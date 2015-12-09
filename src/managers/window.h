@@ -8,11 +8,11 @@
 #include <clib/graphics_protos.h> // InitVPort etc
 #include <graphics/gfxbase.h> // GfxBase etc
 
-#include "ACE:config.h"
+#include "config.h"
 
-#include "ACE:utils/extview.h" // tExtView
-#include "ACE:managers/log.h"
-#include "ACE:managers/memory.h"
+#include "utils/extview.h" // tExtView
+#include "managers/log.h"
+#include "managers/memory.h"
 
 #define CPR_SEEK_CUR 0
 #define CPR_SEEK_SET 1

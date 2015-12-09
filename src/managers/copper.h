@@ -3,10 +3,10 @@
 
 #include <hardware/dmabits.h> // DMAF defines
 
-#include "ACE:types.h"
-#include "ACE:managers/log.h"
-#include "ACE:managers/window.h"
-#include "ACE:utils/custom.h"
+#include "types.h"
+#include "managers/log.h"
+#include "managers/window.h"
+#include "utils/custom.h"
 
 // Since copperlist is double buffered, status flags must be propagated for 2 passes
 #define STATUS_REALLOC_PREV 1

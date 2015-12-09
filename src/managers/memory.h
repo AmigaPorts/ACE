@@ -5,7 +5,7 @@
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <exec/memory.h>      // MEMF_CLEAR etc
 
-#include "ACE:config.h"
+#include "config.h"
 
 /* Types */
 

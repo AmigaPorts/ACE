@@ -1,5 +1,5 @@
 #include "timer.h"
-#include "ACE:managers/log.h"
+#include "managers/log.h"
 
 /* Globals */
 tTimerManager g_sTimerManager;

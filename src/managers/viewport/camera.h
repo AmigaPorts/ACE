@@ -8,10 +8,10 @@
  * All coords are generally used as top-left position of camera unless specified otherwise
  */
 
-#include "ACE:types.h"
-#include "ACE:macros.h"
-#include "ACE:config.h"
-#include "ACE:utils/extview.h"
+#include "types.h"
+#include "macros.h"
+#include "config.h"
+#include "utils/extview.h"
 
 typedef struct {
 	tVpManager sCommon;

@@ -3,13 +3,13 @@
 
 #include <clib/exec_protos.h> // Amiga typedefs
 
-#include "ACE:config.h"
+#include "config.h"
 
-#include "ACE:managers/timer.h"
-#include "ACE:managers/key.h"
-#include "ACE:managers/window.h"
+#include "managers/timer.h"
+#include "managers/key.h"
+#include "managers/window.h"
 
-#include "ACE:utils/extview.h"
+#include "utils/extview.h"
 
 /* Types */
 

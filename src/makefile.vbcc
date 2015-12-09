@@ -1,0 +1,37 @@
+
+ACE_INCLUDE = D:/GitHub/ACE/src/
+
+CC = vc
+CFLAGS =-c -c99 -O2 -sc -sd -IC:/vbcc/targets/m68k-amigaos/include/ -IC:/vbcc/include_h/ -I$(ACE_INCLUDE)
+
+LIBS = -LC:/VBCC/targets/m68k-amigaos/lib -lvc -lamiga
+
+ACE_DIR =
+TMP_DIR = tmp/
+
+COPY = cp
+DEL = rm
+
+ACE_FILES = $(wildcard $(ACE_DIR)managers/*.c $(ACE_DIR)managers/viewport/*.c $(ACE_DIR)utils/*.c)
+ACE_OBJS = $(addprefix $(TMP_DIR), $(notdir $(ACE_FILES:.c=.o)))
+
+ace: $(ACE_OBJS)
+	$(COPY) libs/pario.o $(TMP_DIR)pario.o
+
+$(TMP_DIR)%.o: $(ACE_DIR)%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(TMP_DIR)%.o: $(ACE_DIR)managers/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(TMP_DIR)%.o: $(ACE_DIR)managers/viewport/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(TMP_DIR)%.o: $(ACE_DIR)utils/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+all: clear ace
+
+clear:
+	$(DEL) $(TMP_DIR)*.o
+

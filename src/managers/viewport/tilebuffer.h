@@ -11,16 +11,16 @@
  * 	- scroll
  */
 
-#include "ACE:types.h"
-#include "ACE:macros.h"
-#include "ACE:config.h"
+#include "types.h"
+#include "macros.h"
+#include "config.h"
 
-#include "ACE:utils/extview.h"
-#include "ACE:utils/bitmap.h"
+#include "utils/extview.h"
+#include "utils/bitmap.h"
 
-#include "ACE:managers/blit.h"
-#include "ACE:managers/viewport/camera.h"
-#include "ACE:managers/viewport/scrollBuffer.h"
+#include "managers/blit.h"
+#include "managers/viewport/camera.h"
+#include "managers/viewport/scrollBuffer.h"
 
 /* types */
 
