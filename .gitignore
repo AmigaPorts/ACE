@@ -17,6 +17,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# ACE temp directory
+src/tmp
+
 # =========================
 # Operating System Files
 # =========================
