@@ -4,9 +4,9 @@
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <clib/intuition_protos.h> // IDCMP_RAWKEY etc
 
-#include "ACE:config.h"
+#include "config.h"
 
-#include "ACE:managers/window.h"
+#include "managers/window.h"
 
 /* Types */
 #define KEY_ESCAPE 0x45

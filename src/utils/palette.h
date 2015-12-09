@@ -5,8 +5,8 @@
 #include <clib/exec_protos.h> // Amiga typedefs
 // #include <clib/graphics_protos.h> // BitMap etc
 
-#include "ACE:config.h"
-#include "ACE:utils/extview.h"
+#include "config.h"
+#include "utils/extview.h"
 
 /* Types */
 #define BLIT_DEFAULT 0xC0, 0xFF, 0

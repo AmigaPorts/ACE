@@ -11,16 +11,16 @@
  * TODO: make it work without tileBuffer manager
  */
 
-#include "ACE:types.h"
-#include "ACE:macros.h"
-#include "ACE:config.h"
-#include "ACE:utils/custom.h"
-#include "ACE:utils/extview.h"
-#include "ACE:utils/bitmap.h"
+#include "types.h"
+#include "macros.h"
+#include "config.h"
+#include "utils/custom.h"
+#include "utils/extview.h"
+#include "utils/bitmap.h"
 
-#include "ACE:managers/blit.h"
-#include "ACE:managers/copper.h"
-#include "ACE:managers/viewport/camera.h"
+#include "managers/blit.h"
+#include "managers/copper.h"
+#include "managers/viewport/camera.h"
 
 /* Types */
 

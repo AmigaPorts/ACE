@@ -4,10 +4,10 @@
 #include <clib/exec_protos.h>     // Amiga typedefs
 #include <clib/graphics_protos.h> // BitMap etc.
 
-#include "ACE:config.h"
-#include "ACE:managers/log.h"
-#include "ACE:managers/memory.h"
-#include "ACE:managers/copper.h"
+#include "config.h"
+#include "managers/log.h"
+#include "managers/memory.h"
+#include "managers/copper.h"
 
 /* Types */
 

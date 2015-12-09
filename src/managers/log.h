@@ -7,8 +7,8 @@
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <clib/graphics_protos.h> // Amiga typedefs
 
-#include "ACE:config.h"
-#include "ACE:managers/timer.h"
+#include "config.h"
+#include "managers/timer.h"
 
 #ifndef LOG_FILE_NAME
 #define LOG_FILE_NAME "game.log"

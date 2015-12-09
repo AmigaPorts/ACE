@@ -3,7 +3,7 @@
 
 #include <clib/exec_protos.h> // Amiga typedefs
 
-#include "ACE:config.h"
+#include "config.h"
 
 /* Types */
 #define JPORT1 1
