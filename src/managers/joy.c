@@ -1,4 +1,4 @@
-#include "joy.h"
+#include "managers/joy.h"
 
 /* Globals */
 tJoyManager g_sJoyManager;

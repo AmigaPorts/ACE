@@ -1,4 +1,4 @@
-#include "window.h"
+#include "managers/window.h"
 
 /* Globals */
 tWindowManager g_sWindowManager;

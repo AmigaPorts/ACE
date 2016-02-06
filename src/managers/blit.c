@@ -1,4 +1,4 @@
-#include "blit.h"
+#include "managers/blit.h"
 
 tBlitManager g_sBlitManager = {0};
 

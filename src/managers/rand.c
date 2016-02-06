@@ -1,4 +1,4 @@
-#include "rand.h"
+#include "managers/rand.h"
 
 /* Globals */
 tRandManager g_sRandManager;

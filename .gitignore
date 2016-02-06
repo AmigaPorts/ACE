@@ -48,3 +48,6 @@ src/tmp
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Custom rules
+*.o

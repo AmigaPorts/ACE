@@ -1,4 +1,4 @@
-#include "palette.h"
+#include "utils/palette.h"
 
 void paletteLoad(char *szFileName, UWORD *pPalette) {
 	FILE *pFile;

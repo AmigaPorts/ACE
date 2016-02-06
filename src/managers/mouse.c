@@ -1,4 +1,4 @@
-#include "mouse.h"
+#include "managers/mouse.h"
 
 /* Globals */
 tMouseManager g_sMouseManager;
