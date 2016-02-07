@@ -1,4 +1,4 @@
-#include "bitmap.h"
+#include "utils/bitmap.h"
 
 /* Globals */
 

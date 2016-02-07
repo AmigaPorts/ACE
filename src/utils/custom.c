@@ -1,4 +1,4 @@
-#include "custom.h"
+#include "utils/custom.h"
 
 tRayPos * const vhPosRegs = (APTR)&custom.vposr;
 

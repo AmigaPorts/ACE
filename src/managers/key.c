@@ -1,4 +1,4 @@
-#include "key.h"
+#include "managers/key.h"
 
 /* Globals */
 tKeyManager g_sKeyManager;

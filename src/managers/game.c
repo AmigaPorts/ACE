@@ -1,4 +1,4 @@
-#include "game.h"
+#include "managers/game.h"
 
 /* Globals */
 tGameManager g_sGameManager;

@@ -1,4 +1,4 @@
-#include "scrollbuffer.h"
+#include "managers/viewport/scrollbuffer.h"
 
 /**
  * Creates scroll manager

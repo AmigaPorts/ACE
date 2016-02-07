@@ -1,4 +1,4 @@
-#include "copper.h"
+#include "managers/copper.h"
 
 tCopManager g_sCopManager;
 
