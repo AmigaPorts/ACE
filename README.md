@@ -12,8 +12,8 @@ follow.
 You will need to build VBCC from sources or get pre-build package from
 [amiga-dev@github](https://github.com/kusma/amiga-dev). As noted there,
 you'll need to set up system variables:
-	* VBCC: your vbcc\targets\m68k-amigaos directory,
-	* PATH: add your vbcc\bin dir.
+* VBCC: your vbcc\targets\m68k-amigaos directory,
+* PATH: add your vbcc\bin dir.
 	
 ACE Uses GNU/Make. If you don't have one, be sure to install it via mingw
 or something. If you already own Code::Blocks, you can simply add your
