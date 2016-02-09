@@ -9,7 +9,7 @@ follow.
 
 ### Windows
 
-You will need to build VBCC from sources or get pre-build package from
+You will need to build VBCC from sources or get pre-built package from
 [amiga-dev@github](https://github.com/kusma/amiga-dev). As noted there,
 you'll need to set up system variables:
 * VBCC: your vbcc\targets\m68k-amigaos directory,
