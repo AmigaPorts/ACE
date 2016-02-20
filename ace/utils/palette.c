@@ -1,4 +1,4 @@
-#include "utils/palette.h"
+#include <ace/utils/palette.h>
 
 void paletteLoad(char *szFileName, UWORD *pPalette) {
 	FILE *pFile;

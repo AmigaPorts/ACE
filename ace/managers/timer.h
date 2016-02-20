@@ -5,9 +5,9 @@
 #include <exec/interrupts.h>  // struct Interrupt
 #include <hardware/intbits.h> // INTB_VERTB
 
-#include "config.h"
-#include "managers/memory.h"
-#include "utils/custom.h"
+#include <ace/config.h>
+#include <ace/managers/memory.h>
+#include <ace/utils/custom.h>
 
 /* Types */
 

@@ -1,4 +1,4 @@
-#include "managers/rand.h"
+#include <ace/managers/rand.h>
 
 /* Globals */
 tRandManager g_sRandManager;

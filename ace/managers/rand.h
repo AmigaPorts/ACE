@@ -3,7 +3,7 @@
 
 #include <clib/exec_protos.h> // Amiga typedefs
 
-#include "config.h"
+#include <ace/config.h>
 
 /* Types */
 typedef struct {

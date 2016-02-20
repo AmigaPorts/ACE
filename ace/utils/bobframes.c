@@ -1,4 +1,4 @@
-#include "utils/bobframes.h"
+#include <ace/utils/bobframes.h>
 
 // TODO: read bpp from file
 tBobFrameset *bobFramesCreate(char *szFileName) {

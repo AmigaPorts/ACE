@@ -3,10 +3,10 @@
 
 #include <hardware/dmabits.h> // DMAF defines
 
-#include "types.h"
-#include "managers/log.h"
-#include "managers/window.h"
-#include "utils/custom.h"
+#include <ace/types.h>
+#include <ace/managers/log.h>
+#include <ace/managers/window.h>
+#include <ace/utils/custom.h>
 
 // Since copperlist is double buffered, status flags must be propagated for 2 passes
 #define STATUS_REALLOC_PREV 1
@@ -19,7 +19,7 @@
 
 #define STATUS_REORDER 16     /// Blocks changed order
 
-/* Types */
+/* ******************************************************************** TYPES */
 
 typedef struct {
 	// Higher word
@@ -61,9 +61,9 @@ typedef struct _tCopBlock {
 	UWORD uwCurrCount;           /// Curr instruction count
 	UWORD uwPrevCount;           /// Prev instruction count
 	UBYTE ubDisabled;            /// 1: disabled, 0: enabled
-	UBYTE ubUpdated;             /// 2: current update, 1: prev update, 0: no update
-	UBYTE ubResized;             /// 2: current size change, 1: prev size change, 0: no change
-	tCopCmd *pCmds;           /// Command pointer
+	UBYTE ubUpdated;             /// 2: curr update, 1: prev update, 0: no update
+	UBYTE ubResized;             /// 2: curr size change, 1: prev size change, 0: no change
+	tCopCmd *pCmds;              /// Command pointer
 } tCopBlock;
 
 typedef struct _tCopList {
@@ -79,11 +79,11 @@ typedef struct {
 	tCopList *pBlankList; /// Empty copperlist - LoadView(0) equivalent
 } tCopManager;
 
-/* Globals */
+/* ****************************************************************** GLOBALS */
 
 extern tCopManager g_sCopManager;
 
-/* Functions */
+/* **************************************************************** FUNCTIONS */
 
 /********************* Copper manager functions *******************************/
 

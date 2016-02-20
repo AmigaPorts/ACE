@@ -17,8 +17,9 @@ else
 endif
 SL= $(strip $(SLASH))
 
+ACE_PARENT = $(ACE_DIR)$(SL)..
 CC = vc
-CC_FLAGS = -c99 -I$(ACE_DIR)
+CC_FLAGS = -c99 -I$(ACE_PARENT)
 
 
 TMP_DIR = tmp

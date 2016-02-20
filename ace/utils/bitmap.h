@@ -14,10 +14,10 @@
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <clib/graphics_protos.h> // BitMap etc
 
-#include "config.h"
-#include "managers/log.h"
-#include "managers/memory.h"
-#include "utils/custom.h"
+#include <ace/config.h>
+#include <ace/managers/log.h>
+#include <ace/managers/memory.h>
+#include <ace/utils/custom.h>
 
 /* Types */
 typedef struct BitMap tBitMap;

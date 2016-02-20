@@ -6,9 +6,9 @@
 #include <devices/input.h>
 #include <clib/alib_protos.h>
 
-#include "config.h"
+#include <ace/config.h>
 
-#include "managers/window.h"
+#include <ace/managers/window.h>
 
 /* Types */
 #define MOUSE_LMB IECODE_LBUTTON

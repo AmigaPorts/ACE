@@ -1,4 +1,4 @@
-#include "utils/font.h"
+#include <ace/utils/font.h>
 
 /**
  * Font & text drawing utils
@@ -40,7 +40,7 @@ tFont *fontCreate(char *szFontName) {
 	fread(pFont->pRawData->Planes[0], 1, (pFont->uwWidth >> 3) * pFont->uwHeight, pFontFile);
 	
 	fclose(pFontFile);
-	logBlockEnd("fontCreate");
+	logBlockEnd("fontCreate()");
 	return pFont;
 }
 
@@ -56,7 +56,7 @@ void fontDestroy(tFont *pFont) {
 		memFree(pFont, sizeof(tFont));
 		pFont = 0;
 	}
-	logBlockEnd("fontDestroy");
+	logBlockEnd("fontDestroy()");
 }
 
 /**
@@ -118,7 +118,11 @@ void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
  * 	Creating own minterm: http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node011E.html
  */
 void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags) {
-	// Wyrównanie
+	UBYTE i;
+	UBYTE ubMinterm;
+	tBitMap sTmpDest;
+	
+	// Alignment flags
 	if (ubFlags & FONT_RIGHT)
 		uwX -= pTextBitMap->uwActualWidth;
 	else if (ubFlags & FONT_HCENTER)
@@ -131,15 +135,12 @@ void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uw
 	if(ubFlags & FONT_SHADOW)
 		fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY+1, 0, FONT_COOKIE);
 	
-	UBYTE i;
-	UBYTE ubMinterm;
-	tBitMap sTmpDest;
-	
-	// Init pomocniczej bitmapy docelowej
+	// Helper destination bitmap
 	InitBitMap(&sTmpDest, 1, pDest->BytesPerRow<<3, pDest->Rows);
 	
-	// Czary mary na blitterze
+	// Text-drawing loop
 	for (i = 0; i != pDest->Depth; ++i) {
+		// Determine minterm for given bitplane
 		if(ubFlags & FONT_COOKIE) {
 			if(ubColor & 1)
 				ubMinterm = 0xEA;
@@ -157,6 +158,7 @@ void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uw
 				ubMinterm = 0x00;
 			}
 		}
+		// Blit on given bitplane
 		sTmpDest.Planes[0] = pDest->Planes[i];
 		blitCopy(
 			pTextBitMap->pBitMap, 0, 0,
@@ -169,10 +171,10 @@ void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uw
 }
 
 /**
- * Function for writing one-time texts
+ * Writes one-time texts
  * Should be used very carefully, as text assembling is time-consuming
- * If text is going to be redrawn in game loop, its buffer should be stored
- * and used to redraw
+ * If text is going to be redrawn in game loop, its bitmap buffer should
+ * be stored and used for redraw
  */
 void fontDrawStr(struct BitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY, char *szText, UBYTE ubColor, UBYTE ubFlags) {
 	tTextBitMap *pTextBitMap = fontCreateTextBitMap(pFont, szText);

@@ -1,4 +1,4 @@
-#include "managers/viewport/simplebuffer.h"
+#include <ace/managers/viewport/simplebuffer.h>
 
 tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWORD uwBoundHeight) {
 	UBYTE i;

@@ -1,0 +1,165 @@
+Block begin: windowCreate...OK, time:  34.688 ms
+Block begin: blitManagerCreate
+	Block begin: blitQueueDisable...OK, time:   0.0 us
+Block end: blitManagerCreate, time: 747.2 us
+Block begin: copCreate()
+	Block begin: copListCreate()
+		Addr: 0x218b8
+	Block end: copListCreate(), time:   1.408 ms
+Block end: copCreate(), time:   2.347 ms
+Block begin: viewCreate(uwFlags: 1)
+	addr: 0x7e380
+	Block begin: copListCreate()
+		Addr: 0x7e3f8
+	Block end: copListCreate(), time:   1.408 ms
+Block end: viewCreate(), time:   2.496 ms
+Block begin: vPortCreate(pView: 0x7e380, uwWidth: 320, uwHeight: 256, ubBPP: 5, uwFlags: 0)
+	Addr: 0x7f730
+	Offsets: 0x0
+	No prev VPorts - added to head
+Block end: vPortCreate(), time:   1.343 ms
+Block begin: simpleBufferManagerCreate(pVPort: 0x7f730, uwBoundWidth: 320, uwBoundHeight: 256)
+	Addr: 0x7fff0
+	Bounds: 320x256
+	Block begin: bitmapCreate(uwWidth: 320, uwHeight: 256, ubDepth: 5, ubFlags: 1)
+		addr: 0x80018
+	Block end: bitmapCreate(), time:  13.054 ms
+	Block begin: cameraCreate(pVPort: 0x7f730, uwPosX: 0, uwPosY: 0, uwMaxX: 320, uwMaxY: 256)
+		Addr: 0x80170
+		Block begin: cameraReset(pManager: 0x80170, uwStartX: 0, uwStartY: 0, uwWidth: 320, uwHeight: 256)
+			Camera max coord: 0,65472
+		Block end: cameraReset(), time: 235.2 us
+		Manager 0x80170 attached to head of VP 0x7f730
+	Block end: cameraCreate(), time:   1.920 ms
+	Block begin: copBlockCreate(pCopList: 0x7e3f8, uwMaxCmds: 11, uwWaitX: 0, uwWaitY: 0)
+		pAddr: 0x801f8
+		Head: 0
+		Added as head, next: 0
+	Block end: copBlockCreate(), time:   1.326 ms
+	Manager 0x7fff0 attached after manager 0x80170 of VP 0x7f730
+Block end: simpleBufferManagerCreate(), time:  20.096 ms
+Block begin: fontCreate(szFontName: data/fonts/silkscreen.fnt)
+	Addr: 0x80890, data width: 256px, chars: 123, font height: 6px
+Block end: fontCreate(), time:   2.878 ms
+Block begin: bitmapCreate(uwWidth: 59, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x86e50
+Block end: bitmapCreate(), time:   1.222 ms
+Block begin: bitmapDestroy(pBitMap: 0x86e50)...OK, time: 832.0 us
+Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x86ea8
+Block end: bitmapCreate(), time:   1.156 ms
+Block begin: bitmapCreate(uwWidth: 39, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x86fd8
+Block end: bitmapCreate(), time:   1.156 ms
+Block begin: bitmapCreate(uwWidth: 16, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87218
+Block end: bitmapCreate(), time:   1.849 ms
+Block begin: viewLoad(pView: 0x7e380)...OK, time:  35.686 ms
+Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x872f8
+Block end: bitmapCreate(), time:   1.251 ms
+Block begin: bitmapDestroy(pBitMap: 0x872f8)...OK, time: 832.0 us
+Block begin: bitmapDestroy(pBitMap: 0x87218)...OK, time: 832.4 us
+Block begin: bitmapDestroy(pBitMap: 0x86fd8)...OK, time:   1.835 ms
+Block begin: bitmapDestroy(pBitMap: 0x86ea8)...OK, time:   1.024 ms
+Block begin: bitmapCreate(uwWidth: 20, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x86fd8
+Block end: bitmapCreate(), time:   1.187 ms
+Block begin: bitmapCreate(uwWidth: 67, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87218
+Block end: bitmapCreate(), time:   1.196 ms
+Block begin: bitmapCreate(uwWidth: 70, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87398
+Block end: bitmapCreate(), time:   1.196 ms
+Block begin: bitmapCreate(uwWidth: 70, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87420
+Block end: bitmapCreate(), time:   1.194 ms
+Up
+Block begin: bitmapCreate(uwWidth: 59, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x874b8
+Block end: bitmapCreate(), time:   1.634 ms
+Block begin: bitmapDestroy(pBitMap: 0x874b8)...OK, time: 832.0 us
+Block begin: bitmapDestroy(pBitMap: 0x87420)...OK, time: 768.0 us
+Block begin: bitmapDestroy(pBitMap: 0x87398)...OK, time:   2.432 ms
+Block begin: bitmapDestroy(pBitMap: 0x87218)...OK, time: 875.2 us
+Block begin: bitmapDestroy(pBitMap: 0x86fd8)...OK, time: 768.0 us
+Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87218
+Block end: bitmapCreate(), time:   1.188 ms
+Block begin: bitmapCreate(uwWidth: 39, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87380
+Block end: bitmapCreate(), time:   1.191 ms
+Block begin: bitmapCreate(uwWidth: 16, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87420
+Block end: bitmapCreate(), time:   1.184 ms
+Up
+Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x874b8
+Block end: bitmapCreate(), time:   1.123 ms
+Block begin: bitmapDestroy(pBitMap: 0x874b8)...OK, time: 768.0 us
+Block begin: bitmapDestroy(pBitMap: 0x87420)...OK, time: 704.4 us
+Block begin: bitmapDestroy(pBitMap: 0x87380)...OK, time:   1.622 ms
+Block begin: bitmapDestroy(pBitMap: 0x87218)...OK, time: 832.4 us
+Block begin: bitmapCreate(uwWidth: 20, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87380
+Block end: bitmapCreate(), time:   1.189 ms
+Block begin: bitmapCreate(uwWidth: 67, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87420
+Block end: bitmapCreate(), time:   1.130 ms
+Block begin: bitmapCreate(uwWidth: 70, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87580
+Block end: bitmapCreate(), time:   1.132 ms
+Block begin: bitmapCreate(uwWidth: 70, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x875f8
+Block end: bitmapCreate(), time:   1.132 ms
+Block begin: bitmapCreate(uwWidth: 59, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87690
+Block end: bitmapCreate(), time:   1.768 ms
+Block begin: bitmapDestroy(pBitMap: 0x87690)...OK, time: 832.0 us
+Block begin: bitmapDestroy(pBitMap: 0x875f8)...OK, time:   1.344 ms
+Block begin: bitmapDestroy(pBitMap: 0x87580)...OK, time:   1.152 ms
+Block begin: bitmapDestroy(pBitMap: 0x87420)...OK, time: 740.8 us
+Block begin: bitmapDestroy(pBitMap: 0x87380)...OK, time:   1.472 ms
+Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87420
+Block end: bitmapCreate(), time:   1.507 ms
+Block begin: bitmapCreate(uwWidth: 39, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87578
+Block end: bitmapCreate(), time:   1.170 ms
+Block begin: bitmapCreate(uwWidth: 16, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x87630
+Block end: bitmapCreate(), time:   1.977 ms
+Up
+Block begin: bitmapDestroy(pBitMap: 0x87630)...OK, time: 896.0 us
+Block begin: bitmapDestroy(pBitMap: 0x87578)...OK, time:   1.600 ms
+Block begin: bitmapDestroy(pBitMap: 0x87420)...OK, time: 768.0 us
+Block begin: fontDestroy(pFont: 0x80890)...OK, time:   1.216 ms
+Block begin: viewDestroy(pView: 0x7e380)
+	Block begin: viewLoad(pView: 0)...OK, time:  21.184 ms
+	Block begin: vPortDestroy(pVPort: 0x7f730)
+		Parent extView: 0x7e380
+		found VP: 0x7f730... gotcha!
+		Block begin: Destroying managers
+			Destroying manager 128 @addr: 0x80170
+			cameraManagerDestroy...OK! 
+			Destroying manager 0 @addr: 0x7fff0
+			Block begin: bitmapDestroy(pBitMap: 0x80018)...OK, time:   2.560 ms
+		Block end: Destroying managers, time:   5.952 ms
+	Block end: vPortDestroy(), time:   7.999 ms
+	Block begin: copListDestroy(pCopList: 0x7e3f8)
+		Block begin: copBlockDestroy(pCopList: 0x7e3f8, pBlock: 0x801f8)...OK, time: 768.0 us
+	Block end: copListDestroy(), time:   3.392 ms
+Block end: viewDestroy(), time:  35.840 ms
+Block begin: copDestroy()
+	Block begin: copListDestroy(pCopList: 0x218b8)...OK, time:   1.266 ms
+Block end: copDestroy(), time:   2.176 ms
+Block begin: blitManagerDestroy
+	blitPos: 0
+	Block begin: blitQueueDisable...OK, time:  63.6 us
+Block end: blitManagerDestroy, time:   3.392 ms
+Block begin: windowDestroy()
+	Closing intuition window...OK
+	Closing intuition screen...OK
+	Closing graphics.library...OK
+	Closing intuition.library...OK
+Block end: windowDestroy(), time:  41.984 ms

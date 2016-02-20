@@ -1,6 +1,8 @@
 #ifndef GUARD_ACE_CONFIG_H
 #define GUARD_ACE_CONFIG_H
 
+#include <ace/types.h>
+
 /* Project Compilation flags */
 #define GAME_DEBUG
 
@@ -12,6 +14,6 @@ extern const UWORD WINDOW_SCREEN_BPP;
 #define IN
 #define OUT
 #define INOUT
-#define inline
+#define inline // TODO: Convert to ifdef for elder compilers
 
 #endif

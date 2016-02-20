@@ -4,13 +4,13 @@
 // Implementacja bufora ekranu zgodnego z API AmigaOS
 // korzysta ze scrollingu przez RasInfo
 
-#include "types.h"
-#include "macros.h"
-#include "config.h"
+#include <ace/types.h>
+#include <ace/macros.h>
+#include <ace/config.h>
 
-#include "utils/bitmap.h"
-#include "utils/extview.h"
-#include "managers/viewport/camera.h"
+#include <ace/utils/bitmap.h>
+#include <ace/utils/extview.h>
+#include <ace/managers/viewport/camera.h>
 
 typedef struct {
 	tVpManager sCommon;

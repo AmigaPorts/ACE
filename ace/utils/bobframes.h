@@ -3,9 +3,9 @@
 
 #include <clib/exec_protos.h> // Amiga typedefs
 
-#include "managers/log.h"
-#include "managers/memory.h"
-#include "utils/bitmap.h"
+#include <ace/managers/log.h>
+#include <ace/managers/memory.h>
+#include <ace/utils/bitmap.h>
 
 #define BOBFRAMES_BPP 5
 

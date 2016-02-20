@@ -11,11 +11,11 @@
 #include <hardware/dmabits.h> // DMAF_BLITTER
 #include <hardware/intbits.h> // INTB_BLIT
 
-#include "config.h"
-#include "managers/log.h"
-#include "managers/memory.h"
-#include "utils/custom.h"
-#include "utils/bitmap.h"
+#include <ace/config.h>
+#include <ace/managers/log.h>
+#include <ace/managers/memory.h>
+#include <ace/utils/custom.h>
+#include <ace/utils/bitmap.h>
 
 // BltCon0 channel enable bits
 #define USEA 0x800

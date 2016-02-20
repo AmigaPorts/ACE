@@ -1,4 +1,4 @@
-#include "managers/copper.h"
+#include <ace/managers/copper.h>
 
 tCopManager g_sCopManager;
 
@@ -10,10 +10,11 @@ void copCreate(void) {
 	// Create blank copperlist
 	g_sCopManager.pBlankList = copListCreate();	
 	
-	// Set active copperlist to blank
+	// Set both buffers to blank copperlist
 	g_sCopManager.pCopList = g_sCopManager.pBlankList;
 	copProcess();
 	copProcess();
+	// Update copper-related regs
 	custom.copjmp1 = 1;	
 	custom.dmacon = DMAF_SETCLR | DMAF_COPPER;
 
@@ -173,8 +174,8 @@ void copProcess(void) {
 			pBlock = pBlock->pNext;
 		}
 		
-		// Add 0x7FFF terminator
-		copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0x7F, 0xFF);
+		// Add 0xFFFF terminator
+		copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xFF, 0xFF);
 		++uwListPos;
 		
 		pCopList->pBackBfr->uwCmdCount = uwListPos;
@@ -213,16 +214,24 @@ tCopList *copListCreate(void) {
 
 void copListDestroy(tCopList *pCopList) {
 	logBlockBegin("copListDestroy(pCopList: %p)", pCopList);
+	
+	// Free copperlist buffers
 	while(pCopList->pFirstBlock)
 		copBlockDestroy(pCopList, pCopList->pFirstBlock);
+	
+	// Free front buffer
 	if(pCopList->pFrontBfr->uwAllocSize)
 		memFree(pCopList->pFrontBfr->pList, pCopList->pFrontBfr->uwAllocSize);
 	memFree(pCopList->pFrontBfr, sizeof(tCopBfr));
 	
+	// Free back buffer
 	if(pCopList->pBackBfr->uwAllocSize)
 		memFree(pCopList->pBackBfr->pList, pCopList->pBackBfr->uwAllocSize);
 	memFree(pCopList->pBackBfr, sizeof(tCopBfr));
+	
+	// Free main struct
 	memFree(pCopList, sizeof(tCopList));
+	
 	logBlockEnd("copListDestroy()");
 }
 
@@ -233,8 +242,8 @@ tCopBlock *copBlockCreate(tCopList *pCopList, UWORD uwMaxCmds, UWORD uwWaitX, UW
 	logBlockBegin("copBlockCreate(pCopList: %p, uwMaxCmds: %u, uwWaitX: %u, uwWaitY: %u)", pCopList, uwMaxCmds, uwWaitX, uwWaitY);
 	pBlock = memAllocFastClear(sizeof(tCopBlock));
 	logWrite("pAddr: %p\n", pBlock);
-	pBlock->uwMaxCmds              = uwMaxCmds; // MOVEs only
-	pBlock->pCmds                  = memAllocFast(sizeof(tCopCmd) * pBlock->uwMaxCmds);
+	pBlock->uwMaxCmds = uwMaxCmds; // MOVEs only
+	pBlock->pCmds     = memAllocFast(sizeof(tCopCmd) * pBlock->uwMaxCmds);
 	
 	copWait(pCopList, pBlock, uwWaitX, uwWaitY);
 	

@@ -1,8 +1,8 @@
 #ifndef GUARD_ACE_UTIL_BMFRAME_H
 #define GUARD_ACE_UTIL_BMFRAME_H
 
-#include "utils/bitmap.h"
-#include "managers/blit.h"
+#include <ace/utils/bitmap.h>
+#include <ace/managers/blit.h>
 
 // defines for offsets of tiles in frame file
 

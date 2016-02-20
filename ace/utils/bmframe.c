@@ -1,4 +1,4 @@
-#include "utils/bmframe.h"
+#include <ace/utils/bmframe.h>
 
 void bmFrameDraw(struct BitMap *pFrameSet, struct BitMap *pDest, UWORD uwX, UWORD uwY, UBYTE ubTileWidth, UBYTE ubTileHeight) {
 	UBYTE i;

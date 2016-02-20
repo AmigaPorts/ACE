@@ -3,9 +3,9 @@
 
 #include <clib/exec_protos.h> // Amiga typedefs
 
-#include "config.h"
-#include "managers/blit.h"
-#include "utils/bitmap.h"
+#include <ace/config.h>
+#include <ace/managers/blit.h>
+#include <ace/utils/bitmap.h>
 
 /* Types */
 #define FONT_LEFT    0
