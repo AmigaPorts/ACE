@@ -20,18 +20,19 @@
 /* **************************************************************** FUNCTIONS */
 
 void gsMenuCreate(void);
-
 void gsMenuLoop(void);
-
 void gsMenuDestroy(void);
 
 void menuDrawBG(void);
 
-void menuSetMain(void);
+void menuShowMain(void);
+void menuSelectMain(void);
 
-void menuSetTests(void);
+void menuShowTests(void);
+void menuSelectTests(void);
 
-void menuSetExamples(void);
+void menuShowExamples(void);
+void menuSelectExamples(void);
 
 /* ****************************************************************** INLINES */
 
