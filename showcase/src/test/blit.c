@@ -130,5 +130,6 @@ void gsTestBlitLoop(void) {
 }
 
 void gsTestBlitDestroy(void) {
+	// Destroy buffer, view & viewport
 	viewDestroy(s_pTestBlitView);
 }

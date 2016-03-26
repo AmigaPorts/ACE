@@ -111,19 +111,31 @@ void copProcess(void) {
 	// Update buffer data
 	if(pCopList->ubStatus & STATUS_UPDATE) {
 		UWORD uwListPos;
+		UBYTE ubWasLimitY;
 		
-		// logBlockBegin("update");
 		// Update buffers if their sizes haven't changed
 		pBlock = pCopList->pFirstBlock;
 		uwListPos = 0;
-		while(pBlock && !pBlock->ubResized) {
+		ubWasLimitY = 0;
+		// /////////////////////////////////////////////////////////////////////////
+		// Disabled 'cuz it's broken
+		// This part should update content of modified blocks, which sizes were
+		// not changed. To test fix candidates, run copper test in ACE showcase.
+		// /////////////////////////////////////////////////////////////////////////
+		while(0 && pBlock && !pBlock->ubResized) { 
 			if(!pBlock->ubDisabled) {
 				if(pBlock->ubUpdated) {
 					// Update WAIT
 					if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
-						copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
-						// pBackBfr->pList[uwListPos].ulCode = 0xffdffffe;
-						++uwListPos;
+						if(!ubWasLimitY) {
+							// FIXME: If copper block was moved down, so that WAIT suddenly
+							// consists of 2 instructions instead of 1, such block should be
+							// treated as resized one. Same refers to block, which changed
+							// from 2 WAITs to 1
+							copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
+							++uwListPos;
+							ubWasLimitY = 1;
+						}
 						copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
 						++uwListPos;
 					}
@@ -137,14 +149,13 @@ void copProcess(void) {
 					// logWrite("Copied %u instructions from block\n", pBlock->uwCurrCount);
 					--pBlock->ubUpdated;
 				}
-				// else
-					// logWrite("Block not updated - don't copy\n");
 				uwListPos += pBlock->uwCurrCount;
 			}
-			// else
-				// logWrite("Block disabled - skip\n");
 			pBlock = pBlock->pNext;
 		}
+		// /////////////////////////////////////////////////////////////////////////
+		// End of broken part
+		// /////////////////////////////////////////////////////////////////////////
 		
 		// Do full merge on remaining blocks
 		while(pBlock) {
@@ -156,9 +167,11 @@ void copProcess(void) {
 				
 				// Update WAIT
 				if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
-					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
-					// pBackBfr->pList[uwListPos].ulCode = 0xffdffffe;
-					++uwListPos;
+					if(!ubWasLimitY) {
+						copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
+						++uwListPos;
+						ubWasLimitY = 1;
+					}
 					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
 					++uwListPos;
 				}
@@ -234,7 +247,6 @@ void copListDestroy(tCopList *pCopList) {
 	
 	logBlockEnd("copListDestroy()");
 }
-
 
 tCopBlock *copBlockCreate(tCopList *pCopList, UWORD uwMaxCmds, UWORD uwWaitX, UWORD uwWaitY) {
 	tCopBlock *pBlock;

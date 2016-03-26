@@ -1,222 +1,390 @@
-Block begin: windowCreate...OK, time:  37.375 ms
+Block begin: windowCreate...OK, time:  32.510 ms
 Block begin: blitManagerCreate
-	Block begin: blitQueueDisable...OK, time:  63.6 us
-Block end: blitManagerCreate, time: 747.2 us
+	Block begin: blitQueueDisable...OK, time:   0.4 us
+Block end: blitManagerCreate, time: 690.4 us
 Block begin: copCreate()
 	Block begin: copListCreate()
 		Addr: 0x218b8
 	Block end: copListCreate(), time:   1.472 ms
-Block end: copCreate(), time:   2.944 ms
+Block end: copCreate(), time:   2.111 ms
 Block begin: viewCreate(uwFlags: 1)
-	addr: 0x95050
+	addr: 0x95108
 	Block begin: copListCreate()
-		Addr: 0x958a0
-	Block end: copListCreate(), time:   1.472 ms
-Block end: viewCreate(), time:   2.624 ms
-Block begin: vPortCreate(pView: 0x95050, uwWidth: 320, uwHeight: 256, ubBPP: 5, uwFlags: 0)
-	Addr: 0x95c20
+		Addr: 0x95248
+	Block end: copListCreate(), time:   1.387 ms
+Block end: viewCreate(), time:   2.496 ms
+Block begin: vPortCreate(pView: 0x95108, uwWidth: 320, uwHeight: 256, ubBPP: 5, uwFlags: 0)
+	Addr: 0x96018
 	Offsets: 0x0
 	No prev VPorts - added to head
 Block end: vPortCreate(), time:   1.344 ms
-Block begin: simpleBufferManagerCreate(pVPort: 0x95c20, uwBoundWidth: 320, uwBoundHeight: 256)
-	Addr: 0x95d60
+Block begin: simpleBufferManagerCreate(pVPort: 0x96018, uwBoundWidth: 320, uwBoundHeight: 256)
+	Addr: 0x96218
 	Bounds: 320x256
 	Block begin: bitmapCreate(uwWidth: 320, uwHeight: 256, ubDepth: 5, ubFlags: 1)
-		addr: 0x95e80
-	Block end: bitmapCreate(), time:  13.054 ms
-	Block begin: cameraCreate(pVPort: 0x95c20, uwPosX: 0, uwPosY: 0, uwMaxX: 320, uwMaxY: 256)
-		Addr: 0x95ee0
-		Block begin: cameraReset(pManager: 0x95ee0, uwStartX: 0, uwStartY: 0, uwWidth: 320, uwHeight: 256)
+		addr: 0x96ab0
+	Block end: bitmapCreate(), time:  11.966 ms
+	Block begin: cameraCreate(pVPort: 0x96018, uwPosX: 0, uwPosY: 0, uwMaxX: 320, uwMaxY: 256)
+		Addr: 0x96b10
+		Block begin: cameraReset(pManager: 0x96b10, uwStartX: 0, uwStartY: 0, uwWidth: 320, uwHeight: 256)
 			Camera max coord: 0,65472
-		Block end: cameraReset(), time: 255.6 us
-		Manager 0x95ee0 attached to head of VP 0x95c20
-	Block end: cameraCreate(), time:   2.112 ms
-	Block begin: copBlockCreate(pCopList: 0x958a0, uwMaxCmds: 11, uwWaitX: 0, uwWaitY: 0)
-		pAddr: 0x95f00
+		Block end: cameraReset(), time: 256.0 us
+		Manager 0x96b10 attached to head of VP 0x96018
+	Block end: cameraCreate(), time:   2.155 ms
+	Block begin: copBlockCreate(pCopList: 0x95248, uwMaxCmds: 11, uwWaitX: 0, uwWaitY: 0)
+		pAddr: 0x96a78
 		Head: 0
 		Added as head, next: 0
 	Block end: copBlockCreate(), time:   1.408 ms
-	Manager 0x95d60 attached after manager 0x95ee0 of VP 0x95c20
-Block end: simpleBufferManagerCreate(), time:  20.416 ms
+	Manager 0x96218 attached after manager 0x96b10 of VP 0x96018
+Block end: simpleBufferManagerCreate(), time:  19.391 ms
 Block begin: fontCreate(szFontName: data/fonts/silkscreen.fnt)
-	Addr: 0x95f98, data width: 256px, chars: 123, font height: 6px
-Block end: fontCreate(), time:   2.944 ms
+	Addr: 0x96bb0, data width: 256px, chars: 123, font height: 6px
+Block end: fontCreate(), time:   2.880 ms
 Block begin: bitmapCreate(uwWidth: 59, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-	addr: 0x960a0
-Block end: bitmapCreate(), time:   1.225 ms
-Block begin: bitmapDestroy(pBitMap: 0x960a0)...OK, time: 809.6 us
+	addr: 0x97030
+Block end: bitmapCreate(), time:   1.417 ms
+Block begin: bitmapDestroy(pBitMap: 0x97030)...OK, time: 767.6 us
 Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-	addr: 0x96160
-Block end: bitmapCreate(), time:   1.153 ms
+	addr: 0x97050
+Block end: bitmapCreate(), time:   1.089 ms
 Block begin: bitmapCreate(uwWidth: 39, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-	addr: 0x96200
-Block end: bitmapCreate(), time:   2.238 ms
+	addr: 0x970d0
+Block end: bitmapCreate(), time:   1.094 ms
 Block begin: bitmapCreate(uwWidth: 16, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-	addr: 0x96470
-Block end: bitmapCreate(), time:   1.151 ms
-Block begin: viewLoad(pView: 0x95050)...OK, time:  33.024 ms
+	addr: 0x97150
+Block end: bitmapCreate(), time:   2.166 ms
+Block begin: viewLoad(pView: 0x95108)...OK, time:  35.840 ms
 Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-	addr: 0x96510
-Block end: bitmapCreate(), time:   1.636 ms
-Block begin: bitmapDestroy(pBitMap: 0x96510)...OK, time: 729.6 us
-Block begin: bitmapDestroy(pBitMap: 0x96470)...OK, time: 768.0 us
-Block begin: bitmapDestroy(pBitMap: 0x96200)...OK, time: 704.0 us
-Block begin: bitmapDestroy(pBitMap: 0x96160)...OK, time: 767.6 us
+	addr: 0x97200
+Block end: bitmapCreate(), time:   1.571 ms
+Block begin: bitmapDestroy(pBitMap: 0x97200)...OK, time: 704.4 us
+Block begin: bitmapDestroy(pBitMap: 0x97150)...OK, time:   1.003 ms
+Block begin: bitmapDestroy(pBitMap: 0x970d0)...OK, time:   1.262 ms
+Block begin: bitmapDestroy(pBitMap: 0x97050)...OK, time: 811.2 us
 Block begin: bitmapCreate(uwWidth: 20, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-	addr: 0x96200
-Block end: bitmapCreate(), time:   1.144 ms
+	addr: 0x970d0
+Block end: bitmapCreate(), time:   1.188 ms
 Block begin: bitmapCreate(uwWidth: 20, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-	addr: 0x96480
+	addr: 0x97200
 Block end: bitmapCreate(), time:   1.187 ms
-Block begin: gameChangeState(pCreateCallback: 0x80288, pLoopCallback: 0x80380, pDestroyCallback: 0x80698)
-	Block begin: bitmapDestroy(pBitMap: 0x96480)...OK, time: 768.0 us
-	Block begin: bitmapDestroy(pBitMap: 0x96200)...OK, time:   1.792 ms
-	Block begin: fontDestroy(pFont: 0x95f98)...OK, time:   1.855 ms
-	Block begin: viewDestroy(pView: 0x95050)
-		Block begin: viewLoad(pView: 0)...OK, time:  33.074 ms
-		Block begin: vPortDestroy(pVPort: 0x95c20)
-			Parent extView: 0x95050
-			found VP: 0x95c20... gotcha!
+Block begin: bitmapCreate(uwWidth: 24, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x97270
+Block end: bitmapCreate(), time:   1.252 ms
+Block begin: bitmapCreate(uwWidth: 29, uwHeight: 6, ubDepth: 1, ubFlags: 1)
+	addr: 0x972e0
+Block end: bitmapCreate(), time:   1.147 ms
+Block begin: gameChangeState(pCreateCallback: 0x82108, pLoopCallback: 0x82458, pDestroyCallback: 0x82628)
+	Block begin: bitmapDestroy(pBitMap: 0x972e0)...OK, time: 832.0 us
+	Block begin: bitmapDestroy(pBitMap: 0x97270)...OK, time: 768.4 us
+	Block begin: bitmapDestroy(pBitMap: 0x97200)...OK, time: 767.2 us
+	Block begin: bitmapDestroy(pBitMap: 0x970d0)...OK, time: 960.4 us
+	Block begin: fontDestroy(pFont: 0x96bb0)...OK, time:   1.920 ms
+	Block begin: viewDestroy(pView: 0x95108)
+		Block begin: viewLoad(pView: 0)...OK, time:  37.350 ms
+		Block begin: vPortDestroy(pVPort: 0x96018)
+			Parent extView: 0x95108
+			found VP: 0x96018... gotcha!
 			Block begin: Destroying managers
-				Destroying manager 128 @addr: 0x95ee0
+				Destroying manager 128 @addr: 0x96b10
 				cameraManagerDestroy...OK! 
-				Destroying manager 0 @addr: 0x95d60
-				Block begin: bitmapDestroy(pBitMap: 0x95e80)...OK, time:   2.432 ms
-			Block end: Destroying managers, time:   4.864 ms
-		Block end: vPortDestroy(), time:   6.784 ms
-		Block begin: copListDestroy(pCopList: 0x958a0)
-			Block begin: copBlockDestroy(pCopList: 0x958a0, pBlock: 0x95f00)...OK, time: 831.6 us
-		Block end: copListDestroy(), time:   3.200 ms
-	Block end: viewDestroy(), time:  48.256 ms
+				Destroying manager 0 @addr: 0x96218
+				Block begin: bitmapDestroy(pBitMap: 0x96ab0)...OK, time:   2.430 ms
+			Block end: Destroying managers, time:   5.568 ms
+		Block end: vPortDestroy(), time:   7.552 ms
+		Block begin: copListDestroy(pCopList: 0x95248)
+			Block begin: copBlockDestroy(pCopList: 0x95248, pBlock: 0x96a78)...OK, time: 768.0 us
+		Block end: copListDestroy(), time:   3.392 ms
+	Block end: viewDestroy(), time:  52.416 ms
 	Block begin: viewCreate(uwFlags: 1)
-		addr: 0x95050
+		addr: 0x95108
 		Block begin: copListCreate()
-			Addr: 0x95c20
-		Block end: copListCreate(), time:   1.472 ms
-	Block end: viewCreate(), time:   2.608 ms
-	Block begin: vPortCreate(pView: 0x95050, uwWidth: 320, uwHeight: 256, ubBPP: 5, uwFlags: 0)
-		Addr: 0x95e40
+			Addr: 0x96018
+		Block end: copListCreate(), time:   1.344 ms
+	Block end: viewCreate(), time:   2.368 ms
+	Block begin: vPortCreate(pView: 0x95108, uwWidth: 320, uwHeight: 256, ubBPP: 5, uwFlags: 0)
+		Addr: 0x96058
 		Offsets: 0x0
 		No prev VPorts - added to head
-	Block end: vPortCreate(), time:   2.534 ms
-	Block begin: simpleBufferManagerCreate(pVPort: 0x95e40, uwBoundWidth: 320, uwBoundHeight: 256)
-		Addr: 0x95e80
+	Block end: vPortCreate(), time:   1.280 ms
+	Block begin: simpleBufferManagerCreate(pVPort: 0x96058, uwBoundWidth: 320, uwBoundHeight: 256)
+		Addr: 0x96ab0
 		Bounds: 320x256
 		Block begin: bitmapCreate(uwWidth: 320, uwHeight: 256, ubDepth: 5, ubFlags: 1)
-			addr: 0x95ef0
-		Block end: bitmapCreate(), time:  10.514 ms
-		Block begin: cameraCreate(pVPort: 0x95e40, uwPosX: 0, uwPosY: 0, uwMaxX: 320, uwMaxY: 256)
-			Addr: 0x96000
-			Block begin: cameraReset(pManager: 0x96000, uwStartX: 0, uwStartY: 0, uwWidth: 320, uwHeight: 256)
+			addr: 0x96b40
+		Block end: bitmapCreate(), time:  10.665 ms
+		Block begin: cameraCreate(pVPort: 0x96058, uwPosX: 0, uwPosY: 0, uwMaxX: 320, uwMaxY: 256)
+			Addr: 0x96c58
+			Block begin: cameraReset(pManager: 0x96c58, uwStartX: 0, uwStartY: 0, uwWidth: 320, uwHeight: 256)
 				Camera max coord: 0,65472
 			Block end: cameraReset(), time: 256.0 us
-			Manager 0x96000 attached to head of VP 0x95e40
-		Block end: cameraCreate(), time:   2.240 ms
-		Block begin: copBlockCreate(pCopList: 0x95c20, uwMaxCmds: 11, uwWaitX: 0, uwWaitY: 0)
-			pAddr: 0x96200
+			Manager 0x96c58 attached to head of VP 0x96058
+		Block end: cameraCreate(), time:   2.112 ms
+		Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 11, uwWaitX: 0, uwWaitY: 0)
+			pAddr: 0x96c88
 			Head: 0
 			Added as head, next: 0
-		Block end: copBlockCreate(), time:   1.407 ms
-		Manager 0x95e80 attached after manager 0x96000 of VP 0x95e40
-	Block end: simpleBufferManagerCreate(), time:  18.622 ms
-	Block begin: viewLoad(pView: 0x95050)...OK, time:  38.464 ms
-Block end: gameChangeState, time: 124.480 ms
-Block begin: gameChangeState(pCreateCallback: 0x7fb54, pLoopCallback: 0x7fc88, pDestroyCallback: 0x7fda0)
-	Block begin: viewDestroy(pView: 0x95050)
-		Block begin: viewLoad(pView: 0)...OK, time:  38.245 ms
-		Block begin: vPortDestroy(pVPort: 0x95e40)
-			Parent extView: 0x95050
-			found VP: 0x95e40... gotcha!
+		Block end: copBlockCreate(), time:   1.728 ms
+		Manager 0x96ab0 attached after manager 0x96c58 of VP 0x96058
+	Block end: simpleBufferManagerCreate(), time:  18.432 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 50)
+		pAddr: 0x96cf0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.343 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 51)
+		pAddr: 0x96f00
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.535 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 52)
+		pAddr: 0x96f38
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.203 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 53)
+		pAddr: 0x96f70
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.152 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 54)
+		pAddr: 0x97050
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.152 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 55)
+		pAddr: 0x970e0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.280 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 56)
+		pAddr: 0x971b8
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.215 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 57)
+		pAddr: 0x97210
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 58)
+		pAddr: 0x97280
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 59)
+		pAddr: 0x972f0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 60)
+		pAddr: 0x97350
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.856 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 61)
+		pAddr: 0x97388
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 62)
+		pAddr: 0x973c0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 63)
+		pAddr: 0x973f8
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 64)
+		pAddr: 0x97430
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.280 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 65)
+		pAddr: 0x97468
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 66)
+		pAddr: 0x974a0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 67)
+		pAddr: 0x974d8
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 68)
+		pAddr: 0x97510
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 69)
+		pAddr: 0x97548
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 70)
+		pAddr: 0x97580
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.280 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 71)
+		pAddr: 0x975b8
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.152 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 72)
+		pAddr: 0x975f0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 73)
+		pAddr: 0x97628
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 74)
+		pAddr: 0x97660
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.262 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 75)
+		pAddr: 0x97698
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 76)
+		pAddr: 0x976d0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 77)
+		pAddr: 0x97708
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 78)
+		pAddr: 0x9ef98
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.216 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 79)
+		pAddr: 0x9f000
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.792 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 80)
+		pAddr: 0x9f0a0
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.214 ms
+	Block begin: copBlockCreate(pCopList: 0x96018, uwMaxCmds: 1, uwWaitX: 0, uwWaitY: 81)
+		pAddr: 0x9f148
+		Head: 0x96c88
+	Block end: copBlockCreate(), time:   1.152 ms
+	Block begin: viewLoad(pView: 0x95108)...OK, time:  34.048 ms
+Block end: gameChangeState, time: 212.607 ms
+Block begin: gameChangeState(pCreateCallback: 0x7fb5c, pLoopCallback: 0x7fc90, pDestroyCallback: 0x7fda8)
+	Block begin: viewDestroy(pView: 0x95108)
+		Block begin: viewLoad(pView: 0)...OK, time:  38.592 ms
+		Block begin: vPortDestroy(pVPort: 0x96058)
+			Parent extView: 0x95108
+			found VP: 0x96058... gotcha!
 			Block begin: Destroying managers
-				Destroying manager 128 @addr: 0x96000
+				Destroying manager 128 @addr: 0x96c58
 				cameraManagerDestroy...OK! 
-				Destroying manager 0 @addr: 0x95e80
-				Block begin: bitmapDestroy(pBitMap: 0x95ef0)...OK, time:   2.265 ms
-			Block end: Destroying managers, time:   4.480 ms
-		Block end: vPortDestroy(), time:   6.656 ms
-		Block begin: copListDestroy(pCopList: 0x95c20)
-			Block begin: copBlockDestroy(pCopList: 0x95c20, pBlock: 0x96200)...OK, time: 768.0 us
-		Block end: copListDestroy(), time:   3.017 ms
-	Block end: viewDestroy(), time:  51.840 ms
+				Destroying manager 0 @addr: 0x96ab0
+				Block begin: bitmapDestroy(pBitMap: 0x96b40)...OK, time:   2.368 ms
+			Block end: Destroying managers, time:   5.568 ms
+		Block end: vPortDestroy(), time:   7.423 ms
+		Block begin: copListDestroy(pCopList: 0x96018)
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x96c88)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x96cf0)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x96f00)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x96f38)...OK, time:   1.822 ms
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x96f70)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97050)...OK, time:   1.088 ms
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x970e0)...OK, time: 832.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x971b8)...OK, time: 768.4 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97210)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97280)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x972f0)...OK, time: 704.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97350)...OK, time: 747.2 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97388)...OK, time: 832.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x973c0)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x973f8)...OK, time: 767.6 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97430)...OK, time: 960.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97468)...OK, time: 832.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x974a0)...OK, time: 774.4 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x974d8)...OK, time: 768.4 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97510)...OK, time: 768.4 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97548)...OK, time: 768.8 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97580)...OK, time: 832.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x975b8)...OK, time:   1.123 ms
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x975f0)...OK, time: 811.2 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97628)...OK, time:   1.664 ms
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97660)...OK, time: 768.4 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97698)...OK, time:   1.664 ms
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x976d0)...OK, time: 811.2 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x97708)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x9ef98)...OK, time: 768.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x9f000)...OK, time:   1.451 ms
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x9f0a0)...OK, time: 960.0 us
+			Block begin: copBlockDestroy(pCopList: 0x96018, pBlock: 0x9f148)...OK, time:   1.599 ms
+		Block end: copListDestroy(), time:  71.104 ms
+	Block end: viewDestroy(), time: 120.959 ms
 	Block begin: viewCreate(uwFlags: 1)
-		addr: 0x95050
+		addr: 0x95108
 		Block begin: copListCreate()
-			Addr: 0x95e40
-		Block end: copListCreate(), time:   1.344 ms
+			Addr: 0x96058
+		Block end: copListCreate(), time:   1.407 ms
 	Block end: viewCreate(), time:   2.432 ms
-	Block begin: vPortCreate(pView: 0x95050, uwWidth: 320, uwHeight: 256, ubBPP: 5, uwFlags: 0)
-		Addr: 0x95ef0
+	Block begin: vPortCreate(pView: 0x95108, uwWidth: 320, uwHeight: 256, ubBPP: 5, uwFlags: 0)
+		Addr: 0x96b40
 		Offsets: 0x0
 		No prev VPorts - added to head
-	Block end: vPortCreate(), time:   1.642 ms
-	Block begin: simpleBufferManagerCreate(pVPort: 0x95ef0, uwBoundWidth: 320, uwBoundHeight: 256)
-		Addr: 0x96288
+	Block end: vPortCreate(), time:   1.344 ms
+	Block begin: simpleBufferManagerCreate(pVPort: 0x96b40, uwBoundWidth: 320, uwBoundHeight: 256)
+		Addr: 0x96cb0
 		Bounds: 320x256
 		Block begin: bitmapCreate(uwWidth: 320, uwHeight: 256, ubDepth: 5, ubFlags: 1)
-			addr: 0x962c8
-		Block end: bitmapCreate(), time:  10.470 ms
-		Block begin: cameraCreate(pVPort: 0x95ef0, uwPosX: 0, uwPosY: 0, uwMaxX: 320, uwMaxY: 256)
-			Addr: 0x963a8
-			Block begin: cameraReset(pManager: 0x963a8, uwStartX: 0, uwStartY: 0, uwWidth: 320, uwHeight: 256)
+			addr: 0x97758
+		Block end: bitmapCreate(), time:  10.596 ms
+		Block begin: cameraCreate(pVPort: 0x96b40, uwPosX: 0, uwPosY: 0, uwMaxX: 320, uwMaxY: 256)
+			Addr: 0x97780
+			Block begin: cameraReset(pManager: 0x97780, uwStartX: 0, uwStartY: 0, uwWidth: 320, uwHeight: 256)
 				Camera max coord: 0,65472
-			Block end: cameraReset(), time: 192.0 us
-			Manager 0x963a8 attached to head of VP 0x95ef0
-		Block end: cameraCreate(), time:   1.920 ms
-		Block begin: copBlockCreate(pCopList: 0x95e40, uwMaxCmds: 11, uwWaitX: 0, uwWaitY: 0)
-			pAddr: 0x963d8
+			Block end: cameraReset(), time: 256.0 us
+			Manager 0x97780 attached to head of VP 0x96b40
+		Block end: cameraCreate(), time:   2.112 ms
+		Block begin: copBlockCreate(pCopList: 0x96058, uwMaxCmds: 11, uwWaitX: 0, uwWaitY: 0)
+			pAddr: 0x971b8
 			Head: 0
 			Added as head, next: 0
-		Block end: copBlockCreate(), time:   1.280 ms
-		Manager 0x96288 attached after manager 0x963a8 of VP 0x95ef0
-	Block end: simpleBufferManagerCreate(), time:  17.536 ms
+		Block end: copBlockCreate(), time:   1.535 ms
+		Manager 0x96cb0 attached after manager 0x97780 of VP 0x96b40
+	Block end: simpleBufferManagerCreate(), time:  18.687 ms
 	Block begin: fontCreate(szFontName: data/fonts/silkscreen.fnt)
-		Addr: 0x96440, data width: 256px, chars: 123, font height: 6px
-	Block end: fontCreate(), time:   3.904 ms
+		Addr: 0x972f0, data width: 256px, chars: 123, font height: 6px
+	Block end: fontCreate(), time:   2.944 ms
 	Block begin: bitmapCreate(uwWidth: 59, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-		addr: 0x9e028
-	Block end: bitmapCreate(), time:   1.088 ms
-	Block begin: bitmapDestroy(pBitMap: 0x9e028)...OK, time: 768.0 us
+		addr: 0x979e0
+	Block end: bitmapCreate(), time:   1.662 ms
+	Block begin: bitmapDestroy(pBitMap: 0x979e0)...OK, time: 768.0 us
 	Block begin: bitmapCreate(uwWidth: 22, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-		addr: 0x9e028
-	Block end: bitmapCreate(), time:   1.126 ms
+		addr: 0x979e0
+	Block end: bitmapCreate(), time:   1.145 ms
 	Block begin: bitmapCreate(uwWidth: 39, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-		addr: 0x9e0c0
-	Block end: bitmapCreate(), time:   1.126 ms
+		addr: 0x97a08
+	Block end: bitmapCreate(), time:   1.150 ms
 	Block begin: bitmapCreate(uwWidth: 16, uwHeight: 6, ubDepth: 1, ubFlags: 1)
-		addr: 0x9e140
-	Block end: bitmapCreate(), time:   1.078 ms
-	Block begin: viewLoad(pView: 0x95050)...OK, time:  31.077 ms
-Block end: gameChangeState, time: 240.362 ms
-Block begin: bitmapDestroy(pBitMap: 0x9e140)...OK, time: 768.4 us
-Block begin: bitmapDestroy(pBitMap: 0x9e0c0)...OK, time: 896.0 us
-Block begin: bitmapDestroy(pBitMap: 0x9e028)...OK, time: 768.0 us
-Block begin: fontDestroy(pFont: 0x96440)...OK, time:   1.195 ms
-Block begin: viewDestroy(pView: 0x95050)
-	Block begin: viewLoad(pView: 0)...OK, time:  33.184 ms
-	Block begin: vPortDestroy(pVPort: 0x95ef0)
-		Parent extView: 0x95050
-		found VP: 0x95ef0... gotcha!
+		addr: 0x97a58
+	Block end: bitmapCreate(), time:   1.145 ms
+	Block begin: viewLoad(pView: 0x95108)...OK, time:  23.520 ms
+Block end: gameChangeState, time: 301.055 ms
+Block begin: bitmapDestroy(pBitMap: 0x97a58)...OK, time: 768.4 us
+Block begin: bitmapDestroy(pBitMap: 0x97a08)...OK, time: 939.6 us
+Block begin: bitmapDestroy(pBitMap: 0x979e0)...OK, time: 768.0 us
+Block begin: fontDestroy(pFont: 0x972f0)...OK, time:   1.216 ms
+Block begin: viewDestroy(pView: 0x95108)
+	Block begin: viewLoad(pView: 0)...OK, time:  35.557 ms
+	Block begin: vPortDestroy(pVPort: 0x96b40)
+		Parent extView: 0x95108
+		found VP: 0x96b40... gotcha!
 		Block begin: Destroying managers
-			Destroying manager 128 @addr: 0x963a8
+			Destroying manager 128 @addr: 0x97780
 			cameraManagerDestroy...OK! 
-			Destroying manager 0 @addr: 0x96288
-			Block begin: bitmapDestroy(pBitMap: 0x962c8)...OK, time:   2.496 ms
-		Block end: Destroying managers, time:   4.672 ms
-	Block end: vPortDestroy(), time:   6.400 ms
-	Block begin: copListDestroy(pCopList: 0x95e40)
-		Block begin: copBlockDestroy(pCopList: 0x95e40, pBlock: 0x963d8)...OK, time: 768.0 us
-	Block end: copListDestroy(), time:   2.944 ms
-Block end: viewDestroy(), time:  46.613 ms
+			Destroying manager 0 @addr: 0x96cb0
+			Block begin: bitmapDestroy(pBitMap: 0x97758)...OK, time:   2.368 ms
+		Block end: Destroying managers, time:   4.608 ms
+	Block end: vPortDestroy(), time:   6.848 ms
+	Block begin: copListDestroy(pCopList: 0x96058)
+		Block begin: copBlockDestroy(pCopList: 0x96058, pBlock: 0x971b8)...OK, time:   1.152 ms
+	Block end: copListDestroy(), time:   3.392 ms
+Block end: viewDestroy(), time:  48.958 ms
 Block begin: copDestroy()
-	Block begin: copListDestroy(pCopList: 0x218b8)...OK, time:   1.003 ms
-Block end: copDestroy(), time:   1.728 ms
+	Block begin: copListDestroy(pCopList: 0x218b8)...OK, time:   1.088 ms
+Block end: copDestroy(), time:   2.175 ms
 Block begin: blitManagerDestroy
 	blitPos: 0
-	Block begin: blitQueueDisable...OK, time:  63.6 us
-Block end: blitManagerDestroy, time:   8.320 ms
+	Block begin: blitQueueDisable...OK, time: >7min
+Block end: blitManagerDestroy, time:   4.480 ms
 Block begin: windowDestroy()
 	Closing intuition window...OK
 	Closing intuition screen...OK
 	Closing graphics.library...OK
 	Closing intuition.library...OK
-Block end: windowDestroy(), time:  36.352 ms
+Block end: windowDestroy(), time:  40.171 ms

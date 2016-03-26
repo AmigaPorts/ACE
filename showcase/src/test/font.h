@@ -1,15 +1,10 @@
-#ifndef GUARD_SHOWCASE_TEST_BLIT_H
-#define GUARD_SHOWCASE_TEST_BLIT_H
+#ifndef GUARD_SHOWCASE_TEST_FONT_H
+#define GUARD_SHOWCASE_TEST_FONT_H
 
 #include <ace/types.h>
 #include <ace/config.h>
 
 /* ****************************************************************** DEFINES */
-
-#define TYPE_RECT 0
-#define TYPE_AUTO 128
-#define TYPE_RAPID 64
-#define TYPE_SAVEBG 32
 
 /* ******************************************************************** TYPES */
 
@@ -17,9 +12,13 @@
 
 /* **************************************************************** FUNCTIONS */
 
-void gsTestBlitCreate(void);
-void gsTestBlitLoop(void);
-void gsTestBlitDestroy(void);
+void gsTestFontCreate(void);
+void gsTestFontTableLoop(void);
+void gsTestFontSentenceLoop(void);
+void gsTestFontDestroy(void);
+
+void testFontDrawTable(void);
+void testFontDrawSentence(void);
 
 /* ****************************************************************** INLINES */
 

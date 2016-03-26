@@ -59,7 +59,6 @@ typedef struct _tCopBlock {
 	tUwCoordYX uWaitPos;         /// Wait pos YX
 	UWORD uwMaxCmds;             /// Command limit
 	UWORD uwCurrCount;           /// Curr instruction count
-	UWORD uwPrevCount;           /// Prev instruction count
 	UBYTE ubDisabled;            /// 1: disabled, 0: enabled
 	UBYTE ubUpdated;             /// 2: curr update, 1: prev update, 0: no update
 	UBYTE ubResized;             /// 2: curr size change, 1: prev size change, 0: no change

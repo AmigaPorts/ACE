@@ -9,7 +9,10 @@
 #include <ace/utils/extview.h>
 
 #include "menu/menulist.h"
+
 #include "test/blit.h"
+#include "test/copper.h"
+#include "test/font.h"
 
 static tView *s_pMenuView;
 static tVPort *s_pMenuVPort;
@@ -81,8 +84,10 @@ void gsMenuDestroy(void) {
 	// Destroy menu list
 	menuListDestroy(s_pMenuList);
 	
-	// Destroy buffer, view & viewport
+	// Free font
 	fontDestroy(s_pMenuFont);
+	
+	// Destroy buffer, view & viewport
 	viewDestroy(s_pMenuView);
 }
 
@@ -154,9 +159,11 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = 160;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 2);
+	menuListResetEntries(s_pMenuList, 4);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
+	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
+	menuListSetEntry(s_pMenuList, 3, MENULIST_ENABLED, "Copper");
 	s_ubMenuType = MENU_TESTS;
 	
 	// Redraw list
@@ -170,6 +177,12 @@ void menuSelectTests(void) {
 			break;
 		case 1:
 			gameChangeState(gsTestBlitCreate, gsTestBlitLoop, gsTestBlitDestroy);
+			break;
+		case 2:
+			gameChangeState(gsTestFontCreate, gsTestFontTableLoop, gsTestFontDestroy);
+			break;
+		case 3:
+			gameChangeState(gsTestCopperCreate, gsTestCopperLoop, gsTestCopperDestroy);
 			break;
 	}
 }
