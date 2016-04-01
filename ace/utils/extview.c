@@ -84,7 +84,7 @@ void viewLoad(tView *pView) {
 		viewUpdateCLUT(pView);
 		uwDMA = DMAF_SETCLR | DMAF_RASTER;
 	}
-	copProcess();
+	copProcessBlocks();
 	custom.copjmp1 = 1;
 	custom.dmacon = uwDMA;
 	WaitTOF();

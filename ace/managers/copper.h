@@ -1,6 +1,25 @@
 #ifndef GUARD_ACE_MANAGER_COPPER_H
 #define GUARD_ACE_MANAGER_COPPER_H
 
+/**
+ * Double-buffered copper manager - one to rule them all.
+ * Implements copperlist buffers and lowlevel-ish copper cmds.
+ *
+ * For convenience at cost of speed, one may use copper blocks - MOVE cmds
+ * grouped together by single WAIT cmd. They are automatically reordered
+ * if needed and may be used for small MOVE groups moving across the list.
+ * This approach is superior with fast CPU and true FAST ram.
+ *
+ * If one needs quicker copperlist access on bare machine, one may write
+ * directly into buffers inside CHIP ram using lowlevel-ish functions, command
+ * bitfield modifications or even blits. Lastly, buffer swap fn must be called.
+ * 
+ * Beware: if you plan using raw buffer access, you can't use copBlock fns.
+ * Also, set MODE_RAW in copperlist struct. VPort managers tend to use
+ * copperblocks, so they are unusable that way. Long story short - you have to
+ * do everything by yourself. 
+ */
+
 #include <hardware/dmabits.h> // DMAF defines
 
 #include <ace/types.h>
@@ -19,6 +38,9 @@
 
 #define STATUS_REORDER 16     /// Blocks changed order
 
+#define MODE_BLOCKS 0
+#define MODE_RAW 1
+
 /* ******************************************************************** TYPES */
 
 typedef struct {
@@ -32,14 +54,14 @@ typedef struct {
 
 typedef struct {
 	// Higher word
-	unsigned bfWaitY          :8; /// Y position
-	unsigned bfWaitX          :7; /// X position
-	unsigned bfIsWait         :1; /// Always set to 1
+	unsigned bfWaitY        :8; /// Y position
+	unsigned bfWaitX        :7; /// X position
+	unsigned bfIsWait       :1; /// Always set to 1
 	// Lower word
-	unsigned bfBlitterIgnore  :1; /// If set to 0, waits for pos and blit finish
-	unsigned bfVE             :7; /// Y compare enable bits
-	unsigned bfHE             :7; /// X compare enable bits
-	unsigned bfIsSkip         :1; /// Set to 1 for SKIP, 0 for WAIT
+	unsigned bfBlitterIgnore:1; /// If set to 0, waits for pos and blit finish
+	unsigned bfVE           :7; /// Y compare enable bits
+	unsigned bfHE           :7; /// X compare enable bits
+	unsigned bfIsSkip       :1; /// Set to 1 for SKIP, 0 for WAIT
 } tCopWaitCmd;
 
 typedef union {
@@ -51,7 +73,7 @@ typedef union {
 typedef struct {
 	UWORD uwAllocSize; /// Allocated memory size
 	UWORD uwCmdCount;  /// Copper command count
-	tCopCmd *pList; /// HW Copperlist pointer
+	tCopCmd *pList;    /// HW Copperlist pointer
 } tCopBfr;
 
 typedef struct _tCopBlock {
@@ -68,6 +90,7 @@ typedef struct _tCopBlock {
 typedef struct _tCopList {
 	UWORD uwBlockCount;     /// Total number of blocks
 	UBYTE ubStatus;         /// Status flags for processing
+	UBYTE ubMode;           /// Sets block/raw mode
 	tCopBfr *pFrontBfr;     /// Currently displayed copperlist
 	tCopBfr *pBackBfr;      /// Editable copperlist
 	tCopBlock *pFirstBlock; /// Block list	
@@ -88,19 +111,31 @@ extern tCopManager g_sCopManager;
 
 void copCreate(void);
 void copDestroy(void);
-void copProcess(void);
+void copSwapBuffers(void);
 void copDump(void);
+void copDumpBfr(
+	IN tCopBfr *pBfr
+);
 
 /********************* Copper list functions **********************************/
 
 tCopList *copListCreate(void);
 
+/**
+ * Destroys copperlist along with all attached blocks.
+ */
 void copListDestroy(
 	IN tCopList *pCopList
 );
 
 /********************* Copper block functions *********************************/
 
+/**
+ * Creates new copperlist instruction block with given command count,
+ * automatically WAITing for given x,y.
+ * Block creation sets STATUS_REORDER on parent copperlist, so they don't need
+ * to be added in order.
+ */
 tCopBlock *copBlockCreate(
 	IN tCopList *pCopList,
 	IN UWORD uwMaxCmds,
@@ -113,18 +148,43 @@ void copBlockDestroy(
 	IN tCopBlock *pBlock
 );
 
+/**
+ * Disables instruction block, so it will be omitted during copperlist merge.
+ */
 void copBlockDisable(
 	IN tCopList *pCopList,
 	IN tCopBlock *pBlock
 );
 
+/**
+ * Enables previously disabled instruction block.
+ */
 void copBlockEnable(
 	IN tCopList *pCopList,
 	IN tCopBlock *pBlock
 );
 
-/********************* Copper cmd functions ***********************************/
+/**
+ * Reallocs current backBfr so that it will fit all copper blocks
+ */
+UBYTE copBfrRealloc(void);
 
+/**
+ * Reorders whole copper block list
+ */
+void copReorderBlocks(void);
+
+UBYTE copUpdateFromBlocks(void);
+
+void copProcessBlocks(void);
+
+/********************* Copperblock cmd functions ******************************/
+
+/**
+ * Changes WAIT position for given copper block
+ * Wait may result in copper block reorder - setting STATUS_REORDER
+ * in copperlist lies on user's hands.
+ */
 void copWait(
 	IN tCopList *pCopList,
 	IN tCopBlock *pBlock,
@@ -139,10 +199,31 @@ void copMove(
 	IN UWORD uwValue
 );
 
+/********************* Lowlevel-ish cmd functions *****************************/
+
+/**
+ * Prepares WAIT command on given memory address.
+ * This fn is relatively slow for editing copperlist, since it builds whole WAIT
+  * cmd from scratch. If you exactly know what you're doing, you can just adjust
+	* wait pos of already generated WAIT cmd and omit applying same values to rest of fields.
+ */
 void copSetWait(
-	OUT tCopWaitCmd *pWaitCmd,
+	INOUT tCopWaitCmd *pWaitCmd,
 	UBYTE ubX,
 	UBYTE ubY
+);
+
+/**
+ * Prepares MOVE command on given memory address.
+ * This fn is relatively slow for editing copperlist, since it builds whole MOVE
+ * cmd from scratch. If you want to change only register addr or only value,
+ * edit command using its bitfields.
+ */
+ 
+void copSetMove(
+	INOUT tCopMoveCmd *pMoveCmd,
+	void *pReg,
+	UWORD uwValue
 );
 
 #endif

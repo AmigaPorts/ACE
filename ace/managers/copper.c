@@ -12,8 +12,8 @@ void copCreate(void) {
 	
 	// Set both buffers to blank copperlist
 	g_sCopManager.pCopList = g_sCopManager.pBlankList;
-	copProcess();
-	copProcess();
+	copProcessBlocks();
+	copProcessBlocks();
 	// Update copper-related regs
 	custom.copjmp1 = 1;	
 	custom.dmacon = DMAF_SETCLR | DMAF_COPPER;
@@ -35,179 +35,66 @@ void copDestroy(void) {
 	logBlockEnd("copDestroy()");
 }
 
-void copProcess(void) {
-	// logBlockBegin("copProcess()");
-	UBYTE ubNewStatus;
-	tCopBfr *pBackBfr;
-	tCopBlock *pBlock;
+void copSwapBuffers(void) {
+	tCopBfr *pTmp;
 	tCopList *pCopList;
 	
 	pCopList = g_sCopManager.pCopList;
-	pBackBfr = pCopList->pBackBfr;
-	ubNewStatus = 0;
-	
-	// Realloc buffer memeory
-	if(pCopList->ubStatus & STATUS_REALLOC) {
-		// logBlockBegin("Realloc");
-		// Free memory
-		// logWrite("free mem: %u\n", pBackBfr->uwAllocSize);
-		if(pBackBfr->uwAllocSize)
-			memFree(pBackBfr->pList, pBackBfr->uwAllocSize);
-		
-		// Calculate new list size
-		// logWrite("Alloc calc\n");
-		if(pCopList->ubStatus & STATUS_REALLOC_CURR) {
-			
-			pBackBfr->uwAllocSize = 0;
-			for(pBlock = pCopList->pFirstBlock; pBlock; pBlock = pBlock->pNext)
-				pBackBfr->uwAllocSize += pBlock->uwMaxCmds;
-			pBackBfr->uwAllocSize += pCopList->uwBlockCount + 1; // all WAITs + double WAIT
-			pBackBfr->uwAllocSize *= sizeof(tCopCmd);
-			// Pass realloc to next buffer
-			ubNewStatus |= STATUS_REALLOC_PREV;
-		}
-		else
-			pBackBfr->uwAllocSize = pCopList->pFrontBfr->uwAllocSize;
-		
-		// Alloc memory
-		// logWrite("Alloc: %u\n", pBackBfr->uwAllocSize);
-		pBackBfr->pList = memAllocChip(pBackBfr->uwAllocSize);
-		// logBlockEnd("Realloc");
-	}
-	
-	// Sort blocks if needed
-	if(pCopList->ubStatus & STATUS_REORDER) {
-		// logBlockBegin("reorder");
-		UBYTE ubDone;
-		tCopBlock *pPrev;
-		
-		do {
-			ubDone = 1;
-			pBlock = pCopList->pFirstBlock;
-			pPrev = 0;
-			while(pBlock->pNext) {
-				if(pBlock->uWaitPos.ulYX > pBlock->pNext->uWaitPos.ulYX) {
-					if(!pPrev) {
-						pCopList->pFirstBlock = pBlock->pNext;
-						pBlock->pNext = pCopList->pFirstBlock->pNext;
-						pCopList->pFirstBlock->pNext = pBlock;
-					}
-					else {
-						pPrev->pNext = pBlock->pNext;
-						pBlock->pNext = pPrev->pNext->pNext;
-						pPrev->pNext->pNext = pBlock;
-					}
-					ubDone = 0;
-					break;
-				}
-				pPrev = pBlock;
-				pBlock = pBlock->pNext;
-			}
-			
-		} while(!ubDone);
-		// logBlockEnd("reorder");
-	}
-	
-	// Update buffer data
-	if(pCopList->ubStatus & STATUS_UPDATE) {
-		UWORD uwListPos;
-		UBYTE ubWasLimitY;
-		
-		// Update buffers if their sizes haven't changed
-		pBlock = pCopList->pFirstBlock;
-		uwListPos = 0;
-		ubWasLimitY = 0;
-		// /////////////////////////////////////////////////////////////////////////
-		// Disabled 'cuz it's broken
-		// This part should update content of modified blocks, which sizes were
-		// not changed. To test fix candidates, run copper test in ACE showcase.
-		// /////////////////////////////////////////////////////////////////////////
-		while(0 && pBlock && !pBlock->ubResized) { 
-			if(!pBlock->ubDisabled) {
-				if(pBlock->ubUpdated) {
-					// Update WAIT
-					if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
-						if(!ubWasLimitY) {
-							// FIXME: If copper block was moved down, so that WAIT suddenly
-							// consists of 2 instructions instead of 1, such block should be
-							// treated as resized one. Same refers to block, which changed
-							// from 2 WAITs to 1
-							copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
-							++uwListPos;
-							ubWasLimitY = 1;
-						}
-						copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
-						++uwListPos;
-					}
-					else {
-						copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
-						++uwListPos;
-					}
-					
-					// Copy MOVEs
-					CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
-					// logWrite("Copied %u instructions from block\n", pBlock->uwCurrCount);
-					--pBlock->ubUpdated;
-				}
-				uwListPos += pBlock->uwCurrCount;
-			}
-			pBlock = pBlock->pNext;
-		}
-		// /////////////////////////////////////////////////////////////////////////
-		// End of broken part
-		// /////////////////////////////////////////////////////////////////////////
-		
-		// Do full merge on remaining blocks
-		while(pBlock) {
-			if(!pBlock->ubDisabled) {
-				if(pBlock->ubResized)
-					--pBlock->ubResized;
-				if(pBlock->ubUpdated)
-					--pBlock->ubUpdated;
-				
-				// Update WAIT
-				if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
-					if(!ubWasLimitY) {
-						copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
-						++uwListPos;
-						ubWasLimitY = 1;
-					}
-					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
-					++uwListPos;
-				}
-				else {
-					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
-					++uwListPos;
-				}
-				
-				// Copy MOVEs
-				CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
-				uwListPos += pBlock->uwCurrCount;
-			}			
-			pBlock = pBlock->pNext;
-		}
-		
-		// Add 0xFFFF terminator
-		copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xFF, 0xFF);
-		++uwListPos;
-		
-		pCopList->pBackBfr->uwCmdCount = uwListPos;
-		
-		if(pCopList->ubStatus & STATUS_UPDATE_CURR)
-			ubNewStatus |= STATUS_UPDATE_PREV;
-		// logBlockEnd("update");
-	}
-
-	// Swap copper buffers
-	tCopBfr *pTmp;
 	pTmp = pCopList->pFrontBfr;
 	pCopList->pFrontBfr = pCopList->pBackBfr;
 	pCopList->pBackBfr = pTmp;
 	custom.cop1lc = (ULONG)((void *)pCopList->pFrontBfr->pList);
+}
+
+void copDumpBlocks(void) {
+	UWORD i;
+	tCopList *pCopList;
+	tCopBlock *pBlock;
+	tCopCmd *pCmds;
 	
-	// Update status code
-	pCopList->ubStatus = ubNewStatus;
-	// logBlockEnd("copProcess()");
+	logBlockBegin("copDumpBlocks()");
+	
+	pCopList = g_sCopManager.pCopList;
+	logWrite("Copperlist %p cmd count: %u/%u\n", pCopList, pCopList->pFrontBfr->uwCmdCount, pCopList->pFrontBfr->uwAllocSize>>2);
+	pCmds = pCopList->pFrontBfr->pList;
+	for(i = 0; i != pCopList->pFrontBfr->uwCmdCount; ++i)
+		if(pCmds[i].sWait.bfIsWait)
+			logWrite("%08X - WAIT: %hu,%hu\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX << 1, pCmds[i].sWait.bfWaitY);
+		else
+			logWrite("%08X - MOVE: %03X := %X\n", pCmds[i].ulCode,  pCmds[i].sMove.bfDestAddr, pCmds[i].sMove.bfValue);
+	
+	logWrite("Copper block count: %u\n", pCopList->uwBlockCount);
+	pBlock = pCopList->pFirstBlock;
+	while(pBlock) {
+		logWrite("Block %p has %u/%u cmds:\n", pBlock, pBlock->uwCurrCount, pBlock->uwMaxCmds);
+		logPushIndent();
+		pCmds = pBlock->pCmds;
+		for(i = 0; i != pBlock->uwCurrCount; ++i)
+			if(pCmds[i].sWait.bfIsWait)
+				logWrite("%08X - WAIT: %hu,%hu\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX, pCmds[i].sWait.bfWaitY);
+			else
+				logWrite("%08X - MOVE: %03X := %X\n", pCmds[i].ulCode,  pCmds[i].sMove.bfDestAddr, pCmds[i].sMove.bfValue);
+		
+		logPopIndent();
+		pBlock = pBlock->pNext;
+	}
+	
+	logBlockEnd("copDumpBlocks()");
+}
+
+void copDumpBfr(tCopBfr *pBfr) {
+	UWORD i;
+	
+	logBlockBegin("copDumpBuffer(pBfr: %p)", pBfr);
+	logWrite("Alloc size: %u, cmd count: %u\n", pBfr->uwAllocSize, pBfr->uwCmdCount);
+	for(i = 0; i != pBfr->uwCmdCount; ++i) {
+			if(pBfr->pList[i].sWait.bfIsWait)
+				logWrite("%08X - WAIT: %hu,%hu\n", pBfr->pList[i].ulCode, pBfr->pList[i].sWait.bfWaitX << 1, pBfr->pList[i].sWait.bfWaitY);
+			else
+				logWrite("%08X - MOVE: %03X := %X\n", pBfr->pList[i].ulCode,  pBfr->pList[i].sMove.bfDestAddr, pBfr->pList[i].sMove.bfValue);		
+	}
+	
+	logBlockEnd("copDumpBuffer");
 }
 
 tCopList *copListCreate(void) {
@@ -324,6 +211,199 @@ void copBlockDisable(tCopList *pCopList, tCopBlock *pBlock) {
 	pCopList->ubStatus |= STATUS_UPDATE;
 }
 
+UBYTE copBfrRealloc(void) {
+	tCopList *pCopList;
+	tCopBfr *pBackBfr;
+	tCopBlock *pBlock;
+	UBYTE ubNewStatus;
+	
+	pCopList = g_sCopManager.pCopList;
+	pBackBfr = pCopList->pBackBfr;
+	
+	// Free memory
+	if(pBackBfr->uwAllocSize)
+		memFree(pBackBfr->pList, pBackBfr->uwAllocSize);
+	
+	// Calculate new list size
+	if(pCopList->ubStatus & STATUS_REALLOC_CURR) {
+		
+		pBackBfr->uwAllocSize = 0;
+		for(pBlock = pCopList->pFirstBlock; pBlock; pBlock = pBlock->pNext)
+			pBackBfr->uwAllocSize += pBlock->uwMaxCmds;
+		pBackBfr->uwAllocSize += pCopList->uwBlockCount + 1; // all WAITs + double WAIT
+		pBackBfr->uwAllocSize *= sizeof(tCopCmd);
+		// Pass realloc to next buffer
+		ubNewStatus |= STATUS_REALLOC_PREV;
+	}
+	else {
+		// If realloc just propagates to next buffer, calculations aren't necessary
+		pBackBfr->uwAllocSize = pCopList->pFrontBfr->uwAllocSize;
+		ubNewStatus = 0;
+	}
+	
+	// Alloc memory
+	pBackBfr->pList = memAllocChip(pBackBfr->uwAllocSize);
+	return ubNewStatus;
+}
+
+void copReorderBlocks(void) {
+	UBYTE ubDone;
+	tCopList *pCopList;
+	tCopBlock *pBlock, *pPrev;
+	
+	pCopList = g_sCopManager.pCopList;
+	do {
+		ubDone = 1;
+		pBlock = pCopList->pFirstBlock;
+		pPrev = 0;
+		while(pBlock->pNext) {
+			if(pBlock->uWaitPos.ulYX > pBlock->pNext->uWaitPos.ulYX) {
+				if(!pPrev) {
+					pCopList->pFirstBlock = pBlock->pNext;
+					pBlock->pNext = pCopList->pFirstBlock->pNext;
+					pCopList->pFirstBlock->pNext = pBlock;
+				}
+				else {
+					pPrev->pNext = pBlock->pNext;
+					pBlock->pNext = pPrev->pNext->pNext;
+					pPrev->pNext->pNext = pBlock;
+				}
+				ubDone = 0;
+				break;
+			}
+			pPrev = pBlock;
+			pBlock = pBlock->pNext;
+		}
+		
+	} while(!ubDone);
+}
+
+UBYTE copUpdateFromBlocks(void) {
+	tCopList *pCopList;
+	tCopBlock *pBlock;
+	tCopBfr *pBackBfr;
+	UWORD uwListPos;
+	UBYTE ubWasLimitY;
+	
+	pCopList = g_sCopManager.pCopList;
+	pBackBfr = pCopList->pBackBfr;
+	
+	pBlock = pCopList->pFirstBlock;
+	uwListPos = 0;
+	ubWasLimitY = 0;
+	
+	// Update buffers if their sizes haven't changed
+	// ///////////////////////////////////////////////////////////////////////////
+	// Disabled 'cuz it's broken
+	// This part should update content of modified blocks, which sizes were
+	// not changed. To test fix candidates, run copper test in ACE showcase.
+	// ///////////////////////////////////////////////////////////////////////////
+	while(0 && pBlock && !pBlock->ubResized) {
+		if(!pBlock->ubDisabled) {
+			if(pBlock->ubUpdated) {
+				// Update WAIT
+				if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
+					// FIXME: double WAIT only when previous line ended before some pos
+					if(!ubWasLimitY) {
+						// FIXME: If copper block was moved down, so that WAIT suddenly
+						// consists of 2 instructions instead of 1 AND is first y>0xFF,
+						// such block should be treated as resized one. Same refers to
+						// block, which changed from 2 WAITs to 1.
+						copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
+						++uwListPos;
+						ubWasLimitY = 1;
+					}
+					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
+					++uwListPos;
+				}
+				else {
+					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
+					++uwListPos;
+				}
+				
+				// Copy MOVEs
+				CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
+				--pBlock->ubUpdated;
+			}
+			uwListPos += pBlock->uwCurrCount;
+		}
+		pBlock = pBlock->pNext;
+	}
+	// ///////////////////////////////////////////////////////////////////////////
+	// End of broken part
+	// ///////////////////////////////////////////////////////////////////////////
+	
+	// Do full merge on remaining blocks
+	while(pBlock) {
+		if(!pBlock->ubDisabled) {
+			if(pBlock->ubResized)
+				--pBlock->ubResized;
+			if(pBlock->ubUpdated)
+				--pBlock->ubUpdated;
+			
+			// Update WAIT
+			if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
+				// FIXME: double WAIT only when previous line ended before some pos
+				if(!ubWasLimitY) {
+					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
+					++uwListPos;
+					ubWasLimitY = 1;
+				}
+				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
+				++uwListPos;
+			}
+			else {
+				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
+				++uwListPos;
+			}
+			
+			// Copy MOVEs
+			CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
+			uwListPos += pBlock->uwCurrCount;
+		}			
+		pBlock = pBlock->pNext;
+	}
+	
+	// Add 0xFFFF terminator
+	copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xFF, 0xFF);
+	++uwListPos;
+	
+	pCopList->pBackBfr->uwCmdCount = uwListPos;
+	
+	if(pCopList->ubStatus & STATUS_UPDATE_CURR)
+		return STATUS_UPDATE_PREV;
+	return 0;
+}
+
+void copProcessBlocks(void) {
+	UBYTE ubNewStatus;
+	tCopList *pCopList;
+	tCopBfr *pBackBfr;
+	
+	pCopList = g_sCopManager.pCopList;
+	if(pCopList->ubMode == MODE_BLOCKS) {
+		pBackBfr = pCopList->pBackBfr;
+		
+		// Realloc buffer memeory
+		if(pCopList->ubStatus & STATUS_REALLOC)
+			ubNewStatus = copBfrRealloc();
+		
+		// Sort blocks if needed
+		if(pCopList->ubStatus & STATUS_REORDER)
+			copReorderBlocks();
+		
+		// Update buffer data
+		if(pCopList->ubStatus & STATUS_UPDATE)
+			ubNewStatus |= copUpdateFromBlocks();
+	}
+
+	// Swap copper buffers
+	copSwapBuffers();
+	
+	// Update status code
+	pCopList->ubStatus = ubNewStatus;
+}
+
 void copWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
 	pBlock->uWaitPos.sUwCoord.uwY  = uwY;
 	pBlock->uWaitPos.sUwCoord.uwX  = uwX;
@@ -332,15 +412,10 @@ void copWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
 	pCopList->ubStatus |= STATUS_UPDATE;
 }
 
-void copMove(tCopList *pCopList, tCopBlock *pBlock, void *reg, UWORD uwValue) {
-	tCopMoveCmd *pCmd;
+void copMove(tCopList *pCopList, tCopBlock *pBlock, void *pAddr, UWORD uwValue) {
 	
-	pCmd = (tCopMoveCmd*)&pBlock->pCmds[pBlock->uwCurrCount];
+	copSetMove((tCopMoveCmd*)&pBlock->pCmds[pBlock->uwCurrCount], pAddr, uwValue);
 	++pBlock->uwCurrCount;
-	
-	pCmd->bfUnused = 0;
-	pCmd->bfDestAddr = (ULONG)reg - (ULONG)((UBYTE *)&custom);
-	pCmd->bfValue = uwValue;
 	
 	pBlock->ubUpdated = 2;
 	pBlock->ubResized = 2;
@@ -357,38 +432,8 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 	pWaitCmd->bfIsSkip        = 0;
 }
 
-void copDump(void) {
-	UWORD i;
-	tCopList *pCopList;
-	tCopBlock *pBlock;
-	tCopCmd *pCmds;
-	
-	logBlockBegin("copDump()");
-	
-	pCopList = g_sCopManager.pCopList;
-	logWrite("Copperlist %p cmd count: %u/%u\n", pCopList, pCopList->pFrontBfr->uwCmdCount, pCopList->pFrontBfr->uwAllocSize>>2);
-	pCmds = pCopList->pFrontBfr->pList;
-	for(i = 0; i != pCopList->pFrontBfr->uwCmdCount; ++i)
-		if(pCmds[i].sWait.bfIsWait)
-			logWrite("%08X - WAIT: %hX,%hX\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX << 1, pCmds[i].sWait.bfWaitY);
-		else
-			logWrite("%08X - MOVE: %03X := %X\n", pCmds[i].ulCode,  pCmds[i].sMove.bfDestAddr, pCmds[i].sMove.bfValue);
-	
-	logWrite("Copper block count: %u\n", pCopList->uwBlockCount);
-	pBlock = pCopList->pFirstBlock;
-	while(pBlock) {
-		logWrite("Block %p has %u/%u cmds:\n", pBlock, pBlock->uwCurrCount, pBlock->uwMaxCmds);
-		logPushIndent();
-		pCmds = pBlock->pCmds;
-		for(i = 0; i != pBlock->uwCurrCount; ++i)
-			if(pCmds[i].sWait.bfIsWait)
-				logWrite("%08X - WAIT: %hX,%hX\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX, pCmds[i].sWait.bfWaitY);
-			else
-				logWrite("%08X - MOVE: %03X := %X\n", pCmds[i].ulCode,  pCmds[i].sMove.bfDestAddr, pCmds[i].sMove.bfValue);
-		
-		logPopIndent();
-		pBlock = pBlock->pNext;
-	}
-	
-	logBlockEnd("copDump()");
+void copSetMove(tCopMoveCmd *pMoveCmd, void *pAddr, UWORD uwValue) {
+	pMoveCmd->bfUnused = 0;
+	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)&custom);
+	pMoveCmd->bfValue = uwValue;
 }

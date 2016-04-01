@@ -121,7 +121,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		
 		
 		pManager->uwVpHeightPrev = uwVpHeight;
-		copProcess();
+		copProcessBlocks();
 	}
 	
 	logAvgEnd(pManager->pAvg);
