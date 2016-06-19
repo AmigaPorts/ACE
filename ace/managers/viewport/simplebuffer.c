@@ -24,7 +24,7 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 	pManager->uBfrBounds.sUwCoord.uwX = uwBoundHeight;
 		
 	// Buffer bitmap
-	pManager->pBuffer = bitmapCreate(uwBoundWidth, uwBoundHeight, pVPort->ubBPP, 0);
+	pManager->pBuffer = bitmapCreate(uwBoundWidth, uwBoundHeight, pVPort->ubBPP, BMF_CLEAR);
 	if(!pManager->pBuffer) {
 		logWrite("ERR: Can't alloc buffer bitmap!\n");
 		logBlockEnd("simpleBufferManagerCreate()");
@@ -36,16 +36,16 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
 	
 	uwOffsX = 0;
-	uwModulo = pManager->pBuffer->BytesPerRow - (pManager->sCommon.pVPort->uwHeight >> 3);
+	uwModulo = pManager->pBuffer->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3); // Was uwHeight, WTF?
 
 	// Form display - set registers
 	custom.ddfstop = 0x00D0;
-	custom.ddfstrt = 0x0038;
-	custom.bpl1mod = uwModulo;
-	custom.bpl2mod = uwModulo;
+	custom.ddfstrt = 0x0030;
+	custom.bpl1mod = uwModulo-1;
+	custom.bpl2mod = uwModulo-1;
 	
 	pCopList = pVPort->pView->pCopList;
-	// Bitplanes + shift X
+	// CopBlock contains: bitplanes + shiftX
 	pBlock = copBlockCreate(pCopList, 2*pVPort->ubBPP + 1, 0, pManager->sCommon.pVPort->uwOffsY);
 	pManager->pCopBlock = pBlock;
 	
@@ -57,7 +57,7 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 		copMove(pCopList, pBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
 	}
 	
-	// podpiêcie pod VPort
+	// Add manager to VPort
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 	logBlockEnd("simpleBufferManagerCreate()");
 	return pManager;
@@ -72,5 +72,31 @@ void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 }
 
 void simpleBufferProcess(tSimpleBufferManager *pManager) {
-	// TODO: scrolling
+	UBYTE i;
+	UWORD uwShift;
+	ULONG ulBplAdd;
+	ULONG ulPlaneAddr;
+	tCameraManager *pCameraManager;
+	tCopList *pCopList;
+	
+	pCameraManager = pManager->pCameraManager;
+	pCopList = pManager->sCommon.pVPort->pView->pCopList;
+	
+	// Calculate X movement
+	uwShift = 15-(pCameraManager->uPos.sUwCoord.uwX & 0xF);
+	uwShift = (uwShift << 4) | uwShift;
+	ulBplAdd = (pCameraManager->uPos.sUwCoord.uwX >> 3);
+	
+	// Calculate Y movement
+	ulBplAdd += pManager->pBuffer->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
+	
+	// Update copperlist
+	pManager->pCopBlock->uwCurrCount = 0;
+	copMove(pCopList, pManager->pCopBlock, &custom.bplcon1, uwShift);
+	for(i = 0; i != pManager->pBuffer->Depth; ++i) {
+		ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplAdd;
+		copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
+		copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+	}
+	
 }

@@ -45,4 +45,8 @@ inline BYTE bitmapIsInterleaved(
 	IN tBitMap *pBitMap
 );
 
+void bitmapDump(
+	IN tBitMap *pBitMap
+);
+
 #endif

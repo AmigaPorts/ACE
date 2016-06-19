@@ -31,7 +31,7 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
 		
 		if (ubFlags & BMF_CLEAR)
-			BltClear(pBitMap->Planes[0], (pBitMap->Rows << 16) | pBitMap->BytesPerRow, 3L);
+			BltClear(pBitMap->Planes[0], pBitMap->Rows * pBitMap->BytesPerRow, 1);
 	}
 	else
 		for(i = ubDepth; i--;) {
@@ -46,10 +46,8 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 				logBlockEnd("bitmapCreate()");
 				return 0;
 			}
-			if (ubFlags & BMF_CLEAR) {
-				BltClear(pBitMap->Planes[i], (pBitMap->Rows << 16) | pBitMap->BytesPerRow, 3L);
-				// TODO: split clear blits to smaller than 1008x1024 on OCS
-			}
+			if (ubFlags & BMF_CLEAR)
+				BltClear(pBitMap->Planes[i], pBitMap->Rows * pBitMap->BytesPerRow, 1);
 		}
 
 	if (ubFlags & BMF_CLEAR)
@@ -112,10 +110,10 @@ inline BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
 	return (pBitMap->Depth > 1 && ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0])*pBitMap->Depth == pBitMap->BytesPerRow);
 }
 
-void bitmapLog(tBitMap *pBitMap) {
+void bitmapDump(tBitMap *pBitMap) {
 	UBYTE i;
 	
-	logBlockBegin("bitmapLog(pBitMap: %p)", pBitMap);
+	logBlockBegin("bitmapDump(pBitMap: %p)", pBitMap);
 	
 	logWrite(
 		"BytesPerRow: %u, Rows: %u, Flags: %hu, Depth: %hu, pad: %u\n",
@@ -125,5 +123,5 @@ void bitmapLog(tBitMap *pBitMap) {
 	for(i = 0; i != pBitMap->Depth; ++i)
 		logWrite("Bitplane %hu addr: %p\n", i, pBitMap->Planes[i]);
 	
-	logBlockEnd("bitmapLog()");
+	logBlockEnd("bitmapDump()");
 }

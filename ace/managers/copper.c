@@ -334,6 +334,7 @@ UBYTE copUpdateFromBlocks(void) {
 	// ///////////////////////////////////////////////////////////////////////////
 	
 	// Do full merge on remaining blocks
+	
 	while(pBlock) {
 		if(!pBlock->ubDisabled) {
 			if(pBlock->ubResized)
@@ -380,6 +381,9 @@ void copProcessBlocks(void) {
 	tCopList *pCopList;
 	tCopBfr *pBackBfr;
 	
+	// logWrite("Front buffer dump\n");
+	// copDumpBfr(pCopList->pFrontBfr);
+	
 	pCopList = g_sCopManager.pCopList;
 	if(pCopList->ubMode == MODE_BLOCKS) {
 		pBackBfr = pCopList->pBackBfr;
@@ -391,6 +395,9 @@ void copProcessBlocks(void) {
 		// Sort blocks if needed
 		if(pCopList->ubStatus & STATUS_REORDER)
 			copReorderBlocks();
+
+	// logWrite("New front buffer dump\n");
+	// copDumpBfr(pCopList->pFrontBfr);
 		
 		// Update buffer data
 		if(pCopList->ubStatus & STATUS_UPDATE)
