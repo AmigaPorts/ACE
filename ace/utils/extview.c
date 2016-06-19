@@ -34,6 +34,7 @@ void viewDestroy(tView *pView) {
 		vPortDestroy(pView->pFirstVPort);
 	
 	// Free view
+	logWrite("Freeing copperlists...\n");
 	copListDestroy(pView->pCopList);
 	memFree(pView, sizeof(tView));
 	logBlockEnd("viewDestroy()");
@@ -71,8 +72,8 @@ void viewLoad(tView *pView) {
 		uwDMA = DMAF_RASTER;
 		custom.bplcon0 = 0;
 		UBYTE i;
-		for(i = 0; i != 5; ++i)
-			custom.bplpt[1] = 0;
+		for(i = 0; i != 6; ++i)
+			custom.bplpt[i] = 0;
 		custom.bpl1mod = 0;
 		custom.bpl2mod = 0;
 	}
@@ -203,9 +204,8 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	tVpManager *pVpCurr = pVPort->pFirstManager;
 	// przewiñ przed mened¿er o wy¿szym numerze ni¿ wstawiany
 	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
-		if(pVpCurr->ubId <= pVpManager->ubId) {
+		if(pVpCurr->ubId <= pVpManager->ubId)
 			pVpCurr = pVpCurr->pNext;
-		}
 	}
 	pVpManager->pNext = pVpCurr->pNext;
 	pVpCurr->pNext = pVpManager;

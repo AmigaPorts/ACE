@@ -110,7 +110,7 @@ void gsTestCopperLoop(void) {
 
 	++ubHue;
 	
-	copProcess();
+	copProcessBlocks();
 	WaitTOF();
 }
 

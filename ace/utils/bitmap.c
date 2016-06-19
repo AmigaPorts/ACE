@@ -21,6 +21,12 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 		pBitMap->BytesPerRow *= ubDepth;
 		
 		pBitMap->Planes[0] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
+		if(!pBitMap->Planes[0]) {
+			logWrite("ERR: Can't alloc interleaved bitplane\n");
+			memFree(pBitMap, sizeof(tBitMap));
+			logBlockEnd("bitmapCreate()");
+			return 0;			
+		}
 		for(i = 1; i != ubDepth; ++i)
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
 		
@@ -30,8 +36,20 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 	else
 		for(i = ubDepth; i--;) {
 			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
-			if (ubFlags & BMF_CLEAR)
+			if(!pBitMap->Planes[i]) {
+				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth-i+1,ubDepth);
+				while(i) {
+					memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*uwHeight);
+					--i;
+				}
+				memFree(pBitMap, sizeof(tBitMap));
+				logBlockEnd("bitmapCreate()");
+				return 0;
+			}
+			if (ubFlags & BMF_CLEAR) {
 				BltClear(pBitMap->Planes[i], (pBitMap->Rows << 16) | pBitMap->BytesPerRow, 3L);
+				// TODO: split clear blits to smaller than 1008x1024 on OCS
+			}
 		}
 
 	if (ubFlags & BMF_CLEAR)
@@ -92,4 +110,20 @@ void bitmapDestroy(tBitMap *pBitMap) {
 
 inline BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
 	return (pBitMap->Depth > 1 && ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0])*pBitMap->Depth == pBitMap->BytesPerRow);
+}
+
+void bitmapLog(tBitMap *pBitMap) {
+	UBYTE i;
+	
+	logBlockBegin("bitmapLog(pBitMap: %p)", pBitMap);
+	
+	logWrite(
+		"BytesPerRow: %u, Rows: %u, Flags: %hu, Depth: %hu, pad: %u\n",
+		pBitMap->BytesPerRow, pBitMap->Rows, pBitMap->Flags,
+		pBitMap->Depth, pBitMap->pad
+	);
+	for(i = 0; i != pBitMap->Depth; ++i)
+		logWrite("Bitplane %hu addr: %p\n", i, pBitMap->Planes[i]);
+	
+	logBlockEnd("bitmapLog()");
 }

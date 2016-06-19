@@ -49,7 +49,7 @@ typedef struct {
 	unsigned bfDestAddr:9;  /// Register offset from &custom segment
 	                        /// LSBit must be set to 0 - WAIT check
 	// Lower word
-	unsigned bfValue   :16; /// New value
+	unsigned bfValue:16;    /// New value
 } tCopMoveCmd;
 
 typedef struct {

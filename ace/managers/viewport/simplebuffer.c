@@ -24,7 +24,12 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 	pManager->uBfrBounds.sUwCoord.uwX = uwBoundHeight;
 		
 	// Buffer bitmap
-	pManager->pBuffer = bitmapCreate(uwBoundWidth, uwBoundHeight, pVPort->ubBPP, BMF_CLEAR);
+	pManager->pBuffer = bitmapCreate(uwBoundWidth, uwBoundHeight, pVPort->ubBPP, 0);
+	if(!pManager->pBuffer) {
+		logWrite("ERR: Can't alloc buffer bitmap!\n");
+		logBlockEnd("simpleBufferManagerCreate()");
+		return 0;
+	}
 	
 	// Find camera manager, create if not exists
 	if(!(pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA)))
@@ -59,8 +64,11 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 }
 
 void simpleBufferDestroy(tSimpleBufferManager *pManager) {
+	logWrite("Destroying bitmap...\n");
 	bitmapDestroy(pManager->pBuffer);
+	logWrite("Freeing mem...\n");
 	memFree(pManager, sizeof(tSimpleBufferManager));
+	logWrite("Done\n");
 }
 
 void simpleBufferProcess(tSimpleBufferManager *pManager) {

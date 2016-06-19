@@ -19,6 +19,9 @@ ACE Uses GNU/Make. If you don't have one, be sure to install it via mingw
 or something. If you already own Code::Blocks, you can simply add your
 CodeBlocks\MinGW\bin dir to PATH.
 
+If your make throws system errors, try forcing use of cmd.exe instead of sh:
+'make SHELL=cmd.exe'
+
 ### Amiga
 
 Get yourself VBCC and GNU/Make. The second one typically requires
