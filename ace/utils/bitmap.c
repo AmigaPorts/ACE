@@ -1,4 +1,5 @@
 #include <ace/utils/bitmap.h>
+#include <ace/utils/endian.h>
 
 /* Globals */
 
@@ -124,4 +125,108 @@ void bitmapDump(tBitMap *pBitMap) {
 		logWrite("Bitplane %hu addr: %p\n", i, pBitMap->Planes[i]);
 	
 	logBlockEnd("bitmapDump()");
+}
+
+/**
+ * Saves given BitMap as BMP
+ * Useful for debug purposes and nothing else
+ */
+void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFileName) {
+	UWORD uwOut;
+	UBYTE ubOut;
+	ULONG ulOut;
+	UWORD c;
+	FILE *pOut;
+	UWORD uwX, uwY;
+	UBYTE pIndicesChunk[16];
+	// TODO: EHB support
+	
+	pOut = fopen(szFileName, "w");
+	
+	// BMP header
+	fwrite("BM", 2, 1, pOut);
+
+	ulOut = endianIntel32((pBitMap->BytesPerRow<<3) * pBitMap->Rows + 14+40+256*4);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // BMP file size
+	
+	ulOut = 0;
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Reserved
+	
+	ulOut = endianIntel32(14+40+256*4);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Bitmap data starting addr
+	
+	
+	// Bitmap info header
+	ulOut = endianIntel32(40);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Core header size
+	
+	ulOut = endianIntel32(pBitMap->BytesPerRow<<3);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image width
+
+	ulOut = endianIntel32(pBitMap->Rows);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image height
+	
+	uwOut = endianIntel16(1);
+	fwrite(&uwOut, sizeof(UWORD), 1, pOut); // Color plane count
+	
+	uwOut = endianIntel16(8);
+	fwrite(&uwOut, sizeof(UWORD), 1, pOut); // Image BPP - 8bit indexed
+
+	ulOut = endianIntel32(0);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Compression method - none	
+	
+	ulOut = endianIntel32((pBitMap->BytesPerRow<<3) * pBitMap->Rows);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image size
+	
+	ulOut = endianIntel32(100);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Horizontal resolution - px/m
+	
+	ulOut = endianIntel32(100);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Vertical resolution - px/m
+	
+	ulOut = endianIntel32(0);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Palette length
+	
+	ulOut = endianIntel32(0);
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Number of important colors - all	
+	
+	// Global palette
+	for(c = 0; c != (1 << pBitMap->Depth) - 1; ++c) {
+		ubOut = pPalette[c] & 0xF;
+		ubOut |= ubOut << 4;
+		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // B
+		
+		ubOut = (pPalette[c] >> 4) & 0xF;
+		ubOut |= ubOut << 4;
+		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // G
+		
+		ubOut = pPalette[c] >> 8;
+		ubOut |= ubOut << 4;
+		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // R
+		
+		ubOut = 0;
+		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // 0
+	}
+	// Dummy fill up to 255 indices
+	ulOut = 0;
+	while(c < 256) {
+		fwrite(&ulOut, sizeof(ULONG), 1, pOut);
+		++c;
+	}
+		
+	// Image data
+	for(uwY = pBitMap->Rows; uwY--;) {
+		for(uwX = 0; uwX < pBitMap->BytesPerRow<<3; uwX += 16) {
+			planarRead16(pBitMap, uwX, uwY, pIndicesChunk);
+			fwrite(pIndicesChunk, 16*sizeof(UBYTE), 1, pOut);
+		}
+		ubOut = 0;
+		while(uwX & 0x3) {// 4-byte row padding
+			fwrite(&ubOut, sizeof(UBYTE), 1, pOut);
+			++uwX;
+		}
+	}
+	
+	
+	fclose(pOut);
 }

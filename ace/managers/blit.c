@@ -366,10 +366,11 @@ BYTE blitUnsafeCopy(
 				uwBltCon0, uwBltCon1,                  // bltconX
 				uwFirstMask, uwLastMask,               // bltaXwm
 				0, wSrcModulo, wDstModulo, wDstModulo, // bltXmod
+				// This hell of a casting must stay here or else large offsets get bugged!
 				0,                                     // bltapt
-				pSrc->Planes[ubPlane] + uwSrcOffs,     // bltbpt
-				pDst->Planes[ubPlane] + uwDstOffs,     // bltcpt
-				pDst->Planes[ubPlane] + uwDstOffs,     // bltdpt
+				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltbpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltcpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
 				0xFFFF, 0, 0,                          // bltXdat
 				(wHeight << 6) | uwBlitWords           // bltsize
 			);
@@ -419,9 +420,10 @@ BYTE blitUnsafeCopyAligned(
 			uwBltCon0, 0,                 // bltconX
 			0xFFFF, 0xFFFF,               // bltaXwm
 			wSrcModulo, 0, 0, wDstModulo, // bltXmod
-			pSrc->Planes[0] + uwSrcOffs,  // bltapt
+			// This hell of a casting must stay here or else large offsets get bugged!
+			(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltapt
 			0, 0,                         // bltbpt, bltcpt
-			pDst->Planes[0] + uwDstOffs,  // bltdpt
+			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
 			0, 0, 0,                      // bltXdat
 			(wHeight << 6) | uwBlitWords  // bltsize
 		);
@@ -437,9 +439,10 @@ BYTE blitUnsafeCopyAligned(
 				uwBltCon0, 0,                      // bltconX
 				0xFFFF, 0xFFFF,                    // bltaXwm
 				wSrcModulo, 0, 0, wDstModulo,      // bltXmod
-				pSrc->Planes[ubPlane] + uwSrcOffs, // bltapt
+				// This hell of a casting must stay here or else large offsets get bugged!
+				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltapt
 				0, 0,                              // bltbpt, bltcpt
-				pDst->Planes[ubPlane] + uwDstOffs, // bltdpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
 				0, 0, 0,                           // bltXdat
 				(wHeight << 6) | uwBlitWords       // bltsize
 			);
@@ -505,12 +508,13 @@ BYTE blitUnsafeCopyMask(
 			uwFirstMask, uwLastMask,
 			// Modulos
 			wSrcModulo, wSrcModulo, wDstModulo, wDstModulo, // A, B, C, D
-			// Channel ptrs - w byte'ach, blitter ignoruje najmniej znacz¹cy bit i robi parzyste adresy
-			((UBYTE *)pMsk) + uwSrcOffs,                    // custom.bltapt
-			((UBYTE *)(pSrc->Planes[ubPlane])) + uwSrcOffs, // custom.bltbpt
-			((UBYTE *)(pDst->Planes[ubPlane])) + uwDstOffs, // custom.bltcpt
-			((UBYTE *)(pDst->Planes[ubPlane])) + uwDstOffs, // custom.bltdpt
-			0, 0, 0,                                        // custom.bltXdat
+			// Channel ptrs - in bytes, blitter ignores LSB, thus makes even addrs
+			// This hell of a casting must stay here or else large offsets get bugged!
+			(UBYTE*)((ULONG)pMsk) + uwSrcOffs,                      // bltapt
+			(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltbpt
+			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltcpt
+			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
+			0, 0, 0,                                                // bltXdat
 			// BLTSIZE
 			(wHeight << 6) | uwBlitWords // custom.bltsize
 		);
@@ -569,14 +573,15 @@ BYTE _blitRect(
 		else
 			ubMinterm = 0x0A;
 		g_sBlitManager.pBlitterSetFn(
-			uwBltCon0 | ubMinterm, uwBltCon1,      // bltconX
-			uwFirstMask, uwLastMask,               // bltaXwm
-			0, 0, wDstModulo, wDstModulo,          // bltXmod
-			0, 0,                                  // bltapt, bltbpt
-			pDst->Planes[ubPlane] + uwDstOffs,     // bltcpt
-			pDst->Planes[ubPlane] + uwDstOffs,     // bltdpt
-			0xFFFF, 0, 0,                          // bltXdat
-			(wHeight << 6) | uwBlitWords           // bltsize
+			uwBltCon0 | ubMinterm, uwBltCon1,                       // bltconX
+			uwFirstMask, uwLastMask,                                // bltaXwm
+			0, 0, wDstModulo, wDstModulo,                           // bltXmod
+			// This hell of a casting must stay here or else large offsets get bugged!
+			0, 0,                                                   // bltapt, bltbpt
+			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltcpt
+			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
+			0xFFFF, 0, 0,                                           // bltXdat
+			(wHeight << 6) | uwBlitWords                            // bltsize
 		);
 		ubColor >>= 1;
 		++ubPlane;

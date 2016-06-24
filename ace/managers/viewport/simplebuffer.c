@@ -85,7 +85,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	// Calculate X movement
 	uwShift = 15-(pCameraManager->uPos.sUwCoord.uwX & 0xF);
 	uwShift = (uwShift << 4) | uwShift;
-	ulBplAdd = (pCameraManager->uPos.sUwCoord.uwX >> 3);
+	ulBplAdd = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
 	
 	// Calculate Y movement
 	ulBplAdd += pManager->pBuffer->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;

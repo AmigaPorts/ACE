@@ -49,4 +49,10 @@ void bitmapDump(
 	IN tBitMap *pBitMap
 );
 
+void bitmapSaveBMP(
+	IN tBitMap *pBitMap,
+	IN UWORD *pPalette,
+	IN char *szFileName
+);
+
 #endif
