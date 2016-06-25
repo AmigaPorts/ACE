@@ -8,7 +8,7 @@ void paletteLoad(char *szFileName, UWORD *pPalette) {
 		
 	pFile = fopen(szFileName, "r");
 	fread(&ubPaletteLength, 1, 1, pFile);
-	logWrite(" Color count: %u...", ubPaletteLength);
+	logWrite(" Color count: %u\n", ubPaletteLength);
 	fread(pPalette, sizeof(UWORD), ubPaletteLength, pFile);
 	fclose(pFile);
 	

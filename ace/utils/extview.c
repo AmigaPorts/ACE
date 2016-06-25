@@ -109,7 +109,7 @@ tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UW
 	pVPort->pNext = 0;
 	pVPort->uwOffsX = 0; // TODO: implement non-zero
 	pVPort->uwWidth = uwWidth;
-	pVPort->uwHeight = uwWidth;
+	pVPort->uwHeight = uwHeight;
 	pVPort->ubBPP = ubBPP;
 	pVPort->pFirstManager = 0;
 	
