@@ -1,5 +1,6 @@
 #include <ace/utils/bitmap.h>
 #include <ace/utils/endian.h>
+#include <ace/utils/planar.h>
 
 /* Globals */
 
@@ -61,9 +62,9 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 tBitMap *bitmapCreateFromFile(char *szFileName) {
 	tBitMap *pBitMap;
 	FILE *pFile;
-	UWORD uwWidth, uwHeight;            // wymiary obrazka
-	UWORD uwCopperLength, uwCopperSize; // copperlista - raczej niepotrzebne, usun¹æ póŸniej ze specyfikacji pliku
-	UBYTE ubPlaneCount;                 // liczba bitplanesów
+	UWORD uwWidth, uwHeight;            // Image dimensions
+	UWORD uwCopperLength, uwCopperSize; // Copperlist data - unused - to be removed
+	UBYTE ubPlaneCount;                 // Bitplane count
 	UBYTE i;
 	
 	logBlockBegin("bitmapCreateFromFile(szFileName: %s)", szFileName);

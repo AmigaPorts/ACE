@@ -16,12 +16,3 @@ void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	
 	logBlockEnd("paletteLoad()");
 }
-
-// void paletteSetVPColor(tExtVPort *pVPort, UBYTE ubIdx, UWORD uwColor) {
-	// pVPort->pPalette[ubIdx] = uwColor;
-	// SetRGB4(&pVPort->sVPort, ubIdx, (uwColor >> 8) & 0xF, (uwColor >> 4) & 0xF, (uwColor >> 0) & 0xF);
-// }
-
-// void paletteCopy(tExtVPort *pVPortSrc, tExtVPort *pVPortDest) {
-	// CopyMem(pVPortSrc->pPalette, pVPortDest->pPalette, 32*sizeof(UWORD));
-// }

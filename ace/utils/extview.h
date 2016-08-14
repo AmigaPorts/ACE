@@ -15,9 +15,9 @@
 
 #define VP_NOCLUT 1
 
-// identyfikatory mened¿erów viewporta
-// numer determinuje kolejnoœæ na liœcie a zatem odœwie¿ania
-// kamera na koñcu, ¿eby reszta mog³a wykryæ ruch
+// Viewport manager types
+// number determines processing order
+// camera is last, so rest may see difference between its current and previous position
 #define VPM_SCROLL       0
 #define VPM_TILEBUFFER   1
 #define VPM_DOUBLEBUFFER 2

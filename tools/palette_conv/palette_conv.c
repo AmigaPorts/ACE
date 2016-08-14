@@ -97,15 +97,15 @@ int main(int argc, char *argv[]) {
 	if(argc == 3)
 		szOut = argv[2];
 	else {
-		szOut = malloc(strlen(szExt) - strlen(argv[1]) + 4+1); // filename + ".plt" + \0
+		szOut = malloc((unsigned)(szExt - argv[1]) + 4+1); // filename + ".plt" + \0
 		memcpy(szOut, argv[1], szExt - argv[1]);
 		szOut[szExt - argv[1]] = '\0';
 		strcat(szOut, ".plt");
 	}
 	
 	// Write ACE palette
-	pFile = fopen(szOut, "w");
 	printf("Writing to %s...\n", szOut);
+	pFile = fopen(szOut, "wb");
 	fwrite(&ubColorCount, 1, 1, pFile);
 	for(i = 0; i != ubColorCount; ++i) {
 		ubXR = (pPalette[i].ubR >> 4);

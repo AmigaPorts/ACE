@@ -16,18 +16,8 @@
 /* Functions */
 void paletteLoad(
 	IN char *szFileName,
-	OUT UWORD *pPalette
+	OUT UWORD *pPalette,
+	IN UBYTE ubMaxLength
 );
-
-// void paletteSetVPColor(
-	// IN tExtVPort *pVPort,
-	// IN UBYTE ubIdx,
-	// IN UWORD uwColor
-// );
-
-// void paletteCopy(
-	// IN tExtVPort *pVPortSrc,
-	// IN tExtVPort *pVPortDest
-// );
 
 #endif
