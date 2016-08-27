@@ -11,27 +11,25 @@
 __far extern struct Custom custom;
 
 /**
- * Ray position struct
- * Merges vposr and vhposr read into one
+ * Ray position struct.
+ * Merges vposr and vhposr read into one.
  */
 typedef struct {
-	unsigned ubLaced:1;   /// 1 for interlaced screens
+	unsigned ubLaced:1;   ///< 1 for interlaced screens
 	unsigned uwUnused:14;
-	unsigned uwPosY:9;    /// PAL: 0..312, NTSC: 0..?
-	unsigned ubPosX:8;    /// 0..159?
+	unsigned uwPosY:9;    ///< PAL: 0..312, NTSC: 0..?
+	unsigned ubPosX:8;    ///< 0..159?
 } tRayPos;
 
 extern tRayPos * const vhPosRegs;
 
 /**
- * Bitplane display regs with 16-bit access
- * For use with Copper
- * Other stuff should use custom.bplpt
+ * Bitplane display regs with 16-bit access.
+ * For use with Copper. Other stuff should use custom.bplpt
  */
- 
 typedef struct {
-	UWORD uwHi; /// upper WORD of bitplane address
-	UWORD uwLo; /// lower WORD of bitplane address
+	UWORD uwHi; ///< upper WORD of bitplane address
+	UWORD uwLo; ///< lower WORD of bitplane address
 } tBitplanePtr;
 
 extern tBitplanePtr * const pBplPtrs;

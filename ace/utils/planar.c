@@ -3,9 +3,6 @@
 #include "ace/utils/planar.h"
 #include "ace/utils/bitmap.h"
 
-/**
- * Returns color indices for 16 colors in a row starting from uwX%16,uwY
- */
 void planarRead16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut) {
 	UWORD uwChunk, uwMask;
 	UBYTE i, ubPx;
@@ -23,10 +20,6 @@ void planarRead16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut) {
 	}
 }
 
-/**
- * Returns color index of selected pixel.
- * Inefficient as hell - use if really needed and for prototyping convenience!
- */
 UBYTE planarRead(tBitMap *pBitMap, UWORD uwX, UWORD uwY) {
 	UBYTE pIndicesChunk[16];
 	planarRead16(pBitMap, uwX, uwY, pIndicesChunk);

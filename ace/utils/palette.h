@@ -1,19 +1,25 @@
 #ifndef GUARD_ACE_UTIL_PALETTE_H
 #define GUARD_ACE_UTIL_PALETTE_H
 
-#include <stdio.h> // FILE etc
-#include <clib/exec_protos.h> // Amiga typedefs
-// #include <clib/graphics_protos.h> // BitMap etc
+/**
+ *  Palette utilities.
+ */
 
 #include <ace/config.h>
 #include <ace/utils/extview.h>
 
 /* Types */
-#define BLIT_DEFAULT 0xC0, 0xFF, 0
 
 /* Globals */
 
 /* Functions */
+
+/**
+ *  @brief Loads palette from supplied .plt file to given address.
+ *  @param szFileName  Palette source path.
+ *  @param pPalette    Palette destination pointer.
+ *  @param ubMaxLength Maximum number of colors in palette.
+ */
 void paletteLoad(
 	IN char *szFileName,
 	OUT UWORD *pPalette,
