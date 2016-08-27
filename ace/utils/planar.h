@@ -30,7 +30,7 @@ void planarRead16(
  *  @param uwY     Pixel Y coord.
  *  @return Pixels palette color index.
  *  
- *  @see planarRead
+ *  @see planarRead()
  */
 UBYTE planarRead(
 	IN tBitMap *pBitMap,

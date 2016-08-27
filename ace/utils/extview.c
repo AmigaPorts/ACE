@@ -1,8 +1,5 @@
 #include <ace/utils/extview.h>
 
-/**
- * Creates blank tView
- */
 tView *viewCreate(UWORD uwFlags) {
 	logBlockBegin("viewCreate(uwFlags: %u)", uwFlags);
 	
@@ -20,9 +17,6 @@ tView *viewCreate(UWORD uwFlags) {
 	return pView;
 }
 
-/**
- * Destroys given tView along with attached viewports
- */
 void viewDestroy(tView *pView) {
 	logBlockBegin("viewDestroy(pView: %p)", pView);
 	
@@ -40,7 +34,6 @@ void viewDestroy(tView *pView) {
 	logBlockEnd("viewDestroy()");
 }
 
-// Wywo³uje process wszystkich mened¿erów podpiêtych do ka¿dego viewporta w obêbie viewa
 void viewProcessManagers(tView *pView) {
 	tVPort *pVPort;
 	tVpManager *pManager;
@@ -92,12 +85,6 @@ void viewLoad(tView *pView) {
 	logBlockEnd("viewLoad()");
 }
 
-
-/**
- * Creates new tVPort inside given view with supplied dimensions and BPP
- * Current implementation requires 2-line space between viewports,
- * as system viewport and ACE viewport manager copperlists collide
- */
 tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UWORD uwFlags) {
 	logBlockBegin("vPortCreate(pView: %p, uwWidth: %u, uwHeight: %u, ubBPP: %hu, uwFlags: %u)", pView, uwWidth, uwHeight, ubBPP, uwFlags);
 	
@@ -146,9 +133,6 @@ tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UW
 	return pVPort;
 }
 
-/**
- * Destroys given tVPort along with attached managers
- */
 void vPortDestroy(tVPort *pVPort) {
 	logBlockBegin("vPortDestroy(pVPort: %p)", pVPort);
 	tView *pView;
@@ -193,7 +177,6 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 	// TODO: blok palety kolorów, priorytety na copperliœcie
 }
 
-// Doczepia mened¿er do viewporta
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	// podpiêcie
 	if(!pVPort->pFirstManager) {
@@ -212,7 +195,6 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	logWrite("Manager %p attached after manager %p of VP %p\n", pVpManager, pVpCurr, pVPort);
 }
 
-// Usuwa mened¿er z viewporta, wywo³uje jego destroy
 void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
 	if(!pVPort->pFirstManager) {
 		logWrite("ERR: vPort %p has no managers!\n", pVPort);
