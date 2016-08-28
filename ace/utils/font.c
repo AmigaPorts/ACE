@@ -1,19 +1,9 @@
 #include <ace/utils/font.h>
-
-/**
- * Font & text drawing utils
- * Maintainer: KaiN
- *
- * TODO: Rozwazyc prefix txt, lub rozdzielenie na dwa pliki: font, txt
- */
  
 /* Globals */
 
 /* Functions */
 
-/**
- * Creates font instance from given path
- */
 tFont *fontCreate(char *szFontName) {
 	FILE *pFontFile;
 	tFont *pFont;
@@ -44,9 +34,6 @@ tFont *fontCreate(char *szFontName) {
 	return pFont;
 }
 
-/**
- * Destroys given font instance
- */
 void fontDestroy(tFont *pFont) {
 	logBlockBegin("fontDestroy(pFont: %p)", pFont);
 	if (pFont) {
@@ -59,20 +46,16 @@ void fontDestroy(tFont *pFont) {
 	logBlockEnd("fontDestroy()");
 }
 
-/**
- * Prepares buffered text bitmap written with supplied font
- * Treat as cache - allows faster reblit of text without need of assembling it again
- */
 tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 	tTextBitMap *pTextBitMap;
 	char *p;
 	UWORD uwX;
 	UWORD uwY = pFont->uwHeight;
 
-	// Init struktury bitmapy napisu - przy okazji wyzerowanie uwActualWidth
+	// Init text bitmap struct - also setting uwActualWidth to zero.
 	pTextBitMap = memAllocFastClear(sizeof(tTextBitMap));
 
-	// Zmierzenie d³ugoœci napisu
+	// Text width measurement
 	for (p = szText; *(p); ++p) {
 		if(*p == '\n') {
 			uwY += pFont->uwHeight;
@@ -81,10 +64,10 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 		}
 	}
 	
-	// Init bitmapy
+	// Bitmap init
 	pTextBitMap->pBitMap = bitmapCreate(pTextBitMap->uwActualWidth, uwY, 1, BMF_CLEAR);
 
-	// Odrysowanie napisu na bitmapie tekstu
+	// Draw text on bitmap buffer
 	for (p = szText, uwX = 0, uwY = 0; *(p); ++p) {
 		if(*p == '\n') {
 			uwX = 0;
@@ -102,21 +85,11 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 	return pTextBitMap;
 }
 
-/**
- * Destroys buffered text bitmap
- */
 void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
 	bitmapDestroy(pTextBitMap->pBitMap);
 	memFree(pTextBitMap, sizeof(tTextBitMap));
 }
 
-/**
- * Draws prepared text to destination
- * Each bitplane has its own minterm related to color code bits
- * Useful links:
- * 	About minterms:       http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node011D.html
- * 	Creating own minterm: http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node011E.html
- */
 void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags) {
 	UBYTE i;
 	UBYTE ubMinterm;
@@ -170,12 +143,6 @@ void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uw
 	}
 }
 
-/**
- * Writes one-time texts
- * Should be used very carefully, as text assembling is time-consuming
- * If text is going to be redrawn in game loop, its bitmap buffer should
- * be stored and used for redraw
- */
 void fontDrawStr(struct BitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY, char *szText, UBYTE ubColor, UBYTE ubFlags) {
 	tTextBitMap *pTextBitMap = fontCreateTextBitMap(pFont, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
