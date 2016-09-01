@@ -54,7 +54,7 @@ typedef void (*tVpManagerFn)(tVpManager *pManager);
  *  View describes everything what goes to Amiga screen. Each view
  *  is composed of copperlist and viewports.
  */
-typedef struct {
+typedef struct _tView {
 	UBYTE ubVpCount;             ///< Viewport count.
 	UWORD uwFlags;               ///< Creation flags.
 	struct _tCopList *pCopList;  ///< Pointer to copperlist.
