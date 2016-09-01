@@ -27,6 +27,19 @@ tSimpleBufferManager *simpleBufferCreate(
 	IN UWORD uwBoundHeight
 );
 
+/**
+ *  @brief Makes manager use given bitmap as buffer.
+ *  
+ *  @param pManager Target manager.
+ *  @param pBitMap  Bitmap to be used as buffer.
+ *  
+ *  @todo Realloc copper buffer to reflect BPP change.
+ */
+void simpleBufferSetBitmap(
+	IN tSimpleBufferManager *pManager,
+	IN tBitMap *pBitMap
+);
+
 void simpleBufferDestroy(
 	IN tSimpleBufferManager *pManager
 );
