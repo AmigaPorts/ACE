@@ -1,0 +1,1 @@
+gcc bitmap_conv.c lodepng.c -std=c99 -Wall -o bitmap_conv
