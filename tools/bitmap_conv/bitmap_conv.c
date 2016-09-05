@@ -136,7 +136,13 @@ void writeMask(
 		printf("Can't write to file %s\n", g_szMaskOutputPath);
 		return;
 	}
-	
+	// Write mask header
+	writeByte(uwWidth >> 8, pOut);
+	writeByte(uwWidth & 0xFF, pOut);
+	writeByte(uwHeight >> 8, pOut);
+	writeByte(uwHeight & 0xFF, pOut);
+
+	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
 		uwPixelBuffer = 0;
 		for(x = 0; x != uwWidth; ++x) {
