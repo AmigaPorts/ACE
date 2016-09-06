@@ -30,5 +30,4 @@ ixemul.library, which can be downloaded from Aminet.
 ## Contributing
 
 As engine is during cleanup and overhaul related to public release, code is
-expected to change drastically. Before then, don't contribute to it. Forks
-and suggestions are welcome, though.
+expected to change drastically. Until then, suggestions & merge requests will be rarely accepted.
