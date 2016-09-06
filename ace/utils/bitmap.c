@@ -226,8 +226,7 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFileName) {
 			fwrite(&ubOut, sizeof(UBYTE), 1, pOut);
 			++uwX;
 		}
-	}
-	
+	}	
 	
 	fclose(pOut);
 }
