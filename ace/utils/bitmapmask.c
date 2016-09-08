@@ -11,13 +11,13 @@ tBitmapMask *bitmapMaskCreate(char *szFile) {
 	
 	pMask = memAllocFast(sizeof(tBitmapMask));
 	if(!pMask) {
-		logWrite("Couldn't alloc RAM for mask struct\n");
+		logWrite("ERR: Couldn't alloc RAM for mask struct\n");
 		logBlockEnd("bitmapMaskCreate()");
 		return 0;
 	}
 	pMaskFile = fopen(szFile, "rb");
 	if(!pMaskFile) {
-		logWrite("File doesn't exist: %s\n", pMask);
+		logWrite("ERR: File doesn't exist: %s\n", pMask);
 		memFree(pMask->pData, (pMask->uwWidth>>3) * pMask->uwHeight);
 		fclose(pMaskFile);
 		logBlockEnd("bitmapMaskCreate()");
@@ -28,7 +28,7 @@ tBitmapMask *bitmapMaskCreate(char *szFile) {
 	ulDataSize = (pMask->uwWidth>>3) * pMask->uwHeight;
 	pMask->pData = memAllocChip(ulDataSize);
 	if(!pMask->pData) {
-		logWrite("Couldn't alloc RAM for mask data\n");
+		logWrite("ERR: Couldn't alloc RAM for mask data\n");
 		memFree(pMask->pData, (pMask->uwWidth>>3) * pMask->uwHeight);
 		fclose(pMaskFile);
 		logBlockEnd("bitmapMaskCreate()");

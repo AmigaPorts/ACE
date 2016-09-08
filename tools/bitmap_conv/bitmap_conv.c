@@ -129,7 +129,8 @@ void writeMask(
 	uint8_t *pImgData,
 	uint16_t uwWidth, uint16_t uwHeight
 ) {
-	uint16_t x,y, uwPixelBuffer, uwPos;
+	uint16_t x,y, uwPixelBuffer;
+	uint32_t ulPos;
 	FILE *pOut;
 	pOut = fopen(g_szMaskOutputPath, "wb");
 	if(!pOut) {
@@ -146,10 +147,10 @@ void writeMask(
 	for(y = 0; y != uwHeight; ++y) {
 		uwPixelBuffer = 0;
 		for(x = 0; x != uwWidth; ++x) {
-			uwPos = y*uwWidth*3 + x*3;
+			ulPos = y*uwWidth*3 + x*3;
 			
 			uwPixelBuffer <<= 1;
-			if(pImgData[uwPos] != g_uwMaskR || pImgData[uwPos+1] != g_uwMaskG || pImgData[uwPos+2] != g_uwMaskB)
+			if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
 				uwPixelBuffer |= 1;
 			if((x & 0xF) == 0xF) {
 				writeByte(uwPixelBuffer >> 8, pOut);

@@ -22,7 +22,7 @@ typedef struct {
 	UWORD uwX;
 	UWORD uwWidth;
 	UWORD uwHeight;
-} tUwPoint;
+} tUwRect;
 
 
 #endif
