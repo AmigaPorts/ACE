@@ -183,6 +183,27 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 	// TODO: blok palety kolorów, priorytety na copperliœcie
 }
 
+void vPortWaitForEnd(tVPort *pVPort) {
+	UWORD uwEndPos;
+	UWORD uwCurrFrame;
+	
+	// Determine VPort end position
+	uwEndPos = pVPort->uwOffsY + pVPort->uwHeight + 0x2C; // Addition from DiWStrt
+	if(vhPosRegs->uwPosY < uwEndPos) {
+		// If current beam is before pos, wait for pos @ current frame
+		while(vhPosRegs->uwPosY < uwEndPos);
+	}
+	else {
+		uwCurrFrame = g_sTimerManager.uwFrameCounter;
+		while(
+			vhPosRegs->uwPosY < uwEndPos &&
+			g_sTimerManager.uwFrameCounter != uwCurrFrame
+		);
+	}
+	
+	// Otherwise wait for pos @ next frame
+}
+
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	// podpiêcie
 	if(!pVPort->pFirstManager) {

@@ -176,6 +176,17 @@ void vPortDestroy(
 	IN tVPort *pVPort
 );
 
+/**
+ *  @brief Waits for display beam to pass given VPort.
+ *  
+ *  @param pVPort VPort to be passed.
+ *  
+ *  @todo Make view offset dependent on DiWStrt.
+ */
+void vPortWaitForEnd(
+	IN tVPort *pVPort
+);
+
 /*=========================== Viewport manager functions =====================*/
 
 /**
