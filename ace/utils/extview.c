@@ -56,6 +56,10 @@ void viewUpdateCLUT(tView *pView) {
 	}
 }
 
+/**
+ *  @todo bplcon0 BPP is set up globally - make it only when all vports
+ *        are truly of same BPP.
+ */
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 	WaitTOF();
@@ -63,7 +67,8 @@ void viewLoad(tView *pView) {
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		uwDMA = DMAF_RASTER;
-		custom.bplcon0 = 0;
+		custom.bplcon0 = 0;      // No output
+		custom.fmode = 0;        // AGA fix
 		UBYTE i;
 		for(i = 0; i != 6; ++i)
 			custom.bplpt[i] = 0;
@@ -72,7 +77,8 @@ void viewLoad(tView *pView) {
 	}
 	else {
 		g_sCopManager.pCopList = pView->pCopList;
-		custom.bplcon0 = pView->pFirstVPort->ubBPP << 12;
+		custom.bplcon0 = (pView->pFirstVPort->ubBPP << 12) | (1 << 9); // BPP + composite output
+		custom.fmode = 0;        // AGA fix
 		custom.diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
 		custom.diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
 		viewUpdateCLUT(pView);
