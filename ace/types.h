@@ -24,5 +24,10 @@ typedef struct {
 	UWORD uwHeight;
 } tUwRect;
 
+typedef struct {
+	BYTE bY;
+	BYTE bX;
+} tBCoordYX;
+
 
 #endif

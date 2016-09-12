@@ -15,6 +15,7 @@ tBitmapMask *bitmapMaskCreate(char *szFile) {
 		logBlockEnd("bitmapMaskCreate()");
 		return 0;
 	}
+	logWrite("Addr: %p\n", pMask);
 	pMaskFile = fopen(szFile, "rb");
 	if(!pMaskFile) {
 		logWrite("ERR: File doesn't exist: %s\n", pMask);
@@ -34,6 +35,7 @@ tBitmapMask *bitmapMaskCreate(char *szFile) {
 		logBlockEnd("bitmapMaskCreate()");
 		return 0;
 	}
+	logWrite("Data addr: %p\n", pMask->pData);
 	fread(pMask->pData, ulDataSize, 1, pMaskFile);
 	fclose(pMaskFile);
 	
