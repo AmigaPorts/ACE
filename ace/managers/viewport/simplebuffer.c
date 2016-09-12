@@ -41,10 +41,10 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 	pManager->pCopBlock = copBlockCreate(
 		pCopList,
 		2*pVPort->ubBPP + 5, // Shift + 2 ddf + 2 modulos + 2*bpp*bpladdr
-		0,
-		pVPort->uwOffsY
+		0, pVPort->uwOffsY + 0x2C-1 // Addition from DiWStrt
 	);
 	
+	pManager->pBuffer = 0;
 	simpleBufferSetBitmap(pManager, pBuffer);
 	
 	// Add manager to VPort
@@ -54,7 +54,7 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 }
 
 void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
-	UWORD uwModulo;
+	UWORD uwModulo, uwDDfStrt;
 	tCopList *pCopList;
 	tCopBlock *pBlock;
 	UBYTE i;
@@ -72,15 +72,25 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	pManager->uBfrBounds.sUwCoord.uwY = pBitMap->Rows;
 	pManager->pBuffer = pBitMap;
 	uwModulo = pBitMap->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
+	logWrite("Modulo: %u\n", uwModulo);
+	if(!uwModulo) {
+		uwDDfStrt = 0x0038;
+		logWrite("No X scroll\n");
+	}
+	else {
+		logWrite("X scroll\n");
+		uwDDfStrt = 0x0030;
+		uwModulo -= 1;
+	}
 	
 	// Copperlist - regen bitplane ptrs, update shift
 	pBlock = pManager->pCopBlock;
 	pCopList = pManager->sCommon.pVPort->pView->pCopList;
-	pManager->pCopBlock->uwCurrCount = 0; // Rewind to beginning
+	pBlock->uwCurrCount = 0; // Rewind to beginning
 	copMove(pCopList, pBlock, &custom.ddfstop, 0x00D0);     // Data fetch
-	copMove(pCopList, pBlock, &custom.ddfstrt, 0x0030);
-	copMove(pCopList, pBlock, &custom.bpl1mod, uwModulo-1); // Bitplane modulo
-	copMove(pCopList, pBlock, &custom.bpl2mod, uwModulo-1);
+	copMove(pCopList, pBlock, &custom.ddfstrt, uwDDfStrt);
+	copMove(pCopList, pBlock, &custom.bpl1mod, uwModulo); // Bitplane modulo
+	copMove(pCopList, pBlock, &custom.bpl2mod, uwModulo);
 	copMove(pCopList, pBlock, &custom.bplcon1, 0);          // Shift: 0
 	for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
 		ulPlaneAddr = (ULONG)pManager->pBuffer->Planes[i];
