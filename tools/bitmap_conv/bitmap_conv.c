@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include "lodepng.h"
 
+#define MODE_INTERLEAVED 1
+
 char *g_pKnownBitmapExts[] = {".png", ""};
 char *g_pKnownPaletteExts[] = {".plt", ""};
 char *g_szInputPath;
@@ -19,6 +21,7 @@ char g_szMaskOutputPath[1024];
 int8_t g_bBitmapExt;
 int8_t g_bPaletteExt;
 uint16_t g_uwMaskR, g_uwMaskG, g_uwMaskB;
+uint8_t ubMode;
 
 typedef struct _tColor {
 	uint8_t ubR;
@@ -40,12 +43,12 @@ void printUsage(char *szPrgName) {
 
 	// Parameters
 	puts("\nOptional parameters:");
-	puts("TODO\t-i\t\tInterleaved mode");
-	puts("TODO\t-nmo\t\tDon't generate mask output");
-	puts("TODO\t-no\t\tDon't generate output file");
 	puts("\t-o path\t\tSpecify output file path");
+	puts("\t-i\t\tInterleaved mode");
 	puts("\t-mc #RRGGBB\tAlpha channel mask color");
 	puts("\t-mo path\tAlpha channel output path");
+	puts("TODO\t-nmo\t\tDon't generate mask output file");
+	puts("TODO\t-no\t\tDon't generate bitplane output file");
 }
 
 int16_t findColor(uint8_t *pRGB, tColor *pPalette, uint8_t ubColorCount) {
@@ -53,6 +56,76 @@ int16_t findColor(uint8_t *pRGB, tColor *pPalette, uint8_t ubColorCount) {
 		if(pPalette[ubColorCount].ubR == pRGB[0] && pPalette[ubColorCount].ubG == pRGB[1] && pPalette[ubColorCount].ubB == pRGB[2])
 			return ubColorCount;
 	return -1;
+}
+
+void writePlanarInterleaved(
+	uint8_t *pImgData,
+	uint16_t uwWidth, uint16_t uwHeight,
+	tColor *pPalette, uint8_t ubColorCount
+) {
+	uint8_t i, ubPlaneCount, ubPlane;
+	uint16_t x, y, uwPixelBuffer;
+	uint32_t ulPos;
+	int16_t wColorIdx;
+	FILE *pOut;
+
+	if(uwWidth & 0xF) {
+		printf("Width is not divisible by 16!\n");
+		return;
+	}
+
+	pOut	= fopen(g_szOutputPath, "wb");
+	if(!pOut) {
+		printf("Can't write to file %s\n", g_szOutputPath);
+		return;
+	}
+
+	ubPlaneCount = 1;
+	for(i = 2; i < ubColorCount; i <<= 1)
+		++ubPlaneCount;
+
+	// Write .bm header
+	writeByte(uwWidth >> 8, pOut);
+	writeByte(uwWidth & 0xFF, pOut);
+	writeByte(uwHeight >> 8, pOut);
+	writeByte(uwHeight & 0xFF, pOut);
+	writeByte(ubPlaneCount, pOut);
+	for(i = 0; i != 4; ++i)
+		writeByte(0, pOut);
+
+	// Write bitplanes - from LSB to MSB
+	for(y = 0; y != uwHeight; ++y) {
+		for(ubPlane = 0; ubPlane != ubPlaneCount; ++ubPlane) {
+			uwPixelBuffer = 0;
+			for(x = 0; x != uwWidth; ++x) {
+				// Determine color
+				ulPos = (y*uwWidth + x) * 3;
+				wColorIdx = findColor(&pImgData[ulPos], pPalette, ubColorCount);
+				if(wColorIdx == -1) {
+					if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB) {
+						printf(
+							"ERR: Unexpected color: %hhu, %hhu, %hhu @%u,%u\n",
+							pImgData[ulPos], pImgData[ulPos+1],	pImgData[ulPos+2], x, y
+						);
+						return;
+					}
+					else
+						wColorIdx = 0;
+				}
+
+				// Write to bitplane
+				uwPixelBuffer <<= 1;
+				if(wColorIdx & (1 << ubPlane))
+					uwPixelBuffer |= 1;
+				if((x & 0xF) == 0xF) {
+					writeByte(uwPixelBuffer >> 8, pOut);
+					writeByte(uwPixelBuffer & 0xFF, pOut);
+				}
+			}
+		}
+	}
+
+	fclose(pOut);
 }
 
 void writePlanar(
@@ -162,18 +235,63 @@ void writeMask(
 	fclose(pOut);
 }
 
+void writeMaskInterleaved(
+	uint8_t *pImgData,
+	uint16_t uwWidth, uint16_t uwHeight, uint16_t uwPaletteCount
+) {
+	uint16_t x,y, uwPixelBuffer;
+	uint32_t ulPos;
+	uint8_t ubPlane, ubBpp, i;
+	FILE *pOut;
+	
+	ubBpp = 1;
+	for(i = 2; i < uwPaletteCount; i <<= 1)
+		++ubBpp;
+	
+	pOut = fopen(g_szMaskOutputPath, "wb");
+	if(!pOut) {
+		printf("Can't write to file %s\n", g_szMaskOutputPath);
+		return;
+	}
+	// Write mask header
+	writeByte(uwWidth >> 8, pOut);
+	writeByte(uwWidth & 0xFF, pOut);
+	writeByte(uwHeight >> 8, pOut);
+	writeByte(uwHeight & 0xFF, pOut);
+
+	// Write mask data
+	for(y = 0; y != uwHeight; ++y) {
+		for(ubPlane = 0; ubPlane != ubBpp; ++ubPlane) {
+			uwPixelBuffer = 0;
+			for(x = 0; x != uwWidth; ++x) {
+				ulPos = y*uwWidth*3 + x*3;
+				
+				uwPixelBuffer <<= 1;
+				if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
+					uwPixelBuffer |= 1;
+				if((x & 0xF) == 0xF) {
+					writeByte(uwPixelBuffer >> 8, pOut);
+					writeByte(uwPixelBuffer & 0xFF, pOut);
+				}
+			}
+		}
+	}
+	
+	fclose(pOut);
+}
+
 uint8_t paletteLoad(char *szPath, tColor *pPalette) {
 	FILE *pIn;
-	uint8_t ubPaletteCount, i, ubXR, ubGB;
+	uint8_t uwPaletteCount, i, ubXR, ubGB;
 
 	pIn = fopen(szPath, "rb");
 	if(!pIn) {
 		printf("Can't open file %s\n", szPath);
 		return 0;
 	}
-	fread(&ubPaletteCount, 1, 1, pIn);
-	printf("Palette color count: %hhu\n", ubPaletteCount);
-	for(i = 0; i != ubPaletteCount; ++i) {
+	fread(&uwPaletteCount, 1, 1, pIn);
+	printf("Palette color count: %hhu\n", uwPaletteCount);
+	for(i = 0; i != uwPaletteCount; ++i) {
 		fread(&ubXR, 1, 1, pIn);
 		fread(&ubGB, 1, 1, pIn);
 		pPalette[i].ubR = (ubXR & 0x0F) << 4;
@@ -181,7 +299,7 @@ uint8_t paletteLoad(char *szPath, tColor *pPalette) {
 		pPalette[i].ubB = (ubGB & 0x0F) << 4;
 	}
 	fclose(pIn);
-	return ubPaletteCount;
+	return uwPaletteCount;
 }
 
 int inExtArray(char **pExts, char *szValue) {
@@ -201,14 +319,17 @@ int determineArgs(int argc, char *argv[]) {
 	uint8_t i;
 	uint16_t uwPathLen;
 
+	// Default values
 	g_szOutputPath[0] = 0;
 	g_szMaskOutputPath[0] = 0;
 	g_uwMaskR = 0xFFFF;
+	ubMode = 0;
 	
 	if(argc < 3) {
 		printf("ERR: too few arguments\n");
 		return 0;
 	}
+	
 	// First one must be a path to known palette type
 	szExt = strrchr(argv[1], '.');
 	if(!szExt) {
@@ -244,7 +365,11 @@ int determineArgs(int argc, char *argv[]) {
 			return 0;
 		}
 
-		if(!strcmp(argv[i], "-o")) {
+		if(!strcmp(argv[i], "-i")) {
+			// Interleaved mode
+			ubMode |= MODE_INTERLEAVED;
+		}
+		else if(!strcmp(argv[i], "-o")) {
 			// Output file
 			if(argv[i+1][0] == '-') {
 				printf("ERR: No file path after -o switch\n");
@@ -302,9 +427,9 @@ int determineArgs(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
 	char *szExt;
-	uint8_t *pImgIn;            /// Format is: 0xRR 0xGG 0xBB 0xRR 0xGG 0xBB...
-	uint8_t ubPaletteCount;
-	uint16_t uwWidth, uwHeight; /// Image width & height
+	uint8_t *pImgIn;            ///< Format is: 0xRR 0xGG 0xBB 0xRR 0xGG 0xBB...
+	uint16_t uwPaletteCount;    ///< Number of colors in palette
+	uint16_t uwWidth, uwHeight; ///< Image width & height
 	tColor pPalette[256];
 
 	if(!determineArgs(argc, argv)) {
@@ -314,8 +439,8 @@ int main(int argc, char *argv[]) {
 
 	// Load palette
 	printf("Loading palette from %s...\n", g_szPalettePath);
-	ubPaletteCount = paletteLoad(g_szPalettePath, pPalette);
-	if(!ubPaletteCount) {
+	uwPaletteCount = paletteLoad(g_szPalettePath, pPalette);
+	if(!uwPaletteCount) {
 		printf("No palette colors read, aborting.\n");
 		return 0;
 	}
@@ -342,13 +467,25 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Write as planar
-	printf("Writing to %s...\n", g_szOutputPath);
-	writePlanar(pImgIn, uwWidth, uwHeight, pPalette, ubPaletteCount);
+	if(ubMode & MODE_INTERLEAVED) {
+		printf("Writing interleaved bitmap to %s...\n", g_szOutputPath);
+		writePlanarInterleaved(pImgIn, uwWidth, uwHeight, pPalette, uwPaletteCount);
+	}
+	else {
+		printf("Writing bitmap to %s...\n", g_szOutputPath);
+		writePlanar(pImgIn, uwWidth, uwHeight, pPalette, uwPaletteCount);
+	}
 
 	if(*g_szMaskOutputPath) {
-		printf("Writing bitmap mask to %s...\n", g_szMaskOutputPath);
-		printf("Mask color is #%02x%02x%02x\n", g_uwMaskR, g_uwMaskG, g_uwMaskB);
-		writeMask(pImgIn, uwWidth, uwHeight);
+		printf("Mask color: #%02x%02x%02x\n", g_uwMaskR, g_uwMaskG, g_uwMaskB);
+		if(ubMode & MODE_INTERLEAVED) {
+			printf("Writing interleaved bitmap mask to %s...\n", g_szMaskOutputPath);
+			writeMaskInterleaved(pImgIn, uwWidth, uwHeight, uwPaletteCount);
+		}
+		else {
+			printf("Writing bitmap mask to %s...\n", g_szMaskOutputPath);
+			writeMask(pImgIn, uwWidth, uwHeight);			
+		}
 	}
 
 	printf("All done!");
