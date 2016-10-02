@@ -75,10 +75,10 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	logWrite("Modulo: %u\n", uwModulo);
 	if(!uwModulo) {
 		uwDDfStrt = 0x0038;
-		logWrite("No X scroll\n");
+		pManager->ubXScrollable = 0;
 	}
 	else {
-		logWrite("X scroll\n");
+		pManager->ubXScrollable = 1;
 		uwDDfStrt = 0x0030;
 		uwModulo -= 1;
 	}
@@ -112,7 +112,7 @@ void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	UBYTE i;
 	UWORD uwShift;
-	ULONG ulBplAdd;
+	ULONG ulScrollY;
 	ULONG ulPlaneAddr;
 	tCameraManager *pCameraManager;
 	tCopList *pCopList;
@@ -121,18 +121,22 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	pCopList = pManager->sCommon.pVPort->pView->pCopList;
 	
 	// Calculate X movement
-	uwShift = 15-(pCameraManager->uPos.sUwCoord.uwX & 0xF);
-	uwShift = (uwShift << 4) | uwShift;
-	ulBplAdd = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
+	if(pManager->ubXScrollable) {
+		uwShift = 15-(pCameraManager->uPos.sUwCoord.uwX & 0xF);
+		uwShift = (uwShift << 4) | uwShift;
+	}
+	else
+		uwShift = 0;
+	ulScrollY = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
 	
 	// Calculate Y movement
-	ulBplAdd += pManager->pBuffer->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
+	ulScrollY += pManager->pBuffer->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
 	
 	// Update (rewrite) copperlist
 	pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift instruction pos
 	copMove(pCopList, pManager->pCopBlock, &custom.bplcon1, uwShift);
 	for(i = 0; i != pManager->pBuffer->Depth; ++i) {
-		ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplAdd;
+		ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulScrollY;
 		copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
 		copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
 	}

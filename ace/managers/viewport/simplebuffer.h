@@ -16,9 +16,10 @@ typedef struct {
 	tVpManager sCommon;
 	tCameraManager *pCameraManager;
 	// scroll-specific fields
-	tBitMap *pBuffer;
-	tCopBlock *pCopBlock;
-	tUwCoordYX uBfrBounds;
+	tBitMap *pBuffer;      ///< Bitmap buffer
+	tCopBlock *pCopBlock;  ///< CopBlock containing modulo/shift/bitplane cmds
+	tUwCoordYX uBfrBounds; ///< Buffer bounds in pixels
+	UBYTE ubXScrollable;   ///< 1 if scrollable, otherwise 0. Read only.
 } tSimpleBufferManager;
 
 tSimpleBufferManager *simpleBufferCreate(
