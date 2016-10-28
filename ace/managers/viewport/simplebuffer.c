@@ -1,5 +1,17 @@
 #include <ace/managers/viewport/simplebuffer.h>
 
+/**
+ *  Creates new simple-scrolled buffer manager along with required buffer bitmap.
+ *  This approach is not suitable for big buffers, because you'll run
+ *  out of memory quite easily.
+ *  
+ *  @param pVPort        Parent VPort.
+ *  @param uwBoundWidth  Buffer width, in pixels.
+ *  @param uwBoundHeight Buffer height, in pixels.
+ *  @return Pointer to newly created buffer manager.
+ *  
+ *  @see simpleBufferDestroy
+ */
 tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWORD uwBoundHeight) {
 	tCopList *pCopList;
 	tSimpleBufferManager *pManager;
@@ -53,6 +65,14 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 	return pManager;
 }
 
+/**
+ *  Sets new bitmap to be displayed by buffer manager.
+ *  If there was buffer created by manager, be sure to intercept & free it.
+ *  Also, both buffer bitmaps must have same BPP, as difference would require
+ *  copBlock realloc, which is not implemented.
+ *  @param pManager The buffer manager, which buffer is to be changed.
+ *  @param pBitMap  New bitmap to be pointed by manager.
+ */
 void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	UWORD uwModulo, uwDDfStrt;
 	tCopList *pCopList;
@@ -65,10 +85,12 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		pManager, pBitMap
 	);
 	
-	if(pManager->pBuffer && pManager->pBuffer->Depth != pBitMap->Depth)
+	if(pManager->pBuffer && pManager->pBuffer->Depth != pBitMap->Depth) {
 		logWrite("ERR: buffer bitmaps differ in BPP!\n");
+		return;
+	}
 	
-	pManager->uBfrBounds.sUwCoord.uwX = pBitMap->BytesPerRow << 3;
+	pManager->uBfrBounds.sUwCoord.uwX = bitmapGetWidth(pBitMap) << 3;
 	pManager->uBfrBounds.sUwCoord.uwY = pBitMap->Rows;
 	pManager->pBuffer = pBitMap;
 	uwModulo = pBitMap->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
@@ -112,7 +134,7 @@ void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	UBYTE i;
 	UWORD uwShift;
-	ULONG ulScrollY;
+	ULONG ulBplOffs;
 	ULONG ulPlaneAddr;
 	tCameraManager *pCameraManager;
 	tCopList *pCopList;
@@ -127,16 +149,18 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	}
 	else
 		uwShift = 0;
-	ulScrollY = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
+	
+	// X offset on bitplane
+	ulBplOffs = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
 	
 	// Calculate Y movement
-	ulScrollY += pManager->pBuffer->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
+	ulBplOffs += pManager->pBuffer->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
 	
 	// Update (rewrite) copperlist
-	pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift instruction pos
+	pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
 	copMove(pCopList, pManager->pCopBlock, &custom.bplcon1, uwShift);
 	for(i = 0; i != pManager->pBuffer->Depth; ++i) {
-		ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulScrollY;
+		ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplOffs;
 		copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
 		copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
 	}

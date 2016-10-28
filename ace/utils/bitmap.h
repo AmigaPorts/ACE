@@ -11,6 +11,8 @@
 #include <ace/managers/memory.h>
 #include <ace/utils/custom.h>
 
+#define BITMAP_INTERLEAVED 1
+
 /* Types */
 typedef struct BitMap tBitMap;
 
@@ -19,16 +21,19 @@ typedef struct BitMap tBitMap;
 /* Functions */
 
 /**
- *  @brief Creates new bitmap of specified dimensions and depth.
+ *  @brief Allocates bitmap of given dimensions and depth.
+ *  OS' AllocBitMap is not present on KS1.3, hence this OS-compatible
+ *  implementation.
  *  
- *  @param uwWidth  Bitmap width.
- *  @param uwHeight Bitmap height.
- *  @param ubDepth  Bitmap depth - bits per pixel.
- *  @param ubFlags  Bitmap flags - compatible with BMF_* from OS functions.
- *  @return Pointer to newly created bitmap, 0 on error.
+ *  @param uwWidth  Desired bitmap width, in pixels.
+ *  @param uwHeight Desired bitmap height, in pixels.
+ *  @param ubDepth  Desired bitmap depth (bits per pixel)
+ *  @param ubFlags  Bitmap creation flags, see BMF_* defines
+ *  @return Newly created OS-compatible bitmap, 0 on error.
  *  
- *  @see bitmapCreateFromFile()
- *  @see bitmapDestroy()
+ *  @see bitmapDestroy
+ *  @see bitmapCreateFromFile
+ *  @see bitmapLoadFromFile
  */
 tBitMap* bitmapCreate(
 	IN UWORD uwWidth,
@@ -38,60 +43,96 @@ tBitMap* bitmapCreate(
 );
 
 /**
- *  @brief Creates new bitmap from bitmap file (.bm).
+ *  @brief Loads bitmap data from file to already existing bitmap.
+ *  If source is smaller than destination, you can use uwStartX & uwStartY
+ *  params to load bitmap on given coords.
  *  
- *  @param szFileName File to be read from.
- *  @return Pointer to newly created bitmap, 0 on error.
+ *  @param pBitMap    Pointer to destination bitmap
+ *  @param szFilePath Source bitmap file path.
+ *  @param uwStartX   Start X-coordinate on destination bitmap, 8-pixel aligned.
+ *  @param uwStartY   Start Y-coordinate on destination bitmap
  *  
- *  @see bitmapCreate()
+ *  @see bitmapCreate
+ *  @see bitmapCreateFromFile
+ */
+void bitmapLoadFromFile(
+	IN tBitMap *pBitMap,
+	IN char *szFilePath,
+	IN UWORD uwStartX,
+	IN UWORD uwStartY
+);
+
+/**
+ *  @brief Creates bitmap and loads its data from file.
+ *  As opposed to bitmapLoadFromFile, this function creates bitmap based
+ *  on dimensions, BPP & flags stored in file.
+ *  
+ *  @param szFilePath Source bitmap file path.
+ *  @return Pointer to newly created bitmap based on file, 0 on error.
+ *  
+ *  @see bitmapLoadFromFile
+ *  @see bitmapCreate
+ *  @see bitmapDestroy
  */
 tBitMap* bitmapCreateFromFile(
 	IN char *szFileName
 );
 
 /**
- *  @brief Destroys supplied bitmap.
+ *  @brief Destroys given bitmap, freeing its resources to OS.
+ *  Be sure to end all blitter & display operations on this bitmap
+ *  prior to calling this function.
  *  
  *  @param pBitMap Bitmap to be destroyed.
  *  
- *  @see bitmapCreate()
- *  @see bitmapCreateFromFile()
+ *  @see bitmapCreate
+ *  @see bitmapCreateFromFile
  */
 void bitmapDestroy(
 	IN tBitMap *pBitMap
 );
 
 /**
- *  @brief Checks whether supplied bitmap is interleaved
+ *  @brief Checks if given bitmap is interleaved.
+ *  Detection should work on any OS bitmap.
  *  
  *  @param pBitMap Bitmap to be checked.
- *  @return Zero when bitmap is not interleaved, otherwise non-zero.
+ *  @return non-zero if bitmap is interleaved, otherwise zero.
  */
 inline BYTE bitmapIsInterleaved(
 	IN tBitMap *pBitMap
 );
 
 /**
- *  @brief Dumps bitmap information to log file.
+ *  @brief Saves basic Bitmap information to log file.
  *  
  *  @param pBitMap Bitmap to be dumped.
+ *  
+ *  @see bitmapSaveBMP
  */
 void bitmapDump(
 	IN tBitMap *pBitMap
 );
 
 /**
- *  @brief Saves bitmap as .bmp file.
- *  This function should be used mainly for debug purposes.
+ *  @brief Saves given Bitmap as BMP file.
+ *  Use only for debug purposes, as conversion is outrageously slow.
  *  
- *  @param pBitMap    Bitmap to be saved.
- *  @param pPalette   Palette to be used during bitmap save.
- *  @param szFileName Destination file path.
+ *  @param pBitMap    Bitmap to be dumped.
+ *  @param pPalette   Palette to be used during export.
+ *  @param szFilePath Destination file path.
  */
 void bitmapSaveBMP(
 	IN tBitMap *pBitMap,
 	IN UWORD *pPalette,
 	IN char *szFileName
 );
+
+/**
+ *  @brief Returns bitmap width in bytes.
+ *  Direct check to BytesPerRow may lead to errors as in interleaved mode it
+ *  stores value multiplied by bitplane count.
+ */
+UWORD bitmapGetWidth(tBitMap *pBitMap);
 
 #endif
