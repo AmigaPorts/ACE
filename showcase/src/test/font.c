@@ -22,7 +22,7 @@ void gsTestFontCreate(void) {
 	// Prepare view & viewport
 	s_pTestFontView = viewCreate(V_GLOBAL_CLUT);
 	s_pTestFontVPort = vPortCreate(s_pTestFontView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pTestFontBfr = simpleBufferCreate(s_pTestFontVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT);
+	s_pTestFontBfr = simpleBufferCreate(s_pTestFontVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_CLEAR);
 	s_pTestFontVPort->pPalette[0] = 0x000;
 	s_pTestFontVPort->pPalette[1] = 0xAAA;
 	s_pTestFontVPort->pPalette[2] = 0x666;

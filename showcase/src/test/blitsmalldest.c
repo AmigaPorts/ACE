@@ -41,7 +41,7 @@ void gsTestBlitSmallDestCreate(void) {
 	// Prepare view & viewport
 	s_pTestBlitView = viewCreate(V_GLOBAL_CLUT);
 	s_pTestBlitVPort = vPortCreate(s_pTestBlitView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pTestBlitBfr = simpleBufferCreate(s_pTestBlitVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT);
+	s_pTestBlitBfr = simpleBufferCreate(s_pTestBlitVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_CLEAR);
 	paletteLoad("data/blitToSmall.plt", s_pTestBlitVPort->pPalette, 1 << WINDOW_SCREEN_BPP);
 	
 	s_pDstBitmap = bitmapCreate(32, 32, WINDOW_SCREEN_BPP, 0);

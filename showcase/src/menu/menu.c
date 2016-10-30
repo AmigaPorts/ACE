@@ -28,7 +28,7 @@ void gsMenuCreate(void) {
 	// Prepare view & viewport
 	s_pMenuView = viewCreate(V_GLOBAL_CLUT);
 	s_pMenuVPort = vPortCreate(s_pMenuView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pMenuBfr = simpleBufferCreate(s_pMenuVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT);
+	s_pMenuBfr = simpleBufferCreate(s_pMenuVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_CLEAR);
 	
 	// Prepare palette
 	s_pMenuVPort->pPalette[0] = 0x000;
