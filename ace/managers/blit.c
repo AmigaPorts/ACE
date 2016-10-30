@@ -29,7 +29,7 @@ inline void blitSetRegs(tBlitData *pData) {
 	custom.bltdpt  = pData->bltdpt;
 
 	custom.bltsize = pData->bltsize;
-	// TODO: zamiana na copymemy dopiero jak wszystko inne bêdzie dzia³aæ
+	// TODO: zamiana na copymemy dopiero jak wszystko inne bï¿½dzie dziaï¿½aï¿½
 }
 
 /**
@@ -191,9 +191,10 @@ BYTE blitCheck(
 }
 
 /**
- * Checks if blitter is idle
- * Polls 2 times - A1000 Agnus bug workaround
- * TODO: make it inline assembly so compiler won't 'optimize' it
+ *  Checks if blitter is idle
+ *  Polls 2 times - A1000 Agnus bug workaround
+ *  @todo Make it inline assembly or dmaconr volatile so compiler won't
+ *  'optimize' it.
  */
 inline BYTE blitIsIdle(void) {
 	if(!(custom.dmaconr & DMAF_BLTDONE))
@@ -209,8 +210,8 @@ void blitNotQueued(
 	UWORD bltadat, UWORD bltbdat, UWORD bltcdat,
 	UWORD bltsize
 ) {
-	WaitBlit();
 	OwnBlitter();
+	WaitBlit();
 
 	custom.bltcon0 = bltcon0;
 	custom.bltcon1 = bltcon1;
