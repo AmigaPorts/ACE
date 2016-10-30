@@ -90,7 +90,9 @@ void writePlanarInterleaved(
 	writeByte(uwHeight >> 8, pOut);
 	writeByte(uwHeight & 0xFF, pOut);
 	writeByte(ubPlaneCount, pOut);
-	for(i = 0; i != 4; ++i)
+	writeByte(1, pOut); // Flags
+	writeByte(0, pOut); // Version
+	for(i = 0; i != 2; ++i)
 		writeByte(0, pOut);
 
 	// Write bitplanes - from LSB to MSB
@@ -160,7 +162,9 @@ void writePlanar(
 	writeByte(uwHeight >> 8, pOut);
 	writeByte(uwHeight & 0xFF, pOut);
 	writeByte(ubPlaneCount, pOut);
-	for(i = 0; i != 4; ++i)
+	writeByte(0, pOut); // Flags
+	writeByte(0, pOut); // Version
+	for(i = 0; i != 2; ++i)
 		writeByte(0, pOut);
 
 	// Write bitplanes - from LSB to MSB

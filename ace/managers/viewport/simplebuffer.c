@@ -84,7 +84,6 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		"simpleBufferSetBitmap(pManager: %p, pBitMap: %p)",
 		pManager, pBitMap
 	);
-	
 	if(pManager->pBuffer && pManager->pBuffer->Depth != pBitMap->Depth) {
 		logWrite("ERR: buffer bitmaps differ in BPP!\n");
 		return;
@@ -95,7 +94,7 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	pManager->pBuffer = pBitMap;
 	uwModulo = pBitMap->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 	logWrite("Modulo: %u\n", uwModulo);
-	if(!uwModulo) {
+	if(pManager->uBfrBounds.sUwCoord.uwX <= pManager->sCommon.pVPort->uwWidth) {
 		uwDDfStrt = 0x0038;
 		pManager->ubXScrollable = 0;
 	}
@@ -111,7 +110,7 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	pBlock->uwCurrCount = 0; // Rewind to beginning
 	copMove(pCopList, pBlock, &custom.ddfstop, 0x00D0);     // Data fetch
 	copMove(pCopList, pBlock, &custom.ddfstrt, uwDDfStrt);
-	copMove(pCopList, pBlock, &custom.bpl1mod, uwModulo); // Bitplane modulo
+	copMove(pCopList, pBlock, &custom.bpl1mod, uwModulo);   // Bitplane modulo
 	copMove(pCopList, pBlock, &custom.bpl2mod, uwModulo);
 	copMove(pCopList, pBlock, &custom.bplcon1, 0);          // Shift: 0
 	for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {

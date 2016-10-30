@@ -62,6 +62,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	UWORD uwSrcWidth, uwDstWidth, uwSrcHeight;
 	UBYTE ubSrcFlags, ubSrcBpp, ubSrcVersion;
 	UWORD y;
+	UWORD uwWidth;
 	UBYTE ubPlane;
 	FILE *pFile;
 	
@@ -78,7 +79,6 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
-	logWrite("Addr: %p\n",pBitMap);
 	
 	// Read header
 	fread(&uwSrcWidth, 2, 1, pFile);
@@ -128,12 +128,8 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	}
 	
 	// Read data
+	uwWidth = bitmapGetWidth(pBitMap);
 	if(bitmapIsInterleaved(pBitMap)) {
-		UWORD uwWidth;
-		if(pBitMap->Depth > 1)
-			uwWidth = (ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0];
-		else
-			uwWidth = pBitMap->BytesPerRow;
 		for(y = 0; y != uwSrcHeight; ++y)
 			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane)
 				fread(
@@ -147,7 +143,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 			for(y = 0; y != uwSrcHeight; ++y)
 				fread(
 					&pBitMap->Planes[ubPlane][
-						pBitMap->BytesPerRow*(uwStartY+y) + (uwStartX>>3)
+						uwWidth*(uwStartY+y) + (uwStartX>>3)
 					], ((uwSrcWidth+7)>>3), 1, pFile
 				);
 	}
@@ -219,7 +215,7 @@ void bitmapDestroy(tBitMap *pBitMap) {
 }
 
 inline BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
-	return (pBitMap->Depth > 1 && (bitmapGetWidth(pBitMap))*pBitMap->Depth == pBitMap->BytesPerRow);
+	return (pBitMap->Depth > 1 && ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0])*pBitMap->Depth == pBitMap->BytesPerRow);
 }
 
 void bitmapDump(tBitMap *pBitMap) {
@@ -338,8 +334,8 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 }
 
 UWORD bitmapGetWidth(tBitMap *pBitMap) {
-	if(pBitMap->Depth == 1)
-		return pBitMap->BytesPerRow;
-	else
+	if(bitmapIsInterleaved(pBitMap)) {
 		return ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0]);
+	}
+	return pBitMap->BytesPerRow;
 }
