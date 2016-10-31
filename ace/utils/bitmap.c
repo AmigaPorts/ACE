@@ -23,7 +23,7 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 		
 		pBitMap->Planes[0] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
 		if(!pBitMap->Planes[0]) {
-			logWrite("ERR: Can't alloc interleaved bitplane\n");
+			logWrite("ERR: Can't alloc interleaved bitplanes\n");
 			memFree(pBitMap, sizeof(tBitMap));
 			logBlockEnd("bitmapCreate()");
 			return 0;			
@@ -112,10 +112,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	}
 	
 	// Check bitmap dimensions
-	if(pBitMap->Depth > 1)
-		uwDstWidth = pBitMap->Planes[1] - pBitMap->Planes[0];
-	else
-		uwDstWidth = pBitMap->BytesPerRow;
+	uwDstWidth = bitmapGetWidth(pBitMap) << 3;
 	if(uwStartX + uwSrcWidth > uwDstWidth || uwStartY + uwSrcHeight > (pBitMap->Rows)) {
 		logWrite(
 			"ERR: Source doesn't fit on dest: %ux%u @%u,%u > %ux%u\n",
