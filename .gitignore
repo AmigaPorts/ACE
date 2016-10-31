@@ -51,4 +51,12 @@ Temporary Items
 
 # Custom rules
 *.o
+
+# ACE-specific
 *.log
+showcase/showcase
+showcase/*.bmp
+tools/*/*.exe
+tools/*/*.png
+tools/*/*.bm
+tools/*/*.plt
