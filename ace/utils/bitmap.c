@@ -260,7 +260,7 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	ulOut = endianIntel32(40);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Core header size
 	
-	ulOut = endianIntel32(pBitMap->BytesPerRow<<3);
+	ulOut = endianIntel32(bitmapGetWidth(pBitMap) << 3);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image width
 
 	ulOut = endianIntel32(pBitMap->Rows);
@@ -275,7 +275,7 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	ulOut = endianIntel32(0);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Compression method - none	
 	
-	ulOut = endianIntel32((pBitMap->BytesPerRow<<3) * pBitMap->Rows);
+	ulOut = endianIntel32((bitmapGetWidth(pBitMap) << 3) * pBitMap->Rows);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image size
 	
 	ulOut = endianIntel32(100);
@@ -316,7 +316,7 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 		
 	// Image data
 	for(uwY = pBitMap->Rows; uwY--;) {
-		for(uwX = 0; uwX < pBitMap->BytesPerRow<<3; uwX += 16) {
+		for(uwX = 0; uwX < bitmapGetWidth(pBitMap) << 3; uwX += 16) {
 			planarRead16(pBitMap, uwX, uwY, pIndicesChunk);
 			fwrite(pIndicesChunk, 16*sizeof(UBYTE), 1, pOut);
 		}
