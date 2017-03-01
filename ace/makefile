@@ -19,7 +19,7 @@ SL= $(strip $(SLASH))
 
 ACE_PARENT = $(ACE_DIR)$(SL)..
 CC = vc
-CC_FLAGS = -c99 -I$(ACE_PARENT)
+CC_FLAGS = +kick13 -c99 -I$(ACE_PARENT)
 
 
 TMP_DIR = tmp
