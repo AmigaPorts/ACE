@@ -233,7 +233,7 @@ UBYTE copBfrRealloc(void) {
 		pBackBfr->uwAllocSize += pCopList->uwBlockCount + 1; // all WAITs + double WAIT
 		pBackBfr->uwAllocSize *= sizeof(tCopCmd);
 		// Pass realloc to next buffer
-		ubNewStatus |= STATUS_REALLOC_PREV;
+		ubNewStatus = STATUS_REALLOC_PREV;
 	}
 	else {
 		// If realloc just propagates to next buffer, calculations aren't necessary
@@ -291,13 +291,14 @@ UBYTE copUpdateFromBlocks(void) {
 	pBlock = pCopList->pFirstBlock;
 	uwListPos = 0;
 	ubWasLimitY = 0;
-	
+		
 	// Update buffers if their sizes haven't changed
 	// ///////////////////////////////////////////////////////////////////////////
 	// Disabled 'cuz it's broken
 	// This part should update content of modified blocks, which sizes were
 	// not changed. To test fix candidates, run copper test in ACE showcase.
 	// ///////////////////////////////////////////////////////////////////////////
+	/*
 	while(0 && pBlock && !pBlock->ubResized) {
 		if(!pBlock->ubDisabled) {
 			if(pBlock->ubUpdated) {
@@ -329,12 +330,12 @@ UBYTE copUpdateFromBlocks(void) {
 		}
 		pBlock = pBlock->pNext;
 	}
+	*/
 	// ///////////////////////////////////////////////////////////////////////////
 	// End of broken part
 	// ///////////////////////////////////////////////////////////////////////////
 	
 	// Do full merge on remaining blocks
-	
 	while(pBlock) {
 		if(!pBlock->ubDisabled) {
 			if(pBlock->ubResized)
@@ -364,26 +365,23 @@ UBYTE copUpdateFromBlocks(void) {
 		}			
 		pBlock = pBlock->pNext;
 	}
-	
+		
 	// Add 0xFFFF terminator
 	copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xFF, 0xFF);
 	++uwListPos;
 	
 	pCopList->pBackBfr->uwCmdCount = uwListPos;
-	
+		
 	if(pCopList->ubStatus & STATUS_UPDATE_CURR)
 		return STATUS_UPDATE_PREV;
 	return 0;
 }
 
 void copProcessBlocks(void) {
-	UBYTE ubNewStatus;
+	UBYTE ubNewStatus = 0;
 	tCopList *pCopList;
 	tCopBfr *pBackBfr;
-	
-	// logWrite("Front buffer dump\n");
-	// copDumpBfr(pCopList->pFrontBfr);
-	
+		
 	pCopList = g_sCopManager.pCopList;
 	if(pCopList->ubMode == MODE_BLOCKS) {
 		pBackBfr = pCopList->pBackBfr;
