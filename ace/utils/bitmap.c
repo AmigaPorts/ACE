@@ -1,6 +1,6 @@
 #include <ace/utils/bitmap.h>
 #include <ace/utils/endian.h>
-#include <ace/utils/planar.h>
+#include <ace/utils/chunky.h>
 
 /* Globals */
 
@@ -39,10 +39,8 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
 			if(!pBitMap->Planes[i]) {
 				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth-i+1,ubDepth);
-				while(i) {
+				while(++i != ubDepth)
 					memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*uwHeight);
-					--i;
-				}
 				memFree(pBitMap, sizeof(tBitMap));
 				logBlockEnd("bitmapCreate()");
 				return 0;
@@ -69,12 +67,10 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	logBlockBegin(
 		"bitmapLoadFromFile(pBitMap: %p, szFilePath: %s, uwStartX: %u, uwStartY: %u)",
 		pBitMap, szFilePath, uwStartX, uwStartY
-	);
-	
+	);	
 	// Open source bitmap
 	pFile = fopen(szFilePath, "r");
 	if(!pFile) {
-		fclose(pFile);
 		logWrite("File does not exist: %s\n", szFilePath);
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
@@ -93,6 +89,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
+	logWrite("Source dimensions: %ux%u\n", uwSrcWidth, uwSrcHeight);
 	
 	// Interleaved check
 	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
@@ -112,7 +109,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	}
 	
 	// Check bitmap dimensions
-	uwDstWidth = bitmapGetWidth(pBitMap) << 3;
+	uwDstWidth = bitmapGetByteWidth(pBitMap) << 3;
 	if(uwStartX + uwSrcWidth > uwDstWidth || uwStartY + uwSrcHeight > (pBitMap->Rows)) {
 		logWrite(
 			"ERR: Source doesn't fit on dest: %ux%u @%u,%u > %ux%u\n",
@@ -125,7 +122,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	}
 	
 	// Read data
-	uwWidth = bitmapGetWidth(pBitMap);
+	uwWidth = bitmapGetByteWidth(pBitMap);
 	if(bitmapIsInterleaved(pBitMap)) {
 		for(y = 0; y != uwSrcHeight; ++y)
 			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane)
@@ -231,7 +228,7 @@ void bitmapDump(tBitMap *pBitMap) {
 	logBlockEnd("bitmapDump()");
 }
 
-void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
+void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	UWORD uwOut;
 	UBYTE ubOut;
 	ULONG ulOut;
@@ -260,7 +257,7 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	ulOut = endianIntel32(40);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Core header size
 	
-	ulOut = endianIntel32(bitmapGetWidth(pBitMap) << 3);
+	ulOut = endianIntel32(bitmapGetByteWidth(pBitMap) << 3);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image width
 
 	ulOut = endianIntel32(pBitMap->Rows);
@@ -275,7 +272,7 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	ulOut = endianIntel32(0);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Compression method - none	
 	
-	ulOut = endianIntel32((bitmapGetWidth(pBitMap) << 3) * pBitMap->Rows);
+	ulOut = endianIntel32((bitmapGetByteWidth(pBitMap) << 3) * pBitMap->Rows);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image size
 	
 	ulOut = endianIntel32(100);
@@ -316,8 +313,8 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 		
 	// Image data
 	for(uwY = pBitMap->Rows; uwY--;) {
-		for(uwX = 0; uwX < bitmapGetWidth(pBitMap) << 3; uwX += 16) {
-			planarRead16(pBitMap, uwX, uwY, pIndicesChunk);
+		for(uwX = 0; uwX < bitmapGetByteWidth(pBitMap) << 3; uwX += 16) {
+			chunkyFromPlanar16(pBitMap, uwX, uwY, pIndicesChunk);
 			fwrite(pIndicesChunk, 16*sizeof(UBYTE), 1, pOut);
 		}
 		ubOut = 0;
@@ -330,7 +327,7 @@ void bitmapSaveBMP(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	fclose(pOut);
 }
 
-UWORD bitmapGetWidth(tBitMap *pBitMap) {
+UWORD bitmapGetByteWidth(tBitMap *pBitMap) {
 	if(bitmapIsInterleaved(pBitMap)) {
 		return ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0]);
 	}

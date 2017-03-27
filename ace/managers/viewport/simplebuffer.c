@@ -69,7 +69,7 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		return;
 	}
 	
-	pManager->uBfrBounds.sUwCoord.uwX = bitmapGetWidth(pBitMap) << 3;
+	pManager->uBfrBounds.sUwCoord.uwX = bitmapGetByteWidth(pBitMap) << 3;
 	pManager->uBfrBounds.sUwCoord.uwY = pBitMap->Rows;
 	pManager->pBuffer = pBitMap;
 	uwModulo = pBitMap->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);

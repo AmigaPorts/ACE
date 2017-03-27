@@ -122,7 +122,7 @@ void bitmapDump(
  *  @param pPalette   Palette to be used during export.
  *  @param szFilePath Destination file path.
  */
-void bitmapSaveBMP(
+void bitmapSaveBmp(
 	IN tBitMap *pBitMap,
 	IN UWORD *pPalette,
 	IN char *szFileName
@@ -133,6 +133,6 @@ void bitmapSaveBMP(
  *  Direct check to BytesPerRow may lead to errors as in interleaved mode it
  *  stores value multiplied by bitplane count.
  */
-UWORD bitmapGetWidth(tBitMap *pBitMap);
+UWORD bitmapGetByteWidth(tBitMap *pBitMap);
 
 #endif
