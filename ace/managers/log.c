@@ -28,23 +28,24 @@ void _logPopIndent() {
 void _logWrite(char *szFormat, ...) {
 	if(g_sLogManager.ubShutUp)
 		return;
-	if (g_sLogManager.pFile) {
-		g_sLogManager.ubBlockEmpty = 0;
-		if (!g_sLogManager.ubIsLastWasInline) {
-			UBYTE bLogIndent = g_sLogManager.ubIndent;
-			while (bLogIndent--)
-				fprintf(g_sLogManager.pFile, "\t");
-		}
-
-		g_sLogManager.ubIsLastWasInline = szFormat[strlen(szFormat) - 1] != '\n';
-		
-		va_list vaArgs;
-		va_start(vaArgs, szFormat);
-		vfprintf(g_sLogManager.pFile, szFormat, vaArgs);
-		va_end(vaArgs);
-
-		fflush(g_sLogManager.pFile);
+	if (!g_sLogManager.pFile)
+		return;
+	
+	g_sLogManager.ubBlockEmpty = 0;
+	if (!g_sLogManager.ubIsLastWasInline) {
+		UBYTE ubLogIndent = g_sLogManager.ubIndent;
+		while (ubLogIndent--)
+			fprintf(g_sLogManager.pFile, "\t");
 	}
+
+	g_sLogManager.ubIsLastWasInline = szFormat[strlen(szFormat) - 1] != '\n';
+	
+	va_list vaArgs;
+	va_start(vaArgs, szFormat);
+	vfprintf(g_sLogManager.pFile, szFormat, vaArgs);
+	va_end(vaArgs);
+
+	fflush(g_sLogManager.pFile);
 }
 
 void _logClose() {

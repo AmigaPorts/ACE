@@ -101,6 +101,13 @@ void _memDestroy(void) {
 void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 	void *pAddr;
 	pAddr = _memAllocRls(ulSize, ulFlags);
+	if(!pAddr) {
+		fprintf(
+			s_pMemLog, "ERR: couldn't allocate %lu bytes! (%s:%u)\n",
+			ulSize, szFile, uwLine
+		);
+		return 0;
+	}
 	_memEntryAdd(pAddr, ulSize, uwLine, szFile);
 	return pAddr;
 }
