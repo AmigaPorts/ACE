@@ -4,9 +4,9 @@
 #include <ace/config.h>
 
 typedef struct _tBitmapMask {
+	UWORD *pData;
 	UWORD uwWidth;
 	UWORD uwHeight;
-	UWORD *pData;
 } tBitmapMask;
 
 tBitmapMask *bitmapMaskCreate(
