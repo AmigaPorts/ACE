@@ -49,9 +49,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Custom rules
-*.o
-
 # ACE-specific
 *.log
 ace/.vscode/*
