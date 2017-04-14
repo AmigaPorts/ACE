@@ -1,8 +1,8 @@
 #include <ace/config.h>
 #include <ace/managers/log.h>
-#include "ace/utils/chunky.h"
-#include "ace/utils/bitmap.h"
-#include <math.h>
+#include <ace/utils/chunky.h>
+#include <ace/utils/bitmap.h>
+#include <ace/libfixmath/fix16.h>
 
 void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut) {
 	UWORD uwChunk, uwMask;
@@ -45,33 +45,49 @@ void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 	}
 }
 
-void chunkyRotate(UBYTE *pSource, UBYTE *pDest, float fAngle, UBYTE ubBgColor, WORD wWidth, WORD wHeight) {
-	// VBCC 0.9e Amiga target doesn't have round() and sinf()
-	#define round(x) (x >= 0? (WORD)(x+0.5) : (WORD)(x-0.5))
-	#define sinf(x) (sin((double)x))
-	#define cosf(x) (cos((double)x))
-	float fSin, fCos, fCx, fCy;
+void chunkyRotate(
+	UBYTE *pSource, UBYTE *pDest,
+	fix16_t fAngle, UBYTE ubBgColor,
+	WORD wWidth, WORD wHeight
+) {
+	fix16_t fSin, fCos, fCx, fCy;
 	WORD x,y;
 	WORD u,v;
 		
-	fCx = (wWidth-1)/2.0f;
-	fCy = (wHeight-1)/2.0f;
+	fCx = fix16_div(fix16_from_int(wWidth-1), fix16_from_int(2));
+	fCy = fix16_div(fix16_from_int(wHeight-1), fix16_from_int(2));
 	
 	// For each of new bitmap's pixel sample color from rotated source x,y
-	fSin = sinf(fAngle);
-	fCos = cosf(fAngle);
+	fSin = fix16_sin(fAngle);
+	fCos = fix16_cos(fAngle);
+	fix16_t dx, dy;
 	for(y = 0; y != wHeight; ++y) {
+		dy = fix16_sub(fix16_from_int(y), fCy);
 		for(x = 0; x != wWidth; ++x) {
-			u = round(fCos*(x-fCx) - fSin*(y-fCy) +(fCx));
-			v = round(fSin*(x-fCx) + fCos*(y-fCy) +(fCy));
+			dx = fix16_sub(fix16_from_int(x), fCx);
+			// u = round(fCos*(x-fCx) - fSin*(y-fCy) +(fCx));
+			u = fix16_to_int(
+				fix16_add(
+					fix16_sub(
+						fix16_mul(fCos, dx),
+						fix16_mul(fSin, dy)),
+					fCx
+				)
+			);
+			// v = fix16_to_int(fSin*(x-fCx) + fCos*(y-fCy) +(fCy));
+			v = fix16_to_int(
+				fix16_add(
+					fix16_add(
+						fix16_mul(fSin, dx),
+						fix16_mul(fCos, dy)),
+					fCy
+				)
+			);
+			
 			if(u < 0 || v < 0 || u >= wWidth || v >= wHeight)
 				pDest[y*wWidth + x] = ubBgColor;
 			else
 				pDest[y*wWidth + x] = pSource[v*wWidth + u];
 		}
 	}
-	
-	#undef round
-	#undef sinf
-	#undef cosf
 }

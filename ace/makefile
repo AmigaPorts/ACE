@@ -24,7 +24,7 @@ CC_FLAGS = +kick13 -c99 -I$(ACE_PARENT)
 
 TMP_DIR = tmp
 
-ACE_FILES = $(wildcard $(ACE_DIR)$(SL)managers/*.c $(ACE_DIR)$(SL)managers/viewport/*.c $(ACE_DIR)$(SL)utils/*.c)
+ACE_FILES = $(wildcard $(ACE_DIR)$(SL)managers/*.c $(ACE_DIR)$(SL)managers/viewport/*.c $(ACE_DIR)$(SL)utils/*.c $(ACE_DIR)$(SL)libfixmath/*.c)
 ACE_OBJS = $(addprefix $(TMP_DIR)$(SL), $(notdir $(ACE_FILES:.c=.o)))
 
 hello:
@@ -54,6 +54,9 @@ $(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)managers/viewport/%.c
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 	
 $(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)utils/%.c
+	$(CC) $(CC_FLAGS) -c -o $@ $<
+
+$(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)libfixmath/%.c
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 	
 all: hello clear ace summary

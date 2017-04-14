@@ -3,6 +3,7 @@
 
 #include <ace/config.h>
 #include <ace/utils/bitmap.h>
+#include <ace/libfixmath/fix16.h>
 
 /**
  *  @brief Returns color indices for 16 colors in a row starting from supplied
@@ -58,7 +59,7 @@ UBYTE chunkyFromPlanar(
 void chunkyRotate(
 	IN UBYTE *pSource,
 	OUT UBYTE *pDest,
-	IN float fAngle,
+	IN fix16_t fAngle,
 	IN UBYTE ubBgColor,
 	IN WORD wWidth,
 	IN WORD wHeight
