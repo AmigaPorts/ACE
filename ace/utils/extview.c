@@ -52,7 +52,7 @@ void viewUpdateCLUT(tView *pView) {
 	if(pView->uwFlags & V_GLOBAL_CLUT)
 		CopyMem(pView->pFirstVPort->pPalette, custom.color, sizeof(UWORD)<<pView->pFirstVPort->ubBPP);
 	else {
-		// na pêtli: vPortUpdateCLUT();
+		// na pï¿½tli: vPortUpdateCLUT();
 	}
 }
 
@@ -180,7 +180,7 @@ void vPortDestroy(tVPort *pVPort) {
 }
 
 void vPortUpdateCLUT(tVPort *pVPort) {
-	// TODO: blok palety kolorów, priorytety na copperliœcie
+	// TODO: blok palety kolorï¿½w, priorytety na copperliï¿½cie
 }
 
 void vPortWaitForEnd(tVPort *pVPort) {
@@ -196,8 +196,8 @@ void vPortWaitForEnd(tVPort *pVPort) {
 	else {
 		uwCurrFrame = g_sTimerManager.uwFrameCounter;
 		while(
-			vhPosRegs->uwPosY < uwEndPos &&
-			g_sTimerManager.uwFrameCounter != uwCurrFrame
+			vhPosRegs->uwPosY < uwEndPos ||
+			g_sTimerManager.uwFrameCounter == uwCurrFrame
 		);
 	}
 	
@@ -205,14 +205,14 @@ void vPortWaitForEnd(tVPort *pVPort) {
 }
 
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
-	// podpiêcie
+	// podpiï¿½cie
 	if(!pVPort->pFirstManager) {
 		pVPort->pFirstManager = pVpManager;
 		logWrite("Manager %p attached to head of VP %p\n", pVpManager, pVPort);
 		return;
 	}
 	tVpManager *pVpCurr = pVPort->pFirstManager;
-	// przewiñ przed mened¿er o wy¿szym numerze ni¿ wstawiany
+	// przewiï¿½ przed menedï¿½er o wyï¿½szym numerze niï¿½ wstawiany
 	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
 		if(pVpCurr->ubId <= pVpManager->ubId)
 			pVpCurr = pVpCurr->pNext;
@@ -269,7 +269,7 @@ void extViewFadeOut(tExtView *pExtView) {
 		pVPort = (tExtVPort*)pExtView->sView.ViewPort;
 		while(pVPort) {
 			for (ubColorIdx = 0; ubColorIdx != 32; ++ubColorIdx) {
-				// Wy³uskanie sk³adowych
+				// Wyï¿½uskanie skï¿½adowych
 				ubR = (pVPort->pPalette[ubColorIdx] >> 8) & 0xF;
 				ubG = (pVPort->pPalette[ubColorIdx] >> 4) & 0xF;
 				ubB = (pVPort->pPalette[ubColorIdx] >> 0) & 0xF;
@@ -286,17 +286,17 @@ void extViewFadeOut(tExtView *pExtView) {
 		WaitTOF();
 	}
 
-	// Zapisz trwale paletê aktualnego bufora
+	// Zapisz trwale paletï¿½ aktualnego bufora
 	// MakeVPort(pExtView->pView, pExtView->pMainViewPort);
 	// MrgCop(pExtView->pView);
 
-	// Zaktualizuj paletê drugiego bufora
+	// Zaktualizuj paletï¿½ drugiego bufora
 	// swapScreenBuffers(pExtView);
 	// LoadRGB4(pExtView->pMainViewPort, pTmpPalette, 1 << WINDOW_SCREEN_BPP);
 	// MakeVPort(pExtView->pView, pExtView->pMainViewPort);
 	// MrgCop(pExtView->pView);
 
-	// Wróæ do bufora wyjœciowego
+	// Wrï¿½ï¿½ do bufora wyjï¿½ciowego
 	// swapScreenBuffers(pExtView);
 }
 

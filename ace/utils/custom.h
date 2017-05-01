@@ -21,7 +21,7 @@ typedef struct {
 	unsigned ubPosX:8;    ///< 0..159?
 } tRayPos;
 
-extern tRayPos * const vhPosRegs;
+extern volatile tRayPos * const vhPosRegs;
 
 /**
  * Bitplane display regs with 16-bit access.
