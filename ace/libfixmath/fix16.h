@@ -1,7 +1,7 @@
 #ifndef __libfixmath_fix16_h__
 #define __libfixmath_fix16_h__
 
-#define FIXMATH_NO_ROUNDING      //faster but less accurate
+#define FIXMATH_NO_ROUNDING      // Faster but less accurate
 #define FIXMATH_NO_64BIT         // Disable 64bit-optimized fns
 #define FIXMATH_NO_CACHE         // Don't cache results
 #define FIXMATH_FAST_SIN         // Faster but less accurate

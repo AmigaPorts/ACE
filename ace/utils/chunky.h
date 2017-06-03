@@ -44,8 +44,8 @@ UBYTE chunkyFromPlanar(
 /**
  *  @brief Rotates chunky pixels by given angle, on spefied background.
  *  
- *  This function uses floats, thus is heavily inefficient!
- *  Consider implementing own fixed-point variant with bitmap size constraints.
+ *  This function uses fixed point from libfixmath, so its speed should be
+ *  acceptable for precalcs.
  *  Also, dr Dobb's implementation is faster, but yields greater errors:
  *  http://www.drdobbs.com/architecture-and-design/fast-bitmap-rotation-and-scaling/184416337
  *  
