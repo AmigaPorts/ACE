@@ -79,7 +79,8 @@ void chunkyRotate(
 				fix16_add(
 					fix16_add(
 						fix16_mul(fSin, dx),
-						fix16_mul(fCos, dy)),
+						fix16_mul(fCos, dy)
+					),
 					fCy
 				)
 			);

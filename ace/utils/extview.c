@@ -52,7 +52,7 @@ void viewUpdateCLUT(tView *pView) {
 	if(pView->uwFlags & V_GLOBAL_CLUT)
 		CopyMem(pView->pFirstVPort->pPalette, custom.color, sizeof(UWORD)<<pView->pFirstVPort->ubBPP);
 	else {
-		// na p�tli: vPortUpdateCLUT();
+		// na petli: vPortUpdateCLUT();
 	}
 }
 
@@ -180,7 +180,7 @@ void vPortDestroy(tVPort *pVPort) {
 }
 
 void vPortUpdateCLUT(tVPort *pVPort) {
-	// TODO: blok palety kolor�w, priorytety na copperli�cie
+	// TODO: blok palety kolorow, priorytety na copperliscie
 }
 
 void vPortWaitForEnd(tVPort *pVPort) {
@@ -205,14 +205,14 @@ void vPortWaitForEnd(tVPort *pVPort) {
 }
 
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
-	// podpi�cie
+	// podpiecie
 	if(!pVPort->pFirstManager) {
 		pVPort->pFirstManager = pVpManager;
 		logWrite("Manager %p attached to head of VP %p\n", pVpManager, pVPort);
 		return;
 	}
 	tVpManager *pVpCurr = pVPort->pFirstManager;
-	// przewi� przed mened�er o wy�szym numerze ni� wstawiany
+	// przewin przed menedzer o wyzszym numerze niz wstawiany
 	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
 		if(pVpCurr->ubId <= pVpManager->ubId)
 			pVpCurr = pVpCurr->pNext;
@@ -269,7 +269,7 @@ void extViewFadeOut(tExtView *pExtView) {
 		pVPort = (tExtVPort*)pExtView->sView.ViewPort;
 		while(pVPort) {
 			for (ubColorIdx = 0; ubColorIdx != 32; ++ubColorIdx) {
-				// Wy�uskanie sk�adowych
+				// Wyluskanie skladowych
 				ubR = (pVPort->pPalette[ubColorIdx] >> 8) & 0xF;
 				ubG = (pVPort->pPalette[ubColorIdx] >> 4) & 0xF;
 				ubB = (pVPort->pPalette[ubColorIdx] >> 0) & 0xF;
@@ -286,17 +286,17 @@ void extViewFadeOut(tExtView *pExtView) {
 		WaitTOF();
 	}
 
-	// Zapisz trwale palet� aktualnego bufora
+	// Zapisz trwale palete aktualnego bufora
 	// MakeVPort(pExtView->pView, pExtView->pMainViewPort);
 	// MrgCop(pExtView->pView);
 
-	// Zaktualizuj palet� drugiego bufora
+	// Zaktualizuj palete drugiego bufora
 	// swapScreenBuffers(pExtView);
 	// LoadRGB4(pExtView->pMainViewPort, pTmpPalette, 1 << WINDOW_SCREEN_BPP);
 	// MakeVPort(pExtView->pView, pExtView->pMainViewPort);
 	// MrgCop(pExtView->pView);
 
-	// Wr�� do bufora wyj�ciowego
+	// Wroc do bufora wyjsciowego
 	// swapScreenBuffers(pExtView);
 }
 

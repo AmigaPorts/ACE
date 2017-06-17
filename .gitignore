@@ -58,3 +58,4 @@ tools/*/*.exe
 tools/*/*.png
 tools/*/*.bm
 tools/*/*.plt
+*.o
