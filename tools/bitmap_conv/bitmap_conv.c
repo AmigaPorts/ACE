@@ -298,9 +298,9 @@ uint8_t paletteLoad(char *szPath, tColor *pPalette) {
 	for(i = 0; i != uwPaletteCount; ++i) {
 		fread(&ubXR, 1, 1, pIn);
 		fread(&ubGB, 1, 1, pIn);
-		pPalette[i].ubR = (ubXR & 0x0F) << 4;
-		pPalette[i].ubG = (ubGB & 0xF0);
-		pPalette[i].ubB = (ubGB & 0x0F) << 4;
+		pPalette[i].ubR = ((ubXR & 0x0F) << 4) | (ubXR & 0x0F);
+		pPalette[i].ubG = ((ubGB & 0xF0) >> 4) | (ubGB & 0xF0);
+		pPalette[i].ubB = ((ubGB & 0x0F) << 4) | (ubGB & 0x0F);
 	}
 	fclose(pIn);
 	return uwPaletteCount;
