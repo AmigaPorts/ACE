@@ -9,7 +9,6 @@
  */
 
 #include <ace/types.h>
-#include <ace/macros.h>
 #include <ace/config.h>
 #include <ace/utils/extview.h>
 

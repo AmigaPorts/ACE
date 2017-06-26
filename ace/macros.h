@@ -1,5 +1,5 @@
-#ifndef GUARD_ACE_UTILS_MACROS_H
-#define GUARD_ACE_UTILS_MACROS_H
+#ifndef GUARD_ACE_MACROS_H
+#define GUARD_ACE_MACROS_H
 
 /**
  * ACE Macros
@@ -17,7 +17,10 @@
 #define blockCountCeil(length, blockSize) ((length + blockSize-1)/blockSize)
  
 /// Math
-// #define abs(x) (x<0 ? -x : x) // already implemented
+// #define abs(x) (x<0 ? -x : x) // already implemented (where?)
+#define min(x,y) ((x)<(y)? (x): (y))
+#define max(x,y) ((x)>(y)? (x): (y))
+#define clamp(x, min, max) ((x) < (min)? (min) : ((x) > (max) ? (max) : (x)))
 
 
-#endif
+#endif // GUARD_ACE_MACROS_H
