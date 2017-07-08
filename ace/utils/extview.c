@@ -50,7 +50,7 @@ void viewProcessManagers(tView *pView) {
 
 void viewUpdateCLUT(tView *pView) {
 	if(pView->uwFlags & V_GLOBAL_CLUT)
-		CopyMem(pView->pFirstVPort->pPalette, custom.color, sizeof(UWORD)<<pView->pFirstVPort->ubBPP);
+		CopyMem(pView->pFirstVPort->pPalette, custom.color, 32);
 	else {
 		// na petli: vPortUpdateCLUT();
 	}
@@ -105,9 +105,6 @@ tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UW
 	pVPort->uwHeight = uwHeight;
 	pVPort->ubBPP = ubBPP;
 	pVPort->pFirstManager = 0;
-	
-	// Alloc palette
-	pVPort->pPalette = memAllocFastClear(sizeof(UWORD) << ubBPP);
 	
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
@@ -167,7 +164,6 @@ void vPortDestroy(tVPort *pVPort) {
 			logBlockEnd("Destroying managers");
 			
 			// Free stuff
-			memFree(pVPort->pPalette, sizeof(UWORD) << pVPort->ubBPP);
 			memFree(pVPort, sizeof(tVPort));
 			break;
 		}

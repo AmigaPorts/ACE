@@ -80,8 +80,8 @@ typedef struct _tVPort {
 	UWORD uwHeight; ///< Viewport's height
 	
 	// Color info
-	UBYTE ubBPP;     ///< Bitplane count
-	UWORD *pPalette; ///< Destination palette
+	UBYTE ubBPP;        ///< Bitplane count
+	UWORD pPalette[32]; ///< Destination palette
 } tVPort;
 
 /* Globals */
