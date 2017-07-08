@@ -112,7 +112,7 @@ extern tCopManager g_sCopManager;
 void copCreate(void);
 void copDestroy(void);
 void copSwapBuffers(void);
-void copDump(void);
+void copDumpBlocks(void);
 void copDumpBfr(
 	IN tCopBfr *pBfr
 );

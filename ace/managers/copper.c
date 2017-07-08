@@ -46,6 +46,13 @@ void copSwapBuffers(void) {
 	custom.cop1lc = (ULONG)((void *)pCopList->pFrontBfr->pList);
 }
 
+void copDumpCmd(tCopCmd *pCmd) {
+		if(pCmd->sWait.bfIsWait)
+			logWrite("%08X - WAIT: %hu,%hu\n", pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY);
+		else
+			logWrite("%08X - MOVE: %03X := %X\n", pCmd->ulCode,  pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue);
+}
+
 void copDumpBlocks(void) {
 	UWORD i;
 	tCopList *pCopList;
@@ -58,22 +65,22 @@ void copDumpBlocks(void) {
 	logWrite("Copperlist %p cmd count: %u/%u\n", pCopList, pCopList->pFrontBfr->uwCmdCount, pCopList->pFrontBfr->uwAllocSize>>2);
 	pCmds = pCopList->pFrontBfr->pList;
 	for(i = 0; i != pCopList->pFrontBfr->uwCmdCount; ++i)
-		if(pCmds[i].sWait.bfIsWait)
-			logWrite("%08X - WAIT: %hu,%hu\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX << 1, pCmds[i].sWait.bfWaitY);
-		else
-			logWrite("%08X - MOVE: %03X := %X\n", pCmds[i].ulCode,  pCmds[i].sMove.bfDestAddr, pCmds[i].sMove.bfValue);
+		copDumpCmd(&pCmds[i]);
 	
 	logWrite("Copper block count: %u\n", pCopList->uwBlockCount);
 	pBlock = pCopList->pFirstBlock;
 	while(pBlock) {
-		logWrite("Block %p has %u/%u cmds:\n", pBlock, pBlock->uwCurrCount, pBlock->uwMaxCmds);
+		if(pBlock->ubDisabled)
+		logWrite("DISABLED ");
+		logWrite(
+			"Block %p starts at %u,%u and has %u/%u cmds:\n",
+			pBlock, pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY,
+			pBlock->uwCurrCount, pBlock->uwMaxCmds
+		);
 		logPushIndent();
 		pCmds = pBlock->pCmds;
 		for(i = 0; i != pBlock->uwCurrCount; ++i)
-			if(pCmds[i].sWait.bfIsWait)
-				logWrite("%08X - WAIT: %hu,%hu\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX << 1, pCmds[i].sWait.bfWaitY);
-			else
-				logWrite("%08X - MOVE: %03X := %X\n", pCmds[i].ulCode,  pCmds[i].sMove.bfDestAddr, pCmds[i].sMove.bfValue);
+			copDumpCmd(&pCmds[i]);
 		
 		logPopIndent();
 		pBlock = pBlock->pNext;
@@ -88,10 +95,7 @@ void copDumpBfr(tCopBfr *pBfr) {
 	logBlockBegin("copDumpBuffer(pBfr: %p)", pBfr);
 	logWrite("Alloc size: %u, cmd count: %u\n", pBfr->uwAllocSize, pBfr->uwCmdCount);
 	for(i = 0; i != pBfr->uwCmdCount; ++i) {
-			if(pBfr->pList[i].sWait.bfIsWait)
-				logWrite("%08X - WAIT: %hu,%hu\n", pBfr->pList[i].ulCode, pBfr->pList[i].sWait.bfWaitX << 1, pBfr->pList[i].sWait.bfWaitY);
-			else
-				logWrite("%08X - MOVE: %03X := %X\n", pBfr->pList[i].ulCode,  pBfr->pList[i].sMove.bfDestAddr, pBfr->pList[i].sMove.bfValue);		
+		copDumpCmd(&pBfr->pList[i]);
 	}
 	
 	logBlockEnd("copDumpBuffer");
