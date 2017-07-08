@@ -8,7 +8,7 @@
 
 #include <hardware/custom.h> // Custom chip register addresses
 
-__far extern struct Custom custom;
+extern struct Custom custom;
 
 /**
  * Ray position struct.
