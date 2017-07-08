@@ -71,7 +71,7 @@ void copDumpBlocks(void) {
 		pCmds = pBlock->pCmds;
 		for(i = 0; i != pBlock->uwCurrCount; ++i)
 			if(pCmds[i].sWait.bfIsWait)
-				logWrite("%08X - WAIT: %hu,%hu\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX, pCmds[i].sWait.bfWaitY);
+				logWrite("%08X - WAIT: %hu,%hu\n", pCmds[i].ulCode, pCmds[i].sWait.bfWaitX << 1, pCmds[i].sWait.bfWaitY);
 			else
 				logWrite("%08X - MOVE: %03X := %X\n", pCmds[i].ulCode,  pCmds[i].sMove.bfDestAddr, pCmds[i].sMove.bfValue);
 		
@@ -144,7 +144,7 @@ tCopBlock *copBlockCreate(tCopList *pCopList, UWORD uwMaxCmds, UWORD uwWaitX, UW
 	pBlock->uwMaxCmds = uwMaxCmds; // MOVEs only
 	pBlock->pCmds     = memAllocFast(sizeof(tCopCmd) * pBlock->uwMaxCmds);
 	
-	copWait(pCopList, pBlock, uwWaitX, uwWaitY);
+	copBlockWait(pCopList, pBlock, uwWaitX, uwWaitY);
 	
 	// Add to list
 	logWrite("Head: %p\n", pCopList->pFirstBlock);
@@ -409,7 +409,7 @@ void copProcessBlocks(void) {
 	pCopList->ubStatus = ubNewStatus;
 }
 
-void copWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
+void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
 	pBlock->uWaitPos.sUwCoord.uwY  = uwY;
 	pBlock->uWaitPos.sUwCoord.uwX  = uwX;
 

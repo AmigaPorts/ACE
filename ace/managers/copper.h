@@ -185,7 +185,7 @@ void copProcessBlocks(void);
  * Wait may result in copper block reorder - setting STATUS_REORDER
  * in copperlist lies on user's hands.
  */
-void copWait(
+void copBlockWait(
 	IN tCopList *pCopList,
 	IN tCopBlock *pBlock,
 	IN UWORD uwX, 
@@ -204,13 +204,14 @@ void copMove(
 /**
  * Prepares WAIT command on given memory address.
  * This fn is relatively slow for editing copperlist, since it builds whole WAIT
-  * cmd from scratch. If you exactly know what you're doing, you can just adjust
-	* wait pos of already generated WAIT cmd and omit applying same values to rest of fields.
+ * cmd from scratch. If you exactly know what you're doing, you can just adjust
+ * wait pos of already generated WAIT cmd and omit applying same values to rest
+ * of fields.
  */
 void copSetWait(
 	INOUT tCopWaitCmd *pWaitCmd,
-	UBYTE ubX,
-	UBYTE ubY
+	IN UBYTE ubX,
+	IN UBYTE ubY
 );
 
 /**

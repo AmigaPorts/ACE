@@ -7,7 +7,7 @@ tScrollBufferManager *scrollBufferCreate(tVPort *pVPort, UBYTE ubMarginWidth, UW
 	logBlockBegin("scrollBufferCreate(pVPort: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)", pVPort, ubMarginWidth, uwBoundWidth, uwBoundHeight);
 	tScrollBufferManager *pManager;
 	
-	// Wype³nienie struktury mened¿era
+	// Wypeï¿½nienie struktury menedï¿½era
 	pManager = memAllocFast(sizeof(tScrollBufferManager));
 	logWrite("Addr: %p\n", pManager);
 	pManager->sCommon.pNext = 0;
@@ -85,7 +85,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		// Initial copper block
 		pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
-		copWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
+		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
 		copMove(pCopList, pBlock, &custom.color[0], 0x0F0);
 		copMove(pCopList, pBlock, &custom.bplcon1, uwOffsX);            // Bitplane shift
 		ulPlaneOffs = uwScrollX + (pManager->pBuffer->BytesPerRow*uwScrollY);
@@ -106,7 +106,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		if (pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
 			// logWrite("Break calc: %u - %u == %u, vpHeight: %u\n", pManager->uwBmAvailHeight, uwScrollY, pManager->uwBmAvailHeight - uwScrollY, uwVpHeight);
-			copWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
+			copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
 			// copMove(pCopList, pBlock, &custom.bplcon1, uwOffsX); // potrzebne?
 			copMove(pCopList, pBlock, &custom.color[0], 0x0F00);
 			for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
@@ -117,7 +117,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			copMove(pCopList, pBlock, &custom.color[0], 0x0000);
 		}
 		else
-			copWait(pCopList, pBlock, 0x7F, 0xFF);
+			copBlockWait(pCopList, pBlock, 0x7F, 0xFF);
 		
 		
 		pManager->uwVpHeightPrev = uwVpHeight;
