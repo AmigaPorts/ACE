@@ -8,6 +8,7 @@
 
 #include <hardware/custom.h> // Custom chip register addresses
 
+// Here was __far attrib from DICE/GCC times. Not needed for VBCC, so it was removed.
 extern struct Custom custom;
 
 /**
