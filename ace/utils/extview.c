@@ -92,7 +92,10 @@ void viewLoad(tView *pView) {
 }
 
 tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UWORD uwFlags) {
-	logBlockBegin("vPortCreate(pView: %p, uwWidth: %u, uwHeight: %u, ubBPP: %hu, uwFlags: %u)", pView, uwWidth, uwHeight, ubBPP, uwFlags);
+	logBlockBegin(
+		"vPortCreate(pView: %p, uwWidth: %u, uwHeight: %u, ubBPP: %hu, uwFlags: %u)",
+		pView, uwWidth, uwHeight, ubBPP, uwFlags
+	);
 	
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
@@ -113,7 +116,7 @@ tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UW
 		pVPort->uwOffsY += pPrevVPort->uwHeight;
 		pPrevVPort = pPrevVPort->pNext;
 	}
-	if(pVPort->uwOffsY)
+	if(pVPort->uwOffsY && !(pView->uwFlags & V_GLOBAL_CLUT))
 		pVPort->uwOffsY += 2; // TODO: not always required
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
 	
