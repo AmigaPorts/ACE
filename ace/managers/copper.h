@@ -181,32 +181,50 @@ void copProcessBlocks(void);
 /********************* Copperblock cmd functions ******************************/
 
 /**
- * Changes WAIT position for given copper block
- * Wait may result in copper block reorder - setting STATUS_REORDER
- * in copperlist lies on user's hands.
+ *  Changes WAIT position for given copper block
+ *  Wait may result in copper block reorder - setting STATUS_REORDER
+ *  in copperlist lies on user's hands. This is not done automatically for
+ *  performance sake.
+ *
+ *  @param pCopList Parent copperlist.
+ *  @param pBlock   CopBlock to be modified.
+ *  @param uwX      WAIT cmd's X position.
+ *  @param uwY      Ditto, Y.
  */
 void copBlockWait(
 	IN tCopList *pCopList,
-	IN tCopBlock *pBlock,
+	INOUT tCopBlock *pBlock,
 	IN UWORD uwX, 
 	IN UWORD uwY
 );
 
+/**
+ *  Appends MOVE command to end of copper block.
+ *  
+ *  @param pCopList Parent copperlist
+ *  @param pBlock   CopBlock to be modified
+ *  @param pReg     Custom chip register address to be set
+ *  @param uwValue  New register's value.
+ */
 void copMove(
 	IN tCopList *pCopList,
-	IN tCopBlock *pBlock,
-	IN void *reg,
+	INOUT tCopBlock *pBlock,
+	IN void *pReg,
 	IN UWORD uwValue
 );
 
 /********************* Lowlevel-ish cmd functions *****************************/
 
 /**
- * Prepares WAIT command on given memory address.
- * This fn is relatively slow for editing copperlist, since it builds whole WAIT
- * cmd from scratch. If you exactly know what you're doing, you can just adjust
- * wait pos of already generated WAIT cmd and omit applying same values to rest
- * of fields.
+ *  Prepares WAIT command on given memory address.
+ *  This fn is relatively slow for editing copperlist, since it builds whole WAIT
+ *  cmd from scratch. If you exactly know what you're doing, you can just adjust
+ *  wait pos of already generated WAIT cmd and omit applying same values to rest
+ *  of fields.
+ *
+ *  @param pWaitCmd Pointer to copper command to be modified.
+ *  @param ubX WAIT cmd's X position.
+ *  @param ubY Ditto, Y.
  */
 void copSetWait(
 	INOUT tCopWaitCmd *pWaitCmd,
@@ -215,12 +233,15 @@ void copSetWait(
 );
 
 /**
- * Prepares MOVE command on given memory address.
- * This fn is relatively slow for editing copperlist, since it builds whole MOVE
- * cmd from scratch. If you want to change only register addr or only value,
- * edit command using its bitfields.
+ *  Prepares MOVE command on given memory address.
+ *  This fn is relatively slow for editing copperlist, since it builds whole MOVE
+ *  cmd from scratch. If you want to change only register addr or only value,
+ *  edit command using its bitfields.
+ *
+ *  @param pMoveCmd Pointer to copper command to be modified.
+ *  @param pReg     Custom chip register address to be set
+ *  @param uwValue  New register's value.
  */
- 
 void copSetMove(
 	INOUT tCopMoveCmd *pMoveCmd,
 	void *pReg,

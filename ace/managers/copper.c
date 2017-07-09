@@ -340,34 +340,33 @@ UBYTE copUpdateFromBlocks(void) {
 	// ///////////////////////////////////////////////////////////////////////////
 	
 	// Do full merge on remaining blocks
-	while(pBlock) {
-		if(!pBlock->ubDisabled) {
-			if(pBlock->ubResized)
-				--pBlock->ubResized;
-			if(pBlock->ubUpdated)
-				--pBlock->ubUpdated;
-			
-			// Update WAIT
-			if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
-				// FIXME: double WAIT only when previous line ended before some pos
-				if(!ubWasLimitY) {
-					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
-					++uwListPos;
-					ubWasLimitY = 1;
-				}
-				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
+	for(; pBlock; pBlock = pBlock->pNext) {
+		if(pBlock->ubDisabled)
+			continue;
+		if(pBlock->ubResized)
+			--pBlock->ubResized;
+		if(pBlock->ubUpdated)
+			--pBlock->ubUpdated;
+		
+		// Update WAIT
+		if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
+			// FIXME: double WAIT only when previous line ended before some pos
+			if(!ubWasLimitY) {
+				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
 				++uwListPos;
+				ubWasLimitY = 1;
 			}
-			else {
-				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
-				++uwListPos;
-			}
-			
-			// Copy MOVEs
-			CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
-			uwListPos += pBlock->uwCurrCount;
-		}			
-		pBlock = pBlock->pNext;
+			copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
+			++uwListPos;
+		}
+		else {
+			copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
+			++uwListPos;
+		}
+		
+		// Copy MOVEs
+		CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
+		uwListPos += pBlock->uwCurrCount;
 	}
 		
 	// Add 0xFFFF terminator
