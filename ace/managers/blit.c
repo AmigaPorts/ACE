@@ -174,15 +174,19 @@ BYTE blitCheck(
 	
 	if(pSrc && (wSrcX < 0 || wDstY < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
 		logWrite(
-			"ILLEGAL BLIT Source out of range: source %dx%d, dest: %dx%d, blit: %d,%d %dx%d %s@%u\n",
-			wSrcWidth, pSrc->Rows, wDstWidth, pDst->Rows, wSrcX, wSrcY, wWidth, wHeight, szFile, uwLine
+			"ILLEGAL BLIT Source out of range: "
+			"source %dx%d, dest: %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
+			wSrcWidth, pSrc->Rows, wDstWidth, pDst->Rows,
+			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
 		return 0;
 	}
 	if(pDst && (wDstX < 0 || wDstY < 0 || wDstWidth < wDstX+wWidth || pDst->Rows < wDstY+wHeight)) {
 		logWrite(
-			"ILLEGAL BLIT Dest out of range: source %dx%d, dest: %dx%d, blit: %d,%d %dx%d %s@%u\n",
-			wSrcWidth, pSrc->Rows, wDstWidth, pDst->Rows, wSrcX, wSrcY, wWidth, wHeight, szFile, uwLine
+			"ILLEGAL BLIT Dest out of range: "
+			"source %dx%d, dest: %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
+			wSrcWidth, pSrc->Rows, wDstWidth, pDst->Rows,
+			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
 		return 0;
 	}
@@ -404,13 +408,12 @@ BYTE blitUnsafeCopyAligned(
 	UWORD uwBlitWords, uwBltCon0;
 	WORD wDstModulo, wSrcModulo;
 	UWORD uwSrcOffs, uwDstOffs;
-	UBYTE ubPlane;
 	
 	uwBlitWords = wWidth >> 4;
 	uwBltCon0 = USEA|USED | MINTERM_A;
 	
-	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
-	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
+	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
+	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
 	uwSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
 	uwDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
 	
@@ -422,14 +425,16 @@ BYTE blitUnsafeCopyAligned(
 			0xFFFF, 0xFFFF,               // bltaXwm
 			wSrcModulo, 0, 0, wDstModulo, // bltXmod
 			// This hell of a casting must stay here or else large offsets get bugged!
-			(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltapt
+			(UBYTE*)(((ULONG)(pSrc->Planes[0])) + uwSrcOffs), // bltapt
 			0, 0,                         // bltbpt, bltcpt
-			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
+			(UBYTE*)(((ULONG)(pDst->Planes[0])) + uwDstOffs), // bltdpt
 			0, 0, 0,                      // bltXdat
 			(wHeight << 6) | uwBlitWords  // bltsize
 		);
 	}
-	else {		
+	else {
+		UBYTE ubPlane;
+		
 		if(bitmapIsInterleaved(pSrc))
 			wSrcModulo += pSrc->BytesPerRow * (pSrc->Depth-1);
 		else if(bitmapIsInterleaved(pDst))
@@ -457,7 +462,9 @@ BYTE blitSafeCopyAligned(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UWORD uwLine, char *szFile
 ) {
-	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile))
+	if(!blitCheck(
+		pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile
+	))
 		return 0;
 	if((wSrcX | wDstX | wWidth) & 0x000F) {
 		logWrite("Dimensions are not divisible by 16!\n");
