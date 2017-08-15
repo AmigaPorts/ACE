@@ -10,7 +10,7 @@ tView *viewCreate(UWORD uwFlags) {
 	pView->ubVpCount = 0;
 	pView->uwFlags = uwFlags;
 	pView->pFirstVPort = 0;
-	pView->pCopList = copListCreate();
+	pView->pCopList = copListCreate(0, TAG_DONE);
 	
 	logBlockEnd("viewCreate()");
 

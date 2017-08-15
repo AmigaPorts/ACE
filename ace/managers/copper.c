@@ -1,4 +1,7 @@
 #include <ace/managers/copper.h>
+#include <stdarg.h>
+#include <ace/utils/tag.h>
+#include <limits.h>
 
 tCopManager g_sCopManager;
 
@@ -8,7 +11,7 @@ void copCreate(void) {
 	// TODO: save previous copperlist
 	
 	// Create blank copperlist
-	g_sCopManager.pBlankList = copListCreate();	
+	g_sCopManager.pBlankList = copListCreate(0, TAG_DONE);	
 	
 	// Set both buffers to blank copperlist
 	g_sCopManager.pCopList = g_sCopManager.pBlankList;
@@ -101,18 +104,50 @@ void copDumpBfr(tCopBfr *pBfr) {
 	logBlockEnd("copDumpBuffer");
 }
 
-tCopList *copListCreate(void) {
+tCopList *copListCreate(void *pTagList, ...) {
+	va_list vaTags;
+	va_start(vaTags, pTagList);
 	tCopList *pCopList;
 	logBlockBegin("copListCreate()");
 	
 	// Create copperlist stub
 	pCopList = memAllocFastClear(sizeof(tCopList));
 	logWrite("Addr: %p\n", pCopList);
-	
 	pCopList->pFrontBfr = memAllocFastClear(sizeof(tCopBfr));
 	pCopList->pBackBfr = memAllocFastClear(sizeof(tCopBfr));
+
+	// Handle raw copperlist creation
+	if(tagGet(
+		pTagList, vaTags, TAG_COPPER_LIST_MODE, COPPER_MODE_BLOCK
+	) == COPPER_MODE_RAW) {
+		const ULONG ulInvalidSize = ULONG_MAX;
+		ULONG ulListSize = tagGet(
+			pTagList, vaTags, TAG_COPPER_RAW_SIZE, ulInvalidSize
+		);
+		if(ulListSize == ulInvalidSize) {
+			logWrite("ERR: no size specified for raw list\n");
+			copListDestroy(pCopList);
+			return 0;
+		}
+		else if(ulListSize > USHRT_MAX) {
+			logWrite(
+				"ERR: raw copperlist size too big: %lu, max is %u\n",
+				ulListSize, USHRT_MAX
+			);
+			copListDestroy(pCopList);
+			return 0;
+		}
+		pCopList->pFrontBfr->pList = memAllocChip(ulListSize*sizeof(tCopCmd));
+		pCopList->pFrontBfr->uwAllocSize = ulListSize;
+		pCopList->pBackBfr->pList = memAllocChip(ulListSize*sizeof(tCopCmd));
+		pCopList->pFrontBfr->uwAllocSize = ulListSize;
+		pCopList->ubMode = COPPER_MODE_RAW;
+	}
+	else
+		pCopList->ubMode = COPPER_MODE_BLOCK;
 		
 	logBlockEnd("copListCreate()");
+	va_end(vaTags);
 	return pCopList;
 }
 
@@ -386,7 +421,7 @@ void copProcessBlocks(void) {
 	tCopBfr *pBackBfr;
 		
 	pCopList = g_sCopManager.pCopList;
-	if(pCopList->ubMode == MODE_BLOCKS) {
+	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
 		pBackBfr = pCopList->pBackBfr;
 		
 		// Realloc buffer memeory

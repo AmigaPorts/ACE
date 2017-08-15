@@ -14,10 +14,11 @@
  * directly into buffers inside CHIP ram using lowlevel-ish functions, command
  * bitfield modifications or even blits. Lastly, buffer swap fn must be called.
  * 
- * Beware: if you plan using raw buffer access, you can't use copBlock fns.
- * Also, set MODE_RAW in copperlist struct. VPort managers tend to use
- * copperblocks, so they are unusable that way. Long story short - you have to
- * do everything by yourself. 
+ * BEWARE: if you plan using raw buffer access, you'll have to better know
+ * viewport managers internals to know how they work and to interface with them
+ * corretly. Some of them are only made to use copperblocks, so they may be
+ * unusable without them. Some things you'll have to implement by yourself.
+ * You have been warned. 
  */
 
 #include <hardware/dmabits.h> // DMAF defines
@@ -28,6 +29,14 @@
 #include <ace/utils/custom.h>
 
 // Since copperlist is double buffered, status flags must be propagated for 2 passes
+
+#define TAG_COPPER_LIST_MODE (TAG_USER|1)
+#define TAG_COPPER_RAW_SIZE  (TAG_USER|2)
+
+// Values for TAG_COPPER_LIST_TYPE
+#define COPPER_MODE_BLOCK 0
+#define COPPER_MODE_RAW   1
+
 #define STATUS_REALLOC_PREV 1
 #define STATUS_REALLOC_CURR 2
 #define STATUS_REALLOC (1|2)  /// Block added/removed - realloc merged memory
@@ -35,11 +44,7 @@
 #define STATUS_UPDATE_PREV 4
 #define STATUS_UPDATE_CURR 8
 #define STATUS_UPDATE (4|8)   /// Blocks changed content
-
 #define STATUS_REORDER 16     /// Blocks changed order
-
-#define MODE_BLOCKS 0
-#define MODE_RAW 1
 
 /* ******************************************************************** TYPES */
 
@@ -119,7 +124,7 @@ void copDumpBfr(
 
 /********************* Copper list functions **********************************/
 
-tCopList *copListCreate(void);
+tCopList *copListCreate(void *pTagList, ...);
 
 /**
  * Destroys copperlist along with all attached blocks.
