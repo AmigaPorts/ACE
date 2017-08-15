@@ -13,18 +13,25 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/copper.h>
 
+// Copperlist mode: raw/block
 #define TAG_VIEW_COPLIST_MODE     (TAG_USER|1)
+// If in raw mode, specify copperlist size, in instruction count
 #define TAG_VIEW_COPLIST_RAW_SIZE (TAG_USER|2)
+// If set with non-zero variable, view will use global palette & ignore vPorts'
 #define TAG_VIEW_GLOBAL_CLUT      (TAG_USER|3)
 
 // Values for TAG_VIEW_COPLIST_MODE
 #define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
 #define VIEW_COPLIST_MODE_RAW   COPPER_MODE_RAW
 
+// Ptr to parent view
 #define TAG_VPORT_VIEW         (TAG_USER|1)
+// vPort dimensions, in pixels
 #define TAG_VPORT_WIDTH        (TAG_USER|2)
 #define TAG_VPORT_HEIGHT       (TAG_USER|3)
+// vPort depth, best effects on OCS with 4 or less since copper is faster
 #define TAG_VPORT_BPP          (TAG_USER|4)
+// Pointer to palette to initialize vPort with and its size, in color count.
 #define TAG_VPORT_PALETTE_PTR  (TAG_USER|5)
 #define TAG_VPORT_PALETTE_SIZE (TAG_USER|6)
 
