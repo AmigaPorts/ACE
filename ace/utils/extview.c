@@ -115,23 +115,32 @@ void viewLoad(tView *pView) {
 	logBlockEnd("viewLoad()");
 }
 
-tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UWORD uwFlags) {
-	logBlockBegin(
-		"vPortCreate(pView: %p, uwWidth: %u, uwHeight: %u, ubBPP: %hu, uwFlags: %u)",
-		pView, uwWidth, uwHeight, ubBPP, uwFlags
-	);
+tVPort *vPortCreate(void *pTagList, ...) {
+	logBlockBegin("vPortCreate(pTagList: %p)", pTagList);
 	
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
 	
 	// Initial field fill
-	pVPort->pView = pView;
 	pVPort->pNext = 0;
 	pVPort->uwOffsX = 0; // TODO: implement non-zero
-	pVPort->uwWidth = uwWidth;
-	pVPort->uwHeight = uwHeight;
-	pVPort->ubBPP = ubBPP;
 	pVPort->pFirstManager = 0;
+
+	const UWORD uwDefaultWidth = 320;
+	const UWORD uwDefaultHeight = USHRT_MAX;
+	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
+	
+	va_list vaTags;
+	va_start(vaTags, pTagList);
+
+	// Determine parent view
+	tView *pView = (tView*)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
+	if(!pView) {
+		logWrite("ERR: no view ptr in TAG_VPORT_VIEW specified!\n");
+		vPortDestroy(pVPort);
+		return 0;
+	}
+	pVPort->pView = pView;
 	
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
@@ -141,10 +150,17 @@ tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UW
 		pPrevVPort = pPrevVPort->pNext;
 	}
 	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT))
-		pVPort->uwOffsY += 2; // TODO: not always required
+		pVPort->uwOffsY += 2; // TODO: not always required?
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
-	
-		
+
+	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
+	UWORD uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
+	if(uwHeight == uwDefaultHeight)
+		pVPort->uwHeight = 256-pVPort->uwOffsY;
+	else
+		pVPort->uwHeight = uwHeight;
+	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
+			
 	// Update view - add to vPort list
 	++pView->ubVpCount;
 	if(!pView->pFirstVPort) {

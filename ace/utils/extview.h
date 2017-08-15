@@ -21,18 +21,20 @@
 #define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
 #define VIEW_COPLIST_MODE_RAW   COPPER_MODE_RAW
 
+#define TAG_VPORT_VIEW         (TAG_USER|1)
+#define TAG_VPORT_WIDTH        (TAG_USER|2)
+#define TAG_VPORT_HEIGHT       (TAG_USER|3)
+#define TAG_VPORT_BPP          (TAG_USER|4)
+#define TAG_VPORT_PALETTE_PTR  (TAG_USER|5)
+#define TAG_VPORT_PALETTE_SIZE (TAG_USER|6)
+
 /* Types */
 
 /**
- *  View creation flags.
+ *  View flags.
  */
 #define VIEW_FLAG_GLOBAL_CLUT 1
 #define VIEW_FLAG_COPLIST_RAW 2
-
-/**
- *  VPort creation flags.
- */
-#define VP_NOCLUT 1
 
 /**
  *  Viewport manager IDs.
@@ -154,24 +156,16 @@ void viewLoad(
 
 /**
  *  @brief Creates new tVPort inside given view with supplied dimensions and BPP.
- *  Line-spacing shouldn't be required if VPorts have common CLUT.
+ *  Line-spacing shouldn't be required if VPort have common CLUT with predecessor.
  *  
  *  @param pView    Parent view
- *  @param uwWidth  Viewport's width.
- *  @param uwHeight Viewport's height.
- *  @param ubBpp    Viewport's depth.
- *  @param uwFlags  Viewport creation flags (VP_*).
+ *  @param pTagList Pointer to tag list.
+ *  @param ...      Tag list, see TAG_VPORT_* defines
  *  @return initialized VPort structure.
  *  
  *  @see vPortDestroy()
  */
-tVPort *vPortCreate(
-	IN tView *pView,
-	IN UWORD uwWidth, 
-	IN UWORD uwHeight,
-	IN UBYTE ubBpp,
-	IN UWORD uwFlags
-);
+ tVPort *vPortCreate(void *pTagList, ...);
 
 /**
  *  @brief Destroys given tVPort along with attached managers.
