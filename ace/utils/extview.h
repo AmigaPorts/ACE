@@ -3,7 +3,7 @@
 
 /**
  *  View, viewport & viewport manager base functions.
- *  @todo viewport resolution, lace & EHB control. Or in managers?
+ *  @todo viewport resolution, lace & EHB control. Managers should react accordingly.
  */
 
 #include <clib/exec_protos.h>     // Amiga typedefs
@@ -13,12 +13,21 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/copper.h>
 
+#define TAG_VIEW_COPLIST_MODE     (TAG_USER|1)
+#define TAG_VIEW_COPLIST_RAW_SIZE (TAG_USER|2)
+#define TAG_VIEW_GLOBAL_CLUT      (TAG_USER|3)
+
+// Values for TAG_VIEW_COPLIST_MODE
+#define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
+#define VIEW_COPLIST_MODE_RAW   COPPER_MODE_RAW
+
 /* Types */
 
 /**
  *  View creation flags.
  */
-#define V_GLOBAL_CLUT 1
+#define VIEW_FLAG_GLOBAL_CLUT 1
+#define VIEW_FLAG_COPLIST_RAW 2
 
 /**
  *  VPort creation flags.
@@ -93,15 +102,14 @@ typedef struct _tVPort {
 /**
  *  @brief Creates blank tView.
  *  
- *  @param uwFlags Creation flags (V_*).
+ *  @param pTags Pointer to tag list.
+ *  @param ... Tag list, see TAG_VIEW_* defines.
  *  @return initialized View structure.
  *  
  *  @see viewDestroy()
  *  @see vPortCreate()
  */
-tView *viewCreate(
-	IN UWORD uwFlags
-);
+ tView *viewCreate(void *pTags, ...);
 
 /**
  *  @brief Destroys given tView along with attached viewports.

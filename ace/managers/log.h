@@ -1,10 +1,10 @@
 #ifndef GUARD_ACE_MANAGER_LOG_H
 #define GUARD_ACE_MANAGER_LOG_H
 
-#include <stdio.h> // fopen etc
-#include <string.h> // strlen etc
-#include <stdarg.h> // va_list etc
-#include <clib/exec_protos.h> // Amiga typedefs
+#include <stdio.h>                // fopen etc
+#include <string.h>               // strlen etc
+#include <stdarg.h>               // va_list etc
+#include <clib/exec_protos.h>     // Amiga typedefs
 #include <clib/graphics_protos.h> // Amiga typedefs
 
 #include <ace/config.h>
@@ -119,4 +119,4 @@ void _logBitMap(
 # define logBitMap(pBitMap)
 #endif
 
-#endif
+#endif // GUARD_ACE_MANAGER_LOG_H

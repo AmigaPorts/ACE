@@ -18,6 +18,18 @@ tTag tagGet(void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNo
 			va_end(vaWorkList);
 			return ulOut;
 		}
+		else if(ulTagName == TAG_SKIP) {
+			// Ignore this & next
+			va_arg(vaWorkList, ULONG);
+			va_arg(vaWorkList, ULONG);
+			va_arg(vaWorkList, ULONG);
+		}
+		else if(ulTagName == TAG_MORE) {
+			// This list is finished - parse next one
+			void *pNext = va_arg(vaWorkList, void*);
+			va_end(vaWorkList);
+			return tagGet(pNext, 0, ulTagToFind, ulOnNotFound);
+		}
 		else
 			va_arg(vaWorkList, ULONG);
 	} while(ulTagName != TAG_DONE);

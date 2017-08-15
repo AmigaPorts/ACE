@@ -1,19 +1,43 @@
 #include <ace/utils/extview.h>
+#include <limits.h>
+#include <ace/utils/tag.h>
 
-tView *viewCreate(UWORD uwFlags) {
-	logBlockBegin("viewCreate(uwFlags: %u)", uwFlags);
-	
+tView *viewCreate(void *pTags, ...) {
+	logBlockBegin("viewCreate(pTags: %p)", pTags);
+
+	// Create view stub
 	tView *pView = memAllocFast(sizeof(tView));
 	logWrite("addr: %p\n", pView);
-	
-	// Fill fields
 	pView->ubVpCount = 0;
-	pView->uwFlags = uwFlags;
 	pView->pFirstVPort = 0;
-	pView->pCopList = copListCreate(0, TAG_DONE);
+	pView->uwFlags = 0;
+
+	va_list vaTags;
+	va_start(vaTags, pTags);
+
+	// Process copperlist raw/block tags
+	if(
+		tagGet(pTags, vaTags, TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_BLOCK)
+		== VIEW_COPLIST_MODE_RAW
+	) {
+		ULONG ulCopListSize = tagGet(pTags, vaTags, TAG_VIEW_COPLIST_RAW_SIZE, ULONG_MAX);
+		pView->pCopList = copListCreate(0,
+			TAG_COPPER_LIST_MODE, COPPER_MODE_RAW,
+			TAG_COPPER_RAW_SIZE, ulCopListSize,
+			TAG_DONE
+		);
+		pView->uwFlags |= VIEW_FLAG_COPLIST_RAW;
+	}
+	else
+		pView->pCopList = copListCreate(0, TAG_DONE);
+
+	// Additional CLUT tags
+	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_CLUT, 0))
+		pView->uwFlags |= VIEW_FLAG_GLOBAL_CLUT;
+
+	va_end(vaTags);
 	
 	logBlockEnd("viewCreate()");
-
 	return pView;
 }
 
@@ -49,7 +73,7 @@ void viewProcessManagers(tView *pView) {
 }
 
 void viewUpdateCLUT(tView *pView) {
-	if(pView->uwFlags & V_GLOBAL_CLUT)
+	if(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)
 		CopyMem(pView->pFirstVPort->pPalette, custom.color, 32);
 	else {
 		// na petli: vPortUpdateCLUT();
@@ -116,7 +140,7 @@ tVPort *vPortCreate(tView *pView, UWORD uwWidth, UWORD uwHeight, UBYTE ubBPP, UW
 		pVPort->uwOffsY += pPrevVPort->uwHeight;
 		pPrevVPort = pPrevVPort->pNext;
 	}
-	if(pVPort->uwOffsY && !(pView->uwFlags & V_GLOBAL_CLUT))
+	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT))
 		pVPort->uwOffsY += 2; // TODO: not always required
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
 	
