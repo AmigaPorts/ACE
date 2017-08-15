@@ -40,8 +40,11 @@ tSimpleBufferManager *simpleBufferCreate(tVPort *pVPort, UWORD uwBoundWidth, UWO
 	// CopBlock contains: bitplanes + shiftX
 	pManager->pCopBlock = copBlockCreate(
 		pCopList,
-		2*pVPort->ubBPP + 5,             // Shift +2 ddf +2 modulos +2*bpp*bpladdr
-		0xE2-4, pVPort->uwOffsY + 0x2C-1 // Addition from DiWStrt
+		// Shift +2 ddf +2 modulos +2*bpp bpladdr
+		2*pVPort->ubBPP + 5,
+		// Vertically addition from DiWStrt, horizontally a bit before last fetch.
+		// First to set are ddf, modulos & shift so they are changed during fetch.
+		0xE2-7*4, pVPort->uwOffsY + 0x2C-1
 	);
 	
 	pManager->pBuffer = 0;
