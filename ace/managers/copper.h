@@ -31,7 +31,7 @@
 // Since copperlist is double buffered, status flags must be propagated for 2 passes
 
 #define TAG_COPPER_LIST_MODE (TAG_USER|1)
-#define TAG_COPPER_RAW_SIZE  (TAG_USER|2)
+#define TAG_COPPER_RAW_COUNT (TAG_USER|2)
 
 // Values for TAG_COPPER_LIST_TYPE
 #define COPPER_MODE_BLOCK 0

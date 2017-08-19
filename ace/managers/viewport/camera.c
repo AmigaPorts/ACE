@@ -5,16 +5,17 @@ tCameraManager *cameraCreate(tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD u
 	logBlockBegin("cameraCreate(pVPort: %p, uwPosX: %u, uwPosY: %u, uwMaxX: %u, uwMaxY: %u)", pVPort, uwPosX, uwPosY, uwMaxX, uwMaxY);
 	tCameraManager *pManager;
 	
-	pManager = memAllocFast(sizeof(tCameraManager));
+	pManager = memAllocFastClear(sizeof(tCameraManager));
 	logWrite("Addr: %p\n", pManager);
-	pManager->sCommon.pNext = 0;
 	pManager->sCommon.process = (tVpManagerFn)cameraProcess;
 	pManager->sCommon.destroy = (tVpManagerFn)cameraDestroy;
 	pManager->sCommon.pVPort = pVPort;
 	pManager->sCommon.ubId = VPM_CAMERA;
 	
+	logWrite("Resetting camera bounds...\n");
 	cameraReset(pManager, uwPosX, uwPosY, uwMaxX, uwMaxY);
 	
+	logWrite("Attaching camera to VPort...\n");
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 	logBlockEnd("cameraCreate()");
 	return pManager;

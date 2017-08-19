@@ -95,13 +95,13 @@ void copDumpBlocks(void) {
 void copDumpBfr(tCopBfr *pBfr) {
 	UWORD i;
 	
-	logBlockBegin("copDumpBuffer(pBfr: %p)", pBfr);
+	logBlockBegin("copDumpBfr(pBfr: %p)", pBfr);
 	logWrite("Alloc size: %u, cmd count: %u\n", pBfr->uwAllocSize, pBfr->uwCmdCount);
 	for(i = 0; i != pBfr->uwCmdCount; ++i) {
 		copDumpCmd(&pBfr->pList[i]);
 	}
 	
-	logBlockEnd("copDumpBuffer");
+	logBlockEnd("copDumpBfr");
 }
 
 tCopList *copListCreate(void *pTagList, ...) {
@@ -117,38 +117,45 @@ tCopList *copListCreate(void *pTagList, ...) {
 	pCopList->pBackBfr = memAllocFastClear(sizeof(tCopBfr));
 
 	// Handle raw copperlist creation
-	if(tagGet(
-		pTagList, vaTags, TAG_COPPER_LIST_MODE, COPPER_MODE_BLOCK
-	) == COPPER_MODE_RAW) {
+	 pCopList->ubMode = tagGet(pTagList, vaTags, TAG_COPPER_LIST_MODE, COPPER_MODE_BLOCK);
+	if(pCopList->ubMode	== COPPER_MODE_RAW) {
 		const ULONG ulInvalidSize = ULONG_MAX;
 		ULONG ulListSize = tagGet(
-			pTagList, vaTags, TAG_COPPER_RAW_SIZE, ulInvalidSize
+			pTagList, vaTags, TAG_COPPER_RAW_COUNT, ulInvalidSize
 		);
 		if(ulListSize == ulInvalidSize) {
 			logWrite("ERR: no size specified for raw list\n");
-			copListDestroy(pCopList);
-			return 0;
+			goto fail;
 		}
-		else if(ulListSize > USHRT_MAX) {
+		if(ulListSize > USHRT_MAX) {
 			logWrite(
 				"ERR: raw copperlist size too big: %lu, max is %u\n",
 				ulListSize, USHRT_MAX
 			);
-			copListDestroy(pCopList);
-			return 0;
+			goto fail;
 		}
-		pCopList->pFrontBfr->pList = memAllocChip(ulListSize*sizeof(tCopCmd));
-		pCopList->pFrontBfr->uwAllocSize = ulListSize;
-		pCopList->pBackBfr->pList = memAllocChip(ulListSize*sizeof(tCopCmd));
-		pCopList->pFrontBfr->uwAllocSize = ulListSize;
-		pCopList->ubMode = COPPER_MODE_RAW;
+		logWrite("RAW mode, size: %lu\n", ulListSize);
+		// Front bfr
+		pCopList->pFrontBfr->uwCmdCount = ulListSize;
+		pCopList->pFrontBfr->uwAllocSize = ulListSize*sizeof(tCopCmd);
+		pCopList->pFrontBfr->pList = memAllocChip(pCopList->pFrontBfr->uwAllocSize);
+		// Back bfr
+		pCopList->pBackBfr->uwCmdCount = ulListSize;
+		pCopList->pBackBfr->uwAllocSize = ulListSize*sizeof(tCopCmd);
+		pCopList->pBackBfr->pList = memAllocChip(pCopList->pBackBfr->uwAllocSize);
 	}
 	else
-		pCopList->ubMode = COPPER_MODE_BLOCK;
+		logWrite("BLOCK mode\n");
 		
 	logBlockEnd("copListCreate()");
 	va_end(vaTags);
 	return pCopList;
+	
+fail:
+	va_end(vaTags);
+	copListDestroy(pCopList);
+	logBlockEnd("copListCreate()");
+	return 0;
 }
 
 void copListDestroy(tCopList *pCopList) {

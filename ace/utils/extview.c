@@ -6,11 +6,8 @@ tView *viewCreate(void *pTags, ...) {
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
 
 	// Create view stub
-	tView *pView = memAllocFast(sizeof(tView));
+	tView *pView = memAllocFastClear(sizeof(tView));
 	logWrite("addr: %p\n", pView);
-	pView->ubVpCount = 0;
-	pView->pFirstVPort = 0;
-	pView->uwFlags = 0;
 
 	va_list vaTags;
 	va_start(vaTags, pTags);
@@ -20,10 +17,10 @@ tView *viewCreate(void *pTags, ...) {
 		tagGet(pTags, vaTags, TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_BLOCK)
 		== VIEW_COPLIST_MODE_RAW
 	) {
-		ULONG ulCopListSize = tagGet(pTags, vaTags, TAG_VIEW_COPLIST_RAW_SIZE, ULONG_MAX);
+		ULONG ulCopListSize = tagGet(pTags, vaTags, TAG_VIEW_COPLIST_RAW_COUNT, -1);
 		pView->pCopList = copListCreate(0,
 			TAG_COPPER_LIST_MODE, COPPER_MODE_RAW,
-			TAG_COPPER_RAW_SIZE, ulCopListSize,
+			TAG_COPPER_RAW_COUNT, ulCopListSize,
 			TAG_DONE
 		);
 		pView->uwFlags |= VIEW_FLAG_COPLIST_RAW;
@@ -32,11 +29,12 @@ tView *viewCreate(void *pTags, ...) {
 		pView->pCopList = copListCreate(0, TAG_DONE);
 
 	// Additional CLUT tags
-	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_CLUT, 0))
+	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_CLUT, 0)) {
 		pView->uwFlags |= VIEW_FLAG_GLOBAL_CLUT;
+		logWrite("Global CLUT mode enabled\n");
+	}
 
 	va_end(vaTags);
-	
 	logBlockEnd("viewCreate()");
 	return pView;
 }
@@ -91,8 +89,8 @@ void viewLoad(tView *pView) {
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		uwDMA = DMAF_RASTER;
-		custom.bplcon0 = 0;      // No output
-		custom.fmode = 0;        // AGA fix
+		custom.bplcon0 = 0; // No output
+		custom.fmode = 0;   // AGA fix
 		UBYTE i;
 		for(i = 0; i != 6; ++i)
 			custom.bplpt[i] = 0;
@@ -121,13 +119,8 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
 	
-	// Initial field fill
-	pVPort->pNext = 0;
-	pVPort->uwOffsX = 0; // TODO: implement non-zero
-	pVPort->pFirstManager = 0;
-
 	const UWORD uwDefaultWidth = 320;
-	const UWORD uwDefaultHeight = USHRT_MAX;
+	const UWORD uwDefaultHeight = -1;
 	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
 	
 	va_list vaTags;
@@ -137,10 +130,10 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	tView *pView = (tView*)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
 	if(!pView) {
 		logWrite("ERR: no view ptr in TAG_VPORT_VIEW specified!\n");
-		vPortDestroy(pVPort);
-		return 0;
+		goto fail;
 	}
 	pVPort->pView = pView;
+	logWrite("Parent view: %p\n", pView);
 	
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
@@ -153,13 +146,15 @@ tVPort *vPortCreate(void *pTagList, ...) {
 		pVPort->uwOffsY += 2; // TODO: not always required?
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
 
+	// Get dimensions
 	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
-	UWORD uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
-	if(uwHeight == uwDefaultHeight)
+	pVPort->uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
+	if(pVPort->uwHeight == uwDefaultHeight)
 		pVPort->uwHeight = 256-pVPort->uwOffsY;
-	else
-		pVPort->uwHeight = uwHeight;
 	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
+	logWrite(
+		"Dimensions: %ux%u@%hu\n", pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBPP
+	);
 			
 	// Update view - add to vPort list
 	++pView->ubVpCount;
@@ -175,8 +170,14 @@ tVPort *vPortCreate(void *pTagList, ...) {
 		logWrite("VPort added after %p\n", pPrevVPort);
 	}
 	
+	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
+	
+fail:
+	va_end(vaTags);
+	logBlockEnd("vPortCreate()");
+	return 0;
 }
 
 void vPortDestroy(tVPort *pVPort) {

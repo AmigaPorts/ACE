@@ -14,11 +14,11 @@
 #include <ace/managers/copper.h>
 
 // Copperlist mode: raw/block
-#define TAG_VIEW_COPLIST_MODE     (TAG_USER|1)
-// If in raw mode, specify copperlist size, in instruction count
-#define TAG_VIEW_COPLIST_RAW_SIZE (TAG_USER|2)
+#define TAG_VIEW_COPLIST_MODE      (TAG_USER|1)
+// If in raw mode, specify copperlist instruction count
+#define TAG_VIEW_COPLIST_RAW_COUNT (TAG_USER|2)
 // If set with non-zero variable, view will use global palette & ignore vPorts'
-#define TAG_VIEW_GLOBAL_CLUT      (TAG_USER|3)
+#define TAG_VIEW_GLOBAL_CLUT       (TAG_USER|3)
 
 // Values for TAG_VIEW_COPLIST_MODE
 #define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
