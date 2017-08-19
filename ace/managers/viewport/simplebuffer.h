@@ -21,15 +21,9 @@
 #define TAG_SIMPLEBUFFER_BOUND_HEIGHT   (TAG_USER|3)
 // Buffer bitmap creation flags
 #define TAG_SIMPLEBUFFER_BITMAP_FLAGS   (TAG_USER|4)
-// Copperlist mode: raw/block
-#define TAG_SIMPLEBUFFER_COPLIST_MODE   (TAG_USER|5)
 // If in raw mode, offset on copperlist for placing required copper
 // instructions, specified in copper instruction count since beginning.
 #define TAG_SIMPLEBUFFER_COPLIST_OFFSET (TAG_USER|6)
-
-// TAG_SIMPLEBUFFER_COPLIST_MODE values
-#define SIMPLEBUFFER_COPLIST_MODE_RAW   COPPER_MODE_RAW
-#define SIMPLEBUFFER_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
 
 // Flags for internal usage.
 #define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1

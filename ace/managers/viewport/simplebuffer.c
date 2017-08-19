@@ -48,12 +48,7 @@ tSimpleBufferManager *simpleBufferCreate(
 		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
 	
 	pCopList = pVPort->pView->pCopList;
-	if(
-		tagGet(
-			pTags, vaTags,
-			TAG_SIMPLEBUFFER_COPLIST_MODE, SIMPLEBUFFER_COPLIST_MODE_BLOCK
-		) == SIMPLEBUFFER_COPLIST_MODE_BLOCK
-	) {
+	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
 		// CopBlock contains: bitplanes + shiftX
 		pManager->pCopBlock = copBlockCreate(
 			pCopList,
