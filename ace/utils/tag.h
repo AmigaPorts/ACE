@@ -21,6 +21,11 @@ typedef Tag tTag;
  *  @param ulOnNotFound Value to be returned if tag was not found on list.
  *  @return Zero if tag was not found, otherwise tag value.
  */
-tTag tagGet(void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNotFound);
+ULONG tagGet(
+	IN void *pTagListPtr,
+	IN va_list vaSrcList,
+	IN tTag ulTagToFind,
+	IN ULONG ulOnNotFound
+);
 
 #endif // GUARD_ACE_UTILS_TAG_H

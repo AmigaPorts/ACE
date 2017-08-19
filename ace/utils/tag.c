@@ -1,7 +1,7 @@
 #include <ace/utils/tag.h>
 #include <ace/managers/log.h>
 
-tTag tagGet(void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNotFound) {
+ULONG tagGet(void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNotFound) {
 	if(pTagListPtr) {
 		// TODO
 		logWrite("ERR: Unimplemented in tagFindString()");

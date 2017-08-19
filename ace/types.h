@@ -3,6 +3,14 @@
 
 #include <exec/types.h>
 
+/* Docs */
+#define IN
+#define OUT
+#define INOUT
+
+// TODO: Convert to ifdef for elder compilers
+#define inline
+
 /**
  * Coord type with fast sorting option
  */
