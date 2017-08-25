@@ -56,4 +56,11 @@ void timerFormatPrec(
 	IN ULONG ulPrecTime
 );
 
+/**
+ *  Min number of us to wait: 5. It is recommended to wait for multiples of 5us.
+ */
+void timerWaitUs(
+	IN UWORD uwUsCnt
+);
+
 #endif
