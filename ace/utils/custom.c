@@ -2,4 +2,5 @@
 
 volatile tRayPos * const vhPosRegs = (APTR)&custom.vposr;
 
-tBitplanePtr * const pBplPtrs = (APTR)&custom.bplpt;
+volatile tCopperUlong * const pBplPtrs = (APTR)&custom.bplpt;
+volatile tCopperUlong * const pCopLc = (APTR)&custom.cop1lc;
