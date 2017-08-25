@@ -51,9 +51,15 @@ void copSwapBuffers(void) {
 
 void copDumpCmd(tCopCmd *pCmd) {
 		if(pCmd->sWait.bfIsWait)
-			logWrite("%08X - WAIT: %hu,%hu\n", pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY);
+			logWrite(
+				"@%p: %08X - WAIT: %hu,%hu\n",
+				pCmd, pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY
+			);
 		else
-			logWrite("%08X - MOVE: %03X := %X\n", pCmd->ulCode,  pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue);
+			logWrite(
+				"@%p: %08X - MOVE: %03X := %04X\n",
+				pCmd, pCmd->ulCode,  pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue
+			);
 }
 
 void copDumpBlocks(void) {
@@ -134,15 +140,17 @@ tCopList *copListCreate(void *pTagList, ...) {
 			);
 			goto fail;
 		}
-		logWrite("RAW mode, size: %lu\n", ulListSize);
+		logWrite("RAW mode, size: %lu + WAIT(0xFFFF)\n", ulListSize);
 		// Front bfr
-		pCopList->pFrontBfr->uwCmdCount = ulListSize;
-		pCopList->pFrontBfr->uwAllocSize = ulListSize*sizeof(tCopCmd);
+		pCopList->pFrontBfr->uwCmdCount = ulListSize+1;
+		pCopList->pFrontBfr->uwAllocSize = (ulListSize+1)*sizeof(tCopCmd);
 		pCopList->pFrontBfr->pList = memAllocChip(pCopList->pFrontBfr->uwAllocSize);
+		copSetWait(&pCopList->pFrontBfr->pList[ulListSize].sWait, 0xFF, 0xFF);
 		// Back bfr
-		pCopList->pBackBfr->uwCmdCount = ulListSize;
-		pCopList->pBackBfr->uwAllocSize = ulListSize*sizeof(tCopCmd);
+		pCopList->pBackBfr->uwCmdCount = ulListSize+1;
+		pCopList->pBackBfr->uwAllocSize = (ulListSize+1)*sizeof(tCopCmd);
 		pCopList->pBackBfr->pList = memAllocChip(pCopList->pBackBfr->uwAllocSize);
+		copSetWait(&pCopList->pBackBfr->pList[ulListSize].sWait, 0xFF, 0xFF);
 	}
 	else
 		logWrite("BLOCK mode\n");
