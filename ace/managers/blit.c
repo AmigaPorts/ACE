@@ -172,7 +172,7 @@ BYTE blitCheck(
 	if(bitmapIsInterleaved(pDst))
 		wDstWidth /= pDst->Depth;
 	
-	if(pSrc && (wSrcX < 0 || wDstY < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
+	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
 		logWrite(
 			"ILLEGAL BLIT Source out of range: "
 			"source %dx%d, dest: %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
@@ -181,7 +181,7 @@ BYTE blitCheck(
 		);
 		return 0;
 	}
-	if(pDst && (wDstX < 0 || wDstY < 0 || wDstWidth < wDstX+wWidth || pDst->Rows < wDstY+wHeight)) {
+	if(pDst && (wDstY < 0 || wDstWidth < wDstX+wWidth || pDst->Rows < wDstY+wHeight)) {
 		logWrite(
 			"ILLEGAL BLIT Dest out of range: "
 			"source %dx%d, dest: %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
