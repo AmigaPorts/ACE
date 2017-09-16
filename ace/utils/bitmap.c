@@ -9,28 +9,31 @@
 tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags) {
 	tBitMap *pBitMap;
 	UBYTE i;
-	
-	logBlockBegin("bitmapCreate(uwWidth: %u, uwHeight: %u, ubDepth: %hu, ubFlags: %hu)", uwWidth, uwHeight, ubDepth, ubFlags);
+
+	logBlockBegin(
+		"bitmapCreate(uwWidth: %u, uwHeight: %u, ubDepth: %hu, ubFlags: %hu)",
+		uwWidth, uwHeight, ubDepth, ubFlags
+	);
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
 	logWrite("addr: %p\n", pBitMap);
 
 	InitBitMap(pBitMap, ubDepth, uwWidth, uwHeight);
-	
+
 	if(ubFlags & BMF_INTERLEAVED) {
 		UWORD uwRealWidth;
 		uwRealWidth = pBitMap->BytesPerRow;
 		pBitMap->BytesPerRow *= ubDepth;
-		
+
 		pBitMap->Planes[0] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
 		if(!pBitMap->Planes[0]) {
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
 			memFree(pBitMap, sizeof(tBitMap));
 			logBlockEnd("bitmapCreate()");
-			return 0;			
+			return 0;
 		}
 		for(i = 1; i != ubDepth; ++i)
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
-		
+
 		if (ubFlags & BMF_CLEAR)
 			BltClear(pBitMap->Planes[0], pBitMap->Rows * pBitMap->BytesPerRow, 1);
 	}
@@ -63,11 +66,11 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	UWORD uwWidth;
 	UBYTE ubPlane;
 	FILE *pFile;
-	
+
 	logBlockBegin(
 		"bitmapLoadFromFile(pBitMap: %p, szFilePath: %s, uwStartX: %u, uwStartY: %u)",
 		pBitMap, szFilePath, uwStartX, uwStartY
-	);	
+	);
 	// Open source bitmap
 	pFile = fopen(szFilePath, "r");
 	if(!pFile) {
@@ -75,7 +78,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
-	
+
 	// Read header
 	fread(&uwSrcWidth, 2, 1, pFile);
 	fread(&uwSrcHeight, 2, 1, pFile);
@@ -90,14 +93,14 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 		return;
 	}
 	logWrite("Source dimensions: %ux%u\n", uwSrcWidth, uwSrcHeight);
-	
+
 	// Interleaved check
 	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
 		logWrite("ERR: Interleaved flag conflict\n");
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
-	
+
 	// Depth check
 	if(ubSrcBpp > pBitMap->Depth) {
 		logWrite(
@@ -107,7 +110,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
-	
+
 	// Check bitmap dimensions
 	uwDstWidth = bitmapGetByteWidth(pBitMap) << 3;
 	if(uwStartX + uwSrcWidth > uwDstWidth || uwStartY + uwSrcHeight > (pBitMap->Rows)) {
@@ -120,7 +123,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
-	
+
 	// Read data
 	uwWidth = bitmapGetByteWidth(pBitMap);
 	if(bitmapIsInterleaved(pBitMap)) {
@@ -152,7 +155,7 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 	UBYTE ubVersion, ubFlags; // Format version & flags
 	UBYTE ubPlaneCount;       // Bitplane count
 	UBYTE i;
-	
+
 	logBlockBegin("bitmapCreateFromFile(szFilePath: %s)", szFilePath);
 	pFile = fopen(szFilePath, "r");
 	if(!pFile) {
@@ -161,7 +164,7 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 		logBlockEnd("bitmapCreateFromFile()");
 		return 0;
 	}
-	
+
 	// Read header
 	fread(&uwWidth, 2, 1, pFile);
 	fread(&uwHeight, 2, 1, pFile);
@@ -175,7 +178,7 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 		logBlockEnd("bitmapCreateFromFile()");
 		return 0;
 	}
-	
+
 	// Init bitmap
 	if(ubFlags & BITMAP_INTERLEAVED) {
 		pBitMap = bitmapCreate(uwWidth, uwHeight, ubPlaneCount, BMF_INTERLEAVED);
@@ -187,7 +190,7 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 			fread(pBitMap->Planes[i], 1, (uwWidth >> 3) * uwHeight, pFile);
 	}
 	fclose(pFile);
-	
+
 	logWrite("Dimensions: %ux%u@%uBPP, version: %hu, flags: %hu\n",uwWidth,uwHeight,ubPlaneCount,ubVersion,ubFlags);
 	logBlockEnd("bitmapCreateFromFile()");
 	return pBitMap;
@@ -217,9 +220,9 @@ inline BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
 
 void bitmapDump(tBitMap *pBitMap) {
 	UBYTE i;
-	
+
 	logBlockBegin("bitmapDump(pBitMap: %p)", pBitMap);
-	
+
 	logWrite(
 		"BytesPerRow: %u, Rows: %u, Flags: %hu, Depth: %hu, pad: %u\n",
 		pBitMap->BytesPerRow, pBitMap->Rows, pBitMap->Flags,
@@ -227,7 +230,7 @@ void bitmapDump(tBitMap *pBitMap) {
 	);
 	for(i = 0; i != pBitMap->Depth; ++i)
 		logWrite("Bitplane %hu addr: %p\n", i, pBitMap->Planes[i]);
-	
+
 	logBlockEnd("bitmapDump()");
 }
 
@@ -241,71 +244,71 @@ void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	UBYTE pIndicesChunk[16];
 	UWORD uwWidth;
 	// TODO: EHB support
-	
+
 	uwWidth = bitmapGetByteWidth(pBitMap) << 3;
 	pOut = fopen(szFilePath, "w");
-	
+
 	// BMP header
 	fwrite("BM", 2, 1, pOut);
 
 	ulOut = endianIntel32((pBitMap->BytesPerRow<<3) * pBitMap->Rows + 14+40+256*4);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // BMP file size
-	
+
 	ulOut = 0;
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Reserved
-	
+
 	ulOut = endianIntel32(14+40+256*4);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Bitmap data starting addr
-	
-	
+
+
 	// Bitmap info header
 	ulOut = endianIntel32(40);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Core header size
-	
+
 	ulOut = endianIntel32(uwWidth);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image width
 
 	ulOut = endianIntel32(pBitMap->Rows);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image height
-	
+
 	uwOut = endianIntel16(1);
 	fwrite(&uwOut, sizeof(UWORD), 1, pOut); // Color plane count
-	
+
 	uwOut = endianIntel16(8);
 	fwrite(&uwOut, sizeof(UWORD), 1, pOut); // Image BPP - 8bit indexed
 
 	ulOut = endianIntel32(0);
-	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Compression method - none	
-	
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Compression method - none
+
 	ulOut = endianIntel32(uwWidth * pBitMap->Rows);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Image size
-	
+
 	ulOut = endianIntel32(100);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Horizontal resolution - px/m
-	
+
 	ulOut = endianIntel32(100);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Vertical resolution - px/m
-	
+
 	ulOut = endianIntel32(0);
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Palette length
-	
+
 	ulOut = endianIntel32(0);
-	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Number of important colors - all	
-	
+	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Number of important colors - all
+
 	// Global palette
 	for(c = 0; c != 1 << pBitMap->Depth; ++c) {
 		ubOut = pPalette[c] & 0xF;
 		ubOut |= ubOut << 4;
 		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // B
-		
+
 		ubOut = (pPalette[c] >> 4) & 0xF;
 		ubOut |= ubOut << 4;
 		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // G
-		
+
 		ubOut = pPalette[c] >> 8;
 		ubOut |= ubOut << 4;
 		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // R
-		
+
 		ubOut = 0;
 		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // 0
 	}
@@ -315,7 +318,7 @@ void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 		fwrite(&ulOut, sizeof(ULONG), 1, pOut);
 		++c;
 	}
-		
+
 	// Image data
 	for(uwY = pBitMap->Rows; uwY--;) {
 		for(uwX = 0; uwX < uwWidth; uwX += 16) {
@@ -327,8 +330,8 @@ void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 			fwrite(&ubOut, sizeof(UBYTE), 1, pOut);
 			++uwX;
 		}
-	}	
-	
+	}
+
 	fclose(pOut);
 }
 
