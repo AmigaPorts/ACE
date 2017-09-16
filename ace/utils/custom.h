@@ -35,6 +35,7 @@ typedef struct {
  * Bitplane display regs with 16-bit access.
  * For use with Copper. Other stuff should use custom.bplpt
  */
+extern volatile tCopperUlong * const pSprPtrs;
 extern volatile tCopperUlong * const pBplPtrs;
 extern volatile tCopperUlong * const pCopLc;
 
