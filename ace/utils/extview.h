@@ -34,6 +34,14 @@
 // Pointer to palette to initialize vPort with and its size, in color count.
 #define TAG_VPORT_PALETTE_PTR  (TAG_USER|5)
 #define TAG_VPORT_PALETTE_SIZE (TAG_USER|6)
+// Specify vertical offset from previous VPort
+// TODO auto CopBlocks for disabling bitplane DMA
+// When in raw mode, you have to disable DMA yourself, 'cuz making it work
+// automatically would mean passing additional 2 offsets for WAIT/MOVEs for
+// disabling/enabling DMA and then wasting all cycles between it for VPort
+// manager stuff without letting you including custom instructions in spare
+// time.
+#define TAG_VPORT_OFFSET_TOP   (TAG_USER|7)
 
 /* Types */
 

@@ -41,14 +41,14 @@ tView *viewCreate(void *pTags, ...) {
 
 void viewDestroy(tView *pView) {
 	logBlockBegin("viewDestroy(pView: %p)", pView);
-	
+
 	if(g_sCopManager.pCopList == pView->pCopList)
 		viewLoad(0);
-	
+
 	// Free all attached viewports
 	while(pView->pFirstVPort)
 		vPortDestroy(pView->pFirstVPort);
-	
+
 	// Free view
 	logWrite("Freeing copperlists...\n");
 	copListDestroy(pView->pCopList);
@@ -115,14 +115,14 @@ void viewLoad(tView *pView) {
 
 tVPort *vPortCreate(void *pTagList, ...) {
 	logBlockBegin("vPortCreate(pTagList: %p)", pTagList);
-	
+
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
-	
+
 	const UWORD uwDefaultWidth = 320;
 	const UWORD uwDefaultHeight = -1;
 	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
-	
+
 	va_list vaTags;
 	va_start(vaTags, pTagList);
 
@@ -134,7 +134,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	}
 	pVPort->pView = pView;
 	logWrite("Parent view: %p\n", pView);
-	
+
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
 	tVPort *pPrevVPort = pView->pFirstVPort;
@@ -144,6 +144,8 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	}
 	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT))
 		pVPort->uwOffsY += 2; // TODO: not always required?
+	ULONG ulAddOffsY = tagGet(pTagList, vaTags, TAG_VPORT_OFFSET_TOP, 0);
+	pVPort->uwOffsY += ulAddOffsY;
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
 
 	// Get dimensions
@@ -155,7 +157,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	logWrite(
 		"Dimensions: %ux%u@%hu\n", pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBPP
 	);
-			
+
 	// Update view - add to vPort list
 	++pView->ubVpCount;
 	if(!pView->pFirstVPort) {
@@ -169,11 +171,11 @@ tVPort *vPortCreate(void *pTagList, ...) {
 		pPrevVPort->pNext = pVPort;
 		logWrite("VPort added after %p\n", pPrevVPort);
 	}
-	
+
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
-	
+
 fail:
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
@@ -184,7 +186,7 @@ void vPortDestroy(tVPort *pVPort) {
 	logBlockBegin("vPortDestroy(pVPort: %p)", pVPort);
 	tView *pView;
 	tVPort *pPrevVPort, *pCurrVPort;
-	
+
 	pView = pVPort->pView;
 	logWrite("Parent extView: %p\n", pView);
 	pPrevVPort = 0;
@@ -193,20 +195,20 @@ void vPortDestroy(tVPort *pVPort) {
 		logWrite("found VP: %p...", pCurrVPort);
 		if(pCurrVPort == pVPort) {
 			logWrite(" gotcha!\n");
-			
+
 			// Remove from list
 			if(pPrevVPort)
 				pPrevVPort->pNext = pCurrVPort->pNext;
 			else
 				pView->pFirstVPort = pCurrVPort->pNext;
 			--pView->ubVpCount;
-			
+
 			// Destroy managers
 			logBlockBegin("Destroying managers");
 			while(pCurrVPort->pFirstManager)
 				vPortRmManager(pCurrVPort, pCurrVPort->pFirstManager);
 			logBlockEnd("Destroying managers");
-			
+
 			// Free stuff
 			memFree(pVPort, sizeof(tVPort));
 			break;
@@ -226,7 +228,7 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 void vPortWaitForEnd(tVPort *pVPort) {
 	UWORD uwEndPos;
 	UWORD uwCurrFrame;
-	
+
 	// Determine VPort end position
 	uwEndPos = pVPort->uwOffsY + pVPort->uwHeight + 0x2C; // Addition from DiWStrt
 	if(vhPosRegs->uwPosY < uwEndPos) {
@@ -240,7 +242,7 @@ void vPortWaitForEnd(tVPort *pVPort) {
 			g_sTimerManager.uwFrameCounter == uwCurrFrame
 		);
 	}
-	
+
 	// Otherwise wait for pos @ next frame
 }
 
@@ -287,7 +289,7 @@ void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
 
 tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {
 	tVpManager *pManager;
-	
+
 	pManager = pVPort->pFirstManager;
 	while(pManager) {
 		if(pManager->ubId == ubId)
@@ -304,7 +306,7 @@ void extViewFadeOut(tExtView *pExtView) {
 	UBYTE ubColorIdx;
 	UWORD pTmpPalette[32]; // TODO: view bpp aware
 	UBYTE ubR, ubG, ubB;
-	
+
 	for (bFadeStep = 15; bFadeStep >= 0; --bFadeStep) {
 		pVPort = (tExtVPort*)pExtView->sView.ViewPort;
 		while(pVPort) {
@@ -346,7 +348,7 @@ void extViewFadeIn(tExtView *pExtView) {
 	UBYTE ubColorIdx;
 	UWORD pTmpPalette[32]; // TODO: view bpp aware
 	UBYTE ubR, ubG, ubB;
-	
+
 	for (bFadeStep = 0; bFadeStep <= 15; ++bFadeStep) {
 		pVPort = (tExtVPort*)pExtView->sView.ViewPort;
 		while(pVPort) {
