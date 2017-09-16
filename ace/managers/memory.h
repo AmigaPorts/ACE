@@ -12,6 +12,7 @@
 typedef struct _tMemEntry {
 	void *pAddr;
 	ULONG ulSize;
+	UWORD uwId;
 	struct _tMemEntry *pNext;
 } tMemEntry;
 
