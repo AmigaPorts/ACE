@@ -1,4 +1,5 @@
 #include <ace/managers/log.h>
+#include <hardware/dmabits.h>
 #ifdef GAME_DEBUG
 /* Globals */
 tLogManager g_sLogManager;
@@ -31,6 +32,12 @@ void _logWrite(char *szFormat, ...) {
 	if (!g_sLogManager.pFile)
 		return;
 	
+	// Re-enable disk dma if disabled
+	UBYTE ubWasDiskEnabled = 0;
+	if(!(custom.dmaconr & DMAF_DISK)) {
+		custom.dmacon = BITCLR | DMAF_DISK;
+		ubWasDiskEnabled = 1;
+	}
 	g_sLogManager.ubBlockEmpty = 0;
 	if (!g_sLogManager.ubIsLastWasInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
@@ -46,6 +53,8 @@ void _logWrite(char *szFormat, ...) {
 	va_end(vaArgs);
 
 	fflush(g_sLogManager.pFile);
+	if(ubWasDiskEnabled)
+		custom.dmacon = BITSET | DMAF_DISK;
 }
 
 void _logClose() {
