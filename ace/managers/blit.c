@@ -22,7 +22,7 @@ inline void blitSetRegs(tBlitData *pData) {
 	custom.bltcdat = pData->bltcdat;
 	custom.bltbdat = pData->bltbdat;
 	custom.bltadat = pData->bltadat;
-	
+
 	custom.bltcpt  = pData->bltcpt;
 	custom.bltbpt  = pData->bltbpt;
 	custom.bltapt  = pData->bltapt;
@@ -48,10 +48,10 @@ __amigainterrupt __saveds void blitInterruptHandler(__reg("a0") struct Custom *c
 			pBlitManager->uwBlitPos = 0;
 		}
 	}
-	
+
 	tBlitData *pData;
 	pData = &pBlitManager->pBlitData[pBlitManager->uwBlitPos];
-	
+
 	if(pData->bltdpt) {
 		// If next blit in queue has non-zero size => process it
 		blitSetRegs(pData);
@@ -71,14 +71,14 @@ void blitQueueWait(void) {
 
 void blitQueueEnable(UWORD uwQueueLength) {
 	logBlockBegin("blitQueueEnable");
-	
+
 	// Set manager fields
 	g_sBlitManager.uwQueueLength = uwQueueLength;
 	g_sBlitManager.pBlitterSetFn = blitQueued;
 	g_sBlitManager.pBlitData = memAllocFastClear(sizeof(tBlitData) * uwQueueLength);
 	g_sBlitManager.szHandlerName = memAllocFast(17);
 	strcpy(g_sBlitManager.szHandlerName, "ACE Blit Manager");
-	
+
 	// Interrupt struct setup
 	g_sBlitManager.pInt = memAllocChipClear(sizeof(struct Interrupt)); // CHIP is PUBLIC
 	g_sBlitManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
@@ -86,7 +86,7 @@ void blitQueueEnable(UWORD uwQueueLength) {
 	g_sBlitManager.pInt->is_Node.ln_Name = g_sBlitManager.szHandlerName;
 	g_sBlitManager.pInt->is_Data = &g_sBlitManager;
 	g_sBlitManager.pInt->is_Code = blitInterruptHandler;
-	
+
 	// Enable interrupt handler
 	g_sBlitManager.pPrevInt = SetIntVector(INTB_BLIT, g_sBlitManager.pInt);
 	g_sBlitManager.uwOldDmaCon = custom.dmaconr;
@@ -94,13 +94,13 @@ void blitQueueEnable(UWORD uwQueueLength) {
 	custom.dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
 	custom.intreq = INTF_SETCLR | INTF_BLIT;
 	custom.intena = INTF_SETCLR | INTF_BLIT;
-	
+
 	logBlockEnd("blitQueueEnable");
 	logWrite("blitter queue enabled! Length: %u\n", uwQueueLength);
 }
 
 void blitQueueDisable(void) {
-	
+
 	logBlockBegin("blitQueueDisable");
 	// Wait for all blits to finish
 	blitQueueWait();
@@ -118,7 +118,7 @@ void blitQueueDisable(void) {
 		memFree(g_sBlitManager.pInt, sizeof(struct Interrupt));
 		memFree(g_sBlitManager.szHandlerName, 17);
 		memFree(g_sBlitManager.pBlitData, sizeof(tBlitData) * g_sBlitManager.uwQueueLength);
-		g_sBlitManager.uwQueueLength = 0;		
+		g_sBlitManager.uwQueueLength = 0;
 		g_sBlitManager.uwAddPos = 0;
 		g_sBlitManager.uwBlitPos = 0;
 	}
@@ -130,7 +130,7 @@ void blitQueueDisable(void) {
 
 void blitManagerCreate(UWORD uwQueueLength, UWORD uwFlags) {
 	logBlockBegin("blitManagerCreate");
-	
+
 	g_sBlitManager.uwQueueLength = 0;
 	g_sBlitManager.uwAddPos = 0;
 	g_sBlitManager.uwBlitPos = 0;
@@ -139,24 +139,24 @@ void blitManagerCreate(UWORD uwQueueLength, UWORD uwFlags) {
 		blitQueueDisable();
 	else
 		blitQueueEnable(uwQueueLength);
-	
+
 	logBlockEnd("blitManagerCreate");
 }
 
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
 	logWrite("blitPos: %u\n", g_sBlitManager.uwBlitPos);
-	
+
 	WaitBlit();
 	WaitTOF();
 	blitQueueDisable();
-	
+
 	logBlockEnd("blitManagerDestroy");
 }
 
 /**
  * Checks if blit is allowable at coords at given source and destination
- */ 
+ */
 BYTE blitCheck(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
@@ -164,14 +164,14 @@ BYTE blitCheck(
 ) {
 #ifdef GAME_DEBUG
 	WORD wSrcWidth, wDstWidth;
-	
+
 	wSrcWidth = pSrc->BytesPerRow << 3;
 	wDstWidth = pDst->BytesPerRow << 3;
 	if(bitmapIsInterleaved(pSrc))
 		wSrcWidth /= pSrc->Depth;
 	if(bitmapIsInterleaved(pDst))
 		wDstWidth /= pDst->Depth;
-	
+
 	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
 		logWrite(
 			"ILLEGAL BLIT Source out of range: "
@@ -231,7 +231,7 @@ void blitNotQueued(
 	custom.bltcdat = bltcdat;
 	custom.bltbdat = bltbdat;
 	custom.bltadat = bltadat;
-	
+
 	custom.bltcpt  = bltcpt;
 	custom.bltbpt  = bltbpt;
 	custom.bltapt  = bltapt;
@@ -253,29 +253,29 @@ void blitQueued(
 ) {
 	// Add new entry to blitter queue
 	tBlitData *pData = &g_sBlitManager.pBlitData[g_sBlitManager.uwAddPos];
-	
+
 	pData->bltamod = bltamod;
 	pData->bltbmod = bltbmod;
 	pData->bltcmod = bltcmod;
 	pData->bltdmod = bltdmod;
-	
+
 	pData->bltcon0 = bltcon0;
 	pData->bltcon1 = bltcon1;
 	pData->bltafwm = bltafwm;
 	pData->bltalwm = bltalwm;
-	
+
 	pData->bltcpt  = bltcpt;
 	pData->bltbpt  = bltbpt;
 	pData->bltapt  = bltapt;
 	pData->bltdpt  = bltdpt;
 	pData->bltsize = bltsize;
-	
+
 	pData->bltcdat = bltcdat;
 	pData->bltbdat = bltbdat;
 	pData->bltadat = bltadat;
-	
+
 	// logWrite("Added blit pos %u: pt: %p %p %p %p\n", g_sBlitManager.uwAddPos, bltapt, bltbpt, bltcpt, bltdpt);
-	
+
 	// Execute blit if all queue entries were processed
 	if(g_sBlitManager.uwBlitPos == g_sBlitManager.uwAddPos) {
 		while(!blitIsIdle())
@@ -288,7 +288,7 @@ void blitQueued(
 				g_sBlitManager.ubBlitStarted = 1;
 		// }
 	}
-	
+
 	++g_sBlitManager.uwAddPos;
 	if(g_sBlitManager.uwAddPos == g_sBlitManager.uwQueueLength)
 		g_sBlitManager.uwAddPos = 0;
@@ -308,19 +308,20 @@ void blitQueued(
  * Function is slightly slower (~0.5 - 1.5ms) than bltBitMap:
  * 	- Pre-loop calculations take ~50us on ASC mode, ~80us on DESC mode
  * 	- Rewriting to assembly could speed things up a bit
- */ 
+ */
 BYTE blitUnsafeCopy(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask
 ) {
 	// Helper vars
-	UWORD uwBlitWords, uwBlitWidth, uwSrcOffs, uwDstOffs;
+	UWORD uwBlitWords, uwBlitWidth;
+	ULONG ulSrcOffs, ulDstOffs;
 	UBYTE ubShift, ubSrcDelta, ubDstDelta, ubWidthDelta, ubMaskFShift, ubMaskLShift, ubPlane;
 	// Blitter register values
 	UWORD uwBltCon0, uwBltCon1, uwFirstMask, uwLastMask;
 	WORD wSrcModulo, wDstModulo;
-		
+
 	ubSrcDelta = wSrcX & 0xF;
 	ubDstDelta = wDstX & 0xF;
 	ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
@@ -328,19 +329,19 @@ BYTE blitUnsafeCopy(
 	if(ubSrcDelta > ubDstDelta || ((wWidth+ubDstDelta+15) & 0xFFF0)-(wWidth+ubSrcDelta) > 16) {
 		uwBlitWidth = (wWidth+(ubSrcDelta>ubDstDelta?ubSrcDelta:ubDstDelta)+15) & 0xFFF0;
 		uwBlitWords = uwBlitWidth >> 4;
-		
+
 		ubMaskFShift = ((ubWidthDelta+15)&0xF0)-ubWidthDelta;
 		ubMaskLShift = uwBlitWidth - (wWidth+ubMaskFShift);
 		uwFirstMask = 0xFFFF << ubMaskFShift;
 		uwLastMask = 0xFFFF >> ubMaskLShift;
 		if(ubMaskLShift > 16) // Fix for 2-word blits
 			uwFirstMask &= 0xFFFF >> (ubMaskLShift-16);
-		
+
 		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
 		uwBltCon1 = ubShift << BSHIFTSHIFT | BLITREVERSE;
-		
-		uwSrcOffs = pSrc->BytesPerRow * (wSrcY+wHeight-1) + ((wSrcX+wWidth+ubMaskFShift-1)>>3);
-		uwDstOffs = pDst->BytesPerRow * (wDstY+wHeight-1) + ((wDstX+wWidth+ubMaskFShift-1) >> 3);
+
+		ulSrcOffs = pSrc->BytesPerRow * (wSrcY+wHeight-1) + ((wSrcX+wWidth+ubMaskFShift-1)>>3);
+		ulDstOffs = pDst->BytesPerRow * (wDstY+wHeight-1) + ((wDstX+wWidth+ubMaskFShift-1) >> 3);
 	}
 	else {
 		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
@@ -348,21 +349,21 @@ BYTE blitUnsafeCopy(
 
 		ubMaskFShift = ubSrcDelta;
 		ubMaskLShift = uwBlitWidth-(wWidth+ubSrcDelta);
-		
+
 		uwFirstMask = 0xFFFF >> ubMaskFShift;
 		uwLastMask = 0xFFFF << ubMaskLShift;
 
 		ubShift = ubDstDelta-ubSrcDelta;
 		uwBltCon1 = ubShift << BSHIFTSHIFT;
 
-		uwSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-		uwDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
+		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
 	}
-	
+
 	uwBltCon0 = (ubShift << ASHIFTSHIFT) | USEB|USEC|USED | ubMinterm;
 	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
-	
+
 	ubMask &= 0xFF >> (8- (pSrc->Depth < pDst->Depth? pSrc->Depth: pDst->Depth));
 	ubPlane = 0;
 	while(ubMask) {
@@ -373,9 +374,9 @@ BYTE blitUnsafeCopy(
 				0, wSrcModulo, wDstModulo, wDstModulo, // bltXmod
 				// This hell of a casting must stay here or else large offsets get bugged!
 				0,                                     // bltapt
-				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltbpt
-				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltcpt
-				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
+				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs), // bltbpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltcpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltdpt
 				0xFFFF, 0, 0,                          // bltXdat
 				(wHeight << 6) | uwBlitWords           // bltsize
 			);
@@ -407,53 +408,53 @@ BYTE blitUnsafeCopyAligned(
 ) {
 	UWORD uwBlitWords, uwBltCon0;
 	WORD wDstModulo, wSrcModulo;
-	UWORD uwSrcOffs, uwDstOffs;
-	
+	ULONG ulSrcOffs, ulDstOffs;
+
 	uwBlitWords = wWidth >> 4;
 	uwBltCon0 = USEA|USED | MINTERM_A;
-	
+
 	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
-	uwSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	uwDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
-	
+	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
+	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		wHeight *= pSrc->Depth;
-		
+
 		g_sBlitManager.pBlitterSetFn(
 			uwBltCon0, 0,                 // bltconX
 			0xFFFF, 0xFFFF,               // bltaXwm
 			wSrcModulo, 0, 0, wDstModulo, // bltXmod
 			// This hell of a casting must stay here or else large offsets get bugged!
-			(UBYTE*)(((ULONG)(pSrc->Planes[0])) + uwSrcOffs), // bltapt
+			(UBYTE*)(((ULONG)(pSrc->Planes[0])) + ulSrcOffs), // bltapt
 			0, 0,                         // bltbpt, bltcpt
-			(UBYTE*)(((ULONG)(pDst->Planes[0])) + uwDstOffs), // bltdpt
+			(UBYTE*)(((ULONG)(pDst->Planes[0])) + ulDstOffs), // bltdpt
 			0, 0, 0,                      // bltXdat
 			(wHeight << 6) | uwBlitWords  // bltsize
 		);
 	}
 	else {
 		UBYTE ubPlane;
-		
+
 		if(bitmapIsInterleaved(pSrc))
 			wSrcModulo += pSrc->BytesPerRow * (pSrc->Depth-1);
 		else if(bitmapIsInterleaved(pDst))
 			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
-		
+
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			g_sBlitManager.pBlitterSetFn(
 				uwBltCon0, 0,                      // bltconX
 				0xFFFF, 0xFFFF,                    // bltaXwm
 				wSrcModulo, 0, 0, wDstModulo,      // bltXmod
 				// This hell of a casting must stay here or else large offsets get bugged!
-				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltapt
+				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs), // bltapt
 				0, 0,                              // bltbpt, bltcpt
-				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltdpt
 				0, 0, 0,                           // bltXdat
 				(wHeight << 6) | uwBlitWords       // bltsize
 			);
 		}
-	}	
+	}
 	return 1;
 }
 
@@ -485,30 +486,31 @@ BYTE blitUnsafeCopyMask(
 	WORD wWidth, WORD wHeight, UWORD *pMsk
 ) {
 	UWORD uwBlitWidth, uwBlitWords, uwBltCon0, uwBltCon1;
-	UWORD uwFirstMask, uwLastMask, uwSrcOffs, uwDstOffs;
+	UWORD uwFirstMask, uwLastMask
+	ULONG ulSrcOffs, ulDstOffs;
 	WORD wDstModulo, wSrcModulo;
 	UBYTE ubSrcDelta, ubDstDelta, ubMaskFShift, ubMaskLShift, ubPlane;
-	
+
 	ubSrcDelta = wSrcX & 0xF;
 	ubDstDelta = wDstX & 0xF;
-	
+
 	uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
 	uwBlitWords = uwBlitWidth >> 4;
 
 	ubMaskFShift = ubSrcDelta;
 	ubMaskLShift = uwBlitWidth-(wWidth+ubSrcDelta);
-	
+
 	uwFirstMask = 0xFFFF >> ubMaskFShift;
 	uwLastMask = 0xFFFF << ubMaskLShift;
 
 	uwBltCon1 = (ubDstDelta-ubSrcDelta) << BSHIFTSHIFT;
 	uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
-	
+
 	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
-	uwSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	uwDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
-	
+	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
+	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+
 	for(ubPlane = pSrc->Depth; ubPlane--;) {
 		g_sBlitManager.pBlitterSetFn(
 			// BltCon & Masks
@@ -518,10 +520,10 @@ BYTE blitUnsafeCopyMask(
 			wSrcModulo, wSrcModulo, wDstModulo, wDstModulo, // A, B, C, D
 			// Channel ptrs - in bytes, blitter ignores LSB, thus makes even addrs
 			// This hell of a casting must stay here or else large offsets get bugged!
-			(UBYTE*)((ULONG)pMsk) + uwSrcOffs,                      // bltapt
-			(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + uwSrcOffs), // bltbpt
-			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltcpt
-			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + uwDstOffs), // bltdpt
+			(UBYTE*)((ULONG)pMsk) + ulSrcOffs,                      // bltapt
+			(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs), // bltbpt
+			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltcpt
+			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltdpt
 			0, 0, 0,                                                // bltXdat
 			// BLTSIZE
 			(wHeight << 6) | uwBlitWords // custom.bltsize
@@ -555,18 +557,18 @@ BYTE _blitRect(
 ) {
 	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile))
 		return 0;
-	
+
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth, uwDstOffs;
 	UBYTE ubDstDelta, ubMinterm, ubPlane;
 	// Blitter register values
 	UWORD uwBltCon0, uwBltCon1, uwFirstMask, uwLastMask;
 	WORD wSrcModulo, wDstModulo;
-		
+
 	ubDstDelta = wDstX & 0xF;
 	uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
 	uwBlitWords = uwBlitWidth >> 4;
-	
+
 	uwFirstMask = 0xFFFF >> ubDstDelta;
 	uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ubDstDelta));
 	uwBltCon1 = 0;
