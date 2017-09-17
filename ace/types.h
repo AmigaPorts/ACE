@@ -8,11 +8,11 @@
 #define OUT   /* Output parameter. Passed pointer contants will be changed. */
 #define INOUT /* Input/output parameter. */
 
-#ifndef VBCC
+#ifndef __VBCC__
 #define __amigainterrupt /* Amiga interrupt handler */
 #define __saveds         /**/
 #define __reg(x)         /* Allows putting fn parameters in specific regs */
-#endif // VBCC
+#endif // __VBCC__
 
 /**
  * Coord type with fast sorting option
