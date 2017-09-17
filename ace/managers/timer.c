@@ -20,7 +20,7 @@ __amigainterrupt __saveds void timerVBlankServer(__reg("a1") UWORD *pCounter) {
 void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
 	g_sTimerManager.pInt = memAllocChipClear(sizeof(struct Interrupt)); // CHIP is PUBLIC.
-	
+
 	g_sTimerManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
 	g_sTimerManager.pInt->is_Node.ln_Pri = -60;
 	g_sTimerManager.pInt->is_Node.ln_Name = "ACE_Timer_VBL";
@@ -56,11 +56,12 @@ ULONG timerGet(void) {
 ULONG timerGetPrec(void) {
 	UWORD uwFr1, uwFr2; // frame counts
 	tRayPos sRay1, sRay2;
-	
+	ULONG *pRay1 = (ULONG*)&sRay1, *pRay2 = (ULONG*)&sRay2, *pReg = (ULONG*)vhPosRegs;
+
 	uwFr1 = g_sTimerManager.uwFrameCounter;
-	CopyMem(vhPosRegs, &sRay1, 4);
+	*pRay1 = *pReg;
 	uwFr2 = g_sTimerManager.uwFrameCounter;
-	CopyMem(vhPosRegs, &sRay2, 4);
+	*pRay2 = *pReg;
 	if(uwFr1 == uwFr2)
 		return (uwFr1*160*313 + sRay1.uwPosY*160 + sRay1.ubPosX);
 	else
