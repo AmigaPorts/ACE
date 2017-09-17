@@ -24,13 +24,13 @@ typedef struct BitMap tBitMap;
  *  @brief Allocates bitmap of given dimensions and depth.
  *  OS' AllocBitMap is not present on KS1.3, hence this OS-compatible
  *  implementation.
- *  
+ *
  *  @param uwWidth  Desired bitmap width, in pixels.
  *  @param uwHeight Desired bitmap height, in pixels.
  *  @param ubDepth  Desired bitmap depth (bits per pixel)
  *  @param ubFlags  Bitmap creation flags, see BMF_* defines
  *  @return Newly created OS-compatible bitmap, 0 on error.
- *  
+ *
  *  @see bitmapDestroy
  *  @see bitmapCreateFromFile
  *  @see bitmapLoadFromFile
@@ -46,12 +46,12 @@ tBitMap* bitmapCreate(
  *  @brief Loads bitmap data from file to already existing bitmap.
  *  If source is smaller than destination, you can use uwStartX & uwStartY
  *  params to load bitmap on given coords.
- *  
+ *
  *  @param pBitMap    Pointer to destination bitmap
  *  @param szFilePath Source bitmap file path.
  *  @param uwStartX   Start X-coordinate on destination bitmap, 8-pixel aligned.
  *  @param uwStartY   Start Y-coordinate on destination bitmap
- *  
+ *
  *  @see bitmapCreate
  *  @see bitmapCreateFromFile
  */
@@ -66,10 +66,10 @@ void bitmapLoadFromFile(
  *  @brief Creates bitmap and loads its data from file.
  *  As opposed to bitmapLoadFromFile, this function creates bitmap based
  *  on dimensions, BPP & flags stored in file.
- *  
+ *
  *  @param szFilePath Source bitmap file path.
  *  @return Pointer to newly created bitmap based on file, 0 on error.
- *  
+ *
  *  @see bitmapLoadFromFile
  *  @see bitmapCreate
  *  @see bitmapDestroy
@@ -82,9 +82,9 @@ tBitMap* bitmapCreateFromFile(
  *  @brief Destroys given bitmap, freeing its resources to OS.
  *  Be sure to end all blitter & display operations on this bitmap
  *  prior to calling this function.
- *  
+ *
  *  @param pBitMap Bitmap to be destroyed.
- *  
+ *
  *  @see bitmapCreate
  *  @see bitmapCreateFromFile
  */
@@ -95,19 +95,19 @@ void bitmapDestroy(
 /**
  *  @brief Checks if given bitmap is interleaved.
  *  Detection should work on any OS bitmap.
- *  
+ *
  *  @param pBitMap Bitmap to be checked.
  *  @return non-zero if bitmap is interleaved, otherwise zero.
  */
-inline BYTE bitmapIsInterleaved(
+BYTE bitmapIsInterleaved(
 	IN tBitMap *pBitMap
 );
 
 /**
  *  @brief Saves basic Bitmap information to log file.
- *  
+ *
  *  @param pBitMap Bitmap to be dumped.
- *  
+ *
  *  @see bitmapSaveBMP
  */
 void bitmapDump(
@@ -117,7 +117,7 @@ void bitmapDump(
 /**
  *  @brief Saves given Bitmap as BMP file.
  *  Use only for debug purposes, as conversion is outrageously slow.
- *  
+ *
  *  @param pBitMap    Bitmap to be dumped.
  *  @param pPalette   Palette to be used during export.
  *  @param szFilePath Destination file path.

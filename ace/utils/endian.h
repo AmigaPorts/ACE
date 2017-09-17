@@ -10,14 +10,14 @@
 
 #include <ace/types.h>
 
-// TODO: 
+// TODO:
 
 /**
  *  @brief Converts _native_ 16-bit to Little (Intel) Endian.
- *  
+ *
  *  @param uwIn 16-bit value to be converted
  *  @return Supplied value, byte-swapped if neccessary.
- *  
+ *
  *  @see endianIntel32()
  */
 inline UWORD endianIntel16(UWORD uwIn) {
@@ -26,10 +26,10 @@ inline UWORD endianIntel16(UWORD uwIn) {
 
 /**
  *  @brief Converts _native_ 32-bit to Little (Intel) Endian.
- *  
+ *
  *  @param ulIn 32-bit value to be converted
  *  @return Supplied value, byte-swapped if neccessary.
- *  
+ *
  *  @see endianIntel16()
  */
 inline ULONG endianIntel32(ULONG ulIn) {

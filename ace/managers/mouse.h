@@ -52,11 +52,11 @@ UBYTE mouseIsIntersects(
 	IN UWORD uwHeight
 );
 
-inline UWORD mouseGetX(void);
+UWORD mouseGetX(void);
 
-inline UWORD mouseGetY(void);
+UWORD mouseGetY(void);
 
-inline void mouseSetPointer(
+void mouseSetPointer(
 	IN UWORD *pCursor,
 	IN WORD wHeight,
 	IN WORD wWidth,
@@ -64,7 +64,7 @@ inline void mouseSetPointer(
 	IN WORD wOffsetY
 );
 
-inline void mouseResetPointer(void);
+void mouseResetPointer(void);
 
 void mouseMove(
 	WORD wX,

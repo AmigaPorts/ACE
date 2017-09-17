@@ -210,7 +210,7 @@ void bitmapDestroy(tBitMap *pBitMap) {
 	logBlockEnd("bitmapDestroy()");
 }
 
-inline BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
+BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
 	return (
 		pBitMap->Depth > 1 &&
 		pBitMap->Depth * ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0])

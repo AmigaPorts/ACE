@@ -43,7 +43,7 @@ void gameCreate(
 
 void gameDestroy(void);
 
-inline UBYTE gameIsRunning(void);
+UBYTE gameIsRunning(void);
 
 void gamePushState(
 	IN tVoidFn pCreateCallback,
@@ -59,13 +59,13 @@ void gameChangeState(
 	IN tVoidFn pDestroyCallback
 );
 
-inline void gameChangeLoop(
+void gameChangeLoop(
 	IN tVoidFn pLoopCallback
 );
 
 void gameProcess(void);
 
-inline void gameClose(void);
+void gameClose(void);
 
 void gameKill(
 	IN char *szError

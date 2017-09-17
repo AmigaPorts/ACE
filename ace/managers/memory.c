@@ -125,6 +125,8 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 			s_pMemLog, "ERR: couldn't allocate %lu bytes! (%s:%u)\n",
 			ulSize, szFile, uwLine
 		);
+		fprintf(s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n", s_ulChipPeakUsage, s_ulFastPeakUsage);
+		fprintf(s_pMemLog, "Largest available chunk of given type: %u\n", AvailMem(ulFlags | MEMF_LARGEST));
 		return 0;
 	}
 	_memEntryAdd(pAddr, ulSize, uwLine, szFile);

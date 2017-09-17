@@ -8,12 +8,12 @@ void gameCreate(tVoidFn pCreateCallback, tVoidFn pLoopCallback, tVoidFn pDestroy
 	g_sGameManager.ubStateCount = 0;
 	g_sGameManager.pStateFirst = 0;
 	g_sGameManager.ubIsRunning = 1; // tu albo w pusha bo inaczej gra zaraz wyjdzie
-	// chyba lepiej tu, bo nie ma sensu wielokrotnie nadawaæ tej jedynki
-	
+	// chyba lepiej tu, bo nie ma sensu wielokrotnie nadawaï¿½ tej jedynki
+
 	gamePushState(pCreateCallback, pLoopCallback, pDestroyCallback);
 }
 
-inline UBYTE gameIsRunning(void) {
+UBYTE gameIsRunning(void) {
 	return g_sGameManager.ubIsRunning;
 }
 
@@ -32,7 +32,7 @@ void gamePushState(tVoidFn pCreateCallback, tVoidFn pLoopCallback, tVoidFn pDest
 
 	if (pGameState->pCreateCallback) {
 		pGameState->pCreateCallback();
-		
+
 		// extViewFadeIn(g_sWindowManager.pExtView);
 	}
 }
@@ -73,13 +73,13 @@ void gameChangeState(tVoidFn pCreateCallback, tVoidFn pLoopCallback, tVoidFn pDe
 
 	if (g_sGameManager.pStateFirst->pCreateCallback) {
 		g_sGameManager.pStateFirst->pCreateCallback();
-		
+
 		// extViewFadeIn(g_sWindowManager.pExtView);
 	}
 	logBlockEnd("gameChangeState");
 }
 
-inline void gameChangeLoop(tVoidFn pLoopCallback) {
+void gameChangeLoop(tVoidFn pLoopCallback) {
 	g_sGameManager.pStateFirst->pLoopCallback = pLoopCallback;
 }
 
@@ -88,13 +88,13 @@ void gameProcess(void) {
 		g_sGameManager.pStateFirst->pLoopCallback();
 }
 
-inline void gameClose(void) {
+void gameClose(void) {
 	g_sGameManager.ubIsRunning = 0;
 }
 
 void gameDestroy(void) {
 	tGameState *pGameState, *pPrev;
-	
+
 	pGameState = g_sGameManager.pStateFirst;
 	while (pGameState) {
 		if (g_sGameManager.pStateFirst->pDestroyCallback) {

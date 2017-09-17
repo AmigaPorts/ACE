@@ -34,21 +34,21 @@ UBYTE mouseIsIntersects(UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
 	return (uwX <= g_sWindowManager.pWindow->MouseX) && (g_sWindowManager.pWindow->MouseX < uwX + uwWidth) && (uwY <= g_sWindowManager.pWindow->MouseY) && (g_sWindowManager.pWindow->MouseY < uwY + uwHeight);
 }
 
-inline UWORD mouseGetX(void) {
+UWORD mouseGetX(void) {
 	return g_sWindowManager.pWindow->MouseX;
 }
 
-inline UWORD mouseGetY(void) {
+UWORD mouseGetY(void) {
 	return g_sWindowManager.pWindow->MouseY;
 }
 
-inline void mouseSetPointer(UWORD *pCursor, WORD wHeight, WORD wWidth, WORD wOffsetX, WORD wOffsetY) {
+void mouseSetPointer(UWORD *pCursor, WORD wHeight, WORD wWidth, WORD wOffsetX, WORD wOffsetY) {
 	logBlockBegin("mouseSetPointer(pCursor: %p, wHeight: %d, wWidth, %d, wOffsetX: %d, wOffsetY: %d)", pCursor, wHeight, wWidth, wOffsetX, wOffsetY);
 	SetPointer(g_sWindowManager.pWindow, pCursor, wHeight, wWidth, wOffsetX, wOffsetY);
 	logBlockEnd("mouseSetPointer");
 }
 
-inline void mouseResetPointer(void) {
+void mouseResetPointer(void) {
 	ClearPointer(g_sWindowManager.pWindow);
 }
 
@@ -56,7 +56,7 @@ void _mouseDo(struct InputEvent *pEvent) {
 	g_sMouseManager.pInputIO->io_Data = (APTR) pEvent;
 	g_sMouseManager.pInputIO->io_Length = sizeof(struct InputEvent);
 	g_sMouseManager.pInputIO->io_Command = IND_WRITEEVENT;
-	
+
 	DoIO((struct IORequest *) g_sMouseManager.pInputIO);
 }
 

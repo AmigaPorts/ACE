@@ -35,7 +35,7 @@ void cameraProcess(
 	IN tCameraManager *pManager
 );
 
-inline void cameraReset(
+void cameraReset(
 	IN tCameraManager *pManager,
 	IN UWORD uwPosX,
 	IN UWORD uwPosY,
@@ -61,23 +61,23 @@ void cameraCenterAt(
 	IN UWORD uwAvgY
 );
 
-inline UBYTE cameraIsMoved(
+UBYTE cameraIsMoved(
 	IN tCameraManager *pManager
 );
 
-inline UWORD cameraGetXDiff(
+UWORD cameraGetXDiff(
 	IN tCameraManager *pManager
 );
 
-inline UWORD cameraGetYDiff(
+UWORD cameraGetYDiff(
 	IN tCameraManager *pManager
 );
 
-inline WORD cameraGetDeltaX(
+WORD cameraGetDeltaX(
 	IN tCameraManager *pManager
 );
 
-inline WORD cameraGetDeltaY(
+WORD cameraGetDeltaY(
 	IN tCameraManager *pManager
 );
 

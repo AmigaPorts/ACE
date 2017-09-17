@@ -29,7 +29,7 @@ inline void blitSetRegs(tBlitData *pData) {
 	custom.bltdpt  = pData->bltdpt;
 
 	custom.bltsize = pData->bltsize;
-	// TODO: zamiana na copymemy dopiero jak wszystko inne b�dzie dzia�a�
+	// TODO try to change to copymem after it gets stable
 }
 
 /**
@@ -200,7 +200,7 @@ BYTE blitCheck(
  *  @todo Make it inline assembly or dmaconr volatile so compiler won't
  *  'optimize' it.
  */
-inline BYTE blitIsIdle(void) {
+BYTE blitIsIdle(void) {
 	if(!(custom.dmaconr & DMAF_BLTDONE))
 		if(!(custom.dmaconr & DMAF_BLTDONE))
 			return 1;
@@ -436,6 +436,10 @@ BYTE blitUnsafeCopyAligned(
 	else {
 		UBYTE ubPlane;
 
+		if(bitmapIsInterleaved(pSrc) || bitmapIsInterleaved(pDst)) {
+			// Since you're using this fn for speed
+			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
+		}
 		if(bitmapIsInterleaved(pSrc))
 			wSrcModulo += pSrc->BytesPerRow * (pSrc->Depth-1);
 		else if(bitmapIsInterleaved(pDst))
@@ -486,7 +490,7 @@ BYTE blitUnsafeCopyMask(
 	WORD wWidth, WORD wHeight, UWORD *pMsk
 ) {
 	UWORD uwBlitWidth, uwBlitWords, uwBltCon0, uwBltCon1;
-	UWORD uwFirstMask, uwLastMask
+	UWORD uwFirstMask, uwLastMask;
 	ULONG ulSrcOffs, ulDstOffs;
 	WORD wDstModulo, wSrcModulo;
 	UBYTE ubSrcDelta, ubDstDelta, ubMaskFShift, ubMaskLShift, ubPlane;

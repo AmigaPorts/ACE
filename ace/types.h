@@ -4,12 +4,15 @@
 #include <exec/types.h>
 
 /* Docs */
-#define IN
-#define OUT
-#define INOUT
+#define IN    /* Input parameter. Passed pointer contents is const */
+#define OUT   /* Output parameter. Passed pointer contants will be changed. */
+#define INOUT /* Input/output parameter. */
 
-// TODO: Convert to ifdef for elder compilers
-#define inline
+#ifndef VBCC
+#define __amigainterrupt /* Amiga interrupt handler */
+#define __saveds         /**/
+#define __reg(x)         /* Allows putting fn parameters in specific regs */
+#endif // VBCC
 
 /**
  * Coord type with fast sorting option
