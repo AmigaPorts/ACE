@@ -18,11 +18,11 @@
  * and still calling timerProcess during pause loop
  */
 typedef struct {
-	struct Interrupt *pInt; /// Must be PUBLIC memory
-	ULONG ulGameTicks;      /// Actual ticks passed in game
-	ULONG ulLastTime;       /// Internal - used to update ulGameTicks
-	UWORD uwFrameCounter;   /// Incremented by VBlank interrupt
-	UBYTE ubPaused;         /// 1: pause on
+	struct Interrupt *pInt;        /// Must be PUBLIC memory
+	ULONG ulGameTicks;             /// Actual ticks passed in game
+	ULONG ulLastTime;              /// Internal - used to update ulGameTicks
+	volatile UWORD uwFrameCounter; /// Incremented by VBlank interrupt
+	UBYTE ubPaused;                /// 1: pause on
 } tTimerManager;
 
 /* Globals */
