@@ -510,28 +510,48 @@ BYTE blitUnsafeCopyMask(
 	uwBltCon1 = (ubDstDelta-ubSrcDelta) << BSHIFTSHIFT;
 	uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
 
-	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
-	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
 	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
-
-	for(ubPlane = pSrc->Depth; ubPlane--;) {
+	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
+		wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
+		wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
+		wHeight *= pSrc->Depth;
 		g_sBlitManager.pBlitterSetFn(
 			// BltCon & Masks
 			uwBltCon0, uwBltCon1,
 			uwFirstMask, uwLastMask,
 			// Modulos
-			wSrcModulo, wSrcModulo, wDstModulo, wDstModulo, // A, B, C, D
+			wSrcModulo, wSrcModulo, wDstModulo, wDstModulo,   // A, B, C, D
 			// Channel ptrs - in bytes, blitter ignores LSB, thus makes even addrs
 			// This hell of a casting must stay here or else large offsets get bugged!
-			(UBYTE*)((ULONG)pMsk) + ulSrcOffs,                      // bltapt
-			(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs), // bltbpt
-			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltcpt
-			(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltdpt
-			0, 0, 0,                                                // bltXdat
-			// BLTSIZE
-			(wHeight << 6) | uwBlitWords // custom.bltsize
+			(UBYTE*)((ULONG)pMsk) + ulSrcOffs,                // bltapt
+			(UBYTE*)(((ULONG)(pSrc->Planes[0])) + ulSrcOffs), // bltbpt
+			(UBYTE*)(((ULONG)(pDst->Planes[0])) + ulDstOffs), // bltcpt
+			(UBYTE*)(((ULONG)(pDst->Planes[0])) + ulDstOffs), // bltdpt
+			0, 0, 0,                                          // bltXdat
+			(wHeight << 6) | uwBlitWords                      // bltsize
 		);
+	}
+	else {
+		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
+		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
+		for(ubPlane = pSrc->Depth; ubPlane--;) {
+			g_sBlitManager.pBlitterSetFn(
+				// BltCon & Masks
+				uwBltCon0, uwBltCon1,
+				uwFirstMask, uwLastMask,
+				// Modulos
+				wSrcModulo, wSrcModulo, wDstModulo, wDstModulo, // A, B, C, D
+				// Channel ptrs - in bytes, blitter ignores LSB, thus makes even addrs
+				// This hell of a casting must stay here or else large offsets get bugged!
+				(UBYTE*)((ULONG)pMsk) + ulSrcOffs,                      // bltapt
+				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs), // bltbpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltcpt
+				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltdpt
+				0, 0, 0,                                                // bltXdat
+				(wHeight << 6) | uwBlitWords                            // bltsize
+			);
+		}
 	}
 	return 1;
 }
