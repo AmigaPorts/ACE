@@ -56,16 +56,16 @@ void cameraSetCoord(tCameraManager *pManager, UWORD uwX, UWORD uwY) {
 void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy) {
 	WORD wTmp;
 
-	pManager->uPos.sUwCoord.uwX = clamp(pManager->uPos.sUwCoord.uwX+wDx, 0, pManager->uMaxPos.sUwCoord.uwX);
-	pManager->uPos.sUwCoord.uwY = clamp(pManager->uPos.sUwCoord.uwY+wDy, 0, pManager->uMaxPos.sUwCoord.uwY);
+	pManager->uPos.sUwCoord.uwX = CLAMP(pManager->uPos.sUwCoord.uwX+wDx, 0, pManager->uMaxPos.sUwCoord.uwX);
+	pManager->uPos.sUwCoord.uwY = CLAMP(pManager->uPos.sUwCoord.uwY+wDy, 0, pManager->uMaxPos.sUwCoord.uwY);
 }
 
 void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY) {
 	tVPort *pVPort;
 
 	pVPort = pManager->sCommon.pVPort;
-	pManager->uPos.sUwCoord.uwX = clamp(uwAvgX - (pVPort->uwWidth>>1), 0, pManager->uMaxPos.sUwCoord.uwX);
-	pManager->uPos.sUwCoord.uwY = clamp(uwAvgY - (pVPort->uwHeight>>1), 0, pManager->uMaxPos.sUwCoord.uwY);
+	pManager->uPos.sUwCoord.uwX = CLAMP(uwAvgX - (pVPort->uwWidth>>1), 0, pManager->uMaxPos.sUwCoord.uwX);
+	pManager->uPos.sUwCoord.uwY = CLAMP(uwAvgY - (pVPort->uwHeight>>1), 0, pManager->uMaxPos.sUwCoord.uwY);
 }
 
 UBYTE cameraIsMoved(tCameraManager *pManager) {
