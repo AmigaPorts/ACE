@@ -61,23 +61,19 @@ void _mouseDo(struct InputEvent *pEvent) {
 }
 
 void mouseSetPosition(UWORD uwNewX, UWORD uwNewY) {
-	WORD wDeltaX = uwNewX - mouseGetX();
-	WORD wDeltaY = uwNewY - mouseGetY();
-	mouseMove(wDeltaX, wDeltaY);
+	mouseMoveBy(uwNewX - mouseGetX(), uwNewY - mouseGetY());
 }
 
-void mouseMove(WORD wX, WORD wY) {
-	struct InputEvent *pEvent = memAllocChipFlags(sizeof(struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR);
+void mouseMoveBy(WORD wDx, WORD wDy) {
+	struct InputEvent __chip sEvent;
 
-	pEvent->ie_Class = IECLASS_POINTERPOS;
-	pEvent->ie_Code = IECODE_NOBUTTON;
-	pEvent->ie_Qualifier = IEQUALIFIER_RELATIVEMOUSE; //pozycja wzglêdna
-	pEvent->ie_X = wX;
-	pEvent->ie_Y = wY;
+	sEvent.ie_Class = IECLASS_POINTERPOS;
+	sEvent.ie_Code = IECODE_NOBUTTON;
+	sEvent.ie_Qualifier = IEQUALIFIER_RELATIVEMOUSE;
+	sEvent.ie_X = wDx;
+	sEvent.ie_Y = wDy;
 
-	_mouseDo(pEvent);
-
-	memFree(pEvent, sizeof(struct InputEvent));
+	_mouseDo(&sEvent);
 }
 
 void mouseClick(UBYTE ubMouseCode) {

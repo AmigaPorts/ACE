@@ -77,9 +77,9 @@ void mouseSetPosition(
 /**
  * Moves mouse pointer from current position by relative offsets.
  */
-void mouseMove(
-	IN WORD wX,
-	IN WORD wY
+void mouseMoveBy(
+	IN WORD wDx,
+	IN WORD wDy
 );
 
 void mouseClick(
