@@ -126,7 +126,7 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 			ulSize, szFile, uwLine
 		);
 		fprintf(s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n", s_ulChipPeakUsage, s_ulFastPeakUsage);
-		fprintf(s_pMemLog, "Largest available chunk of given type: %u\n", AvailMem(ulFlags | MEMF_LARGEST));
+		fprintf(s_pMemLog, "Largest available chunk of given type: %lu\n", AvailMem(ulFlags | MEMF_LARGEST));
 		return 0;
 	}
 	_memEntryAdd(pAddr, ulSize, uwLine, szFile);
