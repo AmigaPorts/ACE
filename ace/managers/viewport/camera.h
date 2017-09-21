@@ -49,10 +49,10 @@ void cameraSetCoord(
 	IN UWORD uwY
 );
 
-void cameraMove(
+void cameraMoveBy(
 	IN tCameraManager *pManager,
-	IN WORD wX,
-	IN WORD wY
+	IN WORD wDx,
+	IN WORD wDy
 );
 
 void cameraCenterAt(

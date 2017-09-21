@@ -53,11 +53,11 @@ void cameraSetCoord(tCameraManager *pManager, UWORD uwX, UWORD uwY) {
 	// logWrite("New camera pos: %u,%u\n", uwX, uwY);
 }
 
-void cameraMove(tCameraManager *pManager, WORD wX, WORD wY) {
+void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy) {
 	WORD wTmp;
 
-	pManager->uPos.sUwCoord.uwX = clamp(pManager->uPos.sUwCoord.uwX+wX, 0, pManager->uMaxPos.sUwCoord.uwX);
-	pManager->uPos.sUwCoord.uwY = clamp(pManager->uPos.sUwCoord.uwY+wY, 0, pManager->uMaxPos.sUwCoord.uwY);
+	pManager->uPos.sUwCoord.uwX = clamp(pManager->uPos.sUwCoord.uwX+wDx, 0, pManager->uMaxPos.sUwCoord.uwX);
+	pManager->uPos.sUwCoord.uwY = clamp(pManager->uPos.sUwCoord.uwY+wDy, 0, pManager->uMaxPos.sUwCoord.uwY);
 }
 
 void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY) {
