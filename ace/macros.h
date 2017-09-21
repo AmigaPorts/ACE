@@ -15,9 +15,11 @@
  */
 #define blockCountFloor(length, blockSize) (length/blockSize)
 #define blockCountCeil(length, blockSize) ((length + blockSize-1)/blockSize)
- 
+
 /// Math
 // #define abs(x) (x<0 ? -x : x) // already implemented (where?)
+#define sgn(x) ((x > 0) ? 1 : ((x < 0) ? -1 : 0))
+// #define sgn(x) ((x > 0) - (x < 0)) // Branchless, subtracting is slower?
 #define min(x,y) ((x)<(y)? (x): (y))
 #define max(x,y) ((x)>(y)? (x): (y))
 #define clamp(x, min, max) ((x) < (min)? (min) : ((x) > (max) ? (max) : (x)))
