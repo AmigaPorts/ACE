@@ -66,13 +66,24 @@ void mouseSetPointer(
 
 void mouseResetPointer(void);
 
+/**
+ *  Sets mouse position to given absolute position.
+ */
+void mouseSetPosition(
+	IN UWORD uwNewX,
+	IN UWORD uwNewY
+);
+
+/**
+ * Moves mouse pointer from current position by relative offsets.
+ */
 void mouseMove(
-	WORD wX,
-	WORD wY
+	IN WORD wX,
+	IN WORD wY
 );
 
 void mouseClick(
-	UBYTE ubMouseCode
+	IN UBYTE ubMouseCode
 );
 
 void mouseClose(void);

@@ -60,6 +60,12 @@ void _mouseDo(struct InputEvent *pEvent) {
 	DoIO((struct IORequest *) g_sMouseManager.pInputIO);
 }
 
+void mouseSetPosition(UWORD uwNewX, UWORD uwNewY) {
+	WORD wDeltaX = uwNewX - mouseGetX();
+	WORD wDeltaY = uwNewY - mouseGetY();
+	mouseMove(wDeltaX, wDeltaY);
+}
+
 void mouseMove(WORD wX, WORD wY) {
 	struct InputEvent *pEvent = memAllocChipFlags(sizeof(struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR);
 
