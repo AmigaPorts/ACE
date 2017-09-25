@@ -55,17 +55,23 @@ ULONG timerGet(void) {
  */
 ULONG timerGetPrec(void) {
 	UWORD uwFr1, uwFr2; // frame counts
-	tRayPos sRay1, sRay2;
-	ULONG *pRay1 = (ULONG*)&sRay1, *pRay2 = (ULONG*)&sRay2, *pReg = (ULONG*)vhPosRegs;
+	tRayPos sRay;
+	ULONG *pRay = (ULONG*)&sRay, *pReg = (ULONG*)vhPosRegs;
 
+	// There are 4 cases how measurments may take place:
+	// a) uwFr1, pRay, uwFr2 on frame A
+	// b) uwFr1, pRay on frame A; uwFr2 on frame B
+	// c) uwFr1 on frame A; pRay, uwFr2 on frame B
+	// d) uwFr2, pRay, uwFr2 on frame B
+	// So if pRay took place at low Y pos, it must be on frame B so use uwFr2,
+	// Otherwise, pRay took place on A, so use uwFr1
 	uwFr1 = g_sTimerManager.uwFrameCounter;
-	*pRay1 = *pReg;
+	*pRay = *pReg;
 	uwFr2 = g_sTimerManager.uwFrameCounter;
-	*pRay2 = *pReg;
-	if(uwFr1 == uwFr2)
-		return (uwFr1*160*313 + sRay1.uwPosY*160 + sRay1.ubPosX);
+	if(sRay.uwPosY < 100)
+		return (uwFr2*160*313 + sRay.uwPosY*160 + sRay.ubPosX);
 	else
-		return (uwFr2*160*313 + sRay2.uwPosY*160 + sRay2.ubPosX);
+		return (uwFr1*160*313 + sRay.uwPosY*160 + sRay.ubPosX);
 }
 
 /**
