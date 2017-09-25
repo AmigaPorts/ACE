@@ -16,16 +16,38 @@
 #define __fast           /* Variable in FAST memory region */
 #endif // __VBCC__
 
+// Fast types
+// TODO: AGA: perhaps 32-bit?
+typedef UWORD FUBYTE;
+typedef UWORD FUWORD;
+typedef ULONG FULONG;
+typedef WORD FBYTE;
+typedef WORD FWORD;
+typedef LONG FLONG;
+
 /**
  * Coord type with fast sorting option
  */
-typedef union {
+typedef union _tUwCoordYX {
 	ULONG ulYX;
 	struct {
 		UWORD uwY;
 		UWORD uwX;
 	} sUwCoord;
 } tUwCoordYX;
+
+typedef union _tUbCoordYX {
+	UWORD uwYX;
+	struct {
+		UBYTE ubY;
+		UBYTE ubX;
+	} sUbCoord;
+} tUbCoordYX;
+
+typedef struct _tBCoordYX {
+	BYTE bY;
+	BYTE bX;
+} tBCoordYX;
 
 /**
  * Rectangle type
@@ -36,11 +58,5 @@ typedef struct {
 	UWORD uwWidth;
 	UWORD uwHeight;
 } tUwRect;
-
-typedef struct {
-	BYTE bY;
-	BYTE bX;
-} tBCoordYX;
-
 
 #endif
