@@ -24,5 +24,12 @@
 #define MAX(x,y) ((x)>(y)? (x): (y))
 #define CLAMP(x, min, max) ((x) < (min)? (min) : ((x) > (max) ? (max) : (x)))
 
+/**
+ *  Checks if given x,y is in specified tRect.
+ */
+#define inRect(x, y, r) (                \
+	x >= r.uwX && x <= r.uwX + r.uwWidth   \
+	&& y >= r.uwY && y <= r.uwY+r.uwHeight \
+)
 
 #endif // GUARD_ACE_MACROS_H
