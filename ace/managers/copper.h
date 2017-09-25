@@ -13,12 +13,12 @@
  * If one needs quicker copperlist access on bare machine, one may write
  * directly into buffers inside CHIP ram using lowlevel-ish functions, command
  * bitfield modifications or even blits. Lastly, buffer swap fn must be called.
- * 
+ *
  * BEWARE: if you plan using raw buffer access, you'll have to better know
  * viewport managers internals to know how they work and to interface with them
  * corretly. Some of them are only made to use copperblocks, so they may be
  * unusable without them. Some things you'll have to implement by yourself.
- * You have been warned. 
+ * You have been warned.
  */
 
 #include <hardware/dmabits.h> // DMAF defines
@@ -98,7 +98,7 @@ typedef struct _tCopList {
 	UBYTE ubMode;           /// Sets block/raw mode
 	tCopBfr *pFrontBfr;     /// Currently displayed copperlist
 	tCopBfr *pBackBfr;      /// Editable copperlist
-	tCopBlock *pFirstBlock; /// Block list	
+	tCopBlock *pFirstBlock; /// Block list
 } tCopList;
 
 typedef struct {
@@ -183,6 +183,21 @@ UBYTE copUpdateFromBlocks(void);
 
 void copProcessBlocks(void);
 
+/**
+ *  Adds copBlock which disables given sprites.
+ *  Resulting copBlock is placed at 0,0 so that it will be executed during VBlank.
+ *
+ *  @param pList         Copperlist to be edited.
+ *  @param fubSpriteMask Determines sprites to be disabled.
+ *                       Setting bit0 to 1 disables sprite 0, etc.
+ *
+ *  @return Pointer to resulting copBlock.
+ */
+tCopBlock *copBlockDisableSprites(
+	IN tCopList *pList,
+	IN FUBYTE fubSpriteMask
+);
+
 /********************* Copperblock cmd functions ******************************/
 
 /**
@@ -199,13 +214,13 @@ void copProcessBlocks(void);
 void copBlockWait(
 	IN tCopList *pCopList,
 	INOUT tCopBlock *pBlock,
-	IN UWORD uwX, 
+	IN UWORD uwX,
 	IN UWORD uwY
 );
 
 /**
  *  Appends MOVE command to end of copper block.
- *  
+ *
  *  @param pCopList Parent copperlist
  *  @param pBlock   CopBlock to be modified
  *  @param pReg     Custom chip register address to be set
@@ -251,6 +266,22 @@ void copSetMove(
 	INOUT tCopMoveCmd *pMoveCmd,
 	void *pReg,
 	UWORD uwValue
+);
+
+/**
+ *  Disables given sprites on supplied copperlist at given cmd offset.
+ *  This function doesn't add any WAIT cmd, be sure to put those cmds in VBlank.
+ *
+ *  @param pList         Copperlist to be edited.
+ *  @param fubSpriteMask Determines sprites to be disabled.
+ *                       Setting bit0 to 1 disables sprite 0, etc.
+
+ * @return Number of MOVE instructions added.
+ */
+FUBYTE copRawDisableSprites(
+	IN tCopList *pList,
+	IN FUBYTE fubSpriteMask,
+	IN FUWORD fuwCmdOffs
 );
 
 #endif
