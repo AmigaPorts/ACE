@@ -25,6 +25,13 @@ typedef WORD FBYTE;
 typedef WORD FWORD;
 typedef LONG FLONG;
 
+#define PRI_FUBYTE "hu"
+#define PRI_FUWORD "hu"
+#define PRI_FULONG "u"
+#define PRI_FBYTE  "hd"
+#define PRI_FWORD  "hd"
+#define PRI_FLONG  "d"
+
 /**
  * Coord type with fast sorting option
  */
