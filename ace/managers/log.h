@@ -18,7 +18,8 @@
 
 
 typedef struct {
-	UWORD uwCount;
+	UWORD uwAllocCount;
+	UWORD uwUsedCount;
 	UWORD uwCurrDelta;
 	ULONG ulMin;
 	ULONG ulMax;

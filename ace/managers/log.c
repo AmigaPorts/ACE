@@ -1,3 +1,4 @@
+#include <ace/macros.h>
 #include <ace/managers/log.h>
 #include <hardware/dmabits.h>
 #ifdef GAME_DEBUG
@@ -115,12 +116,13 @@ void _logBlockEnd(char *szBlockName) {
 /**
  *
  */
-tAvg *_logAvgCreate(char *szName, UWORD uwCount) {
+tAvg *_logAvgCreate(char *szName, UWORD uwAllocCount) {
 	tAvg *pAvg = memAllocFast(sizeof(tAvg));
 	pAvg->szName = szName;
-	pAvg->uwCount = uwCount;
+	pAvg->uwAllocCount = uwAllocCount;
 	pAvg->uwCurrDelta = 0;
-	pAvg->pDeltas = memAllocFast(uwCount*sizeof(ULONG));
+	pAvg->uwUsedCount = 0;
+	pAvg->pDeltas = memAllocFast(uwAllocCount*sizeof(ULONG));
 	pAvg->ulMin = 0xFFFFFFFF;
 	pAvg->ulMax = 0;
 	return pAvg;
@@ -131,7 +133,7 @@ tAvg *_logAvgCreate(char *szName, UWORD uwCount) {
  */
 void _logAvgDestroy(tAvg *pAvg) {
 	logAvgWrite(pAvg);
-	memFree(pAvg->pDeltas, pAvg->uwCount*sizeof(ULONG));
+	memFree(pAvg->pDeltas, pAvg->uwAllocCount*sizeof(ULONG));
 	memFree(pAvg, sizeof(tAvg));
 }
 
@@ -155,8 +157,9 @@ void _logAvgEnd(tAvg *pAvg) {
 		pAvg->ulMin = pAvg->pDeltas[pAvg->uwCurrDelta];
 	++pAvg->uwCurrDelta;
 	// Roll 
-	if(pAvg->uwCurrDelta == pAvg->uwCount)
+	if(pAvg->uwCurrDelta == pAvg->uwAllocCount)
 		pAvg->uwCurrDelta = 0;
+	pAvg->uwUsedCount = MIN(pAvg->uwAllocCount, pAvg->uwUsedCount + 1);
 }
 
 /**
@@ -169,10 +172,14 @@ void _logAvgWrite(tAvg *pAvg) {
 	char szMin[15];
 	char szMax[15];
 	
+	if(!pAvg->uwUsedCount) {
+		logWrite("Avg %s: No measures taken!\n", pAvg->szName);
+		return;
+	}
 	// Calculate average time
-	for(i = pAvg->uwCount; i--;)
+	for(i = pAvg->uwUsedCount; i--;)
 		ulAvg += pAvg->pDeltas[i];
-	ulAvg /= pAvg->uwCount;
+	ulAvg /= pAvg->uwUsedCount;
 	
 	// Display info
 	timerFormatPrec(szAvg, ulAvg);
