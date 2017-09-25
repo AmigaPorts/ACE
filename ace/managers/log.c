@@ -120,7 +120,7 @@ tAvg *_logAvgCreate(char *szName, UWORD uwCount) {
 	pAvg->szName = szName;
 	pAvg->uwCount = uwCount;
 	pAvg->uwCurrDelta = 0;
-	pAvg->pDeltas = memAllocFast(uwCount*sizeof(tAvg));
+	pAvg->pDeltas = memAllocFast(uwCount*sizeof(ULONG));
 	pAvg->ulMin = 0xFFFFFFFF;
 	pAvg->ulMax = 0;
 	return pAvg;
@@ -131,7 +131,7 @@ tAvg *_logAvgCreate(char *szName, UWORD uwCount) {
  */
 void _logAvgDestroy(tAvg *pAvg) {
 	logAvgWrite(pAvg);
-	memFree(pAvg->pDeltas, pAvg->uwCount*sizeof(tAvg));
+	memFree(pAvg->pDeltas, pAvg->uwCount*sizeof(ULONG));
 	memFree(pAvg, sizeof(tAvg));
 }
 
