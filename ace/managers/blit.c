@@ -489,29 +489,23 @@ BYTE blitUnsafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UWORD *pMsk
 ) {
-	UWORD uwBlitWidth, uwBlitWords, uwBltCon0, uwBltCon1;
-	UWORD uwFirstMask, uwLastMask;
-	ULONG ulSrcOffs, ulDstOffs;
 	WORD wDstModulo, wSrcModulo;
-	UBYTE ubSrcDelta, ubDstDelta, ubMaskFShift, ubMaskLShift, ubPlane;
+	UBYTE ubPlane;
 
-	ubSrcDelta = wSrcX & 0xF;
-	ubDstDelta = wDstX & 0xF;
+	UBYTE ubSrcOffs = wSrcX & 0xF;
+	UBYTE ubDstOffs = wDstX & 0xF;
 
-	uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
-	uwBlitWords = uwBlitWidth >> 4;
+	UWORD uwBlitWidth = (wWidth+ubDstOffs+15) & 0xFFF0;
+	UWORD uwBlitWords = uwBlitWidth >> 4;
 
-	ubMaskFShift = ubSrcDelta;
-	ubMaskLShift = uwBlitWidth-(wWidth+ubSrcDelta);
+	UWORD uwFirstMask = 0xFFFF >> ubSrcOffs;
+	UWORD uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ubSrcOffs));
 
-	uwFirstMask = 0xFFFF >> ubMaskFShift;
-	uwLastMask = 0xFFFF << ubMaskLShift;
+	UWORD uwBltCon1 = (ubDstOffs-ubSrcOffs) << BSHIFTSHIFT;
+	UWORD uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
 
-	uwBltCon1 = (ubDstDelta-ubSrcDelta) << BSHIFTSHIFT;
-	uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
-
-	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
+	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 		wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
