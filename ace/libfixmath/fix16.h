@@ -6,6 +6,7 @@
 #define FIXMATH_NO_CACHE         // Don't cache results
 #define FIXMATH_FAST_SIN         // Faster but less accurate
 
+//#define FIXMATH_USE_FLOATS       // Enables floating point fns
 //#define FIXMATH_NO_OVERFLOW    // Faster but risk of garbage
 //#define FIXMATH_OPTIMIZE_8BIT  // Significant only on 8-bit CPUs
 //#define FIXMATH_SIN_LUT        // Uses loadsa RAM
@@ -52,8 +53,10 @@ static const fix16_t fix16_one = 0x00010000; /*!< fix16_t value of 1 */
  * These are inlined to allow compiler to optimize away constant numbers
  */
 static inline fix16_t fix16_from_int(int a)     { return a * fix16_one; }
+#ifdef FIXMATH_USE_FLOATS
 static inline float   fix16_to_float(fix16_t a) { return (float)a / fix16_one; }
 static inline double  fix16_to_dbl(fix16_t a)   { return (double)a / fix16_one; }
+#endif
 
 static inline int fix16_to_int(fix16_t a)
 {
@@ -66,6 +69,7 @@ static inline int fix16_to_int(fix16_t a)
 #endif
 }
 
+#ifdef FIXMATH_USE_FLOATS
 static inline fix16_t fix16_from_float(float a)
 {
 	float temp = a * fix16_one;
@@ -83,6 +87,7 @@ static inline fix16_t fix16_from_dbl(double a)
 #endif
 	return (fix16_t)temp;
 }
+#endif
 
 /* Macro for defining fix16_t constant values.
    The functions above can't be used from e.g. global variable initializers,
