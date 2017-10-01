@@ -26,9 +26,20 @@ static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 
 void gsMenuCreate(void) {
 	// Prepare view & viewport
-	s_pMenuView = viewCreate(V_GLOBAL_CLUT);
-	s_pMenuVPort = vPortCreate(s_pMenuView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pMenuBfr = simpleBufferCreate(s_pMenuVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_CLEAR);
+	s_pMenuView = viewCreate(0,
+		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_DONE
+	);
+	s_pMenuVPort = vPortCreate(0,
+		TAG_VPORT_VIEW, s_pMenuView,
+		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_DONE
+	);
+	s_pMenuBfr = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_VPORT, s_pMenuVPort,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+		TAG_DONE
+	);
 	
 	// Prepare palette
 	s_pMenuVPort->pPalette[0] = 0x000;

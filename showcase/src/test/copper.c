@@ -59,9 +59,20 @@ void gsTestCopperCreate(void) {
 	UBYTE i;
 	
 	// Prepare view & viewport
-	s_pTestCopperView = viewCreate(V_GLOBAL_CLUT);
-	s_pTestCopperVPort = vPortCreate(s_pTestCopperView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pTestCopperBfr = simpleBufferCreate(s_pTestCopperVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_CLEAR);
+	s_pTestCopperView = viewCreate(0,
+		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_DONE
+	);
+	s_pTestCopperVPort = vPortCreate(0,
+		TAG_VPORT_VIEW, s_pTestCopperView,
+		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_DONE
+	);
+	s_pTestCopperBfr = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_VPORT, s_pTestCopperVPort,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+		TAG_DONE
+	);
 	s_pTestCopperVPort->pPalette[0] = 0x000;
 	s_pTestCopperVPort->pPalette[1] = 0xAAA;
 	s_pTestCopperVPort->pPalette[2] = 0x666;

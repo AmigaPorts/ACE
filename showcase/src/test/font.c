@@ -20,9 +20,20 @@ UBYTE s_ubPage;
 
 void gsTestFontCreate(void) {
 	// Prepare view & viewport
-	s_pTestFontView = viewCreate(V_GLOBAL_CLUT);
-	s_pTestFontVPort = vPortCreate(s_pTestFontView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pTestFontBfr = simpleBufferCreate(s_pTestFontVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_CLEAR);
+	s_pTestFontView = viewCreate(0,
+		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_DONE
+	);
+	s_pTestFontVPort = vPortCreate(0,
+		TAG_VPORT_VIEW, s_pTestFontView,
+		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_DONE
+	);
+	s_pTestFontBfr = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_VPORT, s_pTestFontVPort,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+		TAG_DONE
+	);
 	s_pTestFontVPort->pPalette[0] = 0x000;
 	s_pTestFontVPort->pPalette[1] = 0xAAA;
 	s_pTestFontVPort->pPalette[2] = 0x666;

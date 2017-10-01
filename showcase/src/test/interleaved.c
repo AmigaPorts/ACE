@@ -13,10 +13,20 @@ static tVPort *s_pTestInterleavedVPort;
 static tSimpleBufferManager *s_pTestInterleavedBfr;
 
 void gsTestInterleavedCreate(void) {
-	s_pTestInterleavedView = viewCreate(V_GLOBAL_CLUT);
-	s_pTestInterleavedVPort = vPortCreate(s_pTestInterleavedView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pTestInterleavedBfr = simpleBufferCreate(s_pTestInterleavedVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_INTERLEAVED);
-	
+	s_pTestInterleavedView = viewCreate(0,
+		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_DONE
+	);
+	s_pTestInterleavedVPort = vPortCreate(0,
+		TAG_VPORT_VIEW, s_pTestInterleavedView,
+		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_DONE
+	);
+	s_pTestInterleavedBfr = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_VPORT, s_pTestInterleavedVPort,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+		TAG_DONE
+	);	
 	paletteLoad("data/amidb32.plt", s_pTestInterleavedVPort->pPalette, 1 << WINDOW_SCREEN_BPP);
 	bitmapLoadFromFile(s_pTestInterleavedBfr->pBuffer, "data/32c_pal_interleaved.bm", 0, 0);
 	// bitmapSaveBMP(s_pTestInterleavedBfr->pBuffer, s_pTestInterleavedVPort->pPalette, "dump.bmp");

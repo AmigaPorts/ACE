@@ -19,9 +19,20 @@ static UBYTE (*s_fnKeyPoll)(UBYTE ubKeyCode);
 
 void gsTestBlitCreate(void) {
 	// Prepare view & viewport
-	s_pTestBlitView = viewCreate(V_GLOBAL_CLUT);
-	s_pTestBlitVPort = vPortCreate(s_pTestBlitView, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, WINDOW_SCREEN_BPP, 0);
-	s_pTestBlitBfr = simpleBufferCreate(s_pTestBlitVPort, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, BMF_CLEAR);
+	s_pTestBlitView = viewCreate(0,
+		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_DONE
+	);
+	s_pTestBlitVPort = vPortCreate(0,
+		TAG_VPORT_VIEW, s_pTestBlitView,
+		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_DONE
+	);
+	s_pTestBlitBfr = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_VPORT, s_pTestBlitVPort,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+		TAG_DONE
+	);
 	s_pTestBlitVPort->pPalette[0] = 0x000;
 	s_pTestBlitVPort->pPalette[1] = 0xAAA;
 	s_pTestBlitVPort->pPalette[2] = 0x666;
