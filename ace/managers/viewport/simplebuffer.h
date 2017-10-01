@@ -45,11 +45,11 @@ typedef struct {
  *  bitmap.
  *  This approach is not suitable for big buffers, because you'll run
  *  out of memory quite easily.
- *  
+ *
  *  @param pTags Initialization taglist.
  *  @param ...   Taglist passed as va_args.
  *  @return Pointer to newly created buffer manager.
- *  
+ *
  *  @see simpleBufferDestroy
  *  @see simpleBufferSetBitmap
  */
@@ -65,7 +65,7 @@ tSimpleBufferManager *simpleBufferCreate(
  *  copBlock realloc, which is not implemented.
  *  @param pManager The buffer manager, which buffer is to be changed.
  *  @param pBitMap  New bitmap to be used by manager.
- *  
+ *
  *  @todo Realloc copper buffer to reflect BPP change.
  */
 void simpleBufferSetBitmap(
@@ -79,6 +79,14 @@ void simpleBufferDestroy(
 
 void simpleBufferProcess(
 	IN tSimpleBufferManager *pManager
+);
+
+UBYTE simpleBufferIsRectVisible(
+	IN tSimpleBufferManager *pManager,
+	IN UWORD uwX,
+	IN UWORD uwY,
+	IN UWORD uwWidth,
+	IN UWORD uwHeight
 );
 
 #endif
