@@ -10,7 +10,7 @@ tBitmapMask *bitmapMaskCreate(UWORD uwWidth, UWORD uwHeight) {
 	logBlockBegin(
 		"bitmapMaskCreate(uwWidth: %u, uwHeight: %u)", uwWidth, uwHeight
 	);
-	
+
 	// Allocate struct
 	pMask = memAllocFast(sizeof(tBitmapMask));
 	if(!pMask) {
@@ -20,7 +20,7 @@ tBitmapMask *bitmapMaskCreate(UWORD uwWidth, UWORD uwHeight) {
 	logWrite("Addr: %p\n", pMask);
 	pMask->uwWidth = uwWidth;
 	pMask->uwHeight = uwHeight;
-	
+
 	// Allocate data
 	ulDataSize = (pMask->uwWidth>>3) * pMask->uwHeight;
 	pMask->pData = memAllocChip(ulDataSize);
@@ -29,10 +29,10 @@ tBitmapMask *bitmapMaskCreate(UWORD uwWidth, UWORD uwHeight) {
 		goto fail;
 	}
 	logWrite("Data addr: %p\n", pMask->pData);
-	
+
 	logBlockEnd("bitmapMaskCreate()");
 	return pMask;
-	
+
 fail:
 	if(pMask)
 		bitmapMaskDestroy(pMask);
@@ -45,9 +45,9 @@ tBitmapMask *bitmapMaskCreateFromFile(char *szFile) {
 	tBitmapMask *pMask = 0;
 	ULONG ulDataSize;
 	UWORD uwWidth, uwHeight;
-	
+
 	logBlockBegin("bitmapMaskCreateFromFile(szFile: %s)", szFile);
-	
+
 	// Read width & height from file
 	pMaskFile = fopen(szFile, "rb");
 	if(!pMaskFile) {
@@ -56,7 +56,7 @@ tBitmapMask *bitmapMaskCreateFromFile(char *szFile) {
 	}
 	fread(&uwWidth, sizeof(UWORD), 1, pMaskFile);
 	fread(&uwHeight, sizeof(UWORD), 1, pMaskFile);
-	
+
 	// Create mask of given size
 	pMask = bitmapMaskCreate(uwWidth, uwHeight);
 	if(!pMask) {
@@ -69,10 +69,10 @@ tBitmapMask *bitmapMaskCreateFromFile(char *szFile) {
 	fread(pMask->pData, ulDataSize, 1, pMaskFile);
 	fclose(pMaskFile);
 	pMaskFile = 0;
-	
+
 	logBlockEnd("bitmapMaskCreateFromFile()");
 	return pMask;
-	
+
 fail:
 	if(pMask)
 		bitmapMaskDestroy(pMask);
@@ -92,10 +92,9 @@ void bitmapMaskDestroy(tBitmapMask *pMask) {
 
 void bitmapMaskSaveBmp(tBitmapMask *pMask, char *szPath) {
 	tBitMap sBitmap;
-	APTR pOldPlane;
 	const UWORD pPalette[2] = {0x0000, 0x0fff};
-	
+
 	InitBitMap(&sBitmap, 1, pMask->uwWidth, pMask->uwHeight);
-	sBitmap.Planes[0] = (APTR)pMask->pData;	
+	sBitmap.Planes[0] = (APTR)pMask->pData;
 	bitmapSaveBmp(&sBitmap, (UWORD*)pPalette, szPath);
 }

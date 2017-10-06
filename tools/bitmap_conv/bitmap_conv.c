@@ -260,8 +260,8 @@ void writeMaskInterleaved(
 	// Write mask header
 	writeByte(uwWidth >> 8, pOut);
 	writeByte(uwWidth & 0xFF, pOut);
-	writeByte(uwHeight >> 8, pOut);
-	writeByte(uwHeight & 0xFF, pOut);
+	writeByte((uwHeight*ubBpp) >> 8, pOut);
+	writeByte((uwHeight*ubBpp) & 0xFF, pOut);
 
 	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
