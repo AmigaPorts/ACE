@@ -296,7 +296,7 @@ void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	fwrite(&ulOut, sizeof(ULONG), 1, pOut); // Number of important colors - all
 
 	// Global palette
-	for(c = 0; c != 1 << pBitMap->Depth; ++c) {
+	for(c = 0; c != (1 << pBitMap->Depth); ++c) {
 		ubOut = pPalette[c] & 0xF;
 		ubOut |= ubOut << 4;
 		fwrite(&ubOut, sizeof(UBYTE), 1, pOut); // B

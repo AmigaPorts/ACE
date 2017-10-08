@@ -40,4 +40,10 @@ void paletteDim(
 	IN UBYTE ubLevel
 );
 
+void paletteDump(
+	IN UWORD *pPalette,
+	IN FUBYTE fubColorCnt,
+	IN char *szPath
+);
+
 #endif
