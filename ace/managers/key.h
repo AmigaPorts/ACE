@@ -73,15 +73,12 @@
 
 // Numpad: digits
 #define KEY_NUM0 0x0F
-
 #define KEY_NUM1 0x1D
 #define KEY_NUM2 0x1E
 #define KEY_NUM3 0x1F
-
 #define KEY_NUM4 0x2D
 #define KEY_NUM5 0x2E
 #define KEY_NUM6 0x2F
-
 #define KEY_NUM7 0x3D
 #define KEY_NUM8 0x3E
 #define KEY_NUM9 0x3F
@@ -142,6 +139,7 @@
 
 typedef struct {
 	UBYTE pStates[103];
+	UBYTE ubLastKey;
 } tKeyManager;
 
 /* ****************************************************************** GLOBALS */
