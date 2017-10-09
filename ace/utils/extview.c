@@ -72,7 +72,7 @@ void viewProcessManagers(tView *pView) {
 
 void viewUpdateCLUT(tView *pView) {
 	if(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)
-		CopyMem(pView->pFirstVPort->pPalette, custom.color, 32);
+		CopyMem(pView->pFirstVPort->pPalette, custom.color, 32*sizeof(UWORD));
 	else {
 		// na petli: vPortUpdateCLUT();
 	}
