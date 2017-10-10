@@ -23,9 +23,19 @@ void bitmapMaskDestroy(
 );
 
 /**
+ * @brief Writes mask to file in ACE's .msk format.
+ * @param pMask  Mask to be saved.
+ * @param szPath Path to output file.
+ */
+void bitmapMaskSave(
+	IN tBitmapMask *pMask,
+	IN char *szPath
+);
+
+/**
  *  @brief Writes mask as 1bpp bitmap.
  *  Only for debug purposes, because it's as unoptimized as bitmapSaveBmp().
- *  
+ *
  *  @see bitmapSaveBmp()
  */
 void bitmapMaskSaveBmp(

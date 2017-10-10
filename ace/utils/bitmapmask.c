@@ -90,6 +90,23 @@ void bitmapMaskDestroy(tBitmapMask *pMask) {
 	logBlockEnd("bitmapMaskDestroy()");
 }
 
+void bitmapMaskSave(tBitmapMask *pMask, char *szPath) {
+	logBlockBegin("bitmapMaskSave(pMask: %p, szPath: %s)", pMask, szPath);
+	FILE *pFile = fopen(szPath, "wb");
+	if(!pFile) {
+		logWrite("ERR: Couldn't save file at: %s\n", szPath);
+		logBlockEnd("bitmapMaskSave()");
+		return;
+	}
+	fwrite(&pMask->uwWidth, sizeof(UWORD), 1, pFile);
+	fwrite(&pMask->uwHeight, sizeof(UWORD), 1, pFile);
+
+	ULONG ulDataSize = (pMask->uwWidth>>3) * pMask->uwHeight;
+	fread(pMask->pData, ulDataSize, 1, pFile);
+	fclose(pFile);
+	logBlockEnd("bitmapMaskSave()");
+}
+
 void bitmapMaskSaveBmp(tBitmapMask *pMask, char *szPath) {
 	tBitMap sBitmap;
 	const UWORD pPalette[2] = {0x0000, 0x0fff};

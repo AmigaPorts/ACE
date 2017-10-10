@@ -115,6 +115,16 @@ void bitmapDump(
 );
 
 /**
+ * Saves bitmap in ACE .bm format.
+ * @param pBitMap Bitmap to be saved.
+ * @param szPath  Path of destination file.
+ */
+void bitmapSave(
+	IN tBitMap *pBitMap,
+	IN char *szPath
+);
+
+/**
  *  @brief Saves given Bitmap as BMP file.
  *  Use only for debug purposes, as conversion is outrageously slow.
  *

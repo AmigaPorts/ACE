@@ -74,7 +74,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	// Open source bitmap
 	pFile = fopen(szFilePath, "r");
 	if(!pFile) {
-		logWrite("File does not exist: %s\n", szFilePath);
+		logWrite("ERR: File does not exist: %s\n", szFilePath);
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
@@ -88,7 +88,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	fseek(pFile, 2, SEEK_CUR); // Skip unused 2 bytes
 	if(ubSrcVersion != 0) {
 		fclose(pFile);
-		logWrite("Unknown file version: %hu\n", ubSrcVersion);
+		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
@@ -97,6 +97,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	// Interleaved check
 	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
 		logWrite("ERR: Interleaved flag conflict\n");
+		fclose(pFile);
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
@@ -107,6 +108,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 			"ERR: Source has greater BPP than destination: %hu > %hu\n",
 			ubSrcBpp, pBitMap->Depth
 		);
+		fclose(pFile);
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
@@ -120,6 +122,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 			uwStartX, uwStartY,
 			uwDstWidth, pBitMap->Rows
 		);
+		fclose(pFile);
 		logBlockEnd("bitmapLoadFromFile()");
 		return;
 	}
@@ -160,7 +163,7 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 	pFile = fopen(szFilePath, "r");
 	if(!pFile) {
 		fclose(pFile);
-		logWrite("File does not exist: %s\n", szFilePath);
+		logWrite("ERR: File does not exist: %s\n", szFilePath);
 		logBlockEnd("bitmapCreateFromFile()");
 		return 0;
 	}
@@ -174,7 +177,7 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 	fseek(pFile, 2, SEEK_CUR); // Skip unused 2 bytes
 	if(ubVersion != 0) {
 		fclose(pFile);
-		logWrite("Unknown file version: %hu\n", ubVersion);
+		logWrite("ERR: Unknown file version: %hu\n", ubVersion);
 		logBlockEnd("bitmapCreateFromFile()");
 		return 0;
 	}
@@ -232,6 +235,43 @@ void bitmapDump(tBitMap *pBitMap) {
 		logWrite("Bitplane %hu addr: %p\n", i, pBitMap->Planes[i]);
 
 	logBlockEnd("bitmapDump()");
+}
+
+void bitmapSave(tBitMap *pBitMap, char *szPath) {
+	logBlockBegin("bitmapSave(pBitMap: %p, szPath: %s)", pBitMap, szPath);
+
+	FILE *pFile = fopen(szPath, "wb");
+	if(!pFile) {
+		logWrite("ERR: Couldn't save bitmap at '%s'\n", szPath);
+		logBlockEnd("bitmapSave()");
+		return;
+	}
+
+	// TODO check free space on disk
+
+	// Header
+	UWORD uwWidth = bitmapGetByteWidth(pBitMap);
+	UWORD uwHeight = pBitMap->Rows;
+	UBYTE ubPlaneCount = pBitMap->Depth;
+	UBYTE ubVersion = 0;
+	UBYTE ubFlags = bitmapIsInterleaved(pBitMap) ? BITMAP_INTERLEAVED : 0;
+	fwrite(&uwWidth, 2, 1, pFile);
+	fwrite(&uwHeight, 2, 1, pFile);
+	fwrite(&ubPlaneCount, 1, 1, pFile);
+	fwrite(&ubVersion, 1, 1, pFile);
+	fwrite(&ubFlags, 1, 1, pFile);
+
+	// Data
+	if(ubFlags & BITMAP_INTERLEAVED) {
+		fwrite(pBitMap->Planes[0], 1, (uwWidth >> 3) * uwHeight * ubPlaneCount, pFile);
+	}
+	else {
+		for (FUBYTE i = 0; i != ubPlaneCount; ++i)
+			fwrite(pBitMap->Planes[i], 1, (uwWidth >> 3) * uwHeight, pFile);
+	}
+
+	fclose(pFile);
+	logBlockEnd("bitmapSave()");
 }
 
 void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
