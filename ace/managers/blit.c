@@ -135,6 +135,8 @@ void blitManagerCreate(UWORD uwQueueLength, UWORD uwFlags) {
 	g_sBlitManager.uwAddPos = 0;
 	g_sBlitManager.uwBlitPos = 0;
 	g_sBlitManager.ubBlitStarted = 0;
+	OwnBlitter();
+	WaitBlit();
 	if(!uwQueueLength)
 		blitQueueDisable();
 	else
@@ -148,6 +150,7 @@ void blitManagerDestroy(void) {
 	logWrite("blitPos: %u\n", g_sBlitManager.uwBlitPos);
 
 	WaitBlit();
+	DisownBlitter();
 	WaitTOF();
 	blitQueueDisable();
 
@@ -214,7 +217,6 @@ void blitNotQueued(
 	UWORD bltadat, UWORD bltbdat, UWORD bltcdat,
 	UWORD bltsize
 ) {
-	OwnBlitter();
 	WaitBlit();
 
 	custom.bltcon0 = bltcon0;
@@ -238,8 +240,6 @@ void blitNotQueued(
 	custom.bltdpt  = bltdpt;
 
 	custom.bltsize = bltsize;
-
-	DisownBlitter();
 }
 /**
  * Adds blit to queue
@@ -281,10 +281,8 @@ void blitQueued(
 		while(!blitIsIdle())
 			WaitBlit();
 		// if(blitIsIdle()) {
-				OwnBlitter();
 				// logWrite("Blitter is idle - starting blit\n");
 				blitSetRegs(pData);
-				DisownBlitter();
 				g_sBlitManager.ubBlitStarted = 1;
 		// }
 	}

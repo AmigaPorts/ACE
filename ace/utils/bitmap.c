@@ -35,7 +35,7 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
 
 		if (ubFlags & BMF_CLEAR)
-			BltClear(pBitMap->Planes[0], pBitMap->Rows * pBitMap->BytesPerRow, 1);
+			memset(pBitMap->Planes[0], 0, pBitMap->Rows * pBitMap->BytesPerRow);
 	}
 	else
 		for(i = ubDepth; i--;) {
@@ -49,7 +49,7 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 				return 0;
 			}
 			if (ubFlags & BMF_CLEAR)
-				BltClear(pBitMap->Planes[i], pBitMap->Rows * pBitMap->BytesPerRow, 1);
+				memset(pBitMap->Planes[i], 0, pBitMap->Rows * pBitMap->BytesPerRow);
 		}
 
 	if (ubFlags & BMF_CLEAR)
