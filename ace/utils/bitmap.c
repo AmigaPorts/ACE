@@ -250,16 +250,18 @@ void bitmapSave(tBitMap *pBitMap, char *szPath) {
 	// TODO check free space on disk
 
 	// Header
-	UWORD uwWidth = bitmapGetByteWidth(pBitMap);
+	UWORD uwWidth = bitmapGetByteWidth(pBitMap) << 3;
 	UWORD uwHeight = pBitMap->Rows;
 	UBYTE ubPlaneCount = pBitMap->Depth;
 	UBYTE ubVersion = 0;
 	UBYTE ubFlags = bitmapIsInterleaved(pBitMap) ? BITMAP_INTERLEAVED : 0;
+	UWORD uwUnused = 0;
 	fwrite(&uwWidth, 2, 1, pFile);
 	fwrite(&uwHeight, 2, 1, pFile);
 	fwrite(&ubPlaneCount, 1, 1, pFile);
 	fwrite(&ubVersion, 1, 1, pFile);
 	fwrite(&ubFlags, 1, 1, pFile);
+	fwrite(&uwUnused, 2, 1, pFile); // Unused 2 bytes
 
 	// Data
 	if(ubFlags & BITMAP_INTERLEAVED) {

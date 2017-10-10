@@ -102,7 +102,7 @@ void bitmapMaskSave(tBitmapMask *pMask, char *szPath) {
 	fwrite(&pMask->uwHeight, sizeof(UWORD), 1, pFile);
 
 	ULONG ulDataSize = (pMask->uwWidth>>3) * pMask->uwHeight;
-	fread(pMask->pData, ulDataSize, 1, pFile);
+	fwrite(pMask->pData, ulDataSize, 1, pFile);
 	fclose(pFile);
 	logBlockEnd("bitmapMaskSave()");
 }
