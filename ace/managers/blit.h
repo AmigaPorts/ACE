@@ -30,111 +30,17 @@
 #define MINTERM_COOKIE 0xCA
 #define MINTERM_COPY 0xC0
 
-// 34 bajty na strukturê
-// przy kolejce 1024 wpisów obci¹¿enie 34KB
-// Villages do odrysowania pe³nej ramki tilemapy potrzebuje WxHxBPP 14x12x5 = 840 blitów (27,9KB)
-// W przypadku grafiki interleaved bêdzie to 14x12 = 168 blitów (5,6KB)
-
-typedef void fnBlitterFill(
-	UWORD bltcon0, UWORD bltcon1, UWORD bltafwm, UWORD bltalwm,
-	WORD bltamod, WORD bltbmod, WORD bltcmod, WORD bltdmod,
-	UBYTE *bltapt, UBYTE *bltbpt, UBYTE *bltcpt, UBYTE *bltdpt,
-	UWORD bltadat, UWORD bltbdat, UWORD bltcdat,
-	UWORD bltsize
-);
-
-/**
- * Single blit data - mirror of custom chip registers
- * Fields are aligned in same order as in Custom struct
- */
-typedef struct {
-	WORD bltcmod; /// Bitplane C Modulo
-	WORD bltbmod; /// Bitplane B Modulo
-	WORD bltamod; /// Bitplane A Modulo
-	WORD bltdmod; /// Bitplane D Modulo
-	
-	UWORD bltcon0; /// Blit control 0
-	UWORD bltcon1; /// Blit control 1
-	
-	UWORD bltafwm; /// First word mask
-	UWORD bltalwm; /// Last word mask
-	
-	UBYTE *bltcpt; /// Bitplane C ptr
-	UBYTE *bltbpt; /// Bitplane B ptr
-	UBYTE *bltapt; /// Bitplane A ptr
-	UBYTE *bltdpt; /// Bitplane D ptr
-	
-	UWORD bltsize; /// Blit size
-	
-	UWORD bltcdat; /// Bitplane C data
-	UWORD bltbdat; /// Bitplane B data
-	UWORD bltadat; /// Bitplane A data
-} tBlitData;
-
 /**
  * Blit manager struct
  */
 typedef struct {
-	UWORD uwQueueLength;          /// Length of blit queue
-	UWORD uwAddPos;               /// Queue pos at which next blit will be added
-	UWORD uwBlitPos;              /// Queue pos which blitter currently processes
-	tBlitData *pBlitData;         /// Blit queue array
-	fnBlitterFill *pBlitterSetFn;
-	char *szHandlerName;          /// For interrupt handler, meaningful description
-	struct Interrupt *pInt;       /// Interrupt structure of manager, must be PUBLIC type
-	                              // Previous interrupt data
-	struct Interrupt *pPrevInt;   /// Previous registered interrupt handler
-	UWORD uwOldIntEna;            /// Old intEna
-	UWORD uwOldDmaCon;            /// Old dmaCon
-	UBYTE ubBlitStarted;          /// 1 if last blitter op was blit from queue
+	FUBYTE fubDummy;
 } tBlitManager;
 
 extern tBlitManager g_sBlitManager;
 
-void blitManagerCreate(
-	IN UWORD uwQueueLength,
-	IN UWORD uwFlags
-);
-
+void blitManagerCreate(void);
 void blitManagerDestroy(void);
-
-void blitQueued(
-	IN UWORD bltcon0,
-	IN UWORD bltcon1,
-	IN UWORD bltafwm,
-	IN UWORD bltalwm,
-	IN WORD bltamod,
-	IN WORD bltbmod,
-	IN WORD bltcmod,
-	IN WORD bltdmod,
-	IN UBYTE *bltapt,
-	IN UBYTE *bltbpt,
-	IN UBYTE *bltcpt,
-	IN UBYTE *bltdpt,
-	IN UWORD bltadat,
-	IN UWORD bltbdat,
-	IN UWORD bltcdat,
-	IN UWORD bltsize
-);
-
-void blitNotQueued(
-	IN UWORD bltcon0,
-	IN UWORD bltcon1,
-	IN UWORD bltafwm,
-	IN UWORD bltalwm,
-	IN WORD bltamod,
-	IN WORD bltbmod,
-	IN WORD bltcmod,
-	IN WORD bltdmod,
-	IN UBYTE *bltapt,
-	IN UBYTE *bltbpt,
-	IN UBYTE *bltcpt,
-	IN UBYTE *bltdpt,
-	IN UWORD bltadat,
-	IN UWORD bltbdat,
-	IN UWORD bltcdat,
-	IN UWORD bltsize
-);
 
 BYTE blitUnsafeCopy(
 	IN tBitMap *pSrc,
