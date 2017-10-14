@@ -2,16 +2,18 @@
 #define GUARD_ACE_MANAGER_BLIT_H
 
 /**
- * The mighty blitter queue manager
- * Allows complete async between CPU and blitter by adding blits to queue
+ * The mighty blitter manager
+ * There was a queue mechanism, it's gone now.
+ * @todo Some convenience for async - state machine?
  */
 
-#include <clib/exec_protos.h> // Amiga typedefs
+#ifdef AMIGA
 #include <exec/interrupts.h>  // struct Interrupt
 #include <hardware/dmabits.h> // DMAF_BLITTER
 #include <hardware/intbits.h> // INTB_BLIT
+#endif // AMIGA
 
-#include <ace/config.h>
+#include <ace/types.h>
 #include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/utils/custom.h>

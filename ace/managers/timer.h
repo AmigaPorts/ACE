@@ -1,9 +1,11 @@
 #ifndef GUARD_ACE_MANAGER_TIMER_H
 #define GUARD_ACE_MANAGER_TIMER_H
 
+#ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <exec/interrupts.h>  // struct Interrupt
 #include <hardware/intbits.h> // INTB_VERTB
+#endif // AMIGA
 
 #include <ace/config.h>
 #include <ace/managers/memory.h>

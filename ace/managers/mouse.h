@@ -1,19 +1,27 @@
 #ifndef GUARD_ACE_MANAGER_MOUSE_H
 #define GUARD_ACE_MANAGER_MOUSE_H
 
+#ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <clib/intuition_protos.h> // IDCMP_RAWKEY etc
 #include <devices/input.h>
 #include <clib/alib_protos.h>
+#endif // AMIGA
 
 #include <ace/config.h>
 
 #include <ace/managers/window.h>
 
 /* Types */
+#ifdef AMIGA
 #define MOUSE_LMB IECODE_LBUTTON
 #define MOUSE_RMB IECODE_RBUTTON
 #define MOUSE_MMB IECODE_MBUTTON
+#else
+#define MOUSE_LMB 1
+#define MOUSE_RMB 2
+#define MOUSE_MMB 4
+#endif // AMIGA
 
 #define MOUSE_NACTIVE 0
 #define MOUSE_USED 1
@@ -21,9 +29,11 @@
 
 typedef struct {
 	UBYTE pStates[3];
+#ifdef AMIGA
 	__chip UWORD pBlankCursor[6];
 	struct MsgPort *pInputMP;
 	struct IOStdReq *pInputIO;
+#endif // AMIGA
 } tMouseManager;
 
 /* Globals */

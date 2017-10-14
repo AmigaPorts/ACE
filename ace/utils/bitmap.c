@@ -7,6 +7,7 @@
 /* Functions */
 
 tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags) {
+#ifdef AMIGA
 	tBitMap *pBitMap;
 	UBYTE i;
 
@@ -57,6 +58,9 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 
 	logBlockEnd("bitmapCreate()");
 	return pBitMap;
+#else
+	return 0;
+#endif // AMIGA
 }
 
 void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWORD uwStartY) {
@@ -203,7 +207,9 @@ void bitmapDestroy(tBitMap *pBitMap) {
 	UBYTE i;
 	logBlockBegin("bitmapDestroy(pBitMap: %p)", pBitMap);
 	if (pBitMap) {
+#ifdef AMIGA
 		WaitBlit();
+#endif
 		if(bitmapIsInterleaved(pBitMap))
 			pBitMap->Depth = 1;
 		for (i = pBitMap->Depth; i--;)

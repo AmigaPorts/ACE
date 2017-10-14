@@ -1,8 +1,10 @@
 #ifndef GUARD_ACE_MANAGER_KEY_H
 #define GUARD_ACE_MANAGER_KEY_H
 
-#include <clib/exec_protos.h> // Amiga typedefs
+#include <ace/types.h>
+#ifdef AMIGA
 #include <clib/intuition_protos.h> // IDCMP_RAWKEY etc
+#endif // AMIGA
 
 #include <ace/config.h>
 

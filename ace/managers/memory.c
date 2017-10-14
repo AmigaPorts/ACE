@@ -2,6 +2,11 @@
 
 /* Globals */
 
+#ifndef AMIGA
+#include <stdlib.h>
+int TypeOfMem(void *pMem) {return MEMF_FAST;};
+#endif // AMIGA
+
 static UWORD s_uwLastId = 0;
 
 /* Vars */
@@ -34,14 +39,15 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	s_pMemTail->ulSize = ulSize;
 	s_pMemTail->uwId = s_uwLastId++;
 	s_pMemTail->pNext = pNext;
+
 	if(TypeOfMem(pAddr) & MEMF_CHIP)
 		fprintf(
-			s_pMemLog, "allocated CHIP memory %hu@%p, size %lu (%s:%u)\n",
+			s_pMemLog, "Allocated CHIP memory %hu@%p, size %lu (%s:%u)\n",
 			s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
 		);
 	else
 		fprintf(
-			s_pMemLog, "allocated FAST memory %hu@%p, size %lu (%s:%u)\n",
+			s_pMemLog, "Allocated FAST memory %hu@%p, size %lu (%s:%u)\n",
 			s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
 		);
 
@@ -126,7 +132,9 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 			ulSize, szFile, uwLine
 		);
 		fprintf(s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n", s_ulChipPeakUsage, s_ulFastPeakUsage);
+#ifdef AMIGA
 		fprintf(s_pMemLog, "Largest available chunk of given type: %lu\n", AvailMem(ulFlags | MEMF_LARGEST));
+#endif // AMIGA
 		return 0;
 	}
 	_memEntryAdd(pAddr, ulSize, uwLine, szFile);
@@ -139,9 +147,17 @@ void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, char *szFile) {
 }
 
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
+	#ifdef AMIGA
 	return AllocMem(ulSize, ulFlags);
+	#else
+	return malloc(ulSize);
+	#endif // AMIGA
 }
 
 void _memFreeRls(void *pMem, ULONG ulSize) {
+	#ifdef AMIGA
 	FreeMem(pMem, ulSize);
+	#else
+	free(pMem);
+	#endif // AMIGA
 }

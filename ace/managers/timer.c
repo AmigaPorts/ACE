@@ -2,9 +2,10 @@
 #include <ace/managers/log.h>
 
 /* Globals */
-tTimerManager g_sTimerManager;
+tTimerManager g_sTimerManager = {0};
 
 /* Functions */
+#ifdef AMIGA
 
 /**
  * Timer VBlank server
@@ -14,11 +15,15 @@ __amigainterrupt __saveds void timerVBlankServer(__reg("a1") UWORD *pCounter) {
 	++(*pCounter);
 }
 
+#endif // AMIGA
+
 /**
  * Creates Vertical Blank server for counting frames
  */
 void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
+
+	#ifdef AMIGA
 	g_sTimerManager.pInt = memAllocChipClear(sizeof(struct Interrupt)); // CHIP is PUBLIC.
 
 	g_sTimerManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
@@ -28,14 +33,17 @@ void timerCreate(void) {
 	g_sTimerManager.pInt->is_Code = timerVBlankServer;
 
 	AddIntServer(INTB_VERTB, g_sTimerManager.pInt);
+	#endif // AMIGA
 }
 
 /**
  * Removes Vertical Blank server
  */
 void timerDestroy(void) {
+	#ifdef AMIGA
 	RemIntServer(INTB_VERTB, g_sTimerManager.pInt);
 	memFree(g_sTimerManager.pInt, sizeof(struct Interrupt));
+	#endif // AMIGA
 }
 
 /**
@@ -54,6 +62,7 @@ ULONG timerGet(void) {
  * Max time capacity: 1715s (28,5 min)
  */
 ULONG timerGetPrec(void) {
+	#ifdef AMIGA
 	UWORD uwFr1, uwFr2; // frame counts
 	tRayPos sRay;
 	ULONG *pRay = (ULONG*)&sRay, *pReg = (ULONG*)vhPosRegs;
@@ -72,6 +81,9 @@ ULONG timerGetPrec(void) {
 		return (uwFr2*160*313 + sRay.uwPosY*160 + sRay.ubPosX);
 	else
 		return (uwFr1*160*313 + sRay.uwPosY*160 + sRay.ubPosX);
+	#else
+	return 0;
+	#endif
 }
 
 /**

@@ -4,8 +4,10 @@
 #include <stdio.h>                // fopen etc
 #include <string.h>               // strlen etc
 #include <stdarg.h>               // va_list etc
+#ifdef AMIGA
 #include <clib/exec_protos.h>     // Amiga typedefs
 #include <clib/graphics_protos.h> // Amiga typedefs
+#endif // AMIGA
 
 #include <ace/config.h>
 #include <ace/managers/timer.h>
@@ -76,12 +78,14 @@ void _logAvgWrite(tAvg *pAvg);
 
 /* Functions - struct dump */
 
+#ifdef AMIGA
 void _logUCopList(
 	IN struct UCopList *pUCopList
 );
 void _logBitMap(
 	IN struct BitMap *pBitMap
 );
+#endif // AMIGA
 
 # define logOpen() _logOpen()
 # define logClose() _logClose()
@@ -116,8 +120,11 @@ void _logBitMap(
 # define logAvgEnd(pAvg)
 # define logAvgWrite(pAvg)
 
+#ifdef AMIGA
 # define logUCopList(pUCopList)
 # define logBitMap(pBitMap)
-#endif
+#endif // AMIGA
+
+#endif // GAME_DEBUG
 
 #endif // GUARD_ACE_MANAGER_LOG_H

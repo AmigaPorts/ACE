@@ -1,6 +1,8 @@
 #ifndef GUARD_ACE_MANAGER_VIEWPORT_TILEBUFFER_H
 #define GUARD_ACE_MANAGER_VIEWPORT_TILEBUFFER_H
 
+#ifdef AMIGA
+
 /**
  * Tilemap buffer manager
  * Provides memory-efficient tilemap buffer
@@ -117,4 +119,5 @@ void tileBufferInvalidateRect(
 	IN UWORD uwHeight
 );
 
-#endif
+#endif // AMIGA
+#endif // GUARD_ACE_MANAGER_VIEWPORT_TILEBUFFER_H

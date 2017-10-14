@@ -7,8 +7,7 @@
  *        'font' and 'txt'.
  */
 
-#include <clib/exec_protos.h> // Amiga typedefs
-#include <ace/config.h>
+#include <ace/types.h>
 #include <ace/managers/blit.h>
 #include <ace/utils/bitmap.h>
 
@@ -55,10 +54,10 @@ typedef struct _tTextBitMap {
 
 /**
  *  @brief Creates font instance from specified file.
- *  
+ *
  *  @param szFontName Font file path to be loaded.
  *  @return pointer to loaded font.
- *  
+ *
  *  @see fontDestroy()
  */
 tFont *fontCreate(
@@ -67,9 +66,9 @@ tFont *fontCreate(
 
 /**
  *  @brief Destroys given font instance.
- *  
+ *
  *  @param pFont Font to be destroyed.
- *  
+ *
  *  @see fontCreate()
  */
 void fontDestroy(
@@ -80,11 +79,11 @@ void fontDestroy(
  *  @brief Creates text bitmap with specified font, containing given text.
  *  Treat as cache - allows faster reblit of text without need
  *  of assembling it again.
- *  
+ *
  *  @param pFont  Font to be used during text assembly.
  *  @param szText String to be printed on bitmap buffer.
  *  @return Newly-created text bitmap pointer.
- *  
+ *
  *  @see fontDestroyTextbitMap()
  *  @see fontDrawTextBitMap()
  */
@@ -95,9 +94,9 @@ tTextBitMap *fontCreateTextBitMap(
 
 /**
  *  @brief Destroys specified buffered text bitmap.
- *  
+ *
  *  @param pTextBitMap Text bitmap to be destroyed.
- *  
+ *
  *  @see fontCreateTextBitMap()
  */
 void fontDestroyTextBitMap(
@@ -106,14 +105,14 @@ void fontDestroyTextBitMap(
 
 /**
  *  @brief Draws specified text bitmap at given position, color and flags.
- *  
+ *
  *  @param pDest       Destination bitmap.
  *  @param pTextbitMap Source text bitmap.
  *  @param uwX         X position on destination bitmap.
  *  @param uwY         Y position on destination bitmap.
  *  @param ubColor     Desired text color.
  *  @param ubFlags     Text draw flags (FONT_*).
- *  
+ *
  *  @see fontCreateTextBitMap()
  *  @see fontDrawStr()
  */
@@ -131,7 +130,7 @@ void fontDrawTextBitMap(
  *  This function should be used very carefully, as text assembling is
  *  time-consuming. If same text is going to be redrawn in game loop, its bitmap
  *  buffer should be stored and used for redraw.
- *  
+ *
  *  @param pDest Destination bitmap.
  *  @param pFont   Font to be used for text assembly.
  *  @param uwX     X position on destination bitmap.
@@ -139,7 +138,7 @@ void fontDrawTextBitMap(
  *  @param szText  String to be printed on destination bitmap.
  *  @param ubColor Desired text color.
  *  @param ubFlags Text draw flags (FONT_*).
- *  
+ *
  *  @see fontDrawTextBitMap()
  */
 void fontDrawStr(

@@ -27,9 +27,14 @@
 /**
  *  Checks if given x,y is in specified tRect.
  */
-#define inRect(x, y, r) (                \
-	x >= r.uwX && x <= r.uwX + r.uwWidth   \
-	&& y >= r.uwY && y <= r.uwY+r.uwHeight \
+#define inRect(x, y, r) (                     \
+	(x) >= r.uwX && (x) <= r.uwX + r.uwWidth && \
+	(y) >= r.uwY && (y) <= r.uwY+r.uwHeight     \
+)
+
+#define inAbsRect(x, y, ar) (          \
+	(x) >= ar.uwX1 && (x) <= ar.uwX2  && \
+	(y) >= ar.uwY1 && (y) <= ar.uwY2     \
 )
 
 #endif // GUARD_ACE_MACROS_H

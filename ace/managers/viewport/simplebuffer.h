@@ -1,6 +1,8 @@
 #ifndef GUARD_ACE_MANAGER_VIEWPORT_SIMPLEBUFFER_H
 #define GUARD_ACE_MANAGER_VIEWPORT_SIMPLEBUFFER_H
 
+#ifdef AMIGA
+
 /**
  *  Buffer with naive scrolling techniques. Uses loadsa CHIP RAM but there
  *  should'nt be any quirks while using it.
@@ -89,4 +91,5 @@ UBYTE simpleBufferIsRectVisible(
 	IN UWORD uwHeight
 );
 
-#endif
+#endif // AMIGA
+#endif // GUARD_ACE_MANAGER_VIEWPORT_SIMPLEBUFFER_H

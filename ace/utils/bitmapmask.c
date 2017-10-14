@@ -111,7 +111,9 @@ void bitmapMaskSaveBmp(tBitmapMask *pMask, char *szPath) {
 	tBitMap sBitmap;
 	const UWORD pPalette[2] = {0x0000, 0x0fff};
 
+#ifdef AMIGA
 	InitBitMap(&sBitmap, 1, pMask->uwWidth, pMask->uwHeight);
 	sBitmap.Planes[0] = (APTR)pMask->pData;
 	bitmapSaveBmp(&sBitmap, (UWORD*)pPalette, szPath);
+#endif // AMIGA
 }

@@ -1,7 +1,11 @@
 #include <ace/macros.h>
 #include <ace/managers/log.h>
-#include <hardware/dmabits.h>
 #ifdef GAME_DEBUG
+
+#ifdef AMIGA
+#include <hardware/dmabits.h>
+#endif // AMIGA
+
 /* Globals */
 tLogManager g_sLogManager;
 
@@ -32,13 +36,15 @@ void _logWrite(char *szFormat, ...) {
 		return;
 	if (!g_sLogManager.pFile)
 		return;
-	
+
+#ifdef AMIGA
 	// Re-enable disk dma if disabled
 	UBYTE ubWasDiskEnabled = 0;
 	if(!(custom.dmaconr & DMAF_DISK)) {
 		custom.dmacon = BITCLR | DMAF_DISK;
 		ubWasDiskEnabled = 1;
 	}
+#endif // AMIGA
 	g_sLogManager.ubBlockEmpty = 0;
 	if (!g_sLogManager.ubIsLastWasInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
@@ -47,15 +53,17 @@ void _logWrite(char *szFormat, ...) {
 	}
 
 	g_sLogManager.ubIsLastWasInline = szFormat[strlen(szFormat) - 1] != '\n';
-	
+
 	va_list vaArgs;
 	va_start(vaArgs, szFormat);
 	vfprintf(g_sLogManager.pFile, szFormat, vaArgs);
 	va_end(vaArgs);
 
 	fflush(g_sLogManager.pFile);
+#ifdef AMIGA
 	if(ubWasDiskEnabled)
 		custom.dmacon = BITSET | DMAF_DISK;
+#endif // AMIGA
 }
 
 void _logClose() {
@@ -78,12 +86,12 @@ void _logBlockBegin(char *szBlockName, ...) {
 	strcpy(szFmtBfr, "Block begin: ");
 	strcat(szFmtBfr, szBlockName);
 	strcat(szFmtBfr, "\n");
-	
+
 	va_list vaArgs;
 	va_start(vaArgs, szBlockName);
 	vsprintf(szStrBfr,szFmtBfr,vaArgs);
 	va_end(vaArgs);
-	
+
 	logWrite(szStrBfr);
 	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
 	logPushIndent();
@@ -95,7 +103,7 @@ void _logBlockEnd(char *szBlockName) {
 		return;
 	logPopIndent();
 	timerFormatPrec(
-		g_sLogManager.szTimeBfr, 
+		g_sLogManager.szTimeBfr,
 		timerGetDelta(
 			g_sLogManager.pTimeStack[g_sLogManager.ubIndent],
 			timerGetPrec()
@@ -156,7 +164,7 @@ void _logAvgEnd(tAvg *pAvg) {
 	if(pAvg->pDeltas[pAvg->uwCurrDelta] < pAvg->ulMin)
 		pAvg->ulMin = pAvg->pDeltas[pAvg->uwCurrDelta];
 	++pAvg->uwCurrDelta;
-	// Roll 
+	// Roll
 	if(pAvg->uwCurrDelta == pAvg->uwAllocCount)
 		pAvg->uwCurrDelta = 0;
 	pAvg->uwUsedCount = MIN(pAvg->uwAllocCount, pAvg->uwUsedCount + 1);
@@ -171,7 +179,7 @@ void _logAvgWrite(tAvg *pAvg) {
 	char szAvg[15];
 	char szMin[15];
 	char szMax[15];
-	
+
 	if(!pAvg->uwUsedCount) {
 		logWrite("Avg %s: No measures taken!\n", pAvg->szName);
 		return;
@@ -180,7 +188,7 @@ void _logAvgWrite(tAvg *pAvg) {
 	for(i = pAvg->uwUsedCount; i--;)
 		ulAvg += pAvg->pDeltas[i];
 	ulAvg /= pAvg->uwUsedCount;
-	
+
 	// Display info
 	timerFormatPrec(szAvg, ulAvg);
 	timerFormatPrec(szMin, pAvg->ulMin);
@@ -188,13 +196,14 @@ void _logAvgWrite(tAvg *pAvg) {
 	logWrite("Avg %s: %s, min: %s, max: %s\n", pAvg->szName, szAvg, szMin, szMax);
 }
 
+#ifdef AMIGA
 // Copperlist debug
 void _logUCopList(struct UCopList *pUCopList) {
 	logBlockBegin("logUCopList(pUCopList: %p)", pUCopList);
 	logWrite("Next: %p\n", pUCopList->Next);
 	logWrite("FirstCopList: %p\n", pUCopList->FirstCopList);
 	logWrite("CopList: %p\n", pUCopList->CopList);
-	
+
 	logBlockBegin("pUCopList->CopList");
 	logWrite("Next: %p\n", pUCopList->CopList->Next);
 	logWrite("_CopList: %p\n", pUCopList->CopList->_CopList);
@@ -207,7 +216,7 @@ void _logUCopList(struct UCopList *pUCopList) {
 	logWrite("MaxCount: %u\n", pUCopList->CopList->MaxCount);
 	logWrite("DyOffset: %u\n", pUCopList->CopList->DyOffset);
 	logBlockEnd("pUCopList->CopList");
-	
+
 	logBlockEnd("logUCopList()");
 }
 
@@ -224,4 +233,6 @@ void _logBitMap(struct BitMap *pBitMap) {
 		logWrite("Planes[%hu]: %p\n", i, pBitMap->Planes[i]);
 	logBlockEnd("logBitMap");
 }
-#endif
+#endif // AMIGA
+
+#endif // GAME_DEBUG

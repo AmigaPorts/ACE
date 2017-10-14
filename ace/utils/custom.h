@@ -1,6 +1,8 @@
 #ifndef GUARD_ACE_UTILS_CUSTOM_H
 #define GUARD_ACE_UTILS_CUSTOM_H
 
+#ifdef AMIGA
+
 /**
  * Quick custom chipset struct include
  * Moved to separate file cuz multiple pasting of extern custom is messy
@@ -39,4 +41,5 @@ extern volatile tCopperUlong * const pSprPtrs;
 extern volatile tCopperUlong * const pBplPtrs;
 extern volatile tCopperUlong * const pCopLc;
 
-#endif
+#endif // AMIGA
+#endif // GUARD_ACE_UTILS_CUSTOM_H

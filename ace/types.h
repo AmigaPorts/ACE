@@ -1,7 +1,19 @@
 #ifndef GUARD_ACE_TYPES_H
 #define GUARD_ACE_TYPES_H
 
+#ifdef AMIGA
 #include <exec/types.h>
+#else
+#include <stdint.h>
+
+typedef uint8_t  UBYTE;
+typedef uint16_t UWORD;
+typedef uint32_t ULONG;
+
+typedef int8_t  BYTE;
+typedef int16_t WORD;
+typedef int32_t LONG;
+#endif // AMIGA
 
 /* Docs */
 #define IN    /* Input parameter. Passed pointer contents is const */
@@ -59,11 +71,18 @@ typedef struct _tBCoordYX {
 /**
  * Rectangle type
  */
-typedef struct {
+typedef struct _tUwRect {
 	UWORD uwY;
 	UWORD uwX;
 	UWORD uwWidth;
 	UWORD uwHeight;
 } tUwRect;
+
+typedef struct _tUwAbsRect {
+	UWORD uwY1;
+	UWORD uwX1;
+	UWORD uwY2;
+	UWORD uwX2;
+} tUwAbsRect;
 
 #endif

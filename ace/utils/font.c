@@ -1,5 +1,5 @@
 #include <ace/utils/font.h>
- 
+
 /* Globals */
 
 /* Functions */
@@ -8,27 +8,33 @@ tFont *fontCreate(char *szFontName) {
 	FILE *pFontFile;
 	tFont *pFont;
 	logBlockBegin("fontCreate(szFontName: %s)", szFontName);
-	
+
 	pFontFile = fopen(szFontName, "r");
 	if (!pFontFile)
 		return 0;
-	
+
 	pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont)
 		return 0;
-	
+
 	fread(pFont, 2 * sizeof(UWORD) + sizeof(UBYTE), 1, pFontFile);
 	logWrite("Addr: %p, data width: %upx, chars: %u, font height: %upx\n", pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight);
-	
-	pFont->pCharOffsets = (UWORD *) memAllocFast(sizeof(UWORD) * pFont->ubChars);
+
+	pFont->pCharOffsets = memAllocFast(sizeof(UWORD) * pFont->ubChars);
 	fread(pFont->pCharOffsets, sizeof(UWORD), pFont->ubChars, pFontFile);
-	
-	pFont->pRawData = (struct BitMap *) memAllocChip(sizeof(struct BitMap));
+
+	pFont->pRawData = memAllocChip(sizeof(tBitMap));
+#ifdef AMIGA
 	InitBitMap(pFont->pRawData, 1, pFont->uwWidth, pFont->uwHeight);
-	
+
 	pFont->pRawData->Planes[0] = AllocRaster(pFont->uwWidth, pFont->uwHeight);
 	fread(pFont->pRawData->Planes[0], 1, (pFont->uwWidth >> 3) * pFont->uwHeight, pFontFile);
-	
+#else
+	fclose(pFontFile);
+	logBlockEnd("fontCreate()");
+	return 0;
+#endif // AMIGA
+
 	fclose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return pFont;
@@ -37,8 +43,10 @@ tFont *fontCreate(char *szFontName) {
 void fontDestroy(tFont *pFont) {
 	logBlockBegin("fontDestroy(pFont: %p)", pFont);
 	if (pFont) {
+#ifdef AMIGA
 		FreeRaster(pFont->pRawData->Planes[0], pFont->pRawData->BytesPerRow << 3, pFont->pRawData->Rows);
-		memFree(pFont->pRawData, sizeof(struct BitMap));
+#endif // AMIGA
+		memFree(pFont->pRawData, sizeof(tBitMap));
 		memFree(pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 		memFree(pFont, sizeof(tFont));
 		pFont = 0;
@@ -63,7 +71,7 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 			pTextBitMap->uwActualWidth += (pFont->pCharOffsets[(*p) + 1] - pFont->pCharOffsets[*p]) + 1;
 		}
 	}
-	
+
 	// Bitmap init
 	pTextBitMap->pBitMap = bitmapCreate(pTextBitMap->uwActualWidth, uwY, 1, BMF_CLEAR);
 
@@ -90,11 +98,11 @@ void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
 	memFree(pTextBitMap, sizeof(tTextBitMap));
 }
 
-void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags) {
+void fontDrawTextBitMap(tBitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags) {
 	UBYTE i;
 	UBYTE ubMinterm;
 	tBitMap sTmpDest;
-	
+
 	// Alignment flags
 	if (ubFlags & FONT_RIGHT)
 		uwX -= pTextBitMap->uwActualWidth;
@@ -104,13 +112,15 @@ void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uw
 		uwY -= pTextBitMap->pBitMap->Rows;
 	else if(ubFlags & FONT_VCENTER)
 		uwY -= pTextBitMap->pBitMap->Rows>>1;
-	
+
 	if(ubFlags & FONT_SHADOW)
 		fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY+1, 0, FONT_COOKIE);
-	
+
 	// Helper destination bitmap
+#ifdef AMIGA
 	InitBitMap(&sTmpDest, 1, pDest->BytesPerRow<<3, pDest->Rows);
-	
+#endif
+
 	// Text-drawing loop
 	for (i = 0; i != pDest->Depth; ++i) {
 		// Determine minterm for given bitplane
@@ -143,7 +153,7 @@ void fontDrawTextBitMap(struct BitMap *pDest, tTextBitMap *pTextBitMap, UWORD uw
 	}
 }
 
-void fontDrawStr(struct BitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY, char *szText, UBYTE ubColor, UBYTE ubFlags) {
+void fontDrawStr(tBitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY, char *szText, UBYTE ubColor, UBYTE ubFlags) {
 	tTextBitMap *pTextBitMap = fontCreateTextBitMap(pFont, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
 	fontDestroyTextBitMap(pTextBitMap);

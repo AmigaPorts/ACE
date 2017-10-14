@@ -2,6 +2,7 @@
 
 tBlitManager g_sBlitManager = {0};
 
+#ifdef AMIGA
 /**
  * Blit interrupt handler
  * Fetches next blit from queue and sets custom registers to its values
@@ -11,18 +12,23 @@ __amigainterrupt __saveds void blitInterruptHandler(__reg("a0") struct Custom *c
 
 	cstm->intreq = INTF_BLIT;
 }
+#endif // AMIGA
 
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
+#ifdef AMIGA
 	OwnBlitter();
 	WaitBlit();
+#endif // AMIGA
 	logBlockEnd("blitManagerCreate");
 }
 
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
+#ifdef AMIGA
 	WaitBlit();
 	DisownBlitter();
+#endif //AMIGA
 	logBlockEnd("blitManagerDestroy");
 }
 
@@ -73,10 +79,14 @@ BYTE blitCheck(
  *  'optimize' it.
  */
 BYTE blitIsIdle(void) {
+	#ifdef AMIGA
 	if(!(custom.dmaconr & DMAF_BLTDONE))
 		if(!(custom.dmaconr & DMAF_BLTDONE))
 			return 1;
 	return 0;
+	#else
+		return 1;
+	#endif // AMIGA
 }
 
 /**
@@ -99,6 +109,7 @@ BYTE blitUnsafeCopy(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask
 ) {
+#ifdef AMIGA
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulSrcOffs, ulDstOffs;
@@ -173,6 +184,7 @@ BYTE blitUnsafeCopy(
 		ubMask >>= 1;
 		++ubPlane;
 	}
+#endif // AMIGA
 	return 1;
 }
 
@@ -196,6 +208,7 @@ BYTE blitUnsafeCopyAligned(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
+	#ifdef AMIGA
 	UWORD uwBlitWords, uwBltCon0;
 	WORD wDstModulo, wSrcModulo;
 	ULONG ulSrcOffs, ulDstOffs;
@@ -253,6 +266,7 @@ BYTE blitUnsafeCopyAligned(
 			custom.bltsize = (wHeight << 6) | uwBlitWords;
 		}
 	}
+#endif // AMIGA
 	return 1;
 }
 
@@ -283,6 +297,7 @@ BYTE blitUnsafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UWORD *pMsk
 ) {
+#ifdef AMIGA
 	WORD wDstModulo, wSrcModulo;
 	UBYTE ubPlane;
 
@@ -316,14 +331,22 @@ BYTE blitUnsafeCopyMask(
 		custom.bltcmod = wDstModulo;
 		custom.bltdmod = wDstModulo;
 
-		custom.bltapt  = (UBYTE*)((ULONG)pMsk) + ulSrcOffs;
-		custom.bltbpt  = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
-		custom.bltcpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
-		custom.bltdpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
+		custom.bltapt  = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
+		custom.bltbpt  = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+		custom.bltcpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		custom.bltdpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
 		custom.bltsize = (wHeight << 6) | uwBlitWords;
 	}
 	else {
+#ifdef GAME_DEBUG
+		if(
+			bitmapIsInterleaved(pSrc) && !bitmapIsInterleaved(pDst) ||
+			!bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)
+		) {
+			logWrite("WARN: Inefficient blit via mask with %p, %p\n", pSrc, pDst);
+		}
+#endif // GAME_DEBUG
 		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 		WaitBlit();
@@ -338,14 +361,15 @@ BYTE blitUnsafeCopyMask(
 		custom.bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			WaitBlit();
-			custom.bltapt  = (UBYTE*)((ULONG)pMsk) + ulSrcOffs;
-			custom.bltbpt  = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
-			custom.bltcpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
-			custom.bltdpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
+			custom.bltapt  = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
+			custom.bltbpt  = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+			custom.bltcpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			custom.bltdpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
 			custom.bltsize = (wHeight << 6) | uwBlitWords;
 		}
 	}
+	#endif // AMIGA
 	return 1;
 }
 
@@ -374,6 +398,7 @@ BYTE _blitRect(
 ) {
 	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile))
 		return 0;
+#ifdef AMIGA
 
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
@@ -420,5 +445,6 @@ BYTE _blitRect(
 		++ubPlane;
 	}	while(ubPlane != pDst->Depth);
 
+#endif // AMIGA
 	return 1;
 }

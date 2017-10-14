@@ -1,6 +1,8 @@
 #ifndef GUARD_ACE_MANAGER_VIEWPORT_SCROLLBUFFER_H
 #define GUARD_ACE_MANAGER_VIEWPORT_SCROLLBUFFER_H
 
+#ifdef AMIGA
+
 /**
  * Scrollable buffer manager
  * Uses scrolling-trick from aminet to achieve memory-efficient scroll
@@ -28,7 +30,7 @@ typedef struct {
 	tVpManager sCommon;
 	tCameraManager *pCameraManager;  /// Quick ref to camera
 
-	struct BitMap *pBuffer;          /// Ptr to buffer bitmap
+	tBitMap *pBuffer;          /// Ptr to buffer bitmap
 	tCopBlock *pStartBlock;          /// Initial data fetch
 	tCopBlock *pBreakBlock;          /// Bitplane ptr reset
 	tUwCoordYX uBfrBounds;           /// Real bounds of buffer (includes height reserved for x-scroll)
@@ -76,4 +78,6 @@ void scrollBufferBlitMask(
 	IN UWORD *pMsk
 );
 
-#endif
+#endif // AMIGA
+
+#endif // GUARD_ACE_MANAGER_VIEWPORT_SCROLLBUFFER_H

@@ -3,10 +3,12 @@
 
 #include <stdlib.h>
 
+#ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <clib/intuition_protos.h> // NewScreen etc
 #include <clib/graphics_protos.h> // InitVPort etc
 #include <graphics/gfxbase.h> // GfxBase etc
+#endif // AMIGA
 
 #include <ace/config.h>
 
@@ -14,22 +16,19 @@
 #include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 
-#define CPR_SEEK_CUR 0
-#define CPR_SEEK_SET 1
-#define CPR_SEEK_END 2
-
 /* Types */
+#ifdef AMIGA
 typedef struct {
 	struct Screen *pScreen;
 	struct Window *pWindow;
 	struct View *pSysView;  /// System view before running app and swapping views
-	UWORD pPalette[32];
 } tWindowManager;
 
 /* Globals */
 extern tWindowManager g_sWindowManager;
 extern struct IntuitionBase *IntuitionBase;
 extern struct GfxBase *GfxBase;
+#endif
 
 /* Functions */
 void windowCreate(void);

@@ -1,6 +1,8 @@
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/utils/tag.h>
 
+#ifdef AMIGA
+
 tSimpleBufferManager *simpleBufferCreate(
 	void *pTags, ...
 ) {
@@ -228,3 +230,5 @@ UBYTE simpleBufferIsRectVisible(
 		uwY <= pManager->pCameraManager->uPos.sUwCoord.uwY + pManager->sCommon.pVPort->uwHeight
 	);
 }
+
+#endif // AMIGA

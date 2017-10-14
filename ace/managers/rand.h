@@ -1,9 +1,7 @@
 #ifndef GUARD_ACE_MANAGER_RAND_H
 #define GUARD_ACE_MANAGER_RAND_H
 
-#include <clib/exec_protos.h> // Amiga typedefs
-
-#include <ace/config.h>
+#include <ace/types.h>
 
 /* Types */
 typedef struct {

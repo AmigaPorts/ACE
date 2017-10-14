@@ -1,8 +1,6 @@
 #ifndef GUARD_ACE_MANAGER_JOY_H
 #define GUARD_ACE_MANAGER_JOY_H
 
-#include <clib/exec_protos.h> // Amiga typedefs
-
 #include <ace/config.h>
 
 /* Types */
@@ -50,7 +48,7 @@
 #define JOY2_DOWN 7
 #define JOY2_LEFT 8
 #define JOY2_RIGHT 9
-	
+
 #define JOY3_FIRE 10
 #define JOY3_UP 11
 #define JOY3_DOWN 12

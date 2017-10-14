@@ -4,6 +4,7 @@
 
 tView *viewCreate(void *pTags, ...) {
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
+#ifdef AMIGA
 
 	// Create view stub
 	tView *pView = memAllocFastClear(sizeof(tView));
@@ -37,11 +38,15 @@ tView *viewCreate(void *pTags, ...) {
 	va_end(vaTags);
 	logBlockEnd("viewCreate()");
 	return pView;
+#else
+	logBlockEnd("viewCreate()");
+	return 0;
+#endif // AMIGA
 }
 
 void viewDestroy(tView *pView) {
 	logBlockBegin("viewDestroy(pView: %p)", pView);
-
+#ifdef AMIGA
 	if(g_sCopManager.pCopList == pView->pCopList)
 		viewLoad(0);
 
@@ -53,6 +58,7 @@ void viewDestroy(tView *pView) {
 	logWrite("Freeing copperlists...\n");
 	copListDestroy(pView->pCopList);
 	memFree(pView, sizeof(tView));
+#endif // AMIGA
 	logBlockEnd("viewDestroy()");
 }
 
@@ -71,11 +77,13 @@ void viewProcessManagers(tView *pView) {
 }
 
 void viewUpdateCLUT(tView *pView) {
+#ifdef AMIGA
 	if(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)
 		CopyMem(pView->pFirstVPort->pPalette, custom.color, 32*sizeof(UWORD));
 	else {
 		// na petli: vPortUpdateCLUT();
 	}
+#endif // AMIGA
 }
 
 /**
@@ -84,6 +92,7 @@ void viewUpdateCLUT(tView *pView) {
  */
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
+#ifdef AMIGA
 	WaitTOF();
 	ULONG uwDMA;
 	if(!pView) {
@@ -110,11 +119,15 @@ void viewLoad(tView *pView) {
 	custom.copjmp1 = 1;
 	custom.dmacon = uwDMA;
 	WaitTOF();
+#endif // AMIGA
 	logBlockEnd("viewLoad()");
 }
 
 tVPort *vPortCreate(void *pTagList, ...) {
 	logBlockBegin("vPortCreate(pTagList: %p)", pTagList);
+	va_list vaTags;
+	va_start(vaTags, pTagList);
+#ifdef AMIGA
 
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
@@ -122,9 +135,6 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	const UWORD uwDefaultWidth = 320;
 	const UWORD uwDefaultHeight = -1;
 	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
-
-	va_list vaTags;
-	va_start(vaTags, pTagList);
 
 	// Determine parent view
 	tView *pView = (tView*)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
@@ -175,7 +185,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
-
+#endif // AMIGA
 fail:
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
@@ -226,6 +236,7 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 }
 
 void vPortWaitForEnd(tVPort *pVPort) {
+#ifdef AMIGA
 	UWORD uwEndPos;
 	UWORD uwCurrFrame;
 
@@ -244,6 +255,7 @@ void vPortWaitForEnd(tVPort *pVPort) {
 	}
 
 	// Otherwise wait for pos @ next frame
+#endif // AMIGA
 }
 
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {

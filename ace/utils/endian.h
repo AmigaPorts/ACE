@@ -21,7 +21,11 @@
  *  @see endianIntel32()
  */
 inline UWORD endianIntel16(UWORD uwIn) {
+#ifdef AMIGA
 	return (uwIn << 8) | (uwIn >> 8);
+#else
+	return uwIn;
+#endif // AMIGA
 }
 
 /**
@@ -33,7 +37,11 @@ inline UWORD endianIntel16(UWORD uwIn) {
  *  @see endianIntel16()
  */
 inline ULONG endianIntel32(ULONG ulIn) {
+#ifdef AMIGA
 	return (ulIn << 24) | ((ulIn&0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
+#else
+	return ulIn;
+#endif // AMIGA
 }
 
 #endif

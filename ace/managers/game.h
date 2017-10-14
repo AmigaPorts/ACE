@@ -1,7 +1,7 @@
 #ifndef GUARD_ACE_MANAGER_GAME_H
 #define GUARD_ACE_MANAGER_GAME_H
 
-#include <clib/exec_protos.h> // Amiga typedefs
+#include <ace/types.h> // Amiga typedefs
 
 #include <ace/config.h>
 

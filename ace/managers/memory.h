@@ -2,8 +2,16 @@
 #define GUARD_ACE_MANAGER_MEMORY_H
 
 #include <stdio.h>            // FILE and related fns
+#ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <exec/memory.h>      // MEMF_CLEAR etc
+#else
+#define MEMF_CHIP    0
+#define MEMF_FAST    1
+#define MEMF_CLEAR   2
+#define MEMF_PUBLIC  4
+#define MEMF_LARGEST 8
+#endif // AMIGA
 
 #include <ace/config.h>
 

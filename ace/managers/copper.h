@@ -21,6 +21,7 @@
  * You have been warned.
  */
 
+#ifdef AMIGA
 #include <hardware/dmabits.h> // DMAF defines
 
 #include <ace/types.h>
@@ -284,4 +285,5 @@ FUBYTE copRawDisableSprites(
 	IN FUWORD fuwCmdOffs
 );
 
-#endif
+#endif // AMIGA
+#endif // GUARD_ACE_MANAGER_COPPER_H

@@ -19,8 +19,8 @@
 #define FRAMETILE_SE 32,32
 
 void bmFrameDraw(
-	IN struct BitMap *pFrameSet,
-	IN struct BitMap *pDest,
+	IN tBitMap *pFrameSet,
+	IN tBitMap *pDest,
 	IN UWORD uwX,
 	IN UWORD uwY,
 	IN UBYTE ubTileWidth,

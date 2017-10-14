@@ -5,11 +5,20 @@
  * Util for handling AmigaOS tag list pattern.
  */
 
-#include <ace/types.h>
-#include <utility/tagitem.h>
 #include <stdarg.h>
+#include <ace/types.h>
 
+#ifdef AMIGA
+#include <utility/tagitem.h>
 typedef Tag tTag;
+#else
+typedef ULONG tTag;
+#define TAG_DONE   0L
+#define TAG_END    0L
+#define TAG_IGNORE 1L
+#define TAG_MORE   2L
+#define TAG_SKIP   3L
+#endif // AMIGA
 
 /**
  *  Finds and returns value of specified tag name from tag list.

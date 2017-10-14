@@ -1,4 +1,5 @@
 #include <ace/managers/copper.h>
+#ifdef AMIGA
 #include <stdarg.h>
 #include <ace/utils/tag.h>
 #include <limits.h>
@@ -547,3 +548,5 @@ FUBYTE copRawDisableSprites(tCopList *pList, FUBYTE fubSpriteMask, FUWORD fuwCmd
 
 	return fubCmdCnt;
 }
+
+#endif // AMIGA

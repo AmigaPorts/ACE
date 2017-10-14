@@ -2,11 +2,28 @@
 #define GUARD_ACE_UTIL_BITMAP_H
 
 #include <stdio.h> // FILE etc
+#include <ace/types.h>
 
-#include <clib/exec_protos.h> // Amiga typedefs
+#ifdef AMIGA
+#include <ace/types.h> // Amiga typedefs
 #include <clib/graphics_protos.h> // BitMap etc
+typedef struct BitMap tBitMap;
+#else
+typedef struct _tBitMap {
+	UWORD BytesPerRow;
+	UWORD Rows;
+	UBYTE Flags;
+	UBYTE Depth;
+	UWORD pad;
+	UWORD *Planes[8];
+} tBitMap;
+#define BMF_CLEAR       (1 << 0)
+#define BMF_DISPLAYABLE (1 << 1)
+#define BMF_INTERLEAVED (1 << 2)
+#define BMF_STANDARD    (1 << 3)
+#define BMF_MINPLANES   (1 << 4)
+#endif // AMIGA
 
-#include <ace/config.h>
 #include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/utils/custom.h>
@@ -14,7 +31,6 @@
 #define BITMAP_INTERLEAVED 1
 
 /* Types */
-typedef struct BitMap tBitMap;
 
 /* Globals */
 
@@ -145,4 +161,4 @@ void bitmapSaveBmp(
  */
 UWORD bitmapGetByteWidth(tBitMap *pBitMap);
 
-#endif
+#endif // GUARD_ACE_UTIL_BITMAP_H

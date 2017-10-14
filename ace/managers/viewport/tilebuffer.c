@@ -1,5 +1,7 @@
 #include <ace/managers/viewport/tilebuffer.h>
 
+#ifdef AMIGA
+
 /**
  * Tilemap buffer manager
  * Provides speed- and memory-efficient tilemap buffer
@@ -23,7 +25,7 @@ tTileBufferManager *tileBufferCreate(
 ) {
 	logBlockBegin("tileBufferCreate(pVPort: %p, uwTileX: %u, uwTileY: %u, ubTileShift: %hu, szTilesetFileName: %s, pTileDrawCallback: %p)", pVPort, uwTileX, uwTileY, ubTileShift, szTileSetFileName, pTileDrawCallback);
 	tTileBufferManager *pManager;
-	
+
 	// Feed struct with args
 	pManager = memAllocFast(sizeof(tTileBufferManager));
 	pManager->sCommon.pNext = 0;
@@ -31,29 +33,29 @@ tTileBufferManager *tileBufferCreate(
 	pManager->sCommon.destroy = (tVpManagerFn)tileBufferDestroy;
 	pManager->sCommon.ubId = VPM_TILEBUFFER;
 	pManager->sCommon.pVPort = pVPort;
-	
+
 	pManager->ubTileShift = ubTileShift;
 	pManager->ubTileSize = 1 << ubTileShift;
 	pManager->pTileDrawCallback = pTileDrawCallback;
-	
+
 	pManager->pTileData = 0;
 	pManager->pTileSet = 0;
 	tileBufferReset(pManager, uwTileX, uwTileY, szTileSetFileName);
-			
+
 	vPortAddManager(pVPort, (tVpManager*)pManager);
-		
+
 	// find camera manager, create if not exists
 	// camera created in scroll bfr
 	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
 	// if(!(pManager->pCameraManager = (tCameraManager*)extVPortGetManager(pVPort, VPM_CAMERA)))
 		// pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwTileX << ubTileShift, uwTileY << ubTileShift);
 	// TODO: reset camera bounds?
-	
-	// nie tutaj bo kamera jeszcze musi zostaæ ustawiona
+
+	// nie tutaj bo kamera jeszcze musi zostaï¿½ ustawiona
 	// i pTileData ustawione
-	// a bez sensu dwa razy odrysowywaæ ca³y ekran
+	// a bez sensu dwa razy odrysowywaï¿½ caï¿½y ekran
 	// tileBufferRedraw(pManager);
-	
+
 	logBlockEnd("tileBufferCreate");
 	return pManager;
 }
@@ -61,18 +63,18 @@ tTileBufferManager *tileBufferCreate(
 void tileBufferDestroy(tTileBufferManager *pManager) {
 	UWORD uwCol;
 	logBlockBegin("tileBufferDestroy(pManager: %p)", pManager);
-	
+
 	// Free tileset
 	bitmapDestroy(pManager->pTileSet);
-	
+
 	// Free tile data
 	for (uwCol = pManager->uTileBounds.sUwCoord.uwX; uwCol--;)
 		memFree(pManager->pTileData[uwCol], pManager->uTileBounds.sUwCoord.uwY * sizeof(UBYTE));
 	memFree(pManager->pTileData, pManager->uTileBounds.sUwCoord.uwX * sizeof(UBYTE *));
-	
+
 	// Free manager
 	memFree(pManager, sizeof(tTileBufferManager));
-	
+
 	logBlockEnd("tileBufferDestroy");
 }
 
@@ -84,7 +86,7 @@ void tileBufferReset(tTileBufferManager *pManager,
 	UWORD uwCol;
 	UBYTE ubTileShift;
 	logBlockBegin("tileBufferReset()");
-	
+
 	// Free old tile data
 	if(pManager->pTileData) {
 		for (uwCol = pManager->uTileBounds.sUwCoord.uwX; uwCol--;)
@@ -92,7 +94,7 @@ void tileBufferReset(tTileBufferManager *pManager,
 		memFree(pManager->pTileData, pManager->uTileBounds.sUwCoord.uwX * sizeof(UBYTE *));
 		pManager->pTileData = 0;
 	}
-	
+
 	// Init new tile data
 	pManager->uTileBounds.sUwCoord.uwX = uwTileX;
 	pManager->uTileBounds.sUwCoord.uwY = uwTileY;
@@ -101,14 +103,14 @@ void tileBufferReset(tTileBufferManager *pManager,
 		for(uwCol = uwTileX; uwCol--;)
 			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(UBYTE));
 	}
-	
+
 	// Load new tileset
 	if(szTileSetFileName) {
 		if(pManager->pTileSet)
 			bitmapDestroy(pManager->pTileSet);
 		pManager->pTileSet = bitmapCreateFromFile(szTileSetFileName);
 	}
-	
+
 	// Reset margin redraw structs
 	ubTileShift = pManager->ubTileShift;
 	memset(&pManager->sMarginL, 0, sizeof(tTileMarginData));
@@ -121,16 +123,16 @@ void tileBufferReset(tTileBufferManager *pManager,
 	pManager->pMarginOppositeX = &pManager->sMarginL;
 	pManager->pMarginY         = &pManager->sMarginD;
 	pManager->pMarginOppositeY = &pManager->sMarginU;
-	
+
 	// Reset scrollManager, create if not exists
 	if(!(pManager->pScrollManager = (tScrollBufferManager*)vPortGetManager(pManager->sCommon.pVPort, VPM_SCROLL)))
 		pManager->pScrollManager = scrollBufferCreate(pManager->sCommon.pVPort, pManager->ubTileSize, uwTileX << ubTileShift, uwTileY << ubTileShift);
 	else
 		scrollBufferReset(pManager->pScrollManager, pManager->ubTileSize, uwTileX << ubTileShift, uwTileY << ubTileShift);
-	
+
 	pManager->uwMarginedWidth = pManager->sCommon.pVPort->uwWidth + (4 << ubTileShift);
 	pManager->uwMarginedHeight = pManager->pScrollManager->uwBmAvailHeight;
-	
+
 	logBlockEnd("tileBufferReset()");
 }
 
@@ -144,7 +146,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	UWORD uwTileOffsX, uwTileOffsY;
 	UBYTE ubTileSize, ubTileShift;
 	UBYTE ubAddY;
-		
+
 	ubTileSize = pManager->ubTileSize;
 	ubTileShift = pManager->ubTileShift;
 	wDeltaX = cameraGetDeltaX(pManager->pCameraManager);
@@ -218,7 +220,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		);
 		++pManager->pMarginX->wTileCurr;
 	}
-	
+
 	// Y movement
 	if (wDeltaY) {
 		// determine redraw row - down or up
@@ -279,7 +281,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			pManager->pMarginOppositeY->wTileEnd = 0;
 		}
 	}
-	
+
 	// Redraw another Y tile - regardless of movement in that direction
 	if (pManager->pMarginY->wTileCurr < pManager->pMarginY->wTileEnd) {
 		ubAddY =      (pManager->pMarginY->wTileCurr << ubTileShift) / pManager->uwMarginedWidth;
@@ -310,22 +312,22 @@ void tileBufferRedraw(tTileBufferManager *pManager) {
 	ubTileShift = pManager->ubTileShift;
 	pManager->uwMarginedWidth = pManager->sCommon.pVPort->uwWidth + (4 << ubTileShift);
 	pManager->uwMarginedHeight = pManager->pScrollManager->uwBmAvailHeight;
-	
+
 	wTileIdxY = (pManager->pCameraManager->uPos.sUwCoord.uwY >> ubTileShift) -1;
 	if (wTileIdxY < 0)
 		wTileIdxY = 0;
 	uwTileOffsY = (wTileIdxY << ubTileShift) % pManager->uwMarginedHeight;
-	
+
 	for (j = 0; j < pManager->uwMarginedHeight; j += ubTileSize) {
-		
+
 		wTileIdxX = (pManager->pCameraManager->uPos.sUwCoord.uwX >> ubTileShift) -1;
 		if (wTileIdxX < 0)
 			wTileIdxX = 0;
 		ubAddY =      (wTileIdxX << ubTileShift) / pManager->uwMarginedWidth;
 		uwTileOffsX = (wTileIdxX << ubTileShift) % pManager->uwMarginedWidth;
-		
+
 		for (i = 0; i < pManager->uwMarginedWidth; i+= ubTileSize) {
-			tileBufferDrawTileQuick(pManager, wTileIdxX, wTileIdxY, uwTileOffsX, uwTileOffsY+ubAddY);			
+			tileBufferDrawTileQuick(pManager, wTileIdxX, wTileIdxY, uwTileOffsX, uwTileOffsY+ubAddY);
 			++wTileIdxX;
 			uwTileOffsX += ubTileSize;
 			if(uwTileOffsX >= pManager->uwMarginedWidth) {
@@ -333,7 +335,7 @@ void tileBufferRedraw(tTileBufferManager *pManager) {
 				uwTileOffsX -= pManager->uwMarginedWidth;
 			}
 		}
-		
+
 		++wTileIdxY;
 		uwTileOffsY = (uwTileOffsY + ubTileSize) % pManager->uwMarginedHeight;
 	}
@@ -349,7 +351,7 @@ void tileBufferDrawTile(tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uw
 	UWORD uwBfrX, uwBfrY;
 	UWORD uwMarginedWidth, uwMarginedHeight;
 	UBYTE ubAddY;
-	
+
 	uwBfrY = (uwTileIdxY << pManager->ubTileShift) % pManager->uwMarginedHeight;
 	ubAddY = (uwTileIdxX << pManager->ubTileShift) / pManager->uwMarginedWidth;
 	uwBfrX = (uwTileIdxX << pManager->ubTileShift) % pManager->uwMarginedWidth;
@@ -382,18 +384,18 @@ void tileBufferInvalidateRect(tTileBufferManager *pManager, UWORD uwX, UWORD uwY
 	UWORD uwVisStartX, uwVisEndX, uwVisStartY, uwVisEndY; /// Visible tile rect (excluding invisible margins)
 	UWORD uwVisX, uwVisY;
 	UBYTE ubAddY;
-	
+
 	// graniczne indeksy kafli
 	uwStartX = uwX >> pManager->ubTileShift;
 	uwEndX = (uwX+uwWidth) >> pManager->ubTileShift;
 	uwStartY = uwY >> pManager->ubTileShift;
 	uwEndY = (uwY+uwHeight) >> pManager->ubTileShift;
-	
+
 	uwVisStartX = pManager->pCameraManager->uPos.sUwCoord.uwX >> pManager->ubTileShift;
 	uwVisStartY = pManager->pCameraManager->uPos.sUwCoord.uwY >> pManager->ubTileShift;
 	uwVisEndX = uwVisStartX + (pManager->sCommon.pVPort->uwWidth >> pManager->ubTileShift);
 	uwVisEndY = uwVisStartY + (pManager->sCommon.pVPort->uwHeight >> pManager->ubTileShift);
-	
+
 	for(uwX = uwStartX; uwX <= uwEndX; ++uwX) {
 		if(uwX < uwVisStartX)
 			continue;
@@ -420,3 +422,5 @@ void tileBufferInvalidateRect(tTileBufferManager *pManager, UWORD uwX, UWORD uwY
 		}
 	}
 }
+
+#endif // AMIGA

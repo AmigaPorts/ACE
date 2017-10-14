@@ -6,9 +6,7 @@
  *  @todo viewport resolution, lace & EHB control. Managers should react accordingly.
  */
 
-#include <clib/exec_protos.h>     // Amiga typedefs
-#include <clib/graphics_protos.h> // BitMap etc.
-#include <ace/config.h>
+#include <ace/types.h>
 #include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/copper.h>
@@ -98,13 +96,13 @@ typedef struct _tVPort {
 	struct _tVPort *pNext;     ///< Pointer to next tVPort.
 	tVpManager *pFirstManager; ///< Pointer to first viewport manager on list.
 	UWORD uwFlags;             ///< Creation flags.
-	
+
 	// VPort dimensions
 	UWORD uwOffsX;  ///< Viewport's X offset on view.
 	UWORD uwOffsY;  ///< Viewport's Y offset on view.
 	UWORD uwWidth;  ///< Viewport's width
 	UWORD uwHeight; ///< Viewport's height
-	
+
 	// Color info
 	UBYTE ubBPP;        ///< Bitplane count
 	UWORD pPalette[32]; ///< Destination palette
@@ -118,11 +116,11 @@ typedef struct _tVPort {
 
 /**
  *  @brief Creates blank tView.
- *  
+ *
  *  @param pTags Pointer to tag list.
  *  @param ... Tag list, see TAG_VIEW_* defines.
  *  @return initialized View structure.
- *  
+ *
  *  @see viewDestroy()
  *  @see vPortCreate()
  */
@@ -130,9 +128,9 @@ typedef struct _tVPort {
 
 /**
  *  @brief Destroys given tView along with attached viewports.
- *  
+ *
  *  @param pView View to be destroyed.
- *  
+ *
  *  @see vCreate()
  *  @see vPortDestroy()
  */
@@ -142,7 +140,7 @@ void viewDestroy(
 
 /**
  *  @brief Processes all viewport managers attached to view's viewports.
- *  
+ *
  *  @param pView View to be processed.
  */
 void viewProcessManagers(
@@ -151,7 +149,7 @@ void viewProcessManagers(
 
 /**
  *  Updates CLUT for every viewport attached to view.
- *  
+ *
  *  @param pView View to be updated.
  */
 void viewUpdateCLUT(
@@ -160,7 +158,7 @@ void viewUpdateCLUT(
 
 /**
  *  Sets given view as current and displays it on screen.
- *  
+ *
  *  @param pView View to be set as current.
  */
 void viewLoad(
@@ -172,21 +170,21 @@ void viewLoad(
 /**
  *  @brief Creates new tVPort inside given view with supplied dimensions and BPP.
  *  Line-spacing shouldn't be required if VPort have common CLUT with predecessor.
- *  
+ *
  *  @param pView    Parent view
  *  @param pTagList Pointer to tag list.
  *  @param ...      Tag list, see TAG_VPORT_* defines
  *  @return initialized VPort structure.
- *  
+ *
  *  @see vPortDestroy()
  */
  tVPort *vPortCreate(void *pTagList, ...);
 
 /**
  *  @brief Destroys given tVPort along with attached managers.
- *  
+ *
  *  @param pVPort Viewport to be destroyed.
- *  
+ *
  *  @see vPortCreate()
  */
 void vPortDestroy(
@@ -195,9 +193,9 @@ void vPortDestroy(
 
 /**
  *  @brief Waits for display beam to pass given VPort.
- *  
+ *
  *  @param pVPort VPort to be passed.
- *  
+ *
  *  @todo Make view offset dependent on DiWStrt.
  */
 void vPortWaitForEnd(
@@ -208,10 +206,10 @@ void vPortWaitForEnd(
 
 /**
  *  @brief Attaches specified VPort manager to given VPort.
- *  
+ *
  *  @param pVPort     Parent VPort.
  *  @param pVpManager VPort manager to be attached.
- *  
+ *
  *  @see vPortRmManager()
  *  @see vPortGetManager()
  */
@@ -222,10 +220,10 @@ void vPortAddManager(
 
 /**
  *  @brief Detaches specified manager from VPort and calls its destroy callback.
- *  
+ *
  *  @param pVPort     Parent VPort.
  *  @param pVpManager VPort manager to be detached.
- *  
+ *
  *  @see vPortAddManager()
  */
 void vPortRmManager(
@@ -235,7 +233,7 @@ void vPortRmManager(
 
 /**
  *  @brief Returns maanger with given ID attached to specified VPort.
- *  
+ *
  *  @param pVPort Parent VPort.
  *  @param ubId   VPort manager ID to be found.
  *  @return if found, pointer to VPort manager, otherwise zero.

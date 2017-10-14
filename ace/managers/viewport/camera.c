@@ -73,11 +73,11 @@ UBYTE cameraIsMoved(tCameraManager *pManager) {
 }
 
 UWORD cameraGetXDiff(tCameraManager *pManager) {
-	return abs(cameraGetDeltaX(pManager));
+	return ABS(cameraGetDeltaX(pManager));
 }
 
 UWORD cameraGetYDiff(tCameraManager *pManager) {
-	return abs(cameraGetDeltaX(pManager));
+	return ABS(cameraGetDeltaX(pManager));
 }
 
 WORD cameraGetDeltaX(tCameraManager *pManager) {

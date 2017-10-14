@@ -1,8 +1,7 @@
 #ifndef GUARD_ACE_UTIL_BOBFRAMES_H
 #define GUARD_ACE_UTIL_BOBFRAMES_H
 
-#include <clib/exec_protos.h> // Amiga typedefs
-
+#include <ace/types.h>
 #include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/utils/bitmap.h>
@@ -10,7 +9,7 @@
 #define BOBFRAMES_BPP 5
 
 typedef struct {
-	struct BitMap *pBitMap;
+	tBitMap *pBitMap;
 	UWORD *pMask;
 } tBobFrame;
 
