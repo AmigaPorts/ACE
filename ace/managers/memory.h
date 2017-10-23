@@ -56,7 +56,7 @@ void _memFreeRls(void *pMem, ULONG ulSize);
 # define memDestroy()
 # define memEntryAdd(pAddr, ulSize)
 # define memEntryDelete(pAddr, ulSize)
-#endif
+#endif // GAME_DEBUG
 
 #define memAllocFast(ulSize) memAlloc(ulSize, 0)
 #define memAllocChip(ulSize) memAlloc(ulSize, MEMF_CHIP)

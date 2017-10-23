@@ -270,13 +270,13 @@ void copSetMove(
 );
 
 /**
- *  Disables given sprites on supplied copperlist at given cmd offset.
- *  This function doesn't add any WAIT cmd, be sure to put those cmds in VBlank.
+ * Disables given sprites on supplied copperlist at given cmd offset.
+ * This function doesn't add any WAIT cmd, be sure to put those cmds in VBlank.
+ * Number of MOVE instructions added equals two times number of sprites disabled.
  *
- *  @param pList         Copperlist to be edited.
- *  @param fubSpriteMask Determines sprites to be disabled.
+ * @param pList         Copperlist to be edited.
+ * @param fubSpriteMask Determines sprites to be disabled.
  *                       Setting bit0 to 1 disables sprite 0, etc.
-
  * @return Number of MOVE instructions added.
  */
 FUBYTE copRawDisableSprites(
