@@ -1,4 +1,5 @@
 #include <ace/managers/blit.h>
+#include <ace/macros.h>
 
 tBlitManager g_sBlitManager = {0};
 
@@ -301,9 +302,6 @@ void blitQueued(
  * 	B: src  read
  * 	C: dest read
  * 	D: dest write
- * Descending mode is used under 2 cases:
- * 	- Blit needs shifting to left with previous data coming from right (ubSrcDelta > ubDstDelta)
- * 	- Ascending right mask shifted more than 16 bits
  * Source and destination regions should not overlap.
  * Function is slightly slower (~0.5 - 1.5ms) than bltBitMap:
  * 	- Pre-loop calculations take ~50us on ASC mode, ~80us on DESC mode
@@ -314,75 +312,92 @@ BYTE blitUnsafeCopy(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask
 ) {
-	// Helper vars
-	UWORD uwBlitWords, uwBlitWidth;
-	ULONG ulSrcOffs, ulDstOffs;
-	UBYTE ubShift, ubSrcDelta, ubDstDelta, ubWidthDelta, ubMaskFShift, ubMaskLShift, ubPlane;
-	// Blitter register values
-	UWORD uwBltCon0, uwBltCon1, uwFirstMask, uwLastMask;
-	WORD wSrcModulo, wDstModulo;
+	// Each dot/hash is 2 bits
+	// CASE A:
+	// srcX & 15 = dstX & 15
+	// ####|#### ....|.... ....|....
+	// ^===================v
+	// ....|.... ....|.... ####|####
+	//
+	// CASE B:
+	// srcX & 15 < dstX & 15
+	// ..##|##.. ....|.... ....|....
+	//   ^--v
+	// ....|#### ....|.... ....|....
+	// ^=========v
+	// ....|.... ....|#### ....|....
+	//
+	// CASE C:
+	// srcX & 15 > dstX & 15
+	// ..##|#### ####|##.. ....|.... ....|....
+	//   ^-------v
+	// ....|.... ####|#### ####|#### ....|....
+	// ^=========v
+	// ....|.... ....|.... ####|#### ####|####
 
-	ubSrcDelta = wSrcX & 0xF;
-	ubDstDelta = wDstX & 0xF;
-	ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
+	logWrite(
+		"Blitting from %hd,%hd to %hd,%hu, size: %hdx%hd\n",
+		wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight
+	);
+	logWrite(
+		"Bitmap sizes - src: %d,%d, dst: %d,%d\n",
+		pSrc->BytesPerRow<<3, pSrc->Rows, pDst->BytesPerRow<<3, pDst->Rows
+	);
 
-	if(ubSrcDelta > ubDstDelta || ((wWidth+ubDstDelta+15) & 0xFFF0)-(wWidth+ubSrcDelta) > 16) {
-		uwBlitWidth = (wWidth+(ubSrcDelta>ubDstDelta?ubSrcDelta:ubDstDelta)+15) & 0xFFF0;
-		uwBlitWords = uwBlitWidth >> 4;
+	UBYTE ubSrcOffs = wSrcX & 0xF;
+	UBYTE ubDstOffs = wDstX & 0xF;
 
-		ubMaskFShift = ((ubWidthDelta+15)&0xF0)-ubWidthDelta;
-		ubMaskLShift = uwBlitWidth - (wWidth+ubMaskFShift);
-		uwFirstMask = 0xFFFF << ubMaskFShift;
-		uwLastMask = 0xFFFF >> ubMaskLShift;
-		if(ubMaskLShift > 16) // Fix for 2-word blits
-			uwFirstMask &= 0xFFFF >> (ubMaskLShift-16);
-
-		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
-		uwBltCon1 = ubShift << BSHIFTSHIFT | BLITREVERSE;
-
-		ulSrcOffs = pSrc->BytesPerRow * (wSrcY+wHeight-1) + ((wSrcX+wWidth+ubMaskFShift-1)>>3);
-		ulDstOffs = pDst->BytesPerRow * (wDstY+wHeight-1) + ((wDstX+wWidth+ubMaskFShift-1) >> 3);
+	LONG lSrcSeg = pSrc->BytesPerRow * wSrcY + (wSrcX >> 3);
+	LONG lDstSeg = pDst->BytesPerRow * wDstY + (wDstX >> 3);
+	if(ubSrcOffs > ubDstOffs) {
+		// Case C
+		lDstSeg -= 2;
+		ubDstOffs += 16;
+		logWrite("Case 'C'\n");
 	}
-	else {
-		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
-		uwBlitWords = uwBlitWidth >> 4;
+	UBYTE ubShift = ubDstOffs-ubSrcOffs;
+	UWORD uwBlitWidth = (MAX(ubSrcOffs, ubDstOffs) + wWidth + 15) & 0xFFF0;
+	UWORD uwBlitWords = uwBlitWidth >> 4;
+	UWORD wSrcModulo = pSrc->BytesPerRow - (uwBlitWords << 1);
+	UWORD wDstModulo = pDst->BytesPerRow - (uwBlitWords << 1);
+	UWORD uwFirstMask = 0xFFFF >> ubSrcOffs;
+	if(ubSrcOffs + wWidth < 16)
+		uwFirstMask &= 0xFFFF << (16 - (ubSrcOffs + wWidth));
+	UWORD uwLastMask = 0xFFFF << (uwBlitWidth - (ubSrcOffs + wWidth));
 
-		ubMaskFShift = ubSrcDelta;
-		ubMaskLShift = uwBlitWidth-(wWidth+ubSrcDelta);
+	logWrite("Offsets - src: %hhu, dst: %hhu\n", ubSrcOffs, ubDstOffs);
+	logWrite("Segs - src: %d, dst: %d\n", lSrcSeg, lDstSeg);
+	logWrite("Shift: %hhu\n", ubShift);
+	logWrite("Blit width: %hu (%hu words)\n", uwBlitWidth, uwBlitWords);
+	logWrite("Modulos - src: %hd, dst: %hd\n", wSrcModulo, wDstModulo);
+	logWrite("Masks: %04X, %04X\n", uwFirstMask, uwLastMask);
 
-		uwFirstMask = 0xFFFF >> ubMaskFShift;
-		uwLastMask = 0xFFFF << ubMaskLShift;
-
-		ubShift = ubDstDelta-ubSrcDelta;
-		uwBltCon1 = ubShift << BSHIFTSHIFT;
-
-		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
-	}
-
-	uwBltCon0 = (ubShift << ASHIFTSHIFT) | USEB|USEC|USED | ubMinterm;
-	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
-	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
-
-	ubMask &= 0xFF >> (8- (pSrc->Depth < pDst->Depth? pSrc->Depth: pDst->Depth));
-	ubPlane = 0;
+	ubMask &= 0xFF >> (8- MIN(pSrc->Depth, pDst->Depth));
+	UBYTE ubPlane = 0;
+	OwnBlitter();
+	custom.bltcon0 = (ubShift << ASHIFTSHIFT) | USEB|USEC|USED | ubMinterm;
+	custom.bltcon1 = (ubShift << BSHIFTSHIFT);
+	custom.bltafwm = uwFirstMask;
+	custom.bltalwm = uwLastMask;
+	// shift & mask before ptr & data
+	custom.bltbmod = wSrcModulo;
+	custom.bltcmod = wDstModulo;
+	custom.bltdmod = wDstModulo;
+	custom.bltadat = 0xFFFF;
 	while(ubMask) {
-		if(ubMask & 1)
-			g_sBlitManager.pBlitterSetFn(
-				uwBltCon0, uwBltCon1,                  // bltconX
-				uwFirstMask, uwLastMask,               // bltaXwm
-				0, wSrcModulo, wDstModulo, wDstModulo, // bltXmod
-				// This hell of a casting must stay here or else large offsets get bugged!
-				0,                                     // bltapt
-				(UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs), // bltbpt
-				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltcpt
-				(UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs), // bltdpt
-				0xFFFF, 0, 0,                          // bltXdat
-				(wHeight << 6) | uwBlitWords           // bltsize
-			);
+		if(ubMask & 1) {
+			WaitBlit();
+			// This hell of a casting must stay here or else large offsets get bugged!
+			custom.bltbpt  = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + lSrcSeg);
+			custom.bltcpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + lDstSeg);
+			custom.bltdpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + lDstSeg);
+			custom.bltsize = (wHeight << 6) | uwBlitWords;
+		}
+
 		ubMask >>= 1;
 		++ubPlane;
 	}
+	DisownBlitter();
 	return 1;
 }
 
