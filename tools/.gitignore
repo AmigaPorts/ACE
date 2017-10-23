@@ -4,6 +4,7 @@
 # Input file types
 *.jpg
 *.png
+*.gpl
 
 # Output file types
 *.plt
