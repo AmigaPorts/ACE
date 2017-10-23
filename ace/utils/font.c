@@ -153,8 +153,17 @@ void fontDrawTextBitMap(tBitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWO
 	}
 }
 
-void fontDrawStr(tBitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY, char *szText, UBYTE ubColor, UBYTE ubFlags) {
+void fontDrawStr(
+	tBitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY,
+	char *szText, UBYTE ubColor, UBYTE ubFlags
+) {
+	logBlockBegin(
+		"fontDrawStr(pDest: %p, pFont: %p, uwX: %hu, uwY: %hu, szText: '%s', "
+		"ubColor: %hhu, ubFlags: %hhu)",
+		pDest, pFont, uwX, uwY, szText, ubColor, ubFlags
+	);
 	tTextBitMap *pTextBitMap = fontCreateTextBitMap(pFont, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
 	fontDestroyTextBitMap(pTextBitMap);
+	logBlockEnd("fontDrawStr()");
 }
