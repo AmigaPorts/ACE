@@ -1,5 +1,12 @@
 .idea/
-.vscode/
+**/.vscode/*
 build/
 lib/
 bin/
+
+showcase/showcase
+showcase/*.bmp
+tools/*/*.exe
+tools/*/*.png
+tools/*/*.bm
+tools/*/*.plt
