@@ -35,7 +35,7 @@ extern tGameManager g_sGameManager;
 
 /* Functions */
 
-void gameCreate(void);
+void gameCreate(void); /* First gameState needs to be added by gamePushState after calling this function */
 
 void gameDestroy(void);
 
