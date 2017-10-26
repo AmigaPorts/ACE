@@ -1,7 +1,7 @@
 #ifndef GUARD_SHOWCASE_MENU_MENULIST_H
 #define GUARD_SHOWCASE_MENU_MENULIST_H
 
-#include <ace/config.h>
+#include <ace/types.h>
 #include <ace/types.h>
 #include <ace/utils/font.h>
 

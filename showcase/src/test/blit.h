@@ -2,7 +2,7 @@
 #define GUARD_SHOWCASE_TEST_BLIT_H
 
 #include <ace/types.h>
-#include <ace/config.h>
+#include <ace/types.h>
 
 /* ****************************************************************** DEFINES */
 
