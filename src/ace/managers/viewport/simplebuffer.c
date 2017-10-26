@@ -92,7 +92,7 @@ fail:
 
 void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	logBlockBegin(
-		"simpleBufferSetBitmap(pManager: %p, pBitMap: %p)\n",
+		"simpleBufferSetBitmap(pManager: %p, pBitMap: %p)",
 		pManager, pBitMap
 	);
 	if(pManager->pBuffer && pManager->pBuffer->Depth != pBitMap->Depth) {
