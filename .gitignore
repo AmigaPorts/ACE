@@ -51,7 +51,7 @@ Temporary Items
 
 # ACE-specific
 *.log
-ace/.vscode/*
+**/.vscode/*
 showcase/showcase
 showcase/*.bmp
 tools/*/*.exe
