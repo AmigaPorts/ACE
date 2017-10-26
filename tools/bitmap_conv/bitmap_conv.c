@@ -106,7 +106,7 @@ void writePlanarInterleaved(
 				if(wColorIdx == -1) {
 					if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB) {
 						printf(
-							"ERR: Unexpected color: %hhu, %hhu, %hhu @%u,%u\n",
+							"ERR: Unexpected color: %hu, %hu, %hu @%u,%u\n",
 							pImgData[ulPos], pImgData[ulPos+1],	pImgData[ulPos+2], x, y
 						);
 						return;
@@ -178,7 +178,7 @@ void writePlanar(
 				if(wColorIdx == -1) {
 					if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB) {
 						printf(
-							"ERR: Unexpected color: %hhu, %hhu, %hhu @%u,%u\n",
+							"ERR: Unexpected color: %hu, %hu, %hu @%u,%u\n",
 							pImgData[ulPos], pImgData[ulPos+1],	pImgData[ulPos+2], x, y
 						);
 						return;
@@ -294,7 +294,7 @@ uint8_t paletteLoad(char *szPath, tColor *pPalette) {
 		return 0;
 	}
 	fread(&uwPaletteCount, 1, 1, pIn);
-	printf("Palette color count: %hhu\n", uwPaletteCount);
+	printf("Palette color count: %hu\n", uwPaletteCount);
 	for(i = 0; i != uwPaletteCount; ++i) {
 		fread(&ubXR, 1, 1, pIn);
 		fread(&ubGB, 1, 1, pIn);

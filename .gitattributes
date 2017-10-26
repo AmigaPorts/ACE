@@ -1,2 +1,3 @@
+# Explicit list for language for file extension
 *.h linguist-language=C
 *.c linguist-language=C

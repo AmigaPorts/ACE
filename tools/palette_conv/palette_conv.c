@@ -12,6 +12,7 @@ typedef struct _tColor {
 void printSupportedExtensions(void) {
 	printf("Supported palettes:\n");
 	printf("\tGIMP Palette (.gpl)\n");
+	printf("\tAdobe Color Table (.act)\n");
 }
 
 void trimEnd(char *str) {
@@ -21,9 +22,8 @@ void trimEnd(char *str) {
 		*c = '\0';
 }
 
-uint8_t paletteLoadFromGpl(FILE *pFile, tColor *pPalette) {
+uint16_t paletteLoadFromGpl(FILE *pFile, tColor *pPalette) {
 	char szBuffer[255];
-	uint8_t ubCommentPos;
 	char *pComment;
 	tColor *pColor;
 	
@@ -54,10 +54,16 @@ uint8_t paletteLoadFromGpl(FILE *pFile, tColor *pPalette) {
 	return pColor - pPalette;
 }
 
+uint16_t paletteLoadFromAct(FILE *pFile, tColor *pPalette) {
+	fread(pPalette, 3, 256, pFile);
+	return fgetc(pFile) << 8 | fgetc(pFile);
+}
+
 int main(int argc, char *argv[]) {
 	char *szExt, *szOut;
 	tColor pPalette[256];
-	uint8_t ubColorCount, i, ubXR, ubGB;
+	uint16_t uwColorCount;
+	uint8_t i, ubXR, ubGB;
 	FILE *pFile;
 	
 	// No args?
@@ -77,9 +83,12 @@ int main(int argc, char *argv[]) {
 	// Read input file
 	printf("Reading from %s...\n", argv[1]);
 	pFile = fopen(argv[1], "r");
-	if(!strcmp(szExt, ".gpl"))
-		ubColorCount = paletteLoadFromGpl(pFile, pPalette);
-	// TODO: other extensions
+	if (!strcmp(szExt, ".gpl")) {
+		uwColorCount = paletteLoadFromGpl(pFile, pPalette);
+	}
+	else if (!strcmp(szExt, ".act")) {
+		uwColorCount = paletteLoadFromAct(pFile, pPalette);
+	}
 	else {
 		fclose(pFile);
 		printf("Unknown input file extension: %s\n", szExt);
@@ -88,10 +97,10 @@ int main(int argc, char *argv[]) {
 	}
 	fclose(pFile);
 	
-	if(!ubColorCount)
+	if(!uwColorCount)
 		printf("ERROR: read 0 colors\n");
 	else
-		printf("Read %hu colors\n", ubColorCount);
+		printf("Read %hu colors\n", uwColorCount);
 	
 	// Determine output path
 	if(argc == 3)
@@ -106,8 +115,8 @@ int main(int argc, char *argv[]) {
 	// Write ACE palette
 	printf("Writing to %s...\n", szOut);
 	pFile = fopen(szOut, "wb");
-	fwrite(&ubColorCount, 1, 1, pFile);
-	for(i = 0; i != ubColorCount; ++i) {
+	fwrite(&uwColorCount, 1, 1, pFile);
+	for(i = 0; i != uwColorCount; ++i) {
 		ubXR = (pPalette[i].ubR >> 4);
 		ubGB = (pPalette[i].ubG & 0xF0) | (pPalette[i].ubB >> 4);
 		fwrite(&ubXR, 1, 1, pFile);

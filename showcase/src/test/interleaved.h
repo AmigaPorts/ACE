@@ -1,7 +1,7 @@
 #ifndef GUARD_SHOWCASE_TEST_INTERLEAVED_H
 #define GUARD_SHOWCASE_TEST_INTERLEAVED_H
 
-#include <ace/config.h>
+#include <ace/types.h>
 
 void gsTestInterleavedCreate(void);
 void gsTestInterleavedLoop(void);

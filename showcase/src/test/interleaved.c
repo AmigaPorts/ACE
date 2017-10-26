@@ -1,6 +1,6 @@
 #include "test/interleaved.h"
 
-#include <ace/config.h>
+#include <ace/types.h>
 #include <ace/utils/extview.h>
 #include <ace/utils/palette.h>
 #include <ace/managers/viewport/simplebuffer.h>
