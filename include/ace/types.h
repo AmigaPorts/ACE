@@ -87,4 +87,4 @@ typedef struct _tUwAbsRect {
 	UWORD uwX2;
 } tUwAbsRect;
 
-#endif
+#endif // GUARD_ACE_TYPES_H
