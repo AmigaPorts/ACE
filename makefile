@@ -7,25 +7,43 @@ ifdef ComSpec
 	RM = del
 	CP = copy
 	SLASH = \\
-	ACE_DIR=$(shell chdir)
+	ACE_ROOT=$(shell chdir)
 else
 	# Linux/Amiga-ixemul
 	RM = rm
 	CP = cp
 	SLASH = /
-	ACE_DIR = $(shell pwd)
+	ACE_ROOT = $(shell pwd)
 endif
 SL= $(strip $(SLASH))
 
-ACE_PARENT = $(ACE_DIR)$(SL)..
+ACE_PARENT = $(ACE_ROOT)$(SL)..
+
+ACE_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)ace
+PARIO_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)pario
+FIXMATH_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)fixmath
+
+ACE_INC_DIR = $(ACE_ROOT)$(SL)include
+
 CC = vc
-CC_FLAGS = +kick13 -c99 -I$(ACE_PARENT) -DAMIGA
+CC_FLAGS = +kick13 -c99 -I$(ACE_INC_DIR) -DAMIGA
 
+BUILD_DIR = build
 
-TMP_DIR = tmp
+ACE_FILES = $(wildcard \
+	$(ACE_SRC_DIR)$(SL)managers/*.c \
+	$(ACE_SRC_DIR)$(SL)managers/viewport/*.c \
+	$(ACE_SRC_DIR)$(SL)utils/*.c \
+)
+ACE_OBJS = $(addprefix $(BUILD_DIR)$(SL), $(notdir $(ACE_FILES:.c=.o)))
 
-ACE_FILES = $(wildcard $(ACE_DIR)$(SL)managers/*.c $(ACE_DIR)$(SL)managers/viewport/*.c $(ACE_DIR)$(SL)utils/*.c $(ACE_DIR)$(SL)libfixmath/*.c)
-ACE_OBJS = $(addprefix $(TMP_DIR)$(SL), $(notdir $(ACE_FILES:.c=.o)))
+PARIO_FILES = $(wildcard $(PARIO_SRC_DIR)/*.asm)
+PARIO_OBJS = $(addprefix $(BUILD_DIR)$(SL), $(notdir $(PARIO_FILES:.asm=.o)))
+
+FIXMATH_FILES = $(wildcard $(FIXMATH_SRC_DIR)/*.c)
+FIXMATH_OBJS = $(addprefix $(BUILD_DIR)$(SL), $(notdir $(FIXMATH_FILES:.c=.o)))
+
+ace: $(ACE_OBJS) $(FIXMATH_OBJS) $(PARIO_OBJS)
 
 hello:
 	@echo.
@@ -39,24 +57,19 @@ summary:
 	@echo ACE Full build completed
 	@echo ========================
 
-ace: $(ACE_OBJS)
-	@echo.
-	@echo Copying libs...
-	$(CP) libs$(SL)pario.o $(TMP_DIR)$(SL)pario.o
-
-$(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)%.c
+$(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 	
-$(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)managers/%.c
+$(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 	
-$(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)managers/viewport/%.c
-	$(CC) $(CC_FLAGS) -c -o $@ $<
-	
-$(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)utils/%.c
+$(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)utils$(SL)%.c
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 
-$(TMP_DIR)$(SL)%.o: $(ACE_DIR)$(SL)libfixmath/%.c
+$(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.asm
+	$(CC) $(CC_FLAGS) -c -o $@ $<
+	
+$(BUILD_DIR)$(SL)%.o: $(FIXMATH_SRC_DIR)$(SL)%.c
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 	
 all: hello clear ace summary
@@ -64,4 +77,4 @@ all: hello clear ace summary
 clear:
 	@echo.
 	@echo Removing old objs...
-	$(RM) $(TMP_DIR)$(SL)*.o
+	$(RM) $(BUILD_DIR)$(SL)*.o
