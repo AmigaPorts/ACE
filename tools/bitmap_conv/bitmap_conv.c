@@ -206,24 +206,40 @@ void writeMask(
 	uint8_t *pImgData,
 	uint16_t uwWidth, uint16_t uwHeight
 ) {
-	uint16_t x,y, uwPixelBuffer;
+	uint8_t i, ubPlaneCount;
+	uint16_t x, y, uwPixelBuffer;
 	uint32_t ulPos;
 	FILE *pOut;
-	pOut = fopen(g_szMaskOutputPath, "wb");
+
+	if(uwWidth & 0xF) {
+		printf("Width is not divisible by 16!\n");
+		return;
+	}
+
+	pOut	= fopen(g_szMaskOutputPath, "wb");
 	if(!pOut) {
 		printf("Can't write to file %s\n", g_szMaskOutputPath);
 		return;
 	}
-	// Write mask header
+
+	ubPlaneCount = 1;
+
+	// Write .bm header
 	writeByte(uwWidth >> 8, pOut);
 	writeByte(uwWidth & 0xFF, pOut);
 	writeByte(uwHeight >> 8, pOut);
 	writeByte(uwHeight & 0xFF, pOut);
+	writeByte(ubPlaneCount, pOut);
+	writeByte(0, pOut); // Version
+	writeByte(0, pOut); // Flags
+	for(i = 0; i != 2; ++i)
+		writeByte(0, pOut);
 
 	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
 		uwPixelBuffer = 0;
 		for(x = 0; x != uwWidth; ++x) {
+			// Determine color
 			ulPos = y*uwWidth*3 + x*3;
 			
 			uwPixelBuffer <<= 1;
@@ -235,7 +251,7 @@ void writeMask(
 			}
 		}
 	}
-	
+
 	fclose(pOut);
 }
 
@@ -243,25 +259,36 @@ void writeMaskInterleaved(
 	uint8_t *pImgData,
 	uint16_t uwWidth, uint16_t uwHeight, uint16_t uwPaletteCount
 ) {
-	uint16_t x,y, uwPixelBuffer;
+	uint8_t i, ubBpp, ubPlane;
+	uint16_t x, y, uwPixelBuffer;
 	uint32_t ulPos;
-	uint8_t ubPlane, ubBpp, i;
 	FILE *pOut;
-	
-	ubBpp = 1;
-	for(i = 2; i < uwPaletteCount; i <<= 1)
-		++ubBpp;
-	
-	pOut = fopen(g_szMaskOutputPath, "wb");
+
+	if(uwWidth & 0xF) {
+		printf("Width is not divisible by 16!\n");
+		return;
+	}
+
+	pOut	= fopen(g_szMaskOutputPath, "wb");
 	if(!pOut) {
 		printf("Can't write to file %s\n", g_szMaskOutputPath);
 		return;
 	}
-	// Write mask header
+
+	ubBpp = 1;
+	for(i = 2; i < uwPaletteCount; i <<= 1)
+		++ubBpp;
+
+	// Write .bm header
 	writeByte(uwWidth >> 8, pOut);
 	writeByte(uwWidth & 0xFF, pOut);
-	writeByte((uwHeight*ubBpp) >> 8, pOut);
-	writeByte((uwHeight*ubBpp) & 0xFF, pOut);
+	writeByte(uwHeight >> 8, pOut);
+	writeByte(uwHeight & 0xFF, pOut);
+	writeByte(ubBpp, pOut);
+	writeByte(0, pOut); // Version
+	writeByte(1, pOut); // Flags
+	for(i = 0; i != 2; ++i)
+		writeByte(0, pOut);
 
 	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
@@ -280,8 +307,8 @@ void writeMaskInterleaved(
 			}
 		}
 	}
-	
-	fclose(pOut);
+
+	fclose(pOut);	
 }
 
 uint8_t paletteLoad(char *szPath, tColor *pPalette) {
@@ -423,7 +450,7 @@ int determineArgs(int argc, char *argv[]) {
 	if(!strlen(g_szMaskOutputPath) && g_uwMaskR != 0xFFFF) {
 		memcpy(g_szMaskOutputPath, g_szInputPath, uwPathLen);
 		g_szMaskOutputPath[uwPathLen] = '\0';
-		strcat(g_szMaskOutputPath, ".msk");
+		strcat(g_szMaskOutputPath, "_mask.bm");
 	}
 	
 	return 1;
@@ -530,7 +557,6 @@ void writePlanes(FILE *pOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight
 	}
 }
 */
-
 
 /**
  * This implementation is painfully slow, but it eats as little memory as possible
