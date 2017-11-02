@@ -1,4 +1,5 @@
 #include <ace/managers/window.h>
+#include <ace/generic/screen.h>
 
 /* Globals */
 #ifdef AMIGA
@@ -24,8 +25,8 @@ void windowCreate() {
 	struct NewScreen sScreen;
 	sScreen.LeftEdge = 0;
 	sScreen.TopEdge = 0;
-	sScreen.Width = WINDOW_SCREEN_WIDTH;
-	sScreen.Height = WINDOW_SCREEN_HEIGHT;
+	sScreen.Width = SCREEN_PAL_WIDTH;
+	sScreen.Height = SCREEN_PAL_HEIGHT;
 	sScreen.Depth = 1;
 	sScreen.DetailPen = 0;
 	sScreen.BlockPen = 1;
@@ -46,8 +47,8 @@ void windowCreate() {
 	struct NewWindow sWindow;
 	sWindow.LeftEdge = 0;
 	sWindow.TopEdge = 0;
-	sWindow.Width = WINDOW_SCREEN_WIDTH;
-	sWindow.Height = WINDOW_SCREEN_HEIGHT;
+	sWindow.Width = SCREEN_PAL_WIDTH;
+	sWindow.Height = SCREEN_PAL_HEIGHT;
 	sWindow.DetailPen = 0;
 	sWindow.BlockPen = 1;
 	sWindow.IDCMPFlags = IDCMP_MOUSEBUTTONS | IDCMP_RAWKEY;
@@ -57,10 +58,10 @@ void windowCreate() {
 	sWindow.Title = 0;
 	sWindow.Screen = g_sWindowManager.pScreen;
 	sWindow.BitMap = 0;
-	sWindow.MinWidth = WINDOW_SCREEN_WIDTH;
-	sWindow.MinHeight = WINDOW_SCREEN_HEIGHT;
-	sWindow.MaxWidth = WINDOW_SCREEN_WIDTH;
-	sWindow.MaxHeight = WINDOW_SCREEN_HEIGHT;
+	sWindow.MinWidth = SCREEN_PAL_WIDTH;
+	sWindow.MinHeight = SCREEN_PAL_HEIGHT;
+	sWindow.MaxWidth = SCREEN_PAL_WIDTH;
+	sWindow.MaxHeight = SCREEN_PAL_HEIGHT;
 	sWindow.Type = CUSTOMSCREEN;
 
 	if (!(g_sWindowManager.pWindow = OpenWindow(&sWindow)))

@@ -1,6 +1,7 @@
 #include <ace/utils/extview.h>
 #include <limits.h>
 #include <ace/utils/tag.h>
+#include <ace/generic/screen.h>
 
 tView *viewCreate(void *pTags, ...) {
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
@@ -132,7 +133,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
 
-	const UWORD uwDefaultWidth = 320;
+	const UWORD uwDefaultWidth = SCREEN_PAL_WIDTH;
 	const UWORD uwDefaultHeight = -1;
 	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
 
@@ -162,7 +163,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
 	pVPort->uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
 	if(pVPort->uwHeight == uwDefaultHeight)
-		pVPort->uwHeight = 256-pVPort->uwOffsY;
+		pVPort->uwHeight = SCREEN_PAL_HEIGHT-pVPort->uwOffsY;
 	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 	logWrite(
 		"Dimensions: %ux%u@%hu\n", pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBPP

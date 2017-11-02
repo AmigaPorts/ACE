@@ -27,7 +27,6 @@ typedef int32_t LONG;
 #define __saveds         /**/
 #define __reg(x)         /* Allows putting fn parameters in specific regs */
 #define __chip           /* Variable in CHIP memory region */
-#define __fast           /* Variable in FAST memory region */
 #endif // __VBCC__
 
 // Fast types
