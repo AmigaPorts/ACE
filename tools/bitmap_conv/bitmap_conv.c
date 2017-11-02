@@ -67,15 +67,15 @@ void writePlanarInterleaved(
 	uint16_t x, y, uwPixelBuffer;
 	uint32_t ulPos;
 	int16_t wColorIdx;
-	FILE *pOut;
+	FILE *pFileOut;
 
 	if(uwWidth & 0xF) {
 		printf("Width is not divisible by 16!\n");
 		return;
 	}
 
-	pOut	= fopen(g_szOutputPath, "wb");
-	if(!pOut) {
+	pFileOut	= fopen(g_szOutputPath, "wb");
+	if(!pFileOut) {
 		printf("Can't write to file %s\n", g_szOutputPath);
 		return;
 	}
@@ -85,15 +85,15 @@ void writePlanarInterleaved(
 		++ubPlaneCount;
 
 	// Write .bm header
-	writeByte(uwWidth >> 8, pOut);
-	writeByte(uwWidth & 0xFF, pOut);
-	writeByte(uwHeight >> 8, pOut);
-	writeByte(uwHeight & 0xFF, pOut);
-	writeByte(ubPlaneCount, pOut);
-	writeByte(0, pOut); // Version
-	writeByte(1, pOut); // Flags
+	writeByte(uwWidth >> 8, pFileOut);
+	writeByte(uwWidth & 0xFF, pFileOut);
+	writeByte(uwHeight >> 8, pFileOut);
+	writeByte(uwHeight & 0xFF, pFileOut);
+	writeByte(ubPlaneCount, pFileOut);
+	writeByte(0, pFileOut); // Version
+	writeByte(1, pFileOut); // Flags
 	for(i = 0; i != 2; ++i)
-		writeByte(0, pOut);
+		writeByte(0, pFileOut);
 
 	// Write bitplanes - from LSB to MSB
 	for(y = 0; y != uwHeight; ++y) {
@@ -120,14 +120,14 @@ void writePlanarInterleaved(
 				if(wColorIdx & (1 << ubPlane))
 					uwPixelBuffer |= 1;
 				if((x & 0xF) == 0xF) {
-					writeByte(uwPixelBuffer >> 8, pOut);
-					writeByte(uwPixelBuffer & 0xFF, pOut);
+					writeByte(uwPixelBuffer >> 8, pFileOut);
+					writeByte(uwPixelBuffer & 0xFF, pFileOut);
 				}
 			}
 		}
 	}
 
-	fclose(pOut);
+	fclose(pFileOut);
 }
 
 void writePlanar(
@@ -139,15 +139,15 @@ void writePlanar(
 	uint16_t x, y, uwPixelBuffer;
 	uint32_t ulPos;
 	int16_t wColorIdx;
-	FILE *pOut;
+	FILE *pFileOut;
 
 	if(uwWidth & 0xF) {
 		printf("Width is not divisible by 16!\n");
 		return;
 	}
 
-	pOut	= fopen(g_szOutputPath, "wb");
-	if(!pOut) {
+	pFileOut	= fopen(g_szOutputPath, "wb");
+	if(!pFileOut) {
 		printf("Can't write to file %s\n", g_szOutputPath);
 		return;
 	}
@@ -157,15 +157,15 @@ void writePlanar(
 		++ubPlaneCount;
 
 	// Write .bm header
-	writeByte(uwWidth >> 8, pOut);
-	writeByte(uwWidth & 0xFF, pOut);
-	writeByte(uwHeight >> 8, pOut);
-	writeByte(uwHeight & 0xFF, pOut);
-	writeByte(ubPlaneCount, pOut);
-	writeByte(0, pOut); // Version
-	writeByte(0, pOut); // Flags
+	writeByte(uwWidth >> 8, pFileOut);
+	writeByte(uwWidth & 0xFF, pFileOut);
+	writeByte(uwHeight >> 8, pFileOut);
+	writeByte(uwHeight & 0xFF, pFileOut);
+	writeByte(ubPlaneCount, pFileOut);
+	writeByte(0, pFileOut); // Version
+	writeByte(0, pFileOut); // Flags
 	for(i = 0; i != 2; ++i)
-		writeByte(0, pOut);
+		writeByte(0, pFileOut);
 
 	// Write bitplanes - from LSB to MSB
 	for(ubPlane = 0; ubPlane != ubPlaneCount; ++ubPlane) {
@@ -192,14 +192,14 @@ void writePlanar(
 				if(wColorIdx & (1 << ubPlane))
 					uwPixelBuffer |= 1;
 				if((x & 0xF) == 0xF) {
-					writeByte(uwPixelBuffer >> 8, pOut);
-					writeByte(uwPixelBuffer & 0xFF, pOut);
+					writeByte(uwPixelBuffer >> 8, pFileOut);
+					writeByte(uwPixelBuffer & 0xFF, pFileOut);
 				}
 			}
 		}
 	}
 
-	fclose(pOut);
+	fclose(pFileOut);
 }
 
 void writeMask(
@@ -209,15 +209,15 @@ void writeMask(
 	uint8_t i, ubPlaneCount;
 	uint16_t x, y, uwPixelBuffer;
 	uint32_t ulPos;
-	FILE *pOut;
+	FILE *pFileOut;
 
 	if(uwWidth & 0xF) {
 		printf("Width is not divisible by 16!\n");
 		return;
 	}
 
-	pOut = fopen(g_szMaskOutputPath, "wb");
-	if(!pOut) {
+	pFileOut = fopen(g_szMaskOutputPath, "wb");
+	if(!pFileOut) {
 		printf("Can't write to file %s\n", g_szMaskOutputPath);
 		return;
 	}
@@ -225,15 +225,15 @@ void writeMask(
 	ubPlaneCount = 1;
 
 	// Write .bm header
-	writeByte(uwWidth >> 8, pOut);
-	writeByte(uwWidth & 0xFF, pOut);
-	writeByte(uwHeight >> 8, pOut);
-	writeByte(uwHeight & 0xFF, pOut);
-	writeByte(ubPlaneCount, pOut);
-	writeByte(0, pOut); // Version
-	writeByte(0, pOut); // Flags
+	writeByte(uwWidth >> 8, pFileOut);
+	writeByte(uwWidth & 0xFF, pFileOut);
+	writeByte(uwHeight >> 8, pFileOut);
+	writeByte(uwHeight & 0xFF, pFileOut);
+	writeByte(ubPlaneCount, pFileOut);
+	writeByte(0, pFileOut); // Version
+	writeByte(0, pFileOut); // Flags
 	for(i = 0; i != 2; ++i)
-		writeByte(0, pOut);
+		writeByte(0, pFileOut);
 
 	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
@@ -246,13 +246,13 @@ void writeMask(
 			if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
 				uwPixelBuffer |= 1;
 			if((x & 0xF) == 0xF) {
-				writeByte(uwPixelBuffer >> 8, pOut);
-				writeByte(uwPixelBuffer & 0xFF, pOut);
+				writeByte(uwPixelBuffer >> 8, pFileOut);
+				writeByte(uwPixelBuffer & 0xFF, pFileOut);
 			}
 		}
 	}
 
-	fclose(pOut);
+	fclose(pFileOut);
 }
 
 void writeMaskInterleaved(
@@ -262,15 +262,15 @@ void writeMaskInterleaved(
 	uint8_t i, ubBpp, ubPlane;
 	uint16_t x, y, uwPixelBuffer;
 	uint32_t ulPos;
-	FILE *pOut;
+	FILE *pFileOut;
 
 	if(uwWidth & 0xF) {
 		printf("Width is not divisible by 16!\n");
 		return;
 	}
 
-	pOut	= fopen(g_szMaskOutputPath, "wb");
-	if(!pOut) {
+	pFileOut	= fopen(g_szMaskOutputPath, "wb");
+	if(!pFileOut) {
 		printf("Can't write to file %s\n", g_szMaskOutputPath);
 		return;
 	}
@@ -280,15 +280,15 @@ void writeMaskInterleaved(
 		++ubBpp;
 
 	// Write .bm header
-	writeByte(uwWidth >> 8, pOut);
-	writeByte(uwWidth & 0xFF, pOut);
-	writeByte(uwHeight >> 8, pOut);
-	writeByte(uwHeight & 0xFF, pOut);
-	writeByte(ubBpp, pOut);
-	writeByte(0, pOut); // Version
-	writeByte(1, pOut); // Flags
+	writeByte(uwWidth >> 8, pFileOut);
+	writeByte(uwWidth & 0xFF, pFileOut);
+	writeByte(uwHeight >> 8, pFileOut);
+	writeByte(uwHeight & 0xFF, pFileOut);
+	writeByte(ubBpp, pFileOut);
+	writeByte(0, pFileOut); // Version
+	writeByte(1, pFileOut); // Flags
 	for(i = 0; i != 2; ++i)
-		writeByte(0, pOut);
+		writeByte(0, pFileOut);
 
 	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
@@ -301,35 +301,35 @@ void writeMaskInterleaved(
 				if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
 					uwPixelBuffer |= 1;
 				if((x & 0xF) == 0xF) {
-					writeByte(uwPixelBuffer >> 8, pOut);
-					writeByte(uwPixelBuffer & 0xFF, pOut);
+					writeByte(uwPixelBuffer >> 8, pFileOut);
+					writeByte(uwPixelBuffer & 0xFF, pFileOut);
 				}
 			}
 		}
 	}
 
-	fclose(pOut);	
+	fclose(pFileOut);	
 }
 
 uint8_t paletteLoad(char *szPath, tColor *pPalette) {
-	FILE *pIn;
+	FILE *pFileIn;
 	uint8_t uwPaletteCount, i, ubXR, ubGB;
 
-	pIn = fopen(szPath, "rb");
-	if(!pIn) {
+	pFileIn = fopen(szPath, "rb");
+	if(!pFileIn) {
 		printf("Can't open file %s\n", szPath);
 		return 0;
 	}
-	fread(&uwPaletteCount, 1, 1, pIn);
+	fread(&uwPaletteCount, 1, 1, pFileIn);
 	printf("Palette color count: %hu\n", uwPaletteCount);
 	for(i = 0; i != uwPaletteCount; ++i) {
-		fread(&ubXR, 1, 1, pIn);
-		fread(&ubGB, 1, 1, pIn);
+		fread(&ubXR, 1, 1, pFileIn);
+		fread(&ubGB, 1, 1, pFileIn);
 		pPalette[i].ubR = ((ubXR & 0x0F) << 4) | (ubXR & 0x0F);
 		pPalette[i].ubG = ((ubGB & 0xF0) >> 4) | (ubGB & 0xF0);
 		pPalette[i].ubB = ((ubGB & 0x0F) << 4) | (ubGB & 0x0F);
 	}
-	fclose(pIn);
+	fclose(pFileIn);
 	return uwPaletteCount;
 }
 
@@ -529,7 +529,7 @@ int main(int argc, char *argv[]) {
  * This implementation is painfully slow, but it eats as little memory as possible
  */
  /*
-void writePlanes(FILE *pOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight, uint16_t *pPalette, uint8_t ubBpp) {
+void writePlanes(FILE *pFileOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight, uint16_t *pPalette, uint8_t ubBpp) {
 	uint8_t ubPlane, x, y, ubCheckBit;
 	uint16_t uwOutBfr;
 
@@ -547,9 +547,9 @@ void writePlanes(FILE *pOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight
 					// Write filled word buffer - watch out for endians!
 					uint8_t ubByteBfr;
 					ubByteBfr = uwOutBfr>>8;
-					fwrite(&ubByteBfr, 1, 1, pOut);
+					fwrite(&ubByteBfr, 1, 1, pFileOut);
 					ubByteBfr = uwOutBfr&0xFF;
-					fwrite(&ubByteBfr, 1, 1, pOut);
+					fwrite(&ubByteBfr, 1, 1, pFileOut);
 					// uwOutBfr = 0; // Needed?
 				}
 			}
@@ -562,11 +562,11 @@ void writePlanes(FILE *pOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight
  * This implementation is painfully slow, but it eats as little memory as possible
  */
  /*
-void sth(FILE *pOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight, uint16_t *pPalette, uint8_t ubBpp, uint8_t ubMaskColor) {
+void sth(FILE *pFileOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight, uint16_t *pPalette, uint8_t ubBpp, uint8_t ubMaskColor) {
 	uint8_t ubPlane, x, y, ubCheckBit;
 	uint16_t uwOutBfr;
 
-	writePlanes(pOut, pData, uwWidth, uwHeight, pPalette, ubBpp);
+	writePlanes(pFileOut, pData, uwWidth, uwHeight, pPalette, ubBpp);
 
 	// Write mask
 	for(y = 0; y != uwHeight; ++y) {
@@ -579,9 +579,9 @@ void sth(FILE *pOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight, uint16
 				// Write filled word buffer - watch out for endians!
 				uint8_t ubByteBfr;
 				ubByteBfr = uwOutBfr>>8;
-				fwrite(&ubByteBfr, 1, 1, pOut);
+				fwrite(&ubByteBfr, 1, 1, pFileOut);
 				ubByteBfr = uwOutBfr&0xFF;
-				fwrite(&ubByteBfr, 1, 1, pOut);
+				fwrite(&ubByteBfr, 1, 1, pFileOut);
 				// uwOutBfr = 0; // Needed?
 			}
 		}
