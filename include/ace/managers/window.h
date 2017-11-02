@@ -11,7 +11,6 @@
 #endif // AMIGA
 
 #include <ace/types.h>
-#include <ace/config.h>
 
 #include <ace/utils/extview.h> // tExtView
 #include <ace/managers/log.h>

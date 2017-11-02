@@ -31,7 +31,7 @@ UWORD colorHSV(UBYTE ubH, UBYTE ubS, UBYTE ubV) {
 	}
 
 	ubRegion = ubH / 43;
-	ubRem = (ubH - (ubRegion * 43)) * 6; 
+	ubRem = (ubH - (ubRegion * 43)) * 6;
 
 	p = (ubV * (255 - ubS)) >> 8;
 	q = (ubV * (255 - ((ubS * ubRem) >> 8))) >> 8;
@@ -57,7 +57,7 @@ UWORD colorHSV(UBYTE ubH, UBYTE ubS, UBYTE ubV) {
 
 void gsTestCopperCreate(void) {
 	UBYTE i;
-	
+
 	// Prepare view & viewport
 	s_pTestCopperView = viewCreate(0,
 		TAG_VIEW_GLOBAL_CLUT, 1,
@@ -76,13 +76,13 @@ void gsTestCopperCreate(void) {
 	s_pTestCopperVPort->pPalette[0] = 0x000;
 	s_pTestCopperVPort->pPalette[1] = 0xAAA;
 	s_pTestCopperVPort->pPalette[2] = 0x666;
-	
+
 	blitRect(s_pTestCopperBfr->pBuffer, 0,0, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, 1);
-	blitRect(s_pTestCopperBfr->pBuffer, 0,0, 1, 256, 2);
-	blitRect(s_pTestCopperBfr->pBuffer, 319,0, 1, 256, 2);
-	blitRect(s_pTestCopperBfr->pBuffer, 0,0, 320, 1, 2);
-	blitRect(s_pTestCopperBfr->pBuffer, 0,255, 320, 1, 2);
-	
+	blitRect(s_pTestCopperBfr->pBuffer, 0,0, 1, SCREEN_PAL_HEIGHT, 2);
+	blitRect(s_pTestCopperBfr->pBuffer, 319,0, 1, SCREEN_PAL_HEIGHT, 2);
+	blitRect(s_pTestCopperBfr->pBuffer, 0,0, SCREEN_PAL_WIDTH, 1, 2);
+	blitRect(s_pTestCopperBfr->pBuffer, 0,255, SCREEN_PAL_WIDTH, 1, 2);
+
 	for(i = 0; i != 32; ++i)
 		pBar[i] = copBlockCreate(s_pTestCopperView->pCopList, 1, 0, 50+i);
 	for(i = 0; i != 16; ++i)
@@ -99,19 +99,19 @@ void gsTestCopperLoop(void) {
 	static BYTE bDir = 1;
 	static UBYTE ubHue = 0;
 	UBYTE i;
-	
+
 	if (keyUse(KEY_ESCAPE)) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 		return;
 	}
-	
+
 	if(uwY >= 280)
 		bDir = -1;
 	if(uwY <= 30)
 		bDir = 1;
-	
+
 	uwY += 2*bDir;
-	
+
 	for(i = 0; i != 32; ++i)
 		copWait(s_pTestCopperView->pCopList, pBar[i], 0, uwY+i);
 	for(i = 0; i != 16; ++i)
@@ -120,7 +120,7 @@ void gsTestCopperLoop(void) {
 		pBar[i]->pCmds[0].sMove.bfValue = colorHSV(ubHue,255,((31-i) << 4) | (31-i));
 
 	++ubHue;
-	
+
 	copProcessBlocks();
 	WaitTOF();
 }

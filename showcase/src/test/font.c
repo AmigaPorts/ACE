@@ -39,15 +39,15 @@ void gsTestFontCreate(void) {
 	s_pTestFontVPort->pPalette[2] = 0x666;
 	s_pTestFontVPort->pPalette[3] = 0xFFF;
 	s_pTestFontVPort->pPalette[4] = 0x111;
-	
+
 	// Load fonts
 	s_pFontUI = fontCreate("data/fonts/silkscreen.fnt");
-	
+
 	// Loop vars
 	s_ubPage = 0;
 	testFontDrawTable();
 	memset(s_szSentence, 0, 20);
-	
+
 	// Display view with its viewports
 	viewLoad(s_pTestFontView);
 }
@@ -57,12 +57,12 @@ void gsTestFontTableLoop(void) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 		return;
 	}
-	
+
 	if(keyUse(KEY_F2)) {
 		testFontDrawSentence();
 		gameChangeLoop(gsTestFontSentenceLoop);
 	}
-	
+
 	if((keyUse(KEY_RIGHT) || keyUse(KEY_DOWN))) {
 		if(s_ubPage < 3)
 				++s_ubPage;
@@ -77,14 +77,14 @@ void gsTestFontTableLoop(void) {
 				s_ubPage = 3;
 		testFontDrawTable();
 	}
-	
+
 }
 
 void gsTestFontSentenceLoop(void) {
 	UBYTE i, d, ubRedraw;
 	static const UBYTE szAllowedChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	d = strlen(szAllowedChars);
-	
+
 	if (keyUse(KEY_ESCAPE)) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 		return;
@@ -94,7 +94,7 @@ void gsTestFontSentenceLoop(void) {
 		testFontDrawTable();
 		gameChangeLoop(gsTestFontTableLoop);
 	}
-	
+
 	ubRedraw = 0;
 	if(keyUse(KEY_BACKSPACE)) {
 		d = strlen(s_szSentence);
@@ -103,7 +103,7 @@ void gsTestFontSentenceLoop(void) {
 			ubRedraw = 1;
 		}
 	}
-	
+
 	for(i = 0; i != d; ++i)
 		if(keyUse(szAllowedChars[i])) {
 			d = strlen(s_szSentence);
@@ -112,7 +112,7 @@ void gsTestFontSentenceLoop(void) {
 				ubRedraw = 1;
 			}
 		}
-		
+
 	if(ubRedraw)
 		testFontDrawSentence();
 }
@@ -120,7 +120,7 @@ void gsTestFontSentenceLoop(void) {
 void gsTestFontDestroy(void) {
 	// Free fonts
 	fontDestroy(s_pFontUI);
-	
+
 	// Destroy buffer, view & viewport
 	viewDestroy(s_pTestFontView);
 }
@@ -129,18 +129,18 @@ void testFontDrawTable() {
 	tFont *pFont;
 	UWORD i;
 	char szCodeBfr[3];
-	
+
 	pFont = s_pFontUI;
-	
+
 	// Background
-	blitRect(s_pTestFontBfr->pBuffer, 0,0, 320,256, 2);
+	blitRect(s_pTestFontBfr->pBuffer, 0,0, SCREEN_PAL_WIDTH,SCREEN_PAL_HEIGHT, 2);
 	for(i = 0; i != 8; ++i) {
-		blitRect(s_pTestFontBfr->pBuffer, 40*i, 0, 1, 256, 0); // Vertical lines
-		blitRect(s_pTestFontBfr->pBuffer, 0, 32*i, 320, 1, 0); // Horizontal lines
+		blitRect(s_pTestFontBfr->pBuffer, 40*i, 0, 1, SCREEN_PAL_HEIGHT, 0); // Vertical lines
+		blitRect(s_pTestFontBfr->pBuffer, 0, 32*i, SCREEN_PAL_WIDTH, 1, 0); // Horizontal lines
 	}
-	blitRect(s_pTestFontBfr->pBuffer, 319, 0, 1, 256, 0); // Last V line
-	blitRect(s_pTestFontBfr->pBuffer, 0, 255, 320, 1, 0); // Last H line
-	
+	blitRect(s_pTestFontBfr->pBuffer, 319, 0, 1, SCREEN_PAL_HEIGHT, 0); // Last V line
+	blitRect(s_pTestFontBfr->pBuffer, 0, 255, SCREEN_PAL_WIDTH, 1, 0); // Last H line
+
 	for(i = 0; i != 64; ++i) {
 		// Char - crashes because of font rendering bugs
 		// if(i && pFont->pCharOffsets[i] != pFont->pCharOffsets[i-1] && (s_ubPage*64)+i < pFont->ubChars) {
@@ -151,7 +151,7 @@ void testFontDrawTable() {
 				// szCodeBfr, 3, FONT_CENTER|FONT_COOKIE
 			// );
 		// }
-		
+
 		// Char code
 		sprintf(szCodeBfr, "%02X", (s_ubPage*64)+i);
 		fontDrawStr(
@@ -163,5 +163,5 @@ void testFontDrawTable() {
 }
 
 void testFontDrawSentence(void) {
-	
+
 }

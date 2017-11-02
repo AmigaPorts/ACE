@@ -38,34 +38,34 @@ void gsTestBlitCreate(void) {
 	s_pTestBlitVPort->pPalette[2] = 0x666;
 	s_pTestBlitVPort->pPalette[3] = 0xFFF;
 	s_pTestBlitVPort->pPalette[4] = 0x111;
-	
+
 	// Loop vars
 	s_uwX = WINDOW_SCREEN_WIDTH>>1;
 	s_uwY = WINDOW_SCREEN_HEIGHT>>1;
 	s_ubType = TYPE_RECT;
 	s_fnKeyPoll = keyUse;
-	
+
 	// Display view with its viewports
 	viewLoad(s_pTestBlitView);
 }
 
 void gsTestBlitLoop(void) {
 	static BYTE bSpeedX = 0, bSpeedY = 0;
-	
+
 	if (keyUse(KEY_ESCAPE)) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 		return;
 	}
-	
+
 	// Erase previous blit using old type & coords
 	if(s_ubType & TYPE_SAVEBG) {
 		//TODO: Restore BG
 	}
 	else
 		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 0);
-	
+
 	// Update type
-	
+
 	// Rapid movement
 	if(keyUse(KEY_R)) {
 		s_ubType ^= TYPE_RAPID;
@@ -74,7 +74,7 @@ void gsTestBlitLoop(void) {
 		else
 			s_fnKeyPoll = keyUse;
 	}
-	
+
 	// Auto movement
 	if(keyUse(KEY_A)) {
 		s_ubType ^= TYPE_AUTO;
@@ -83,7 +83,7 @@ void gsTestBlitLoop(void) {
 			bSpeedY = 1;
 		}
 	}
-	
+
 	// Save BG
 	if(keyUse(KEY_B)) {
 		s_ubType ^= TYPE_SAVEBG;
@@ -91,14 +91,14 @@ void gsTestBlitLoop(void) {
 			// TODO: Draw whole BG
 		}
 	}
-	
+
 	// Rect mode
 	if(keyUse(KEY_1))
 		s_ubType = TYPE_RECT;
-	
+
 	if(s_ubType & TYPE_AUTO) {
 		if(bSpeedX > 0)
-			if(s_uwX < 320-16)
+			if(s_uwX < SCREEN_PAL_WIDTH-16)
 				++s_uwX;
 			else
 				bSpeedX = -1;
@@ -107,7 +107,7 @@ void gsTestBlitLoop(void) {
 				--s_uwX;
 			else
 				bSpeedX = 1;
-			
+
 		if(bSpeedY > 0)
 			if(s_uwY < 256-16)
 				++s_uwY;
@@ -122,14 +122,14 @@ void gsTestBlitLoop(void) {
 	else {
 		if(s_fnKeyPoll(KEY_UP) && s_uwY)
 			--s_uwY;
-		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < 256-16)
+		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < SCREEN_PAL_HEIGHT-16)
 			++s_uwY;
 		if(s_fnKeyPoll(KEY_LEFT) && s_uwX)
 			--s_uwX;
-		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < 320-16)
+		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < SCREEN_PAL_WIDTH-16)
 			++s_uwX;
 	}
-	
+
 	// Reblit using new type & coords
 	if(s_ubType & TYPE_SAVEBG) {
 		//TODO: Save BG beneath new bob
@@ -137,7 +137,7 @@ void gsTestBlitLoop(void) {
 	// if(s_ubType & TYPE_RECT)
 		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 3);
 	WaitTOF();
-	
+
 }
 
 void gsTestBlitDestroy(void) {
