@@ -216,7 +216,7 @@ void writeMask(
 		return;
 	}
 
-	pOut	= fopen(g_szMaskOutputPath, "wb");
+	pOut = fopen(g_szMaskOutputPath, "wb");
 	if(!pOut) {
 		printf("Can't write to file %s\n", g_szMaskOutputPath);
 		return;
