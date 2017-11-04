@@ -175,9 +175,9 @@ BYTE blitUnsafeCopy(
 		if(ubMask & 1) {
 			WaitBlit();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			custom.bltbpt  = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
-			custom.bltcpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
-			custom.bltdpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
+			custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+			custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
 			custom.bltsize = (wHeight << 6) | uwBlitWords;
 		}
@@ -233,8 +233,8 @@ BYTE blitUnsafeCopyAligned(
 		custom.bltdmod = wDstModulo;
 
 		// This hell of a casting must stay here or else large offsets get bugged!
-		custom.bltapt  = (UBYTE*)(((ULONG)(pSrc->Planes[0])) + ulSrcOffs);
-		custom.bltdpt  = (UBYTE*)(((ULONG)(pDst->Planes[0])) + ulDstOffs);
+		custom.bltapt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
+		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
 
 		custom.bltsize = (wHeight << 6) | uwBlitWords;
 	}
@@ -261,8 +261,8 @@ BYTE blitUnsafeCopyAligned(
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			WaitBlit();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			custom.bltapt  = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
-			custom.bltdpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
+			custom.bltapt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
+			custom.bltdpt = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
 			custom.bltsize = (wHeight << 6) | uwBlitWords;
 		}
 	}
@@ -331,10 +331,10 @@ BYTE blitUnsafeCopyMask(
 		custom.bltcmod = wDstModulo;
 		custom.bltdmod = wDstModulo;
 
-		custom.bltapt  = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
-		custom.bltbpt  = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-		custom.bltcpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-		custom.bltdpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		custom.bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
+		custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+		custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
 		custom.bltsize = (wHeight << 6) | uwBlitWords;
 	}
@@ -361,10 +361,10 @@ BYTE blitUnsafeCopyMask(
 		custom.bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			WaitBlit();
-			custom.bltapt  = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
-			custom.bltbpt  = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-			custom.bltcpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-			custom.bltdpt  = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			custom.bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
+			custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+			custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
 			custom.bltsize = (wHeight << 6) | uwBlitWords;
 		}
@@ -438,8 +438,8 @@ BYTE _blitRect(
 		WaitBlit();
 		custom.bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!
-		custom.bltcpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
-		custom.bltdpt  = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
+		custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 		custom.bltsize = (wHeight << 6) | uwBlitWords;
 		ubColor >>= 1;
 		++ubPlane;
