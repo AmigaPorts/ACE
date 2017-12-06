@@ -10,12 +10,17 @@ tFont *fontCreate(char *szFontName) {
 	logBlockBegin("fontCreate(szFontName: %s)", szFontName);
 
 	pFontFile = fopen(szFontName, "r");
-	if (!pFontFile)
+	if (!pFontFile) {
+		logBlockEnd("fontCreate()");
 		return 0;
+	}
 
 	pFont = (tFont *) memAllocFast(sizeof(tFont));
-	if (!pFont)
+	if (!pFont) {
+		logBlockEnd("fontCreate()");
+		fclose(pFontFile);
 		return 0;
+	}
 
 	fread(pFont, 2 * sizeof(UWORD) + sizeof(UBYTE), 1, pFontFile);
 	logWrite("Addr: %p, data width: %upx, chars: %u, font height: %upx\n", pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight);
@@ -30,6 +35,8 @@ tFont *fontCreate(char *szFontName) {
 	pFont->pRawData->Planes[0] = AllocRaster(pFont->uwWidth, pFont->uwHeight);
 	fread(pFont->pRawData->Planes[0], 1, (pFont->uwWidth >> 3) * pFont->uwHeight, pFontFile);
 #else
+	logWrite("ERR: Unimplemented\n");
+	memFree(pFont, sizeof(tFont));
 	fclose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return 0;
