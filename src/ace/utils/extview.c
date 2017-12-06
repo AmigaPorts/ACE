@@ -183,6 +183,18 @@ tVPort *vPortCreate(void *pTagList, ...) {
 		logWrite("VPort added after %p\n", pPrevVPort);
 	}
 
+	// Palette tag
+	UWORD *pSrcPalette = (UWORD*)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
+	if(pSrcPalette) {
+		UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
+		if(uwPaletteSize == 0xFFFF)
+			logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
+		else if(!uwPaletteSize || uwPaletteSize > 32)
+			logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
+		else
+			memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
+	}
+
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
