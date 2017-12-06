@@ -46,3 +46,4 @@ expected to change drastically. Until then, suggestions & merge requests will be
 - [OpenFire](https://github.com/tehKaiN/openFire)
 - Goblin Villages
 - CastleHack
+- [Squared](https://github.com/tehKaiN/ld40-squared)
