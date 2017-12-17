@@ -1,5 +1,4 @@
 #include <ace/managers/mouse.h>
-#include <ace/macros.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
 #include <ace/generic/screen.h>
@@ -20,6 +19,12 @@ void mouseCreate() {
 	g_sMouseManager.uwY = (g_sMouseManager.uwMaxY - g_sMouseManager.uwMinY) >> 1;
 	s_ubPrevX = 0;
 	s_ubPrevY = 0;
+
+	// Enable RMB & MMB on port 1
+	g_sMouseManager.uwPrevPotGo = custom.potinp;
+	UWORD uwPotMask = (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8);
+	custom.potgo = (custom.potinp & (0xFFFF ^ uwPotMask)) | uwPotMask;
+
 	// Amiga Hardware Reference Manual suggests that pos should be polled every
 	// vblank, so there could be some interrupt init.
 #endif // AMIGA
@@ -29,6 +34,7 @@ void mouseDestroy(void) {
 #ifdef AMIGA
 	// Should mouse manager be interrupt driven, interrupt handler deletion will
 	// be here.
+	custom.potgo = g_sMouseManager.uwPrevPotGo;
 #endif // AMIGA
 }
 
@@ -47,100 +53,31 @@ void mouseProcess(void) {
 	UBYTE ubPosX = uwMousePos & 0xFF;
 	UBYTE ubPosY = uwMousePos >> 8;
 
-	BYTE wDx = ubPosX - s_ubPrevX;
-	BYTE wDy = ubPosY - s_ubPrevY;
-	if(ABS(wDx) <= 127) {
-		g_sMouseManager.uwX = CLAMP(
-			g_sMouseManager.uwX + wDx, g_sMouseManager.uwMinX, g_sMouseManager.uwMaxX
-		);
-	}
-	else {
-		g_sMouseManager.uwX = CLAMP(
-			g_sMouseManager.uwX - wDx, g_sMouseManager.uwMinX, g_sMouseManager.uwMaxX
-		);
-	}
-
-	if(ABS(wDy) <= 127) {
-		g_sMouseManager.uwY = CLAMP(
-			g_sMouseManager.uwY + wDy, g_sMouseManager.uwMinY, g_sMouseManager.uwMaxY
-		);
-	}
-	else {
-		g_sMouseManager.uwY = CLAMP(
-			g_sMouseManager.uwY + wDy, g_sMouseManager.uwMinY, g_sMouseManager.uwMaxY
-		);
-	}
+	BYTE bDx = ubPosX - s_ubPrevX;
+	BYTE bDy = ubPosY - s_ubPrevY;
+	mouseMoveBy(bDx, bDy);
 
 	s_ubPrevX = ubPosX;
 	s_ubPrevY = ubPosY;
+	volatile UWORD * const pCiaAPra = (UWORD*)((UBYTE*)0xBFE001);
 
-	// Button states
+	// Left button state
+	if(*pCiaAPra & (1 << 6))
+		mouseSetButton(MOUSE_LMB, MOUSE_NACTIVE);
+	else if(!mouseCheck(MOUSE_LMB))
+		mouseSetButton(MOUSE_LMB, MOUSE_ACTIVE);
 
-#endif // AMIGA
-}
+	// Right button state
+	if(custom.potinp & (1 << 10))
+		mouseSetButton(MOUSE_RMB, MOUSE_NACTIVE);
+	else if(!mouseCheck(MOUSE_RMB))
+		mouseSetButton(MOUSE_RMB, MOUSE_ACTIVE);
 
-void mouseSetState(UBYTE ubMouseCode, UBYTE ubMouseState) {
-	g_sMouseManager.pButtonStates[ubMouseCode] = ubMouseState;
-}
+	// Middle button state
+	if(custom.potinp & (1 << 8))
+		mouseSetButton(MOUSE_MMB, MOUSE_NACTIVE);
+	else if(!mouseCheck(MOUSE_MMB))
+		mouseSetButton(MOUSE_MMB, MOUSE_ACTIVE);
 
-UBYTE mouseCheck(UBYTE ubMouseCode) {
-	return g_sMouseManager.pButtonStates[ubMouseCode] != MOUSE_NACTIVE;
-}
-
-UBYTE mouseUse(UBYTE ubMouseCode) {
-	if (g_sMouseManager.pButtonStates[ubMouseCode] == MOUSE_ACTIVE) {
-		g_sMouseManager.pButtonStates[ubMouseCode] = MOUSE_USED;
-		return 1;
-	}
-	return 0;
-}
-
-UBYTE mouseIsIntersects(UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
-#ifdef AMIGA
-	// return (uwX <= g_sWindowManager.pWindow->MouseX) && (g_sWindowManager.pWindow->MouseX < uwX + uwWidth) && (uwY <= g_sWindowManager.pWindow->MouseY) && (g_sWindowManager.pWindow->MouseY < uwY + uwHeight);
-#else
-	return 0;
-#endif // AMIGA
-}
-
-UWORD mouseGetX(void) {
-#ifdef AMIGA
-	return g_sMouseManager.uwX;
-#else
-	return 0;
-#endif // AMIGA
-}
-
-UWORD mouseGetY(void) {
-#ifdef AMIGA
-	return g_sMouseManager.uwY;
-#else
-	return 0;
-#endif // AMIGA
-}
-
-void mouseSetPointer(UWORD *pCursor, WORD wHeight, WORD wWidth, WORD wOffsetX, WORD wOffsetY) {
-	logBlockBegin("mouseSetPointer(pCursor: %p, wHeight: %d, wWidth, %d, wOffsetX: %d, wOffsetY: %d)", pCursor, wHeight, wWidth, wOffsetX, wOffsetY);
-#ifdef AMIGA
-#endif // AMIGA
-	logBlockEnd("mouseSetPointer");
-}
-
-void mouseResetPointer(void) {
-#ifdef AMIGA
-#endif // AMIGA
-}
-
-void mouseSetPosition(UWORD uwNewX, UWORD uwNewY) {
-	mouseMoveBy(uwNewX - mouseGetX(), uwNewY - mouseGetY());
-}
-
-void mouseMoveBy(WORD wDx, WORD wDy) {
-#ifdef AMIGA
-#endif // AMIGA
-}
-
-void mouseClick(UBYTE ubMouseCode) {
-#ifdef AMIGA
 #endif // AMIGA
 }
