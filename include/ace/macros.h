@@ -16,7 +16,8 @@
 #define blockCountFloor(length, blockSize) (length/blockSize)
 #define blockCountCeil(length, blockSize) ((length + blockSize-1)/blockSize)
 
-/// Math
+// Math
+
 #define ABS(x) ((x)<0 ? -(x) : (x))
 #define SGN(x) ((x) > 0 ? 1 : ((x) < 0 ? -1 : 0))
 // #define SGN(x) ((x > 0) - (x < 0)) // Branchless, subtracting is slower?

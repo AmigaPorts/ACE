@@ -44,6 +44,18 @@ extern tBlitManager g_sBlitManager;
 void blitManagerCreate(void);
 void blitManagerDestroy(void);
 
+/**
+ * Checks if blitter is idle
+ * Polls 2 times - A1000 Agnus bug workaround
+ */
+UBYTE blitIsIdle(void);
+
+/**
+ * Waits until blitter finishes its work.
+ * In the meantime, BLITHOG bit is set.
+ */
+void blitWait(void);
+
 BYTE blitUnsafeCopy(
 	IN tBitMap *pSrc,
 	IN WORD wSrcX,
@@ -153,4 +165,4 @@ BYTE _blitRect(
 
 #define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) _blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor, __LINE__, __FILE__)
 
-#endif
+#endif // GUARD_ACE_MANAGER_BLIT_H

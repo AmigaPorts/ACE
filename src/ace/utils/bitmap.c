@@ -1,6 +1,7 @@
 #include <ace/utils/bitmap.h>
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
+#include <ace/managers/blit.h>
 
 /* Globals */
 
@@ -54,7 +55,7 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 		}
 
 	if (ubFlags & BMF_CLEAR)
-		WaitBlit();
+		blitWait();
 
 	logBlockEnd("bitmapCreate()");
 	return pBitMap;
@@ -208,7 +209,7 @@ void bitmapDestroy(tBitMap *pBitMap) {
 	logBlockBegin("bitmapDestroy(pBitMap: %p)", pBitMap);
 	if (pBitMap) {
 #ifdef AMIGA
-		WaitBlit();
+		blitWait();
 #endif
 		if(bitmapIsInterleaved(pBitMap))
 			pBitMap->Depth = 1;

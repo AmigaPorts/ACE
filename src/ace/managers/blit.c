@@ -17,8 +17,8 @@ __amigainterrupt __saveds void blitInterruptHandler(__reg("a0") struct Custom *c
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 #ifdef AMIGA
-//	OwnBlitter();
-	WaitBlit();
+	OwnBlitter();
+	blitWait();
 #endif // AMIGA
 	logBlockEnd("blitManagerCreate");
 }
@@ -26,8 +26,8 @@ void blitManagerCreate(void) {
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
 #ifdef AMIGA
-	WaitBlit();
-//	DisownBlitter();
+	blitWait();
+	DisownBlitter();
 #endif //AMIGA
 	logBlockEnd("blitManagerDestroy");
 }
@@ -72,16 +72,23 @@ BYTE blitCheck(
 	return 1;
 }
 
+void blitWait(void) {
+		custom.dmacon = BITSET | DMAF_BLITHOG;
+		while(!blitIsIdle()) {}
+		custom.dmacon = BITCLR | DMAF_BLITHOG;
+}
+
 /**
  *  Checks if blitter is idle
  *  Polls 2 times - A1000 Agnus bug workaround
  *  @todo Make it inline assembly or dmaconr volatile so compiler won't
  *  'optimize' it.
  */
-BYTE blitIsIdle(void) {
+UBYTE blitIsIdle(void) {
 	#ifdef AMIGA
-	if(!(custom.dmaconr & DMAF_BLTDONE))
-		if(!(custom.dmaconr & DMAF_BLTDONE))
+	volatile UWORD * const pDmaConR = &custom.dmaconr;
+	if(!(*pDmaConR & DMAF_BLTDONE))
+		if(!(*pDmaConR & DMAF_BLTDONE))
 			return 1;
 	return 0;
 	#else
@@ -162,7 +169,7 @@ BYTE blitUnsafeCopy(
 
 	ubMask &= 0xFF >> (8- (pSrc->Depth < pDst->Depth? pSrc->Depth: pDst->Depth));
 	ubPlane = 0;
-	WaitBlit();
+	blitWait();
 	custom.bltcon0 = uwBltCon0;
 	custom.bltcon1 = uwBltCon1;
 	custom.bltafwm = uwFirstMask;
@@ -173,7 +180,7 @@ BYTE blitUnsafeCopy(
 	custom.bltadat = 0xFFFF;
 	while(ubMask) {
 		if(ubMask & 1) {
-			WaitBlit();
+			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
 			custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
 			custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
@@ -223,7 +230,7 @@ BYTE blitUnsafeCopyAligned(
 
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		wHeight *= pSrc->Depth;
-		WaitBlit();
+		blitWait();
 		custom.bltcon0 = uwBltCon0;
 		custom.bltcon1 = 0;
 		custom.bltafwm = 0xFFFF;
@@ -250,7 +257,7 @@ BYTE blitUnsafeCopyAligned(
 		else if(bitmapIsInterleaved(pDst))
 			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
 
-		WaitBlit();
+		blitWait();
 		custom.bltcon0 = uwBltCon0;
 		custom.bltcon1 = 0;
 		custom.bltafwm = 0xFFFF;
@@ -259,7 +266,7 @@ BYTE blitUnsafeCopyAligned(
 		custom.bltamod = wSrcModulo;
 		custom.bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
-			WaitBlit();
+			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
 			custom.bltapt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
 			custom.bltdpt = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
@@ -320,7 +327,7 @@ BYTE blitUnsafeCopyMask(
 		wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
 		wHeight *= pSrc->Depth;
 
-		WaitBlit();
+		blitWait();
 		custom.bltcon0 = uwBltCon0;
 		custom.bltcon1 = uwBltCon1;
 		custom.bltafwm = uwFirstMask;
@@ -349,7 +356,7 @@ BYTE blitUnsafeCopyMask(
 #endif // GAME_DEBUG
 		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
-		WaitBlit();
+		blitWait();
 		custom.bltcon0 = uwBltCon0;
 		custom.bltcon1 = uwBltCon1;
 		custom.bltafwm = uwFirstMask;
@@ -360,7 +367,7 @@ BYTE blitUnsafeCopyMask(
 		custom.bltcmod = wDstModulo;
 		custom.bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
-			WaitBlit();
+			blitWait();
 			custom.bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
 			custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
 			custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
@@ -419,7 +426,7 @@ BYTE _blitRect(
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 	uwBltCon0 = USEC|USED;
 
-	WaitBlit();
+	blitWait();
 	custom.bltcon1 = uwBltCon1;
 	custom.bltafwm = uwFirstMask;
 	custom.bltalwm = uwLastMask;
@@ -435,7 +442,7 @@ BYTE _blitRect(
 			ubMinterm = 0xFA;
 		else
 			ubMinterm = 0x0A;
-		WaitBlit();
+		blitWait();
 		custom.bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!
 		custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
