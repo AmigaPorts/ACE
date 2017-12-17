@@ -1,38 +1,95 @@
 #include <ace/managers/mouse.h>
+#include <ace/macros.h>
+#include <ace/managers/log.h>
+#include <ace/utils/custom.h>
+#include <ace/generic/screen.h>
 
 /* Globals */
 tMouseManager g_sMouseManager;
 
-/* Functions */
-void mouseOpen() {
-#ifdef AMIGA
-	g_sMouseManager.pInputMP = CreatePort(NULL, 0L);
-	g_sMouseManager.pInputIO = (struct IOStdReq *) CreateExtIO(g_sMouseManager.pInputMP, sizeof(struct IOStdReq));
+static UBYTE s_ubPrevX, s_ubPrevY;
 
-	OpenDevice("input.device", 0, (struct IORequest *) g_sMouseManager.pInputIO, 0);
+/* Functions */
+void mouseCreate() {
+#ifdef AMIGA
+	g_sMouseManager.uwMinX = 0;
+	g_sMouseManager.uwMinY = 0;
+	g_sMouseManager.uwMaxX = SCREEN_PAL_WIDTH;
+	g_sMouseManager.uwMaxY = SCREEN_PAL_HEIGHT;
+	g_sMouseManager.uwX = (g_sMouseManager.uwMaxX - g_sMouseManager.uwMinX) >> 1;
+	g_sMouseManager.uwY = (g_sMouseManager.uwMaxY - g_sMouseManager.uwMinY) >> 1;
+	s_ubPrevX = 0;
+	s_ubPrevY = 0;
+	// Amiga Hardware Reference Manual suggests that pos should be polled every
+	// vblank, so there could be some interrupt init.
+#endif // AMIGA
+}
+
+void mouseDestroy(void) {
+#ifdef AMIGA
+	// Should mouse manager be interrupt driven, interrupt handler deletion will
+	// be here.
+#endif // AMIGA
+}
+
+void mouseSetBounds(UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
+	g_sMouseManager.uwMinX = uwX;
+	g_sMouseManager.uwMinY = uwY;
+	g_sMouseManager.uwMaxX = uwWidth;
+	g_sMouseManager.uwMaxY = uwHeight;
+}
+
+void mouseProcess(void) {
+	// Even if whole Amiga process will be moved to vbl interrupt, other platforms
+	// will prob'ly use this fn anyway
+#ifdef AMIGA
+	UWORD uwMousePos = custom.joy0dat;
+	UBYTE ubPosX = uwMousePos & 0xFF;
+	UBYTE ubPosY = uwMousePos >> 8;
+
+	BYTE wDx = ubPosX - s_ubPrevX;
+	BYTE wDy = ubPosY - s_ubPrevY;
+	if(ABS(wDx) <= 127) {
+		g_sMouseManager.uwX = CLAMP(
+			g_sMouseManager.uwX + wDx, g_sMouseManager.uwMinX, g_sMouseManager.uwMaxX
+		);
+	}
+	else {
+		g_sMouseManager.uwX = CLAMP(
+			g_sMouseManager.uwX - wDx, g_sMouseManager.uwMinX, g_sMouseManager.uwMaxX
+		);
+	}
+
+	if(ABS(wDy) <= 127) {
+		g_sMouseManager.uwY = CLAMP(
+			g_sMouseManager.uwY + wDy, g_sMouseManager.uwMinY, g_sMouseManager.uwMaxY
+		);
+	}
+	else {
+		g_sMouseManager.uwY = CLAMP(
+			g_sMouseManager.uwY + wDy, g_sMouseManager.uwMinY, g_sMouseManager.uwMaxY
+		);
+	}
+
+	s_ubPrevX = ubPosX;
+	s_ubPrevY = ubPosY;
+
+	// Button states
+
 #endif // AMIGA
 }
 
 void mouseSetState(UBYTE ubMouseCode, UBYTE ubMouseState) {
-#ifdef AMIGA
-	ubMouseCode -= IECODE_LBUTTON;
-#endif // AMIGA
-	g_sMouseManager.pStates[ubMouseCode] = ubMouseState;
+	g_sMouseManager.pButtonStates[ubMouseCode] = ubMouseState;
 }
 
 UBYTE mouseCheck(UBYTE ubMouseCode) {
-#ifdef AMIGA
-	ubMouseCode -= IECODE_LBUTTON;
-#endif // AMIGA
-	return g_sMouseManager.pStates[ubMouseCode] != MOUSE_NACTIVE;
+	return g_sMouseManager.pButtonStates[ubMouseCode] != MOUSE_NACTIVE;
 }
 
 UBYTE mouseUse(UBYTE ubMouseCode) {
-#ifdef AMIGA
-	ubMouseCode -= IECODE_LBUTTON;
-#endif // AMIGA
-	if (g_sMouseManager.pStates[ubMouseCode] == MOUSE_ACTIVE) {
-		g_sMouseManager.pStates[ubMouseCode] = MOUSE_USED;
+	if (g_sMouseManager.pButtonStates[ubMouseCode] == MOUSE_ACTIVE) {
+		g_sMouseManager.pButtonStates[ubMouseCode] = MOUSE_USED;
 		return 1;
 	}
 	return 0;
@@ -40,7 +97,7 @@ UBYTE mouseUse(UBYTE ubMouseCode) {
 
 UBYTE mouseIsIntersects(UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
 #ifdef AMIGA
-	return (uwX <= g_sWindowManager.pWindow->MouseX) && (g_sWindowManager.pWindow->MouseX < uwX + uwWidth) && (uwY <= g_sWindowManager.pWindow->MouseY) && (g_sWindowManager.pWindow->MouseY < uwY + uwHeight);
+	// return (uwX <= g_sWindowManager.pWindow->MouseX) && (g_sWindowManager.pWindow->MouseX < uwX + uwWidth) && (uwY <= g_sWindowManager.pWindow->MouseY) && (g_sWindowManager.pWindow->MouseY < uwY + uwHeight);
 #else
 	return 0;
 #endif // AMIGA
@@ -48,7 +105,7 @@ UBYTE mouseIsIntersects(UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
 
 UWORD mouseGetX(void) {
 #ifdef AMIGA
-	return g_sWindowManager.pWindow->MouseX;
+	return g_sMouseManager.uwX;
 #else
 	return 0;
 #endif // AMIGA
@@ -56,7 +113,7 @@ UWORD mouseGetX(void) {
 
 UWORD mouseGetY(void) {
 #ifdef AMIGA
-	return g_sWindowManager.pWindow->MouseY;
+	return g_sMouseManager.uwY;
 #else
 	return 0;
 #endif // AMIGA
@@ -65,26 +122,14 @@ UWORD mouseGetY(void) {
 void mouseSetPointer(UWORD *pCursor, WORD wHeight, WORD wWidth, WORD wOffsetX, WORD wOffsetY) {
 	logBlockBegin("mouseSetPointer(pCursor: %p, wHeight: %d, wWidth, %d, wOffsetX: %d, wOffsetY: %d)", pCursor, wHeight, wWidth, wOffsetX, wOffsetY);
 #ifdef AMIGA
-	SetPointer(g_sWindowManager.pWindow, pCursor, wHeight, wWidth, wOffsetX, wOffsetY);
 #endif // AMIGA
 	logBlockEnd("mouseSetPointer");
 }
 
 void mouseResetPointer(void) {
 #ifdef AMIGA
-	ClearPointer(g_sWindowManager.pWindow);
 #endif // AMIGA
 }
-
-#ifdef AMIGA
-void _mouseDo(struct InputEvent *pEvent) {
-	g_sMouseManager.pInputIO->io_Data = (APTR) pEvent;
-	g_sMouseManager.pInputIO->io_Length = sizeof(struct InputEvent);
-	g_sMouseManager.pInputIO->io_Command = IND_WRITEEVENT;
-
-	DoIO((struct IORequest *) g_sMouseManager.pInputIO);
-}
-#endif // AMIGA
 
 void mouseSetPosition(UWORD uwNewX, UWORD uwNewY) {
 	mouseMoveBy(uwNewX - mouseGetX(), uwNewY - mouseGetY());
@@ -92,35 +137,10 @@ void mouseSetPosition(UWORD uwNewX, UWORD uwNewY) {
 
 void mouseMoveBy(WORD wDx, WORD wDy) {
 #ifdef AMIGA
-	struct InputEvent __chip sEvent;
-
-	sEvent.ie_Class = IECLASS_POINTERPOS;
-	sEvent.ie_Code = IECODE_NOBUTTON;
-	sEvent.ie_Qualifier = IEQUALIFIER_RELATIVEMOUSE;
-	sEvent.ie_X = wDx;
-	sEvent.ie_Y = wDy;
-
-	_mouseDo(&sEvent);
 #endif // AMIGA
 }
 
 void mouseClick(UBYTE ubMouseCode) {
 #ifdef AMIGA
-	struct InputEvent *pEvent = memAllocChipFlags(sizeof(struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR);
-
-	pEvent->ie_Class = IECLASS_RAWMOUSE;
-	pEvent->ie_Code = ubMouseCode;
-
-	_mouseDo(pEvent);
-
-	memFree(pEvent, sizeof(struct InputEvent));
-#endif // AMIGA
-}
-
-void mouseClose() {
-#ifdef AMIGA
-	CloseDevice((struct IORequest *) g_sMouseManager.pInputIO);
-	DeleteExtIO((struct IORequest *) g_sMouseManager.pInputIO);
-	DeletePort(g_sMouseManager.pInputMP);
 #endif // AMIGA
 }

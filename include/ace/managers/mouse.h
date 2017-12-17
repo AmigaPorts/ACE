@@ -1,16 +1,7 @@
 #ifndef GUARD_ACE_MANAGER_MOUSE_H
 #define GUARD_ACE_MANAGER_MOUSE_H
 
-#ifdef AMIGA
-#include <clib/exec_protos.h> // Amiga typedefs
-#include <clib/intuition_protos.h> // IDCMP_RAWKEY etc
-#include <devices/input.h>
-#include <clib/alib_protos.h>
-#endif // AMIGA
-
 #include <ace/types.h>
-
-#include <ace/managers/window.h>
 
 /* Types */
 #ifdef AMIGA
@@ -28,11 +19,15 @@
 #define MOUSE_ACTIVE 2
 
 typedef struct {
-	UBYTE pStates[3];
+	UBYTE pButtonStates[3];
+	UWORD uwX;
+	UWORD uwY;
 #ifdef AMIGA
+	UWORD uwMinX;
+	UWORD uwMinY;
+	UWORD uwMaxX;
+	UWORD uwMaxY;
 	__chip UWORD pBlankCursor[6];
-	struct MsgPort *pInputMP;
-	struct IOStdReq *pInputIO;
 #endif // AMIGA
 } tMouseManager;
 
@@ -40,7 +35,19 @@ typedef struct {
 extern tMouseManager g_sMouseManager;
 
 /* Functions */
-void mouseOpen(void);
+
+void mouseCreate(void);
+
+void mouseDestroy(void);
+
+void mouseProcess(void);
+
+void mouseSetBounds(
+	IN UWORD uwX,
+	IN UWORD uwY,
+	IN UWORD uwWidth,
+	IN UWORD uwHeight
+);
 
 void mouseSetState(
 	IN UBYTE ubMouseCode,
@@ -55,7 +62,7 @@ UBYTE mouseUse(
 	IN UBYTE ubMouseCode
 );
 
-UBYTE mouseIsIntersects(
+UBYTE mouseIsInRect(
 	IN UWORD uwX,
 	IN UWORD uwY,
 	IN UWORD uwWidth,
