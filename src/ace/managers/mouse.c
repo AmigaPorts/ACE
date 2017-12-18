@@ -50,78 +50,60 @@ void mouseSetBounds(UWORD uwLoX, UWORD uwLoY, UWORD uwHiX, UWORD uwHiY) {
 	g_sMouseManager.uwHiY = uwHiY;
 }
 
-void mouseProcess(void) {
-	// Even if whole Amiga process will be moved to vbl interrupt, other platforms
-	// will prob'ly use this fn anyway
-#ifdef AMIGA
-	volatile UWORD * const pCiaAPra = (UWORD*)((UBYTE*)0xBFE001);
-
+static void mouseProcessPort(
+	UBYTE ubPort, UWORD uwPosReg,
+	UBYTE ubStateLmb, UBYTE ubStateRmb, UBYTE ubStateMmb
+) {
 	// Deltas are signed bytes even though underflows and overflows may occur.
 	// It is expected behavior since it is encouraged in Amiga HRM as means to
 	// determine mouse movement direction which takes into account joyxdat
 	// underflows and overflows.
 
+	UBYTE ubPosX = uwPosReg & 0xFF;
+	UBYTE ubPosY = uwPosReg >> 8;
+
+	BYTE bDx = ubPosX - g_sMouseManager.pMouses[ubPort].ubPrevHwX;
+	BYTE bDy = ubPosY - g_sMouseManager.pMouses[ubPort].ubPrevHwY;
+	mouseMoveBy(ubPort, bDx, bDy);
+
+	g_sMouseManager.pMouses[ubPort].ubPrevHwX = ubPosX;
+	g_sMouseManager.pMouses[ubPort].ubPrevHwY = ubPosY;
+
+	// Left button state
+	if(ubStateLmb)
+		mouseSetButton(ubPort, MOUSE_LMB, MOUSE_NACTIVE);
+	else if(!mouseCheck(ubPort, MOUSE_LMB))
+		mouseSetButton(ubPort, MOUSE_LMB, MOUSE_ACTIVE);
+
+	// Right button state
+	if(ubStateRmb)
+		mouseSetButton(ubPort, MOUSE_RMB, MOUSE_NACTIVE);
+	else if(!mouseCheck(ubPort, MOUSE_RMB))
+		mouseSetButton(ubPort, MOUSE_RMB, MOUSE_ACTIVE);
+
+	// Middle button state
+	if(ubStateMmb)
+		mouseSetButton(ubPort, MOUSE_MMB, MOUSE_NACTIVE);
+	else if(!mouseCheck(ubPort, MOUSE_MMB))
+		mouseSetButton(ubPort, MOUSE_MMB, MOUSE_ACTIVE);
+}
+
+void mouseProcess(void) {
+	// Even if whole Amiga process will be moved to vbl interrupt, other platforms
+	// will prob'ly use this fn anyway
+#ifdef AMIGA
+
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_1) {
-		// Movement
-		UWORD uwMousePos = custom.joy0dat;
-		UBYTE ubPosX = uwMousePos & 0xFF;
-		UBYTE ubPosY = uwMousePos >> 8;
-
-		BYTE bDx = ubPosX - g_sMouseManager.pMouses[MOUSE_PORT_1].ubPrevHwX;
-		BYTE bDy = ubPosY - g_sMouseManager.pMouses[MOUSE_PORT_1].ubPrevHwY;
-		mouseMoveBy(MOUSE_PORT_1, bDx, bDy);
-
-		g_sMouseManager.pMouses[MOUSE_PORT_1].ubPrevHwX = ubPosX;
-		g_sMouseManager.pMouses[MOUSE_PORT_1].ubPrevHwY = ubPosY;
-
-		// Left button state
-		if(*pCiaAPra & BV(6))
-			mouseSetButton(MOUSE_PORT_1, MOUSE_LMB, MOUSE_NACTIVE);
-		else if(!mouseCheck(MOUSE_PORT_1, MOUSE_LMB))
-			mouseSetButton(MOUSE_PORT_1, MOUSE_LMB, MOUSE_ACTIVE);
-
-		// Right button state
-		if(custom.potinp & BV(10))
-			mouseSetButton(MOUSE_PORT_1, MOUSE_RMB, MOUSE_NACTIVE);
-		else if(!mouseCheck(MOUSE_PORT_1, MOUSE_RMB))
-			mouseSetButton(MOUSE_PORT_1, MOUSE_RMB, MOUSE_ACTIVE);
-
-		// Middle button state
-		if(custom.potinp & BV(8))
-			mouseSetButton(MOUSE_PORT_1, MOUSE_MMB, MOUSE_NACTIVE);
-		else if(!mouseCheck(MOUSE_PORT_1, MOUSE_MMB))
-			mouseSetButton(MOUSE_PORT_1, MOUSE_MMB, MOUSE_ACTIVE);
+		mouseProcessPort(
+			MOUSE_PORT_1, custom.joy0dat,
+			g_pCiaA->pra & BV(6), custom.potinp & BV(10), custom.potinp & BV(8)
+		);
 	}
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_2) {
-		// Movement
-		UWORD uwMousePos = custom.joy1dat;
-		UBYTE ubPosX = uwMousePos & 0xFF;
-		UBYTE ubPosY = uwMousePos >> 8;
-
-		BYTE bDx = ubPosX - g_sMouseManager.pMouses[MOUSE_PORT_2].ubPrevHwX;
-		BYTE bDy = ubPosY - g_sMouseManager.pMouses[MOUSE_PORT_2].ubPrevHwY;
-		mouseMoveBy(MOUSE_PORT_2, bDx, bDy);
-
-		g_sMouseManager.pMouses[MOUSE_PORT_2].ubPrevHwX = ubPosX;
-		g_sMouseManager.pMouses[MOUSE_PORT_2].ubPrevHwY = ubPosY;
-
-		// Left button state
-		if(*pCiaAPra & BV(7))
-			mouseSetButton(MOUSE_PORT_2, MOUSE_LMB, MOUSE_NACTIVE);
-		else if(!mouseCheck(MOUSE_PORT_2, MOUSE_LMB))
-			mouseSetButton(MOUSE_PORT_2, MOUSE_LMB, MOUSE_ACTIVE);
-
-		// Right button state
-		if(custom.potinp & BV(14))
-			mouseSetButton(MOUSE_PORT_2, MOUSE_RMB, MOUSE_NACTIVE);
-		else if(!mouseCheck(MOUSE_PORT_2, MOUSE_RMB))
-			mouseSetButton(MOUSE_PORT_2, MOUSE_RMB, MOUSE_ACTIVE);
-
-		// Middle button state
-		if(custom.potinp & BV(12))
-			mouseSetButton(MOUSE_PORT_2, MOUSE_MMB, MOUSE_NACTIVE);
-		else if(!mouseCheck(MOUSE_PORT_2, MOUSE_MMB))
-			mouseSetButton(MOUSE_PORT_2, MOUSE_MMB, MOUSE_ACTIVE);
+		mouseProcessPort(
+			MOUSE_PORT_2, custom.joy1dat,
+			g_pCiaA->pra & BV(7), custom.potinp & BV(14), custom.potinp & BV(12)
+		);
 	}
 
 #endif // AMIGA
