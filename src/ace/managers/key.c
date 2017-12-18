@@ -1,5 +1,34 @@
 #include <ace/managers/key.h>
 
+#include <ace/utils/custom.h>
+#define KEY_RELEASED_BIT 1
+
+/**
+ * Timer VBlank server
+ * Increments frame counter
+ */
+__amigainterrupt __saveds void keyIntServer(__reg("a1") tKeyManager *pManager) {
+	UBYTE ubKeyCode = ~g_pCiaA->sdr;
+
+	// Start handshake
+	g_pCiaA->cra |= CIACRA_SPMODE;
+	UWORD uwStart = (g_pCiaA->tbhi << 8) | g_pCiaA->tblo;
+
+	// Get keypress flag and shift keyCode
+	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
+	ubKeyCode >>= 1;
+
+	if(ubKeyReleased)
+		keySetState(ubKeyCode, KEY_NACTIVE);
+	else if (!keyCheck(ubKeyCode))
+		keySetState(ubKeyCode, KEY_ACTIVE);
+
+	// End handshake
+	while(uwStart - ((g_pCiaA->tbhi << 8) | g_pCiaA->tblo) < 65)
+		continue;
+	g_pCiaA->cra &= ~CIACRA_SPMODE;
+}
+
 /* Globals */
 tKeyManager g_sKeyManager;
 
@@ -15,32 +44,31 @@ const UBYTE g_pToAscii[] = {
 	'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '(', ')', '/', '*', '+', '-',
 };
 
+void keyCreate(void) {
+#ifdef AMIGA
+	g_sKeyManager.pInt = memAllocChipClear(sizeof(struct Interrupt)); // CHIP is PUBLIC.
+
+	g_sKeyManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
+	g_sKeyManager.pInt->is_Node.ln_Pri = -60;
+	g_sKeyManager.pInt->is_Node.ln_Name = "ACE_Keyboard_CIA";
+	g_sKeyManager.pInt->is_Data = (APTR)&g_sKeyManager;
+	g_sKeyManager.pInt->is_Code = keyIntServer;
+
+	AddIntServer(INTB_PORTS, g_sKeyManager.pInt);
+#endif // AMIGA
+}
+
+void keyDestroy(void) {
+#ifdef AMIGA
+	RemIntServer(INTB_PORTS, g_sKeyManager.pInt);
+	memFree(g_sKeyManager.pInt, sizeof(struct Interrupt));
+#endif // AMIGA
+}
+
 /* Functions */
-void keyProcess() {
-	ULONG ulWindowSignal;
-	ULONG ulSignals;
-	struct IntuiMessage *pMsg;
-
-	ulWindowSignal = 1L << g_sWindowManager.pWindow->UserPort->mp_SigBit;
-	ulSignals = SetSignal(0L, 0L);
-
-	if (ulSignals & ulWindowSignal) {
-		while (pMsg = (struct IntuiMessage *) GetMsg(g_sWindowManager.pWindow->UserPort)) {
-			ReplyMsg((struct Message *) pMsg);
-
-			switch (pMsg->Class) {
-				case IDCMP_RAWKEY:
-					if (pMsg->Code & IECODE_UP_PREFIX) {
-						pMsg->Code -= IECODE_UP_PREFIX;
-						keySetState(pMsg->Code, KEY_NACTIVE);
-					}
-					else if (!keyCheck(pMsg->Code)) {
-						keySetState(pMsg->Code, KEY_ACTIVE);
-					}
-					break;
-			}
-		}
-	}
+void keyProcess(void) {
+	// This function is left out for other platforms - they will prob'ly not be
+	// interrupt-driven.
 }
 
 void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState) {

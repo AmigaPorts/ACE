@@ -4,6 +4,7 @@
 #include <ace/types.h>
 #ifdef AMIGA
 #include <clib/intuition_protos.h> // IDCMP_RAWKEY etc
+#include <exec/interrupts.h>  // struct Interrupt
 #endif // AMIGA
 
 #include <ace/types.h>
@@ -140,6 +141,7 @@
 /* ******************************************************************** TYPES */
 
 typedef struct {
+	struct Interrupt *pInt;
 	UBYTE pStates[103];
 	UBYTE ubLastKey;
 } tKeyManager;
@@ -151,6 +153,10 @@ extern const UBYTE g_pFromAscii[];
 extern const UBYTE g_pToAscii[];
 
 /* **************************************************************** FUNCTIONS */
+
+void keyCreate(void);
+
+void keyDestroy(void);
 
 void keySetState(
 	IN UBYTE ubKeyCode,
