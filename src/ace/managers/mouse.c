@@ -8,31 +8,32 @@ tMouseManager g_sMouseManager;
 
 /* Functions */
 void mouseCreate(UBYTE ubPortFlags) {
-#ifdef AMIGA
-	mouseSetBounds(0, 0, SCREEN_PAL_WIDTH, SCREEN_PAL_HEIGHT);
-
+	memset(&g_sMouseManager, 0, sizeof(tMouseManager));
 	g_sMouseManager.ubPortFlags = ubPortFlags;
+
+#ifdef AMIGA
 	g_sMouseManager.uwPrevPotGo = custom.potinp;
 	UWORD uwPotMask = 0;
 
 	// Enable RMB & MMB
-	if(ubPortFlags & MOUSE_PORT_1) {
+	if(ubPortFlags & MOUSE_PORT_1)
 		uwPotMask |= BV(11) | BV(10) | BV(9) | BV(8);
-		memset(&g_sMouseManager.pMouses[MOUSE_PORT_1], 0, sizeof(tMouse));
-		g_sMouseManager.pMouses[MOUSE_PORT_1].uwX = (g_sMouseManager.uwHiX - g_sMouseManager.uwLoX) >> 1;
-		g_sMouseManager.pMouses[MOUSE_PORT_1].uwY = (g_sMouseManager.uwHiY - g_sMouseManager.uwHiY) >> 1;
-	}
-	if(ubPortFlags & MOUSE_PORT_2) {
+	if(ubPortFlags & MOUSE_PORT_2)
 		uwPotMask |= BV(15) | BV(14) | BV(13) | BV(12);
-		memset(&g_sMouseManager.pMouses[MOUSE_PORT_2], 0, sizeof(tMouse));
-		g_sMouseManager.pMouses[MOUSE_PORT_2].uwX = (g_sMouseManager.uwHiX - g_sMouseManager.uwLoX) >> 1;
-		g_sMouseManager.pMouses[MOUSE_PORT_2].uwY = (g_sMouseManager.uwHiY - g_sMouseManager.uwLoY) >> 1;
-	}
 	custom.potgo = (custom.potinp & (0xFFFF ^ uwPotMask)) | uwPotMask;
 
 	// Amiga Hardware Reference Manual suggests that pos should be polled every
 	// vblank, so there could be some interrupt init.
 #endif // AMIGA
+
+	if(ubPortFlags & MOUSE_PORT_1) {
+		mouseSetBounds(MOUSE_PORT_1, 0, 0, SCREEN_PAL_WIDTH, SCREEN_PAL_HEIGHT);
+		mouseResetPos(MOUSE_PORT_1);
+	}
+	if(ubPortFlags & MOUSE_PORT_2) {
+		mouseSetBounds(MOUSE_PORT_2, 0, 0, SCREEN_PAL_WIDTH, SCREEN_PAL_HEIGHT);
+		mouseResetPos(MOUSE_PORT_2);
+	}
 }
 
 void mouseDestroy(void) {
@@ -41,13 +42,6 @@ void mouseDestroy(void) {
 	// be here.
 	custom.potgo = g_sMouseManager.uwPrevPotGo;
 #endif // AMIGA
-}
-
-void mouseSetBounds(UWORD uwLoX, UWORD uwLoY, UWORD uwHiX, UWORD uwHiY) {
-	g_sMouseManager.uwLoX = uwLoX;
-	g_sMouseManager.uwLoY = uwLoY;
-	g_sMouseManager.uwHiX = uwHiX;
-	g_sMouseManager.uwHiY = uwHiY;
 }
 
 static void mouseProcessPort(

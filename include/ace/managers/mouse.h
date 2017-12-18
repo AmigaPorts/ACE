@@ -24,6 +24,7 @@ typedef struct _tMouse {
 	UWORD uwX;
 	UWORD uwY;
 	UBYTE pButtonStates[3];
+	tUwAbsRect sBounds; ///< Min/max mouse position.
 #ifdef AMIGA
 	UBYTE ubPrevHwX;
 	UBYTE ubPrevHwY;
@@ -33,10 +34,6 @@ typedef struct _tMouse {
 typedef struct _tMouseManager {
 	UBYTE ubPortFlags;
 	tMouse pMouses[3]; ///< Zero is pad, faster than subtracting from port code.
-	UWORD uwLoX; ///< Minimum cursor's X position
-	UWORD uwLoY; ///< Minimum cursor's Y position
-	UWORD uwHiX; ///< Maximum cursor's X position
-	UWORD uwHiY; ///< Maximum cursor's Y position
 #ifdef AMIGA
 	UWORD uwPrevPotGo; ///< Previous control port config.
 #endif // AMIGA
@@ -72,17 +69,25 @@ void mouseProcess(void);
 
 /**
  * Set on-screen constraints for cursor.
- * @param uwLoX Minimum cursor X position.
- * @param uwLoX Minimum cursor Y position.
- * @param uwHiY Maximum cursor X position.
- * @param uwHiY Maximum cursor Y position.
+ * @param ubMousePort: Mouse port to be constrained.
+ * @param uwLoX: Minimum cursor X position.
+ * @param uwLoX: Minimum cursor Y position.
+ * @param uwHiY: Maximum cursor X position.
+ * @param uwHiY: Maximum cursor Y position.
  */
-void mouseSetBounds(
+static inline void mouseSetBounds(
+	IN UBYTE ubMousePort,
 	IN UWORD uwLoX,
 	IN UWORD uwLoY,
 	IN UWORD uwHiX,
 	IN UWORD uwHiY
-);
+) {
+	g_sMouseManager.pMouses[ubMousePort].sBounds.uwX1 = uwLoX;
+	g_sMouseManager.pMouses[ubMousePort].sBounds.uwY1 = uwLoY;
+	g_sMouseManager.pMouses[ubMousePort].sBounds.uwX2 = uwHiX;
+	g_sMouseManager.pMouses[ubMousePort].sBounds.uwY2 = uwHiY;
+}
+
 
 /**
  * Returns given mouse's current X position.
@@ -187,12 +192,9 @@ static inline void mouseSetPosition(
 	IN UWORD uwNewX,
 	IN UWORD uwNewY
 ) {
-	g_sMouseManager.pMouses[ubMousePort].uwX = CLAMP(
-		uwNewX, g_sMouseManager.uwLoX, g_sMouseManager.uwHiX
-	);
-	g_sMouseManager.pMouses[ubMousePort].uwY = CLAMP(
-		uwNewY, g_sMouseManager.uwLoY, g_sMouseManager.uwHiY
-	);
+	tMouse *pMouse = &g_sMouseManager.pMouses[ubMousePort];
+	pMouse->uwX = CLAMP(uwNewX, pMouse->sBounds.uwX1, pMouse->sBounds.uwX2);
+	pMouse->uwY = CLAMP(uwNewY, pMouse->sBounds.uwY1, pMouse->sBounds.uwY2);
 }
 
 /**
@@ -209,14 +211,25 @@ static inline void mouseMoveBy(
 	IN WORD wDx,
 	IN WORD wDy
 ) {
-	g_sMouseManager.pMouses[ubMousePort].uwX = CLAMP(
-		g_sMouseManager.pMouses[ubMousePort].uwX + wDx,
-		g_sMouseManager.uwLoX, g_sMouseManager.uwHiX
+	tMouse *pMouse = &g_sMouseManager.pMouses[ubMousePort];
+	pMouse->uwX = CLAMP(
+		pMouse->uwX + wDx, pMouse->sBounds.uwX1, pMouse->sBounds.uwX2
 	);
-	g_sMouseManager.pMouses[ubMousePort].uwY = CLAMP(
-		g_sMouseManager.pMouses[ubMousePort].uwY + wDy,
-		g_sMouseManager.uwLoY, g_sMouseManager.uwHiY
+	pMouse->uwY = CLAMP(
+		pMouse->uwY + wDy, pMouse->sBounds.uwY1, pMouse->sBounds.uwY2
 	);
+}
+
+/**
+ * Resets mouse position to center of legal coordinate range.
+ * @param ubMousePort: Mouse of which position should be reset.
+ */
+void mouseResetPos(
+	IN UBYTE ubMousePort
+) {
+	const tUwAbsRect *pBounds = &g_sMouseManager.pMouses[ubMousePort].sBounds;
+	g_sMouseManager.pMouses[ubMousePort].uwX = (pBounds->uwX2 - pBounds->uwX1) >> 1;
+	g_sMouseManager.pMouses[ubMousePort].uwY = (pBounds->uwY2 - pBounds->uwY1) >> 1;
 }
 
 #endif
