@@ -33,7 +33,7 @@ typedef struct _tMouse {
 
 typedef struct _tMouseManager {
 	UBYTE ubPortFlags;
-	tMouse pMouses[3]; ///< Zero is pad, faster than subtracting from port code.
+	tMouse pMice[3]; ///< Zero is pad, faster than subtracting from port code.
 #ifdef AMIGA
 	UWORD uwPrevPotGo; ///< Previous control port config.
 #endif // AMIGA
@@ -82,10 +82,10 @@ static inline void mouseSetBounds(
 	IN UWORD uwHiX,
 	IN UWORD uwHiY
 ) {
-	g_sMouseManager.pMouses[ubMousePort].sBounds.uwX1 = uwLoX;
-	g_sMouseManager.pMouses[ubMousePort].sBounds.uwY1 = uwLoY;
-	g_sMouseManager.pMouses[ubMousePort].sBounds.uwX2 = uwHiX;
-	g_sMouseManager.pMouses[ubMousePort].sBounds.uwY2 = uwHiY;
+	g_sMouseManager.pMice[ubMousePort].sBounds.uwX1 = uwLoX;
+	g_sMouseManager.pMice[ubMousePort].sBounds.uwY1 = uwLoY;
+	g_sMouseManager.pMice[ubMousePort].sBounds.uwX2 = uwHiX;
+	g_sMouseManager.pMice[ubMousePort].sBounds.uwY2 = uwHiY;
 }
 
 
@@ -97,7 +97,7 @@ static inline void mouseSetBounds(
 static inline UWORD mouseGetX(
 	IN UBYTE ubMousePort
 ) {
-	return g_sMouseManager.pMouses[ubMousePort].uwX;
+	return g_sMouseManager.pMice[ubMousePort].uwX;
 }
 
 /**
@@ -108,7 +108,7 @@ static inline UWORD mouseGetX(
 static inline UWORD mouseGetY(
 	IN UBYTE ubMousePort
 ) {
-	return g_sMouseManager.pMouses[ubMousePort].uwY;
+	return g_sMouseManager.pMice[ubMousePort].uwY;
 }
 
 /**
@@ -124,7 +124,7 @@ static inline void mouseSetButton(
 	IN UBYTE ubMouseCode,
 	IN UBYTE ubMouseState
 ) {
-	g_sMouseManager.pMouses[ubMousePort].pButtonStates[ubMouseCode] = ubMouseState;
+	g_sMouseManager.pMice[ubMousePort].pButtonStates[ubMouseCode] = ubMouseState;
 }
 
 /**
@@ -137,7 +137,7 @@ static inline UBYTE mouseCheck(
 	IN UBYTE ubMousePort,
 	IN UBYTE ubMouseCode
 ) {
-	UBYTE ubBtn = g_sMouseManager.pMouses[ubMousePort].pButtonStates[ubMouseCode];
+	UBYTE ubBtn = g_sMouseManager.pMice[ubMousePort].pButtonStates[ubMouseCode];
 	return ubBtn != MOUSE_NACTIVE;
 }
 
@@ -152,7 +152,7 @@ static inline UBYTE mouseUse(
 	IN UBYTE ubMousePort,
 	IN UBYTE ubMouseCode
 ) {
-	tMouse *pMouse = &g_sMouseManager.pMouses[ubMousePort];
+	tMouse *pMouse = &g_sMouseManager.pMice[ubMousePort];
 	if(pMouse->pButtonStates[ubMouseCode] == MOUSE_ACTIVE) {
 		pMouse->pButtonStates[ubMouseCode] = MOUSE_USED;
 		return 1;
@@ -170,8 +170,8 @@ static inline UBYTE mouseInRect(
 	IN UBYTE ubMousePort,
 	IN tUwRect sRect
 ) {
-	UWORD uwMouseX = g_sMouseManager.pMouses[ubMousePort].uwX;
-	UWORD uwMouseY = g_sMouseManager.pMouses[ubMousePort].uwY;
+	UWORD uwMouseX = g_sMouseManager.pMice[ubMousePort].uwX;
+	UWORD uwMouseY = g_sMouseManager.pMice[ubMousePort].uwY;
 	return (
 		(sRect.uwX <= uwMouseX) && (uwMouseX < sRect.uwX + sRect.uwWidth) &&
 		(sRect.uwY <= uwMouseY) && (uwMouseY < sRect.uwY + sRect.uwHeight)
@@ -192,7 +192,7 @@ static inline void mouseSetPosition(
 	IN UWORD uwNewX,
 	IN UWORD uwNewY
 ) {
-	tMouse *pMouse = &g_sMouseManager.pMouses[ubMousePort];
+	tMouse *pMouse = &g_sMouseManager.pMice[ubMousePort];
 	pMouse->uwX = CLAMP(uwNewX, pMouse->sBounds.uwX1, pMouse->sBounds.uwX2);
 	pMouse->uwY = CLAMP(uwNewY, pMouse->sBounds.uwY1, pMouse->sBounds.uwY2);
 }
@@ -211,7 +211,7 @@ static inline void mouseMoveBy(
 	IN WORD wDx,
 	IN WORD wDy
 ) {
-	tMouse *pMouse = &g_sMouseManager.pMouses[ubMousePort];
+	tMouse *pMouse = &g_sMouseManager.pMice[ubMousePort];
 	pMouse->uwX = CLAMP(
 		pMouse->uwX + wDx, pMouse->sBounds.uwX1, pMouse->sBounds.uwX2
 	);
@@ -227,9 +227,9 @@ static inline void mouseMoveBy(
 void mouseResetPos(
 	IN UBYTE ubMousePort
 ) {
-	const tUwAbsRect *pBounds = &g_sMouseManager.pMouses[ubMousePort].sBounds;
-	g_sMouseManager.pMouses[ubMousePort].uwX = (pBounds->uwX2 - pBounds->uwX1) >> 1;
-	g_sMouseManager.pMouses[ubMousePort].uwY = (pBounds->uwY2 - pBounds->uwY1) >> 1;
+	const tUwAbsRect *pBounds = &g_sMouseManager.pMice[ubMousePort].sBounds;
+	g_sMouseManager.pMice[ubMousePort].uwX = (pBounds->uwX2 - pBounds->uwX1) >> 1;
+	g_sMouseManager.pMice[ubMousePort].uwY = (pBounds->uwY2 - pBounds->uwY1) >> 1;
 }
 
 #endif

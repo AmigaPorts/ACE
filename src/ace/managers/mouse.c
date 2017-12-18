@@ -56,12 +56,12 @@ static void mouseProcessPort(
 	UBYTE ubPosX = uwPosReg & 0xFF;
 	UBYTE ubPosY = uwPosReg >> 8;
 
-	BYTE bDx = ubPosX - g_sMouseManager.pMouses[ubPort].ubPrevHwX;
-	BYTE bDy = ubPosY - g_sMouseManager.pMouses[ubPort].ubPrevHwY;
+	BYTE bDx = ubPosX - g_sMouseManager.pMice[ubPort].ubPrevHwX;
+	BYTE bDy = ubPosY - g_sMouseManager.pMice[ubPort].ubPrevHwY;
 	mouseMoveBy(ubPort, bDx, bDy);
 
-	g_sMouseManager.pMouses[ubPort].ubPrevHwX = ubPosX;
-	g_sMouseManager.pMouses[ubPort].ubPrevHwY = ubPosY;
+	g_sMouseManager.pMice[ubPort].ubPrevHwX = ubPosX;
+	g_sMouseManager.pMice[ubPort].ubPrevHwY = ubPosY;
 
 	// Left button state
 	if(ubStateLmb)
