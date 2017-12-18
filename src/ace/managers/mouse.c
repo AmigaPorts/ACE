@@ -17,13 +17,13 @@ void mouseCreate(UBYTE ubPortFlags) {
 
 	// Enable RMB & MMB
 	if(ubPortFlags & MOUSE_PORT_1) {
-		uwPotMask |= (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8);
+		uwPotMask |= BV(11) | BV(10) | BV(9) | BV(8);
 		memset(&g_sMouseManager.pMouses[MOUSE_PORT_1], 0, sizeof(tMouse));
 		g_sMouseManager.pMouses[MOUSE_PORT_1].uwX = (g_sMouseManager.uwHiX - g_sMouseManager.uwLoX) >> 1;
 		g_sMouseManager.pMouses[MOUSE_PORT_1].uwY = (g_sMouseManager.uwHiY - g_sMouseManager.uwHiY) >> 1;
 	}
 	if(ubPortFlags & MOUSE_PORT_2) {
-		uwPotMask |= (1 << 15) | (1 << 14) | (1 << 13) | (1 << 12);
+		uwPotMask |= BV(15) | BV(14) | BV(13) | BV(12);
 		memset(&g_sMouseManager.pMouses[MOUSE_PORT_2], 0, sizeof(tMouse));
 		g_sMouseManager.pMouses[MOUSE_PORT_2].uwX = (g_sMouseManager.uwHiX - g_sMouseManager.uwLoX) >> 1;
 		g_sMouseManager.pMouses[MOUSE_PORT_2].uwY = (g_sMouseManager.uwHiY - g_sMouseManager.uwLoY) >> 1;
@@ -56,6 +56,11 @@ void mouseProcess(void) {
 #ifdef AMIGA
 	volatile UWORD * const pCiaAPra = (UWORD*)((UBYTE*)0xBFE001);
 
+	// Deltas are signed bytes even though underflows and overflows may occur.
+	// It is expected behavior since it is encouraged in Amiga HRM as means to
+	// determine mouse movement direction which takes into account joyxdat
+	// underflows and overflows.
+
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_1) {
 		// Movement
 		UWORD uwMousePos = custom.joy0dat;
@@ -70,19 +75,19 @@ void mouseProcess(void) {
 		g_sMouseManager.pMouses[MOUSE_PORT_1].ubPrevHwY = ubPosY;
 
 		// Left button state
-		if(*pCiaAPra & (1 << 6))
+		if(*pCiaAPra & BV(6))
 			mouseSetButton(MOUSE_PORT_1, MOUSE_LMB, MOUSE_NACTIVE);
 		else if(!mouseCheck(MOUSE_PORT_1, MOUSE_LMB))
 			mouseSetButton(MOUSE_PORT_1, MOUSE_LMB, MOUSE_ACTIVE);
 
 		// Right button state
-		if(custom.potinp & (1 << 10))
+		if(custom.potinp & BV(10))
 			mouseSetButton(MOUSE_PORT_1, MOUSE_RMB, MOUSE_NACTIVE);
 		else if(!mouseCheck(MOUSE_PORT_1, MOUSE_RMB))
 			mouseSetButton(MOUSE_PORT_1, MOUSE_RMB, MOUSE_ACTIVE);
 
 		// Middle button state
-		if(custom.potinp & (1 << 8))
+		if(custom.potinp & BV(8))
 			mouseSetButton(MOUSE_PORT_1, MOUSE_MMB, MOUSE_NACTIVE);
 		else if(!mouseCheck(MOUSE_PORT_1, MOUSE_MMB))
 			mouseSetButton(MOUSE_PORT_1, MOUSE_MMB, MOUSE_ACTIVE);
@@ -101,19 +106,19 @@ void mouseProcess(void) {
 		g_sMouseManager.pMouses[MOUSE_PORT_2].ubPrevHwY = ubPosY;
 
 		// Left button state
-		if(*pCiaAPra & (1 << 7))
+		if(*pCiaAPra & BV(7))
 			mouseSetButton(MOUSE_PORT_2, MOUSE_LMB, MOUSE_NACTIVE);
 		else if(!mouseCheck(MOUSE_PORT_2, MOUSE_LMB))
 			mouseSetButton(MOUSE_PORT_2, MOUSE_LMB, MOUSE_ACTIVE);
 
 		// Right button state
-		if(custom.potinp & (1 << 14))
+		if(custom.potinp & BV(14))
 			mouseSetButton(MOUSE_PORT_2, MOUSE_RMB, MOUSE_NACTIVE);
 		else if(!mouseCheck(MOUSE_PORT_2, MOUSE_RMB))
 			mouseSetButton(MOUSE_PORT_2, MOUSE_RMB, MOUSE_ACTIVE);
 
 		// Middle button state
-		if(custom.potinp & (1 << 12))
+		if(custom.potinp & BV(12))
 			mouseSetButton(MOUSE_PORT_2, MOUSE_MMB, MOUSE_NACTIVE);
 		else if(!mouseCheck(MOUSE_PORT_2, MOUSE_MMB))
 			mouseSetButton(MOUSE_PORT_2, MOUSE_MMB, MOUSE_ACTIVE);

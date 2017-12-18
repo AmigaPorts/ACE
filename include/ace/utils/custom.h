@@ -14,6 +14,11 @@
 extern struct Custom custom;
 
 /**
+ * Bit value macro - useful for setting & testing bits.
+ */
+#define BV(x) (1 << (x))
+
+/**
  * Ray position struct.
  * Merges vposr and vhposr read into one.
  * Setting fields as volatile is mandatory for VBCC 0.9d as setting pointer
@@ -83,46 +88,46 @@ typedef struct _tCia {
 /**
  * CIA defines.
  */
-#define CIAAPRA_OVL  0x01
-#define CIAAPRA_LED  0x02
-#define CIAAPRA_CHNG 0x04
-#define CIAAPRA_WPRO 0x08
-#define CIAAPRA_TK0  0x10
-#define CIAAPRA_RDY  0x20
-#define CIAAPRA_FIR0 0x40
-#define CIAAPRA_FIR1 0x80
+#define CIAAPRA_OVL  BV(0)
+#define CIAAPRA_LED  BV(1)
+#define CIAAPRA_CHNG BV(2)
+#define CIAAPRA_WPRO BV(3)
+#define CIAAPRA_TK0  BV(4)
+#define CIAAPRA_RDY  BV(5)
+#define CIAAPRA_FIR0 BV(6)
+#define CIAAPRA_FIR1 BV(7)
 
-#define CIABPRB_STEP 0x01
-#define CIABPRB_DIR  0x02
-#define CIABPRB_SIDE 0x04
-#define CIABPRB_SEL0 0x08
-#define CIABPRB_SEL1 0x10
-#define CIABPRB_SEL2 0x20
-#define CIABPRB_SEL3 0x40
-#define CIABPRB_MTR  0x80
+#define CIABPRB_STEP BV(0)
+#define CIABPRB_DIR  BV(1)
+#define CIABPRB_SIDE BV(2)
+#define CIABPRB_SEL0 BV(3)
+#define CIABPRB_SEL1 BV(4)
+#define CIABPRB_SEL2 BV(5)
+#define CIABPRB_SEL3 BV(6)
+#define CIABPRB_MTR  BV(7)
 
-#define CIAICR_TIMER_A 0x01
-#define CIAICR_TIMER_B 0x02
-#define CIAICR_TOD     0x04
-#define CIAICR_SERIAL  0x08
-#define CIAICR_FLAG    0x10
-#define CIAICR_SETCLR  0x80
+#define CIAICR_TIMER_A BV(0)
+#define CIAICR_TIMER_B BV(1)
+#define CIAICR_TOD     BV(2)
+#define CIAICR_SERIAL  BV(3)
+#define CIAICR_FLAG    BV(4)
+#define CIAICR_SETCLR  BV(7)
 
-#define CIACRA_START   0x01
-#define CIACRA_PBON    0x02
-#define CIACRA_OUTMODE 0x04
-#define CIACRA_RUNMODE 0x08
-#define CIACRA_LOAD    0x10
-#define CIACRA_INMODE  0x20
-#define CIACRA_SPMODE  0x40
+#define CIACRA_START   BV(0)
+#define CIACRA_PBON    BV(1)
+#define CIACRA_OUTMODE BV(2)
+#define CIACRA_RUNMODE BV(3)
+#define CIACRA_LOAD    BV(4)
+#define CIACRA_INMODE  BV(5)
+#define CIACRA_SPMODE  BV(6)
 
-#define CIACRB_START   0x01
-#define CIACRB_PBON    0x02
-#define CIACRB_OUTMODE 0x04
-#define CIACRB_RUNMODE 0x08
-#define CIACRB_LOAD    0x10
-#define CIACRB_INMODE  0x60
-#define CIACRB_ALARM   0x80
+#define CIACRB_START   BV(0)
+#define CIACRB_PBON    BV(1)
+#define CIACRB_OUTMODE BV(2)
+#define CIACRB_RUNMODE BV(3)
+#define CIACRB_LOAD    BV(4)
+#define CIACRB_INMODE  (BV(5) | BV(6))
+#define CIACRB_ALARM   BV(7)
 
 extern volatile tCia * const g_pCiaA;
 extern volatile tCia * const g_pCiaB;
