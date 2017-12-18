@@ -1,6 +1,8 @@
 #ifndef GUARD_ACE_UTILS_CUSTOM_H
 #define GUARD_ACE_UTILS_CUSTOM_H
 
+#include <ace/macros.h>
+
 #ifdef AMIGA
 
 /**
@@ -12,11 +14,6 @@
 
 // Here was __far attrib from DICE/GCC times. Not needed for VBCC, so it was removed.
 extern struct Custom custom;
-
-/**
- * Bit value macro - useful for setting & testing bits.
- */
-#define BV(x) (1 << (x))
 
 /**
  * Ray position struct.

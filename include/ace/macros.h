@@ -26,6 +26,11 @@
 #define CLAMP(x, min, max) ((x) < (min)? (min) : ((x) > (max) ? (max) : (x)))
 
 /**
+ * Bit value macro - useful for setting & testing bits.
+ */
+#define BV(x) (1 << (x))
+
+/**
  *  Checks if given x,y is in specified tRect.
  */
 #define inRect(x, y, r) (                     \
