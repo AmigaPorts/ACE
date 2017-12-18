@@ -1,6 +1,7 @@
 #include <ace/managers/key.h>
-
+#include <ace/managers/memory.h>
 #include <ace/utils/custom.h>
+#include <hardware/intbits.h> // INTB_PORTS
 #define KEY_RELEASED_BIT 1
 
 /**
@@ -65,26 +66,7 @@ void keyDestroy(void) {
 #endif // AMIGA
 }
 
-/* Functions */
 void keyProcess(void) {
 	// This function is left out for other platforms - they will prob'ly not be
 	// interrupt-driven.
-}
-
-void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState) {
-	g_sKeyManager.pStates[ubKeyCode] = ubKeyState;
-	if(ubKeyState == KEY_ACTIVE)
-		g_sKeyManager.ubLastKey = ubKeyCode;
-}
-
-UBYTE keyCheck(UBYTE ubKeyCode) {
-	return g_sKeyManager.pStates[ubKeyCode] != KEY_NACTIVE;
-}
-
-UBYTE keyUse(UBYTE ubKeyCode) {
-	if (g_sKeyManager.pStates[ubKeyCode] == KEY_ACTIVE) {
-		g_sKeyManager.pStates[ubKeyCode] = KEY_USED;
-		return 1;
-	}
-	return 0;
 }
