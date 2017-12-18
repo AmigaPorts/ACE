@@ -224,7 +224,7 @@ static inline void mouseMoveBy(
  * Resets mouse position to center of legal coordinate range.
  * @param ubMousePort: Mouse of which position should be reset.
  */
-void mouseResetPos(
+static inline void mouseResetPos(
 	IN UBYTE ubMousePort
 ) {
 	const tUwAbsRect *pBounds = &g_sMouseManager.pMice[ubMousePort].sBounds;
