@@ -126,7 +126,7 @@ static inline void mouseSetButton(
  * Returns given mouse's button state.
  * @param ubMousePort: Mouse to be polled.
  * @param ubMouseCode: Button to be polled (MOUSE_LMB, MOUSE_RMB or MOUSE_MMB).
- * @return Current mouse sate: (MOUSE_NACTIVE, MOUSE_USED, MOUSE_ACTIVE).
+ * @return 1 if button is pressed, otherwise 0.
  */
 static inline UBYTE mouseCheck(
 	IN UBYTE ubMousePort,
