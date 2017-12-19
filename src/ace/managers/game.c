@@ -96,8 +96,8 @@ void gameDestroy(void) {
 
 	pGameState = g_sGameManager.pStateFirst;
 	while (pGameState) {
-		if (g_sGameManager.pStateFirst->pDestroyCallback) {
-			g_sGameManager.pStateFirst->pDestroyCallback();
+		if (pGameState->pDestroyCallback) {
+			pGameState->pDestroyCallback();
 		}
 		pPrev = pGameState->pPrev;
 		memFree(pGameState, sizeof(tGameState));
