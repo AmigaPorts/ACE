@@ -3,12 +3,8 @@
 
 #include <ace/types.h>
 #ifdef AMIGA
-#include <clib/intuition_protos.h> // IDCMP_RAWKEY etc
+#include <exec/interrupts.h>  // struct Interrupt
 #endif // AMIGA
-
-#include <ace/types.h>
-
-#include <ace/managers/window.h>
 
 /* ****************************************************************** DEFINES */
 
@@ -131,7 +127,7 @@
 #define KEY_DEL 0x46
 #define KEY_HELP 0x5F
 
-// Key status flags
+// Key state flags
 #define KEY_NACTIVE 0
 #define KEY_USED 1
 #define KEY_ACTIVE 2
@@ -140,6 +136,7 @@
 /* ******************************************************************** TYPES */
 
 typedef struct {
+	struct Interrupt *pInt;
 	UBYTE pStates[103];
 	UBYTE ubLastKey;
 } tKeyManager;
@@ -152,19 +149,63 @@ extern const UBYTE g_pToAscii[];
 
 /* **************************************************************** FUNCTIONS */
 
-void keySetState(
+/**
+ * Initializes mouse manager.
+ */
+void keyCreate(void);
+
+/**
+ * Cleans up after mouse manager.
+ */
+void keyDestroy(void);
+
+/**
+ * Processes key manager, updating keys' states.
+ * This function should be called once per frame.
+ */
+void keyProcess(void);
+
+/**
+ * Sets state of given key.
+ * @param ubKeyCode: Code of key, which state should be changed.
+ * @param ubKeyState: Key state (KEY_ACTIVE, KEY_NACTIVE or KEY_USED).
+ */
+static inline void keySetState(
 	IN UBYTE ubKeyCode,
 	IN UBYTE ubKeyState
-);
+) {
+	g_sKeyManager.pStates[ubKeyCode] = ubKeyState;
+	if(ubKeyState == KEY_ACTIVE)
+		g_sKeyManager.ubLastKey = ubKeyCode;
+}
 
-UBYTE keyCheck(
+/**
+ * Polls state of key with given code.
+ * @param ubKeyCode: Code of key, which state should be polled.
+ * @return 1 if key is pressed, otherwise 0.
+ * @see keyUse()
+ */
+static inline UBYTE keyCheck(
 	IN UBYTE ubKeyCode
-);
+) {
+	return g_sKeyManager.pStates[ubKeyCode] != KEY_NACTIVE;
+}
 
-UBYTE keyUse(
+/**
+ * Checks if given key was recently pressed.
+ * If key's code is ACTIVE, fn returns 1 and changes key state to USED.
+ * @param ubKeyCode: Code of key, which state should be polled.
+ * @return 1 if key was recently pressed, otherwise 0.
+ * @see keyCheck()
+ */
+static inline UBYTE keyUse(
 	IN UBYTE ubKeyCode
-);
-
-void keyProcess(void);
+) {
+	if (g_sKeyManager.pStates[ubKeyCode] == KEY_ACTIVE) {
+		g_sKeyManager.pStates[ubKeyCode] = KEY_USED;
+		return 1;
+	}
+	return 0;
+}
 
 #endif
