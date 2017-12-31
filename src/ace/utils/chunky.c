@@ -31,7 +31,7 @@ void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 	UWORD uwPlanarBuffer = 0;
 	UWORD *pPlane;
 	ULONG ulOffset;
-	
+
 	ulOffset = uwY*(pOut->BytesPerRow>>1) + (uwX >> 4);
 	for(ubPlane = 0; ubPlane != pOut->Depth; ++ubPlane) {
 		for(ubPixel = 0; ubPixel != 16; ++ubPixel) {
@@ -42,6 +42,13 @@ void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 		pPlane = (UWORD*)(pOut->Planes[ubPlane]);
 		pPlane[ulOffset] = uwPlanarBuffer;
 	}
+}
+
+void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
+	UBYTE pChunky[16];
+	chunkyFromPlanar16(pOut, uwX, uwY, pChunky);
+	pChunky[uwX & 15] = ubIn;
+	chunkyToPlanar16(pChunky, uwX, uwY, pOut);
 }
 
 void chunkyRotate(

@@ -6,16 +6,16 @@
 #include <fixmath/fix16.h>
 
 /**
- *  @brief Returns color indices for 16 colors in a row starting from supplied
+ * @brief Returns color indices for 16 colors in a row starting from supplied
  *         coords.
- *  
- *  @param pBitMap Bitmap, from which pixel colors will be read
- *  @param uwX     Starting X coord, always word-aligned.
- *                 E.g. Read from pixel 18 will start it from x = 16 anyway.
- *  @param uwY     Row number, from which pixels will be read.
- *  @param pOut    Color index output buffer.
- *  
- *  @see chunkyFromPlanar()
+ *
+ * @param pBitMap Bitmap, from which pixel colors will be read
+ * @param uwX     Starting X coord, always word-aligned.
+ *                E.g. Read from pixel 18 will start it from x = 16 anyway.
+ * @param uwY     Row number, from which pixels will be read.
+ * @param pOut    Color index output buffer.
+ *
+ * @see chunkyFromPlanar()
  */
 void chunkyFromPlanar16(
 	IN tBitMap *pBitMap,
@@ -25,15 +25,15 @@ void chunkyFromPlanar16(
 );
 
 /**
- *  @brief Returns color index of selected pixel.
- *  Inefficient as hell - use if really needed or for prototyping convenience!
- *  
- *  @param pBitMap Bitmap, from which pixel color will be read.
- *  @param uwX     Pixel X coord.
- *  @param uwY     Pixel Y coord.
- *  @return Pixels palette color index.
- *  
- *  @see chunkyFromPlanar16()
+ * @brief Returns color index of selected pixel.
+ * Inefficient as hell - use if really needed or for prototyping convenience!
+ *
+ * @param pBitMap Bitmap, from which pixel color will be read.
+ * @param uwX     Pixel X coord.
+ * @param uwY     Pixel Y coord.
+ * @return Pixels palette color index.
+ *
+ * @see chunkyFromPlanar16()
  */
 UBYTE chunkyFromPlanar(
 	IN tBitMap *pBitMap,
@@ -66,18 +66,18 @@ void chunkyRotate(
 );
 
 /**
- *  @brief Puts 16-pixel chunky row on bitmap at given coordinates.
- *  
- *  This function assumes that chunky pixels are of same depth as bitmap.
- *  Higher chunky bits will thus be ignored.
- *  
- *  @param pIn  Source chunky pixels.
- *  @param uwX  Destination start X coordinate.
- *  @param uwY  Destination Y coordinate.
- *  @param pOut Destination bitmap.
- *  
- *  @todo Implement using 32-bit fixed points & Taylor sine approximation.
- *  @see chunkyFromPlanar16
+ * @brief Puts 16-pixel chunky row on bitmap at given coordinates.
+ *
+ * This function assumes that chunky pixels are of same depth as bitmap.
+ * Higher chunky bits will thus be ignored.
+ *
+ * @param pIn  Source chunky pixels.
+ * @param uwX  Destination start X coordinate.
+ * @param uwY  Destination Y coordinate.
+ * @param pOut Destination bitmap.
+ *
+ * @see chunkyFromPlanar16
+ * @see chunkyToPlanar
  */
 void chunkyToPlanar16(
 	IN UBYTE *pIn,
@@ -86,5 +86,25 @@ void chunkyToPlanar16(
 	OUT tBitMap *pOut
 );
 
+/**
+ * Puts single chunky pixel on bitmap at given coordinates.
+ *
+ * Inefficient as hell - use if really needed or for prototyping convenience!
+ *
+ * @param ubIn: Chunky pixel value (color index).
+ * @param uwX: Pixel's x position on bitmap.
+ * @param uwY: Pixel's y position on bitmap.
+ * @param pOut: Destination bitmap.
+ *
+ * @see chunkyToPlanar16
+ * @see chunkyFromPlanar16
+ * @see chunkyFromPlanar
+ */
+void chunkyToPlanar(
+	IN UBYTE ubIn,
+	IN UWORD uwX,
+	IN UWORD uwY,
+	OUT tBitMap *pOut
+);
 
 #endif
