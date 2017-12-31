@@ -52,45 +52,28 @@ void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 }
 
 void chunkyRotate(
-	UBYTE *pSource, UBYTE *pDest,
-	fix16_t fAngle, UBYTE ubBgColor,
-	WORD wWidth, WORD wHeight
+	UBYTE *pSource, UBYTE *pDest,	fix16_t fSin, fix16_t fCos,
+	UBYTE ubBgColor, WORD wWidth, WORD wHeight
 ) {
-	fix16_t fSin, fCos, fCx, fCy;
+	fix16_t fCx, fCy;
+	fix16_t fHalf = fix16_one>>1;
 	WORD x,y;
 	WORD u,v;
-		
-	fCx = fix16_div(fix16_from_int(wWidth-1), fix16_from_int(2));
-	fCy = fix16_div(fix16_from_int(wHeight-1), fix16_from_int(2));
-	
+
+	fCx = fix16_div(fix16_from_int(wWidth), fix16_from_int(2));
+	fCy = fix16_div(fix16_from_int(wHeight), fix16_from_int(2));
+
 	// For each of new bitmap's pixel sample color from rotated source x,y
-	fSin = fix16_sin(fAngle);
-	fCos = fix16_cos(fAngle);
-	fix16_t dx, dy;
+	fix16_t fDx, fDy;
 	for(y = 0; y != wHeight; ++y) {
-		dy = fix16_sub(fix16_from_int(y), fCy);
+		fDy = fix16_from_int(y) - fCy;
 		for(x = 0; x != wWidth; ++x) {
-			dx = fix16_sub(fix16_from_int(x), fCx);
+			fDx = fix16_from_int(x) - fCx;
 			// u = round(fCos*(x-fCx) - fSin*(y-fCy) +(fCx));
-			u = fix16_to_int(
-				fix16_add(
-					fix16_sub(
-						fix16_mul(fCos, dx),
-						fix16_mul(fSin, dy)),
-					fCx
-				)
-			);
 			// v = fix16_to_int(fSin*(x-fCx) + fCos*(y-fCy) +(fCy));
-			v = fix16_to_int(
-				fix16_add(
-					fix16_add(
-						fix16_mul(fSin, dx),
-						fix16_mul(fCos, dy)
-					),
-					fCy
-				)
-			);
-			
+			u = fix16_to_int(fix16_mul(fCos, fDx) - fix16_mul(fSin, fDy) + fCx + fHalf);
+			v = fix16_to_int(fix16_mul(fSin, fDx) + fix16_mul(fCos, fDy) + fCy + fHalf);
+
 			if(u < 0 || v < 0 || u >= wWidth || v >= wHeight)
 				pDest[y*wWidth + x] = ubBgColor;
 			else

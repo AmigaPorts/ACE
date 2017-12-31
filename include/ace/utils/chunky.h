@@ -42,24 +42,26 @@ UBYTE chunkyFromPlanar(
 );
 
 /**
- *  @brief Rotates chunky pixels by given angle, on spefied background.
- *  
- *  This function uses fixed point from libfixmath, so its speed should be
- *  acceptable for precalcs.
- *  Also, dr Dobb's implementation is faster, but yields greater errors:
- *  http://www.drdobbs.com/architecture-and-design/fast-bitmap-rotation-and-scaling/184416337
- *  
- *  @param pSource   Source chunky pixels.
- *  @param pDest     Destination chunky pixels.
- *  @param fAngle    Rotation angle, in radians.
- *  @param ubBgColor Background color to use if rotation goes out of source.
- *  @param wWidth    Source/destination chunky map width.
- *  @param wHeight   Ditto, height.
+ * @brief Rotates chunky pixels by given angle, on spefied background.
+ *
+ * This function uses fixed point from libfixmath, so its speed should be
+ * acceptable for precalcs.
+ * Also, dr Dobb's implementation is faster, but yields greater errors:
+ * http://www.drdobbs.com/architecture-and-design/fast-bitmap-rotation-and-scaling/184416337
+ *
+ * @param pSource   Source chunky pixels.
+ * @param pDest     Destination chunky pixels.
+ * @param fSin      Sine value of rotation angle.
+ * @param fCos      Cosine value of rotation angle.
+ * @param ubBgColor Background color to use if rotation goes out of source.
+ * @param wWidth    Source/destination chunky map width.
+ * @param wHeight   Ditto, height.
  */
 void chunkyRotate(
 	IN UBYTE *pSource,
 	OUT UBYTE *pDest,
-	IN fix16_t fAngle,
+	IN fix16_t fSin,
+	IN fix16_t fCos,
 	IN UBYTE ubBgColor,
 	IN WORD wWidth,
 	IN WORD wHeight
