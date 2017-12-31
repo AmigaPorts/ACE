@@ -52,7 +52,7 @@ void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 }
 
 void chunkyRotate(
-	UBYTE *pSource, UBYTE *pDest,	fix16_t fSin, fix16_t fCos,
+	UBYTE *pSource, UBYTE *pDest, fix16_t fSin, fix16_t fCos,
 	UBYTE ubBgColor, WORD wWidth, WORD wHeight
 ) {
 	fix16_t fCx, fCy;
