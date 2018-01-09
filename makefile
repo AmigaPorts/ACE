@@ -50,7 +50,7 @@ hello:
 	@echo ===============================================
 	@echo ACE Full build commenced'
 	@echo ===============================================
-	
+
 summary:
 	@echo.
 	@echo ========================
@@ -58,20 +58,25 @@ summary:
 	@echo ========================
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
-	$(CC) $(CC_FLAGS) -c -o $@ $<
-	
+	@echo Building $<
+	@$(CC) $(CC_FLAGS) -c -o $@ $<
+
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
-	$(CC) $(CC_FLAGS) -c -o $@ $<
-	
+	@echo Building $<
+	@$(CC) $(CC_FLAGS) -c -o $@ $<
+
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)utils$(SL)%.c
-	$(CC) $(CC_FLAGS) -c -o $@ $<
+	@echo Building $<
+	@$(CC) $(CC_FLAGS) -c -o $@ $<
 
 $(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.asm
-	$(CC) $(CC_FLAGS) -c -o $@ $<
-	
+	@echo Building $<
+	@$(CC) $(CC_FLAGS) -c -o $@ $<
+
 $(BUILD_DIR)$(SL)%.o: $(FIXMATH_SRC_DIR)$(SL)%.c
-	$(CC) $(CC_FLAGS) -c -o $@ $<
-	
+	@echo Building $<
+	@$(CC) $(CC_FLAGS) -c -o $@ $<
+
 all: hello clear ace summary
 
 clear:

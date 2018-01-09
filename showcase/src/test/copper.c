@@ -7,7 +7,7 @@
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/viewport/simplebuffer.h>
-
+#include "main.h"
 #include "menu/menu.h"
 
 static tView *s_pTestCopperView;
@@ -54,6 +54,9 @@ UWORD colorHSV(UBYTE ubH, UBYTE ubS, UBYTE ubV) {
 	}
 }
 
+#define TEST_COPPER_COLOR_BORDER 2
+#define TEST_COPPER_COLOR_INSIDE 1
+
 
 void gsTestCopperCreate(void) {
 	UBYTE i;
@@ -65,7 +68,7 @@ void gsTestCopperCreate(void) {
 	);
 	s_pTestCopperVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestCopperView,
-		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_VPORT_BPP, SHOWCASE_BPP,
 		TAG_DONE
 	);
 	s_pTestCopperBfr = simpleBufferCreate(0,
@@ -77,18 +80,43 @@ void gsTestCopperCreate(void) {
 	s_pTestCopperVPort->pPalette[1] = 0xAAA;
 	s_pTestCopperVPort->pPalette[2] = 0x666;
 
-	blitRect(s_pTestCopperBfr->pBuffer, 0,0, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, 1);
-	blitRect(s_pTestCopperBfr->pBuffer, 0,0, 1, SCREEN_PAL_HEIGHT, 2);
-	blitRect(s_pTestCopperBfr->pBuffer, 319,0, 1, SCREEN_PAL_HEIGHT, 2);
-	blitRect(s_pTestCopperBfr->pBuffer, 0,0, SCREEN_PAL_WIDTH, 1, 2);
-	blitRect(s_pTestCopperBfr->pBuffer, 0,255, SCREEN_PAL_WIDTH, 1, 2);
+	blitRect(
+		s_pTestCopperBfr->pBuffer, 0,0,
+		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX,
+		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY,
+		TEST_COPPER_COLOR_INSIDE
+	);
+	blitRect(
+		s_pTestCopperBfr->pBuffer, 0,0,
+		1, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY, TEST_COPPER_COLOR_BORDER
+	);
+	blitRect(
+		s_pTestCopperBfr->pBuffer, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX-1, 0,
+		1, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY, TEST_COPPER_COLOR_BORDER
+	);
+	blitRect(
+		s_pTestCopperBfr->pBuffer, 0,0,
+		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX, 1, TEST_COPPER_COLOR_BORDER
+	);
+	blitRect(
+		s_pTestCopperBfr->pBuffer, 0, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY-1,
+		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX, 1, TEST_COPPER_COLOR_BORDER
+	);
 
 	for(i = 0; i != 32; ++i)
 		pBar[i] = copBlockCreate(s_pTestCopperView->pCopList, 1, 0, 50+i);
-	for(i = 0; i != 16; ++i)
-		copMove(s_pTestCopperView->pCopList, pBar[i], &custom.color[1], colorHSV(0,255,i << 3));
-	for(i = 16; i != 32; ++i)
-		copMove(s_pTestCopperView->pCopList, pBar[i], &custom.color[1], colorHSV(0,255,(31-i) << 3));
+	for(i = 0; i != 16; ++i) {
+		copMove(
+			s_pTestCopperView->pCopList, pBar[i],
+			&custom.color[1], colorHSV(0,255,i << 3)
+		);
+	}
+	for(i = 16; i != 32; ++i) {
+		copMove(
+			s_pTestCopperView->pCopList, pBar[i],
+			&custom.color[1], colorHSV(0,255,(31-i) << 3)
+		);
+	}
 
 	// Display view with its viewports
 	viewLoad(s_pTestCopperView);
@@ -113,7 +141,7 @@ void gsTestCopperLoop(void) {
 	uwY += 2*bDir;
 
 	for(i = 0; i != 32; ++i)
-		copWait(s_pTestCopperView->pCopList, pBar[i], 0, uwY+i);
+		copBlockWait(s_pTestCopperView->pCopList, pBar[i], 0, uwY+i);
 	for(i = 0; i != 16; ++i)
 		pBar[i]->pCmds[0].sMove.bfValue = colorHSV(ubHue,255,(i << 4) | i);
 	for(i = 16; i != 32; ++i)

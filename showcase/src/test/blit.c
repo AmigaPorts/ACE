@@ -1,12 +1,12 @@
 #include "test/blit.h"
-
 #include <ace/utils/extview.h>
 #include <ace/managers/game.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/viewport/simplebuffer.h>
-
+#include <ace/generic/screen.h>
+#include "main.h"
 #include "menu/menu.h"
 
 static tView *s_pTestBlitView;
@@ -25,7 +25,7 @@ void gsTestBlitCreate(void) {
 	);
 	s_pTestBlitVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestBlitView,
-		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_VPORT_BPP, SHOWCASE_BPP,
 		TAG_DONE
 	);
 	s_pTestBlitBfr = simpleBufferCreate(0,
@@ -40,8 +40,8 @@ void gsTestBlitCreate(void) {
 	s_pTestBlitVPort->pPalette[4] = 0x111;
 
 	// Loop vars
-	s_uwX = WINDOW_SCREEN_WIDTH>>1;
-	s_uwY = WINDOW_SCREEN_HEIGHT>>1;
+	s_uwX = s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX >> 1;
+	s_uwY = s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY >> 1;
 	s_ubType = TYPE_RECT;
 	s_fnKeyPoll = keyUse;
 
@@ -98,7 +98,7 @@ void gsTestBlitLoop(void) {
 
 	if(s_ubType & TYPE_AUTO) {
 		if(bSpeedX > 0)
-			if(s_uwX < SCREEN_PAL_WIDTH-16)
+			if(s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX - 16)
 				++s_uwX;
 			else
 				bSpeedX = -1;
@@ -122,11 +122,11 @@ void gsTestBlitLoop(void) {
 	else {
 		if(s_fnKeyPoll(KEY_UP) && s_uwY)
 			--s_uwY;
-		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < SCREEN_PAL_HEIGHT-16)
+		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16)
 			++s_uwY;
 		if(s_fnKeyPoll(KEY_LEFT) && s_uwX)
 			--s_uwX;
-		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < SCREEN_PAL_WIDTH-16)
+		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16)
 			++s_uwX;
 	}
 

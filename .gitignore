@@ -10,3 +10,7 @@ tools/*/*.exe
 tools/*/*.png
 tools/*/*.bm
 tools/*/*.plt
+
+# Showcase stuff
+showcase/memory\.log
+showcase/game\.log

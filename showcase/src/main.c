@@ -8,7 +8,6 @@
 #include <ace/managers/copper.h>
 #include <ace/managers/game.h>
 
-#include "config.h"
 #include "input.h"
 #include "menu/menu.h"
 
@@ -16,23 +15,24 @@ int main(void) {
 	memCreate();
 	logOpen();
 	timerCreate();
-	
+
 	windowCreate();
-	blitManagerCreate(0,0);
+	blitManagerCreate();
 	copCreate();
-	
+
 	inputOpen();
-	
-	gameCreate(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+
+	gameCreate();
+	gamePushState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 	while (gameIsRunning()) {
 		timerProcess();
 		inputProcess();
 		gameProcess();
 	}
 	gameDestroy();
-	
+
 	inputClose();
-	
+
 	copDestroy();
 	blitManagerDestroy();
 	windowDestroy();

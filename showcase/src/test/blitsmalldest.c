@@ -7,7 +7,8 @@
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/viewport/simplebuffer.h>
-
+#include <ace/generic/screen.h>
+#include "main.h"
 #include "menu/menu.h"
 
 static tView *s_pTestBlitView;
@@ -24,9 +25,9 @@ void prepareRefBitmap() {
 	UBYTE ubBlockHeight = 32;
 	UBYTE ubImageCount = 16;
 	UBYTE i;
-	
-	s_pRefBitmap = bitmapCreate(ubBlockWidth+ubImageCount, ubBlockHeight*ubImageCount, WINDOW_SCREEN_BPP, 0);
-	
+
+	s_pRefBitmap = bitmapCreate(ubBlockWidth+ubImageCount, ubBlockHeight*ubImageCount, SHOWCASE_BPP, 0);
+
 	for(i = 0; i != ubImageCount; ++i) {
 		blitRect(s_pRefBitmap, 0+i, 0+ubBlockHeight*i, ubBlockWidth, ubBlockHeight, 2);   // fill
 		blitRect(s_pRefBitmap, 0+i, 0+ubBlockHeight*i, ubBlockWidth, 1, 1);               // top
@@ -45,7 +46,7 @@ void gsTestBlitSmallDestCreate(void) {
 	);
 	s_pTestBlitVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestBlitView,
-		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_VPORT_BPP, SHOWCASE_BPP,
 		TAG_DONE
 	);
 	s_pTestBlitBfr = simpleBufferCreate(0,
@@ -53,12 +54,12 @@ void gsTestBlitSmallDestCreate(void) {
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
 		TAG_DONE
 	);
-	paletteLoad("data/blitToSmall.plt", s_pTestBlitVPort->pPalette, 1 << WINDOW_SCREEN_BPP);
-	
-	s_pDstBitmap = bitmapCreate(32, 32, WINDOW_SCREEN_BPP, 0);
+	paletteLoad("data/blitToSmall.plt", s_pTestBlitVPort->pPalette, 1 << SHOWCASE_BPP);
+
+	s_pDstBitmap = bitmapCreate(32, 32, SHOWCASE_BPP, 0);
 	prepareRefBitmap();
 	ubFrameIdx = 0;
-	
+
 	// Display view with its viewports
 	viewLoad(s_pTestBlitView);
 }
@@ -66,7 +67,7 @@ void gsTestBlitSmallDestCreate(void) {
 void gsTestBlitSmallDestLoop(void) {
 	static BYTE bSpeedX = 0, bSpeedY = 0;
 	BYTE bUpdate = 0;
-	
+
 	if (keyUse(KEY_ESCAPE)) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 		return;
@@ -75,22 +76,27 @@ void gsTestBlitSmallDestLoop(void) {
 		bUpdate += 1;
 	if(keyUse(KEY_LEFT))
 		bUpdate -=1;
-	
+
 	if(bUpdate && ubFrameIdx + bUpdate > -1 && ubFrameIdx + bUpdate < 16) {
 		ubFrameIdx += bUpdate;
-		blitRect(s_pTestBlitBfr->pBuffer, 0, 0, WINDOW_SCREEN_WIDTH, WINDOW_SCREEN_HEIGHT, 0);
+		blitRect(
+			s_pTestBlitBfr->pBuffer, 0, 0,
+			s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX,
+			s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY,
+			0
+		);
 		blitCopy(s_pRefBitmap, ubFrameIdx, ubFrameIdx*32, s_pDstBitmap, 0, 0, 32, 32, 0xCA, 0xFF);
 		blitCopyAligned(s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBuffer, 16, 16, 32, 32);
 	}
-	
+
 	WaitTOF();
-	
+
 }
 
 void gsTestBlitSmallDestDestroy(void) {
 	// Destroy buffer, view & viewport
 	viewDestroy(s_pTestBlitView);
-	
+
 	bitmapDestroy(s_pDstBitmap);
 	bitmapDestroy(s_pRefBitmap);
 }

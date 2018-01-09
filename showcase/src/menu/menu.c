@@ -5,10 +5,10 @@
 #include <ace/managers/joy.h>
 #include <ace/managers/game.h>
 #include <ace/managers/blit.h>
-
 #include <ace/utils/extview.h>
 #include <ace/generic/screen.h>
 
+#include "main.h"
 #include "menu/menulist.h"
 
 #include "test/blit.h"
@@ -33,7 +33,7 @@ void gsMenuCreate(void) {
 	);
 	s_pMenuVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pMenuView,
-		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_VPORT_BPP, SHOWCASE_BPP,
 		TAG_DONE
 	);
 	s_pMenuBfr = simpleBufferCreate(0,
@@ -110,8 +110,8 @@ void menuDrawBG() {
 	UBYTE ubOdd, ubColor;
 
 	// Draw checkerboard
-	for(uwY = 0; uwY <= SCREEN_PAL_HEIGHT-16; uwY += 16) {
-		for(uwX = 0; uwX <= SCREEN_PAL_WIDTH-16; uwX += 16) {
+	for(uwY = 0; uwY <= s_pMenuBfr->uBfrBounds.sUwCoord.uwY - 16; uwY += 16) {
+		for(uwX = 0; uwX <= s_pMenuBfr->uBfrBounds.sUwCoord.uwX-16; uwX += 16) {
 			if(ubOdd)
 				ubColor = 0;
 			else
@@ -123,10 +123,16 @@ void menuDrawBG() {
 	}
 
 	// Draw border
-	blitRect(s_pMenuBfr->pBuffer, 0,0, SCREEN_PAL_WIDTH, 1, 1);
-	blitRect(s_pMenuBfr->pBuffer, 0,255, SCREEN_PAL_WIDTH, 1, 1);
-	blitRect(s_pMenuBfr->pBuffer, 0,0, 1, SCREEN_PAL_HEIGHT, 1);
-	blitRect(s_pMenuBfr->pBuffer, 319,0, 1, SCREEN_PAL_HEIGHT, 1);
+	blitRect(s_pMenuBfr->pBuffer, 0,0, s_pMenuBfr->uBfrBounds.sUwCoord.uwX, 1, 1);
+	blitRect(
+		s_pMenuBfr->pBuffer, 0, s_pMenuBfr->uBfrBounds.sUwCoord.uwY-1,
+		s_pMenuBfr->uBfrBounds.sUwCoord.uwX, 1, 1
+	);
+	blitRect(s_pMenuBfr->pBuffer, 0,0, 1, s_pMenuBfr->uBfrBounds.sUwCoord.uwY, 1);
+	blitRect(
+		s_pMenuBfr->pBuffer, s_pMenuBfr->uBfrBounds.sUwCoord.uwX-1, 0,
+		1, s_pMenuBfr->uBfrBounds.sUwCoord.uwY, 1
+	);
 }
 
 /******************************************************* Main menu definition */
@@ -134,10 +140,14 @@ void menuDrawBG() {
 void menuShowMain(void) {
 	// Draw BG
 	menuDrawBG();
-	fontDrawStr(s_pMenuBfr->pBuffer, s_pMenuFont, 160, 80, "ACE Showcase", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW);
+	fontDrawStr(
+		s_pMenuBfr->pBuffer, s_pMenuFont,
+		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
+		"ACE Showcase", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
+	);
 
 	// Prepare new list
-	s_pMenuList->sCoord.sUwCoord.uwX = 160;
+	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
 	menuListResetEntries(s_pMenuList, 3);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Tests");
@@ -168,10 +178,14 @@ void menuSelectMain(void) {
 void menuShowTests(void) {
 	// Draw BG
 	menuDrawBG();
-	fontDrawStr(s_pMenuBfr->pBuffer, s_pMenuFont, 160, 80, "Tests", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW);
+	fontDrawStr(
+		s_pMenuBfr->pBuffer, s_pMenuFont,
+		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
+		"Tests", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
+	);
 
 	// Prepare new list
-	s_pMenuList->sCoord.sUwCoord.uwX = 160;
+	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
 	menuListResetEntries(s_pMenuList, 6);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
@@ -201,10 +215,15 @@ void menuSelectTests(void) {
 			gameChangeState(gsTestCopperCreate, gsTestCopperLoop, gsTestCopperDestroy);
 			break;
 		case 4:
-			gameChangeState(gsTestBlitSmallDestCreate, gsTestBlitSmallDestLoop, gsTestBlitSmallDestDestroy);
+			gameChangeState(
+				gsTestBlitSmallDestCreate, gsTestBlitSmallDestLoop,
+				gsTestBlitSmallDestDestroy
+			);
 			break;
 		case 5:
-			gameChangeState(gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy);
+			gameChangeState(
+				gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy
+			);
 			break;
 	}
 }
@@ -214,10 +233,14 @@ void menuSelectTests(void) {
 void menuShowExamples(void) {
 	// Draw BG
 	menuDrawBG();
-	fontDrawStr(s_pMenuBfr->pBuffer, s_pMenuFont, 160, 80, "Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW);
+	fontDrawStr(
+		s_pMenuBfr->pBuffer, s_pMenuFont,
+		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
+		"Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
+	);
 
 	// Prepare new list
-	s_pMenuList->sCoord.sUwCoord.uwX = 160;
+	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
 	menuListResetEntries(s_pMenuList, 1);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");

@@ -7,7 +7,9 @@
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/utils/extview.h>
 #include <ace/utils/font.h>
+#include <ace/generic/screen.h>
 
+#include "main.h"
 #include "menu/menu.h"
 
 tView *s_pTestFontView;
@@ -26,7 +28,7 @@ void gsTestFontCreate(void) {
 	);
 	s_pTestFontVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestFontView,
-		TAG_VPORT_BPP, WINDOW_SCREEN_BPP,
+		TAG_VPORT_BPP, SHOWCASE_BPP,
 		TAG_DONE
 	);
 	s_pTestFontBfr = simpleBufferCreate(0,
@@ -133,13 +135,29 @@ void testFontDrawTable() {
 	pFont = s_pFontUI;
 
 	// Background
-	blitRect(s_pTestFontBfr->pBuffer, 0,0, SCREEN_PAL_WIDTH,SCREEN_PAL_HEIGHT, 2);
+	blitRect(
+		s_pTestFontBfr->pBuffer, 0,0,
+		s_pTestFontBfr->uBfrBounds.sUwCoord.uwX,
+		s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 2
+	);
 	for(i = 0; i != 8; ++i) {
-		blitRect(s_pTestFontBfr->pBuffer, 40*i, 0, 1, SCREEN_PAL_HEIGHT, 0); // Vertical lines
-		blitRect(s_pTestFontBfr->pBuffer, 0, 32*i, SCREEN_PAL_WIDTH, 1, 0); // Horizontal lines
+		blitRect(
+			s_pTestFontBfr->pBuffer, 40*i, 0,
+			1, s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 0
+		); // Vertical lines
+		blitRect(
+			s_pTestFontBfr->pBuffer, 0, 32*i,
+			s_pTestFontBfr->uBfrBounds.sUwCoord.uwX, 1, 0
+		); // Horizontal lines
 	}
-	blitRect(s_pTestFontBfr->pBuffer, 319, 0, 1, SCREEN_PAL_HEIGHT, 0); // Last V line
-	blitRect(s_pTestFontBfr->pBuffer, 0, 255, SCREEN_PAL_WIDTH, 1, 0); // Last H line
+	blitRect(
+		s_pTestFontBfr->pBuffer, s_pTestFontBfr->uBfrBounds.sUwCoord.uwX - 1, 0,
+		1, s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 0
+	); // Last V line
+	blitRect(
+		s_pTestFontBfr->pBuffer, 0, s_pTestFontBfr->uBfrBounds.sUwCoord.uwY-1,
+		s_pTestFontBfr->uBfrBounds.sUwCoord.uwX, 1, 0
+	); // Last H line
 
 	for(i = 0; i != 64; ++i) {
 		// Char - crashes because of font rendering bugs
