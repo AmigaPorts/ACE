@@ -22,12 +22,23 @@ typedef int32_t LONG;
 #define OUT   /* Output parameter. Passed pointer contents will be changed. */
 #define INOUT /* Input/output parameter. */
 
-#ifndef __VBCC__
-#define __amigainterrupt /* Amiga interrupt handler */
-#define __saveds         /**/
-#define __reg(x)         /* Allows putting fn parameters in specific regs */
-#define __chip           /* Variable in CHIP memory region */
-#endif // __VBCC__
+#if  defined(__VBCC__)
+#define INTERRUPT __amigainterrupt __saveds
+#define REGARG(arg, reg) __reg(reg) arg
+#define CHIP __chip
+#elif defined(__GNUC__)
+#define INTERRUPT __attribute__((interrupt)) __attribute__((saveds))
+#define REGARG(arg, reg) arg asm(reg)
+#define CHIP __attribute__((chip))
+#elif defined(__CODE_CHECKER__)
+// My realtime source checker has problems with GCC asm() expanded from REGARG()
+// being in fn arg list, so I just use blank defines for it
+#define INTERRUPT
+#define REGARG(arg, x) arg
+#define CHIP
+#else
+#error "Compiler not supported!"
+#endif
 
 // Fast types
 // TODO: AGA: perhaps 32-bit?

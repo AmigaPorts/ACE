@@ -162,10 +162,9 @@ void scrollBufferBlitMask(
 	tScrollBufferManager *pDstManager, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UWORD *pMsk
 ) {
-	UBYTE ubAddY;
 	// TODO: if area is visible
 	wDstY %= pDstManager->uwBmAvailHeight;
-	ubAddY = wDstX/(pDstManager->pBuffer->BytesPerRow<<3);
+	// UBYTE ubAddY = wDstX/(pDstManager->pBuffer->BytesPerRow<<3);
 	wDstY %= (pDstManager->pBuffer->BytesPerRow<<3);
 
 	if(wDstY + wHeight <= pDstManager->uwBmAvailHeight) {

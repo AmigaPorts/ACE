@@ -20,10 +20,9 @@ void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 }
 
 void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
-	UBYTE i, c;
 	UBYTE r,g,b;
 
-	for(c = 0; c != ubColorCount; ++c) {
+	for(UBYTE c = 0; c != ubColorCount; ++c) {
 		// Extract channels
 		r = (pSource[c] >> 8) & 0xF;
 		g = (pSource[c] >> 4) & 0xF;

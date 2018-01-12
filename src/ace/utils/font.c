@@ -63,7 +63,7 @@ void fontDestroy(tFont *pFont) {
 
 tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 	tTextBitMap *pTextBitMap;
-	char *p;
+	UBYTE *p;
 	UWORD uwX;
 	UWORD uwY = pFont->uwHeight;
 
@@ -71,7 +71,7 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 	pTextBitMap = memAllocFastClear(sizeof(tTextBitMap));
 
 	// Text width measurement
-	for (p = szText; *(p); ++p) {
+	for (p = (UBYTE*)szText; *(p); ++p) {
 		if(*p == '\n') {
 			uwY += pFont->uwHeight;
 		} else {
@@ -83,7 +83,7 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 	pTextBitMap->pBitMap = bitmapCreate(pTextBitMap->uwActualWidth, uwY, 1, BMF_CLEAR);
 
 	// Draw text on bitmap buffer
-	for (p = szText, uwX = 0, uwY = 0; *(p); ++p) {
+	for (p = (UBYTE*)szText, uwX = 0, uwY = 0; *(p); ++p) {
 		if(*p == '\n') {
 			uwX = 0;
 			uwY += pFont->uwHeight;

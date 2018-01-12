@@ -54,8 +54,6 @@ void cameraSetCoord(tCameraManager *pManager, UWORD uwX, UWORD uwY) {
 }
 
 void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy) {
-	WORD wTmp;
-
 	pManager->uPos.sUwCoord.uwX = CLAMP(pManager->uPos.sUwCoord.uwX+wDx, 0, pManager->uMaxPos.sUwCoord.uwX);
 	pManager->uPos.sUwCoord.uwY = CLAMP(pManager->uPos.sUwCoord.uwY+wDy, 0, pManager->uMaxPos.sUwCoord.uwY);
 }

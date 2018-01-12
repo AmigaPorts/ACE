@@ -12,7 +12,9 @@ tBlitManager g_sBlitManager = {0};
  * Fetches next blit from queue and sets custom registers to its values
  * NOTE: Can't log inside this fn and all other called by it
  */
-__amigainterrupt __saveds void blitInterruptHandler(__reg("a0") struct Custom *cstm, __reg("a1") tBlitManager *pBlitManager) {
+void INTERRUPT blitInterruptHandler(
+	REGARG(struct Custom *cstm, "a0"), REGARG(tBlitManager *pBlitManager, "a1")
+) {
 
 	cstm->intreq = INTF_BLIT;
 }
@@ -310,7 +312,6 @@ BYTE blitUnsafeCopyMask(
 ) {
 #ifdef AMIGA
 	WORD wDstModulo, wSrcModulo;
-	UBYTE ubPlane;
 
 	UBYTE ubSrcOffs = wSrcX & 0xF;
 	UBYTE ubDstOffs = wDstX & 0xF;
@@ -343,17 +344,17 @@ BYTE blitUnsafeCopyMask(
 		custom.bltdmod = wDstModulo;
 
 		custom.bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
-		custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-		custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
+		custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
+		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
 
 		custom.bltsize = (wHeight << 6) | uwBlitWords;
 	}
 	else {
 #ifdef GAME_DEBUG
 		if(
-			bitmapIsInterleaved(pSrc) && !bitmapIsInterleaved(pDst) ||
-			!bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)
+			(bitmapIsInterleaved(pSrc) && !bitmapIsInterleaved(pDst)) ||
+			(!bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst))
 		) {
 			logWrite("WARN: Inefficient blit via mask with %p, %p\n", pSrc, pDst);
 		}
@@ -370,7 +371,7 @@ BYTE blitUnsafeCopyMask(
 		custom.bltbmod = wSrcModulo;
 		custom.bltcmod = wDstModulo;
 		custom.bltdmod = wDstModulo;
-		for(ubPlane = pSrc->Depth; ubPlane--;) {
+		for(UBYTE ubPlane = pSrc->Depth; ubPlane--;) {
 			blitWait();
 			custom.bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
 			custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
@@ -417,7 +418,7 @@ BYTE _blitRect(
 	UBYTE ubDstDelta, ubMinterm, ubPlane;
 	// Blitter register values
 	UWORD uwBltCon0, uwBltCon1, uwFirstMask, uwLastMask;
-	WORD wSrcModulo, wDstModulo;
+	WORD wDstModulo;
 
 	ubDstDelta = wDstX & 0xF;
 	uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;

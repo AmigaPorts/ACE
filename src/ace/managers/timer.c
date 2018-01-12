@@ -11,7 +11,7 @@ tTimerManager g_sTimerManager = {0};
  * Timer VBlank server
  * Increments frame counter
  */
-__amigainterrupt __saveds void timerVBlankServer(__reg("a1") UWORD *pCounter) {
+void INTERRUPT timerVBlankServer(REGARG(UWORD *pCounter, "a1")) {
 	++(*pCounter);
 }
 
@@ -30,7 +30,7 @@ void timerCreate(void) {
 	g_sTimerManager.pInt->is_Node.ln_Pri = -60;
 	g_sTimerManager.pInt->is_Node.ln_Name = "ACE_Timer_VBL";
 	g_sTimerManager.pInt->is_Data = (APTR)&g_sTimerManager.uwFrameCounter;
-	g_sTimerManager.pInt->is_Code = timerVBlankServer;
+	g_sTimerManager.pInt->is_Code = (void*)timerVBlankServer;
 
 	AddIntServer(INTB_VERTB, g_sTimerManager.pInt);
 	#endif // AMIGA

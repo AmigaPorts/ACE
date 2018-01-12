@@ -434,12 +434,9 @@ UBYTE copUpdateFromBlocks(void) {
 void copProcessBlocks(void) {
 	UBYTE ubNewStatus = 0;
 	tCopList *pCopList;
-	tCopBfr *pBackBfr;
 
 	pCopList = g_sCopManager.pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
-		pBackBfr = pCopList->pBackBfr;
-
 		// Realloc buffer memeory
 		if(pCopList->ubStatus & STATUS_REALLOC)
 			ubNewStatus = copBfrRealloc();
@@ -471,7 +468,7 @@ void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
 	pCopList->ubStatus |= STATUS_UPDATE;
 }
 
-void copMove(tCopList *pCopList, tCopBlock *pBlock, void *pAddr, UWORD uwValue) {
+void copMove(tCopList *pCopList, tCopBlock *pBlock, volatile void *pAddr, UWORD uwValue) {
 
 	copSetMove((tCopMoveCmd*)&pBlock->pCmds[pBlock->uwCurrCount], pAddr, uwValue);
 	++pBlock->uwCurrCount;
@@ -491,7 +488,7 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 	pWaitCmd->bfIsSkip        = 0;
 }
 
-void copSetMove(tCopMoveCmd *pMoveCmd, void *pAddr, UWORD uwValue) {
+void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
 	pMoveCmd->bfUnused = 0;
 	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)&custom);
 	pMoveCmd->bfValue = uwValue;

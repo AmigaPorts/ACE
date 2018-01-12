@@ -1,16 +1,19 @@
 .idea/
 **/.vscode/*
+ace\.code-workspace
+
 build/
 lib/
 bin/
 
+# Showcase
 showcase/showcase
 showcase/*.bmp
+showcase/memory\.log
+showcase/game\.log
+
+# Tools
 tools/*/*.exe
 tools/*/*.png
 tools/*/*.bm
 tools/*/*.plt
-
-# Showcase stuff
-showcase/memory\.log
-showcase/game\.log

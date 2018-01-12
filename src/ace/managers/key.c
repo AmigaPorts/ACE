@@ -8,7 +8,7 @@
  * Timer VBlank server
  * Increments frame counter
  */
-__amigainterrupt __saveds void keyIntServer(__reg("a1") tKeyManager *pManager) {
+void INTERRUPT keyIntServer(REGARG(tKeyManager *pManager, "a1")) {
 	UBYTE ubKeyCode = ~g_pCiaA->sdr;
 
 	// Start handshake
@@ -53,7 +53,7 @@ void keyCreate(void) {
 	g_sKeyManager.pInt->is_Node.ln_Pri = -60;
 	g_sKeyManager.pInt->is_Node.ln_Name = "ACE_Keyboard_CIA";
 	g_sKeyManager.pInt->is_Data = (APTR)&g_sKeyManager;
-	g_sKeyManager.pInt->is_Code = keyIntServer;
+	g_sKeyManager.pInt->is_Code = (void*)keyIntServer;
 
 	AddIntServer(INTB_PORTS, g_sKeyManager.pInt);
 #endif // AMIGA

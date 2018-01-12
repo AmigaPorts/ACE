@@ -13,11 +13,11 @@ void windowCreate() {
 	logBlockBegin("windowCreate");
 #ifdef AMIGA
 
-	if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 0L))) {
+	if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary((CONST_STRPTR)"intuition.library", 0L))) {
 		windowKill("Can't open Intuition Library!\n");
 	}
 
-	if (!(GfxBase = (struct GfxBase *) OpenLibrary("graphics.library", 0L))) {
+	if (!(GfxBase = (struct GfxBase *) OpenLibrary((CONST_STRPTR)"graphics.library", 0L))) {
 		windowKill("Can't open Gfx Library!\n");
 	}
 
