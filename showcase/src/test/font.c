@@ -84,7 +84,8 @@ void gsTestFontTableLoop(void) {
 
 void gsTestFontSentenceLoop(void) {
 	UBYTE i, d, ubRedraw;
-	static const UBYTE szAllowedChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static const char szAllowedChars[] =
+		"0123456789" "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	d = strlen(szAllowedChars);
 
 	if (keyUse(KEY_ESCAPE)) {
@@ -128,11 +129,11 @@ void gsTestFontDestroy(void) {
 }
 
 void testFontDrawTable() {
-	tFont *pFont;
+	// tFont *pFont;
 	UWORD i;
 	char szCodeBfr[3];
 
-	pFont = s_pFontUI;
+	// pFont = s_pFontUI;
 
 	// Background
 	blitRect(

@@ -15,11 +15,6 @@
 
 typedef void (*tMenuActivateCb)(void);
 
-typedef void (*tMenuSelectCb)(
-	IN struct _tMenuList *pList,
-	IN UBYTE ubPosIdx
-);
-
 typedef struct _tMenuEntry {
 	char *szText;                    /// Displayed text
 	UBYTE ubDisplay;                 /// 0 to disable
@@ -40,6 +35,11 @@ typedef struct _tMenuList {
 	UBYTE ubCount;                /// Entry count on list
 	UBYTE ubSelected;             /// Currently selected entry
 } tMenuList;
+
+typedef void (*tMenuSelectCb)(
+	IN struct _tMenuList *pList,
+	IN UBYTE ubPosIdx
+);
 
 /* ****************************************************************** GLOBALS */
 

@@ -65,7 +65,6 @@ void gsTestBlitSmallDestCreate(void) {
 }
 
 void gsTestBlitSmallDestLoop(void) {
-	static BYTE bSpeedX = 0, bSpeedY = 0;
 	BYTE bUpdate = 0;
 
 	if (keyUse(KEY_ESCAPE)) {

@@ -22,7 +22,6 @@ tCopBlock *pBar[32];
  * on 12-bit.
  */
 UWORD colorHSV(UBYTE ubH, UBYTE ubS, UBYTE ubV) {
-	UWORD uwRGB;
 	UBYTE ubRegion, ubRem, p, q, t;
 
 	if (ubS == 0) {

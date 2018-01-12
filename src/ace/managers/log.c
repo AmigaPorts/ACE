@@ -93,7 +93,7 @@ void _logBlockBegin(char *szBlockName, ...) {
 	va_end(vaArgs);
 
 	logWrite(szStrBfr);
-	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
+	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = 0;//timerGetPrec();
 	logPushIndent();
 	g_sLogManager.ubBlockEmpty = 1;
 }

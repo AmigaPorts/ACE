@@ -10,12 +10,16 @@ ifdef ComSpec
 	CP = copy
 	SLASH = \\
 	CURR_DIR=$(shell chdir)
+	ECHO = @echo
+	NEWLINE = @echo.
 else
 	# Linux/Amiga
 	RM = rm
 	CP = cp
 	SLASH = /
 	CURR_DIR = $(shell pwd)
+	ECHO = @echo
+	NEWLINE = @echo " "
 endif
 SL= $(strip $(SLASH))
 SRC_DIR = $(CURR_DIR)$(SL)src
@@ -25,8 +29,18 @@ TMP_DIR = $(CURR_DIR)$(SL)build
 ACE_DIR = ..
 
 # Compiler stuff
-CC = vc
-CC_FLAGS = -c99 +kick13 -I$(SRC_DIR) -I$(ACE_DIR)/include -DAMIGA
+SHOWCASE_CC ?= vc
+
+INCLUDES = -I$(SRC_DIR) -I$(ACE_DIR)/include
+ifeq ($(SHOWCASE_CC), vc)
+	CC_FLAGS = +kick13 -c99 $(INCLUDES) -DAMIGA
+	ACE_AS = vc
+	AS_FLAGS = +kick13 -c
+else ifeq ($(SHOWCASE_CC), m68k-amigaos-gcc)
+	CC_FLAGS = -std=gnu11 $(INCLUDES) -DAMIGA -noixemul -Wall
+	ACE_AS = vasm
+	AS_FLAGS = -quiet -x -m68010 -Faout
+endif
 
 # File list
 SHOWCASE_MAIN_FILES = $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/examples/*.c $(SRC_DIR)/menu/*.c)
@@ -41,39 +55,39 @@ ACE_OBJS = $(wildcard $(ACE_DIR)/build/*.o)
 
 #
 ace: $(ACE_OBJS)
-	make -C $(ACE_DIR) all
-	@echo.
-	@echo Copying ACE objs
+	-make -C $(ACE_DIR) all ACE_CC=$(SHOWCASE_CC)
+	$(NEWLINE)
+	$(ECHO) Copying ACE objs
 	@$(CP) $(ACE_DIR)$(SL)build$(SL)*.o $(TMP_DIR) > NUL
-	@echo.
+	$(NEWLINE)
 
 showcase: $(SHOWCASE_OBJS)
-	@echo.
-	@echo Linking...
-	@$(CC) $(CC_FLAGS) -lamiga -o $@ $^ $(ACE_OBJS)
+	$(NEWLINE)
+	$(ECHO) Linking...
+	@$(SHOWCASE_CC) $(CC_FLAGS) -lamiga -o $@ $^ $(ACE_OBJS)
 
 # Main files
 $(TMP_DIR)$(SL)%.o: $(SRC_DIR)/%.c
-	@echo Building $<
-	@$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(ECHO) Building $<
+	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
 
 # Menu
 $(TMP_DIR)$(SL)%.o: $(SRC_DIR)/menu/%.c
-	@echo Building $<
-	@$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(ECHO) Building $<
+	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
 
 # Tests
 $(TMP_DIR)$(SL)test_%.o: $(SRC_DIR)/test/%.c
-	@echo Building $<
-	@$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(ECHO) Building $<
+	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
 
 # Examples
 $(TMP_DIR)$(SL)%.o: $(SRC_DIR)/examples/%.c
-	@echo Building $<
-	@$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(ECHO) Building $<
+	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
 
 all: clear ace showcase
 
 clear:
-	@echo "a" > $(TMP_DIR)$(SL)foo.o
+	$(ECHO) "a" > $(TMP_DIR)$(SL)foo.o
 	@$(RM) $(TMP_DIR)$(SL)*.o

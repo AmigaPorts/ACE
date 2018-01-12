@@ -36,7 +36,7 @@ ifeq ($(ACE_CC), vc)
 	ACE_AS = vc
 	AS_FLAGS = +kick13 -c
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
-	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -fbaserel -Wall
+	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall
 	ACE_AS = vasm
 	AS_FLAGS = -quiet -x -m68010 -Faout
 endif
@@ -72,23 +72,23 @@ summary:
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
 	$(ECHO) Building $<
-	$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
 	$(ECHO) Building $<
-	$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)utils$(SL)%.c
 	$(ECHO) Building $<
-	$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
 
 $(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.s
 	$(ECHO) Building $<
-	$(ACE_AS) $(AS_FLAGS) -o $@ $<
+	@$(ACE_AS) $(AS_FLAGS) -o $@ $<
 
 $(BUILD_DIR)$(SL)%.o: $(FIXMATH_SRC_DIR)$(SL)%.c
 	$(ECHO) Building $<
-	$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
 
 all: hello clear ace summary
 
