@@ -175,7 +175,7 @@ void _logAvgEnd(tAvg *pAvg) {
  */
 void _logAvgWrite(tAvg *pAvg) {
 	UWORD i;
-	ULONG ulAvg;
+	ULONG ulAvg = 0;
 	char szAvg[15];
 	char szMin[15];
 	char szMax[15];

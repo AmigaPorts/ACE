@@ -36,10 +36,12 @@ ifeq ($(SHOWCASE_CC), vc)
 	CC_FLAGS = +kick13 -c99 $(INCLUDES) -DAMIGA
 	ACE_AS = vc
 	AS_FLAGS = +kick13 -c
+	OBJDUMP =
 else ifeq ($(SHOWCASE_CC), m68k-amigaos-gcc)
-	CC_FLAGS = -std=gnu11 $(INCLUDES) -DAMIGA -noixemul -Wall
+	CC_FLAGS = -std=gnu11 $(INCLUDES) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O2
 	ACE_AS = vasm
 	AS_FLAGS = -quiet -x -m68010 -Faout
+	OBJDUMP = m68k-amigaos-objdump -S -d $@ > $@.dasm
 endif
 
 # File list
@@ -65,29 +67,36 @@ showcase: $(SHOWCASE_OBJS)
 	$(NEWLINE)
 	$(ECHO) Linking...
 	@$(SHOWCASE_CC) $(CC_FLAGS) -lamiga -o $@ $^ $(ACE_OBJS)
+	@$(OBJDUMP)
 
 # Main files
 $(TMP_DIR)$(SL)%.o: $(SRC_DIR)/%.c
 	$(ECHO) Building $<
 	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 # Menu
 $(TMP_DIR)$(SL)%.o: $(SRC_DIR)/menu/%.c
 	$(ECHO) Building $<
 	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 # Tests
 $(TMP_DIR)$(SL)test_%.o: $(SRC_DIR)/test/%.c
 	$(ECHO) Building $<
 	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 # Examples
 $(TMP_DIR)$(SL)%.o: $(SRC_DIR)/examples/%.c
 	$(ECHO) Building $<
 	@$(SHOWCASE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 all: clear ace showcase
 
 clear:
 	$(ECHO) "a" > $(TMP_DIR)$(SL)foo.o
+	$(ECHO) "a" > $(TMP_DIR)$(SL)foo.dasm
 	@$(RM) $(TMP_DIR)$(SL)*.o
+	@$(RM) $(TMP_DIR)$(SL)*.dasm

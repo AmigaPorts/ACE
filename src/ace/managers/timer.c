@@ -13,6 +13,7 @@ tTimerManager g_sTimerManager = {0};
  */
 void INTERRUPT timerVBlankServer(REGARG(UWORD *pCounter, "a1")) {
 	++(*pCounter);
+	INTERRUPT_END;
 }
 
 #endif // AMIGA
@@ -24,13 +25,14 @@ void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
 
 	#ifdef AMIGA
-	g_sTimerManager.pInt = memAllocChipClear(sizeof(struct Interrupt)); // CHIP is PUBLIC.
+	// CHIP is PUBLIC.
+	g_sTimerManager.pInt = memAllocChipClear(sizeof(struct Interrupt));
 
 	g_sTimerManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
 	g_sTimerManager.pInt->is_Node.ln_Pri = -60;
 	g_sTimerManager.pInt->is_Node.ln_Name = "ACE_Timer_VBL";
 	g_sTimerManager.pInt->is_Data = (APTR)&g_sTimerManager.uwFrameCounter;
-	g_sTimerManager.pInt->is_Code = (void*)timerVBlankServer;
+	g_sTimerManager.pInt->is_Code = (void(*)(void))timerVBlankServer;
 
 	AddIntServer(INTB_VERTB, g_sTimerManager.pInt);
 	#endif // AMIGA

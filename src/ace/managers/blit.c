@@ -15,8 +15,8 @@ tBlitManager g_sBlitManager = {0};
 void INTERRUPT blitInterruptHandler(
 	REGARG(struct Custom *cstm, "a0"), REGARG(tBlitManager *pBlitManager, "a1")
 ) {
-
 	cstm->intreq = INTF_BLIT;
+	INTERRUPT_END;
 }
 #endif // AMIGA
 
@@ -41,7 +41,7 @@ void blitManagerDestroy(void) {
 /**
  * Checks if blit is allowable at coords at given source and destination
  */
-BYTE blitCheck(
+UBYTE blitCheck(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UWORD uwLine, char *szFile
@@ -59,8 +59,8 @@ BYTE blitCheck(
 	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
 		logWrite(
 			"ILLEGAL BLIT Source out of range: "
-			"source %dx%d, dest: %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
-			wSrcWidth, pSrc->Rows, wDstWidth, pDst->Rows,
+			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
+			pSrc,	wSrcWidth, pSrc->Rows, pDst, wDstWidth, pDst->Rows,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
 		return 0;
@@ -68,8 +68,8 @@ BYTE blitCheck(
 	if(pDst && (wDstY < 0 || wDstWidth < wDstX+wWidth || pDst->Rows < wDstY+wHeight)) {
 		logWrite(
 			"ILLEGAL BLIT Dest out of range: "
-			"source %dx%d, dest: %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
-			wSrcWidth, pSrc->Rows, wDstWidth, pDst->Rows,
+			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
+			pSrc, wSrcWidth, pSrc->Rows, pDst, wDstWidth, pDst->Rows,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
 		return 0;
@@ -117,7 +117,7 @@ UBYTE blitIsIdle(void) {
  * 	- Pre-loop calculations take ~50us on ASC mode, ~80us on DESC mode
  * 	- Rewriting to assembly could speed things up a bit
  */
-BYTE blitUnsafeCopy(
+UBYTE blitUnsafeCopy(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask
@@ -201,7 +201,7 @@ BYTE blitUnsafeCopy(
 	return 1;
 }
 
-BYTE blitSafeCopy(
+UBYTE blitSafeCopy(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask, UWORD uwLine, char *szFile
@@ -217,7 +217,7 @@ BYTE blitSafeCopy(
  * Does not check if destination has less bitplanes than source
  * Best for drawing tilemaps
  */
-BYTE blitUnsafeCopyAligned(
+UBYTE blitUnsafeCopyAligned(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
@@ -283,7 +283,7 @@ BYTE blitUnsafeCopyAligned(
 	return 1;
 }
 
-BYTE blitSafeCopyAligned(
+UBYTE blitSafeCopyAligned(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UWORD uwLine, char *szFile
@@ -305,7 +305,7 @@ BYTE blitSafeCopyAligned(
  * - wSrcX < wDstX (shifts to right)
  * - mask must have same dimensions as source bitplane
  */
-BYTE blitUnsafeCopyMask(
+UBYTE blitUnsafeCopyMask(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UWORD *pMsk
@@ -385,7 +385,7 @@ BYTE blitUnsafeCopyMask(
 	return 1;
 }
 
-BYTE blitSafeCopyMask(
+UBYTE blitSafeCopyMask(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UWORD *pMsk, UWORD uwLine, char *szFile
@@ -404,7 +404,7 @@ BYTE blitSafeCopyMask(
  * 	- fill: D = A+C
  * - erase: D = (~A)*C
  */
-BYTE _blitRect(
+UBYTE _blitRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubColor, UWORD uwLine, char *szFile
 ) {

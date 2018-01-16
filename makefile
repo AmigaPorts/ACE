@@ -35,10 +35,12 @@ ifeq ($(ACE_CC), vc)
 	CC_FLAGS = +kick13 -c99 -I$(ACE_INC_DIR) -DAMIGA
 	ACE_AS = vc
 	AS_FLAGS = +kick13 -c
+	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
-	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall
+	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O2
 	ACE_AS = vasm
 	AS_FLAGS = -quiet -x -m68010 -Faout
+	OBJDUMP = m68k-amigaos-objdump -S -d $@ > $@.dasm
 endif
 
 BUILD_DIR = build
@@ -73,14 +75,17 @@ summary:
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)utils$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.s
 	$(ECHO) Building $<
@@ -89,6 +94,7 @@ $(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.s
 $(BUILD_DIR)$(SL)%.o: $(FIXMATH_SRC_DIR)$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(OBJDUMP)
 
 all: hello clear ace summary
 
@@ -96,4 +102,6 @@ clear:
 	$(NEWLINE)
 	$(ECHO) Removing old objs...
 	$(ECHO) "a" > $(BUILD_DIR)$(SL)foo.o
+	$(ECHO) "a" > $(BUILD_DIR)$(SL)foo.dasm
 	$(RM) $(BUILD_DIR)$(SL)*.o
+	$(RM) $(BUILD_DIR)$(SL)*.dasm

@@ -108,11 +108,11 @@ void gsMenuDestroy(void) {
 
 void menuDrawBG() {
 	UWORD uwX, uwY;
-	UBYTE ubOdd, ubColor;
+	UBYTE ubOdd = 0, ubColor;
 
 	// Draw checkerboard
 	for(uwY = 0; uwY <= s_pMenuBfr->uBfrBounds.sUwCoord.uwY - 16; uwY += 16) {
-		for(uwX = 0; uwX <= s_pMenuBfr->uBfrBounds.sUwCoord.uwX-16; uwX += 16) {
+		for(uwX = 0; uwX <= s_pMenuBfr->uBfrBounds.sUwCoord.uwX - 16; uwX += 16) {
 			if(ubOdd)
 				ubColor = 0;
 			else

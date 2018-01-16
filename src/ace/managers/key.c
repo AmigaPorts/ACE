@@ -28,6 +28,7 @@ void INTERRUPT keyIntServer(REGARG(tKeyManager *pManager, "a1")) {
 	while(uwStart - ((g_pCiaA->tbhi << 8) | g_pCiaA->tblo) < 65)
 		continue;
 	g_pCiaA->cra &= ~CIACRA_SPMODE;
+	INTERRUPT_END;
 }
 
 /* Globals */
@@ -53,7 +54,7 @@ void keyCreate(void) {
 	g_sKeyManager.pInt->is_Node.ln_Pri = -60;
 	g_sKeyManager.pInt->is_Node.ln_Name = "ACE_Keyboard_CIA";
 	g_sKeyManager.pInt->is_Data = (APTR)&g_sKeyManager;
-	g_sKeyManager.pInt->is_Code = (void*)keyIntServer;
+	g_sKeyManager.pInt->is_Code = (void(*)(void))keyIntServer;
 
 	AddIntServer(INTB_PORTS, g_sKeyManager.pInt);
 #endif // AMIGA

@@ -17,3 +17,7 @@ tools/*/*.exe
 tools/*/*.png
 tools/*/*.bm
 tools/*/*.plt
+
+*.dasm
+
+showcase/NUL
