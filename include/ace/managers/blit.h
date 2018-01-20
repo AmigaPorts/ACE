@@ -165,4 +165,30 @@ BYTE _blitRect(
 
 #define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) _blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor, __LINE__, __FILE__)
 
+/**
+ * @brief Draws line of given color between two points.
+ * This function writes through all bitmap's bitplanes, so it's quite slow.
+ * You can speed up your lines by drawing on only single bitplane - that's what
+ * most demos do.
+ *
+ * @param pDst: Destination bitmap.
+ * @param x1: Line start position's X coordinate.
+ * @param y1: Line start position's Y coordinate.
+ * @param x2: Line end position's X coordinate.
+ * @param y2: Line end position's Y coordinate.
+ * @param ubColor: Line's color index.
+ * @param uwPattern: 16-bit pattern to be used. 1: filled pixel, 0: omitted.
+ * @param isOneDot: If set to 1, draws fill-friendly lines.
+ */
+void blitLine(
+	IN tBitMap *pDst,
+	IN WORD x1,
+	IN WORD y1,
+	IN WORD x2,
+	IN WORD y2,
+	IN UBYTE ubColor,
+	IN UWORD uwPattern,
+	IN UBYTE isOneDot
+);
+
 #endif // GUARD_ACE_MANAGER_BLIT_H
