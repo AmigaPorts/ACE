@@ -1,6 +1,8 @@
 #ifndef GUARD_ACE_MACROS_H
 #define GUARD_ACE_MACROS_H
 
+#include <ace/types.h>
+
 /**
  * ACE Macros
  * General purpose macros used throughout all code
@@ -16,8 +18,40 @@
 #define blockCountFloor(length, blockSize) (length/blockSize)
 #define blockCountCeil(length, blockSize) ((length + blockSize-1)/blockSize)
 
-// Math
+// Rotate fns - should be optimized away by compiler to single instruction
+// Based on https://stackoverflow.com/questions/776508/best-practices-for-circular-shift-rotate-operations-in-c
 
+static inline UWORD rol16(UWORD uwIn, UBYTE ubRot) {
+  const UWORD uwMask = ((sizeof(uwIn)<<3) - 1);
+  ubRot &= uwMask;
+  return (uwIn << ubRot) | (uwIn >> ((-ubRot) & uwMask));
+}
+
+static inline UWORD ror16(UWORD uwIn, UBYTE ubRot) {
+  const UWORD uwMask = ((sizeof(uwIn)<<3) - 1);
+  ubRot &= uwMask;
+  return (uwIn >> ubRot) | (uwIn << ((-ubRot) & uwMask));
+}
+
+static inline ULONG rol32(ULONG ulIn, UBYTE ubRot) {
+  const ULONG ulMask = ((sizeof(ulIn)<<3) - 1);
+  ubRot &= ulMask;
+  return (ulIn << ubRot) | (ulIn >> ((-ubRot) & ulMask));
+}
+
+static inline ULONG ror32(ULONG ulIn, UBYTE ubRot) {
+  const ULONG ulMask = ((sizeof(ulIn)<<3) - 1);
+  ubRot &= ulMask;
+  return (ulIn >> ubRot) | (ulIn << ((-ubRot) & ulMask));
+}
+
+/**
+ * @brief Swaps contents of two vars.
+ * VBCC doesn't have typeof() so there is no type-safe way to do it.
+ */
+#define SWAP(a, b) do {ULONG tmp; tmp = a; a = b; b = tmp;} while(0)
+
+// Math
 #define ABS(x) ((x)<0 ? -(x) : (x))
 #define SGN(x) ((x) > 0 ? 1 : ((x) < 0 ? -1 : 0))
 // #define SGN(x) ((x > 0) - (x < 0)) // Branchless, subtracting is slower?
