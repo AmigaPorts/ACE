@@ -80,27 +80,29 @@ void gsTestCopperCreate(void) {
 	s_pTestCopperVPort->pPalette[1] = 0xAAA;
 	s_pTestCopperVPort->pPalette[2] = 0x666;
 
+	UWORD uwMaxX = s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX-1;
+	UWORD uwMaxY = s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY-1;
 	blitRect(
 		s_pTestCopperBfr->pBuffer, 0,0,
 		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX,
 		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY,
 		TEST_COPPER_COLOR_INSIDE
 	);
-	blitRect(
-		s_pTestCopperBfr->pBuffer, 0,0,
-		1, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY, TEST_COPPER_COLOR_BORDER
+	blitLine(
+		s_pTestCopperBfr->pBuffer, 0, 0, uwMaxX, 0,
+		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
-	blitRect(
-		s_pTestCopperBfr->pBuffer, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX-1, 0,
-		1, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY, TEST_COPPER_COLOR_BORDER
+	blitLine(
+		s_pTestCopperBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY,
+		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
-	blitRect(
-		s_pTestCopperBfr->pBuffer, 0,0,
-		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX, 1, TEST_COPPER_COLOR_BORDER
+	blitLine(
+		s_pTestCopperBfr->pBuffer, 0, 0, 0, uwMaxY,
+		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
-	blitRect(
-		s_pTestCopperBfr->pBuffer, 0, s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY-1,
-		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX, 1, TEST_COPPER_COLOR_BORDER
+	blitLine(
+		s_pTestCopperBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY,
+		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
 
 	for(i = 0; i != 32; ++i)

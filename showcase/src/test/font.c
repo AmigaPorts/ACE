@@ -140,24 +140,18 @@ void testFontDrawTable() {
 		s_pTestFontBfr->uBfrBounds.sUwCoord.uwX,
 		s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 2
 	);
+	UWORD uwMaxX = s_pTestFontBfr->uBfrBounds.sUwCoord.uwX-1;
+	UWORD uwMaxY = s_pTestFontBfr->uBfrBounds.sUwCoord.uwY-1;
 	for(i = 0; i != 8; ++i) {
-		blitRect(
-			s_pTestFontBfr->pBuffer, 40*i, 0,
-			1, s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 0
-		); // Vertical lines
-		blitRect(
-			s_pTestFontBfr->pBuffer, 0, 32*i,
-			s_pTestFontBfr->uBfrBounds.sUwCoord.uwX, 1, 0
-		); // Horizontal lines
+		// Vertical lines
+		blitLine(s_pTestFontBfr->pBuffer, 40*i, 0, 40*i, uwMaxY, 0, 0xFFFF, 0);
+		// Horizontal lines
+		blitLine(s_pTestFontBfr->pBuffer, 0, 32*i, uwMaxX, 32*i, 0, 0xFFFF, 0);
 	}
-	blitRect(
-		s_pTestFontBfr->pBuffer, s_pTestFontBfr->uBfrBounds.sUwCoord.uwX - 1, 0,
-		1, s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 0
-	); // Last V line
-	blitRect(
-		s_pTestFontBfr->pBuffer, 0, s_pTestFontBfr->uBfrBounds.sUwCoord.uwY-1,
-		s_pTestFontBfr->uBfrBounds.sUwCoord.uwX, 1, 0
-	); // Last H line
+	// Last V line
+	blitLine(s_pTestFontBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY, 0, 0xFFFF, 0);
+	// Last H line
+	blitLine(s_pTestFontBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY, 0, 0xFFFF, 0);
 
 	for(i = 0; i != 64; ++i) {
 		// Char - crashes because of font rendering bugs

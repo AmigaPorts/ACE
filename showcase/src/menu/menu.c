@@ -16,6 +16,7 @@
 #include "test/font.h"
 #include "test/blitsmalldest.h"
 #include "test/interleaved.h"
+#include "test/lines.h"
 
 static tView *s_pMenuView;
 static tVPort *s_pMenuVPort;
@@ -123,16 +124,12 @@ void menuDrawBG() {
 	}
 
 	// Draw border
-	blitRect(s_pMenuBfr->pBuffer, 0,0, s_pMenuBfr->uBfrBounds.sUwCoord.uwX, 1, 1);
-	blitRect(
-		s_pMenuBfr->pBuffer, 0, s_pMenuBfr->uBfrBounds.sUwCoord.uwY-1,
-		s_pMenuBfr->uBfrBounds.sUwCoord.uwX, 1, 1
-	);
-	blitRect(s_pMenuBfr->pBuffer, 0,0, 1, s_pMenuBfr->uBfrBounds.sUwCoord.uwY, 1);
-	blitRect(
-		s_pMenuBfr->pBuffer, s_pMenuBfr->uBfrBounds.sUwCoord.uwX-1, 0,
-		1, s_pMenuBfr->uBfrBounds.sUwCoord.uwY, 1
-	);
+	UWORD uwMaxX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX-1;
+	UWORD uwMaxY = s_pMenuBfr->uBfrBounds.sUwCoord.uwY-1;
+	blitLine(s_pMenuBfr->pBuffer, 0, 0, uwMaxX, 0, 1, 0xFFFF, 0);
+	blitLine(s_pMenuBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
+	blitLine(s_pMenuBfr->pBuffer, 0, 0, 0, uwMaxY, 1, 0xFFFF, 0);
+	blitLine(s_pMenuBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
 }
 
 /******************************************************* Main menu definition */
@@ -187,13 +184,14 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 6);
+	menuListResetEntries(s_pMenuList, 7);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
 	menuListSetEntry(s_pMenuList, 3, MENULIST_ENABLED, "Copper");
-	menuListSetEntry(s_pMenuList, 4, MENULIST_ENABLED, "Blits with small dst");
-	menuListSetEntry(s_pMenuList, 5, MENULIST_ENABLED, "Interleaved bitmaps");
+	menuListSetEntry(s_pMenuList, 4, MENULIST_ENABLED, "Blitter lines");
+	menuListSetEntry(s_pMenuList, 5, MENULIST_ENABLED, "Blits with small dst");
+	menuListSetEntry(s_pMenuList, 6, MENULIST_ENABLED, "Interleaved bitmaps");
 	s_ubMenuType = MENU_TESTS;
 
 	// Redraw list
@@ -215,12 +213,15 @@ void menuSelectTests(void) {
 			gameChangeState(gsTestCopperCreate, gsTestCopperLoop, gsTestCopperDestroy);
 			break;
 		case 4:
+			gameChangeState(gsTestLinesCreate, gsTestLinesLoop, gsTestLinesDestroy);
+			break;
+		case 5:
 			gameChangeState(
 				gsTestBlitSmallDestCreate, gsTestBlitSmallDestLoop,
 				gsTestBlitSmallDestDestroy
 			);
 			break;
-		case 5:
+		case 6:
 			gameChangeState(
 				gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy
 			);
