@@ -83,10 +83,10 @@ void blitWait(void) {
 }
 
 /**
- *  Checks if blitter is idle
- *  Polls 2 times - A1000 Agnus bug workaround
- *  @todo Make it inline assembly or dmaconr volatile so compiler won't
- *  'optimize' it.
+ * Checks if blitter is idle
+ * Polls 2 times - A1000 Agnus bug workaround
+ * @todo Make it inline assembly or dmaconr volatile so compiler won't
+ * 'optimize' it.
  */
 UBYTE blitIsIdle(void) {
 	#ifdef AMIGA
@@ -104,7 +104,7 @@ UBYTE blitIsIdle(void) {
  * Blit without mask - BltBitMap equivalent, but less safe
  * Channels:
  * 	A: mask const, read disabled
- * 	B: src  read
+ * 	B: src read
  * 	C: dest read
  * 	D: dest write
  * Descending mode is used under 2 cases:
@@ -468,49 +468,49 @@ void blitLine(
 	// Based on Cahir's function from:
 	// https://github.com/cahirwpz/demoscene/blob/master/a500/base/libsys/blt-line.c
 
-  UWORD uwBltCon1 = LINEMODE;
+	UWORD uwBltCon1 = LINEMODE;
 	if(isOneDot)
 		uwBltCon1 |= ONEDOT;
 
-  // Always draw the line downwards.
-  if (y1 > y2) {
-    SWAP(x1, x2);
-    SWAP(y1, y2);
-  }
+	// Always draw the line downwards.
+	if (y1 > y2) {
+		SWAP(x1, x2);
+		SWAP(y1, y2);
+	}
 
-  // Word containing the first pixel of the line.
-  WORD wDx = x2 - x1;
-  WORD wDy = y2 - y1;
+	// Word containing the first pixel of the line.
+	WORD wDx = x2 - x1;
+	WORD wDy = y2 - y1;
 
 	// Setup octant bits
-  if (wDx < 0) {
-    wDx = -wDx;
-    if (wDx >= wDy) {
-      uwBltCon1 |= AUL | SUD;
-    }
+	if (wDx < 0) {
+		wDx = -wDx;
+		if (wDx >= wDy) {
+			uwBltCon1 |= AUL | SUD;
+		}
 		else {
-      uwBltCon1 |= SUL;
-      SWAP(wDx, wDy);
-    }
-  }
+			uwBltCon1 |= SUL;
+			SWAP(wDx, wDy);
+		}
+	}
 	else {
-    if (wDx >= wDy) {
-      uwBltCon1 |= SUD;
-    }
+		if (wDx >= wDy) {
+			uwBltCon1 |= SUD;
+		}
 		else {
-      SWAP(wDx, wDy);
-    }
-  }
+			SWAP(wDx, wDy);
+		}
+	}
 
-  WORD wDerr = wDy + wDy - wDx;
-  if (wDerr < 0) {
-    uwBltCon1 |= SIGNFLAG;
+	WORD wDerr = wDy + wDy - wDx;
+	if (wDerr < 0) {
+		uwBltCon1 |= SIGNFLAG;
 	}
 
 	UWORD uwBltSize = (wDx << 6) + 66;
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + (x1 >> 3) & ~1;
-  blitWait();
+	blitWait();
 	custom.bltafwm = -1;
 	custom.bltalwm = -1;
 	custom.bltadat = 0x8000;
@@ -519,18 +519,18 @@ void blitLine(
 	custom.bltbmod = wDy + wDy;
 	custom.bltcmod = pDst->BytesPerRow;
 	custom.bltdmod = pDst->BytesPerRow;
-  custom.bltcon1 = uwBltCon1;
-  custom.bltapt = (APTR)(LONG)wDerr;
+	custom.bltcon1 = uwBltCon1;
+	custom.bltapt = (APTR)(LONG)wDerr;
 	for(UBYTE ubPlane = 0; ubPlane != pDst->Depth; ++ubPlane) {
 		UBYTE *pData = pDst->Planes[ubPlane] + ulDataOffs;
-		UWORD uwOp =  ((ubColor & BV(ubPlane)) ? BLIT_LINE_OR : BLIT_LINE_ERASE);
+		UWORD uwOp = ((ubColor & BV(ubPlane)) ? BLIT_LINE_OR : BLIT_LINE_ERASE);
 
-    blitWait();
-    custom.bltcon0 = uwBltCon0 | uwOp;
-    custom.bltcpt = pData;
-    custom.bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
-    custom.bltsize = uwBltSize;
-  }
+		blitWait();
+		custom.bltcon0 = uwBltCon0 | uwOp;
+		custom.bltcpt = pData;
+		custom.bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
+		custom.bltsize = uwBltSize;
+	}
 #else
 #error "Unimplemented: blitLine()"
 #endif // AMIGa
