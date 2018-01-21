@@ -40,8 +40,8 @@ void _logWrite(char *szFormat, ...) {
 #ifdef AMIGA
 	// Re-enable disk dma if disabled
 	UBYTE ubWasDiskEnabled = 0;
-	if(!(custom.dmaconr & DMAF_DISK)) {
-		custom.dmacon = BITCLR | DMAF_DISK;
+	if(!(g_pCustom->dmaconr & DMAF_DISK)) {
+		g_pCustom->dmacon = BITCLR | DMAF_DISK;
 		ubWasDiskEnabled = 1;
 	}
 #endif // AMIGA
@@ -62,7 +62,7 @@ void _logWrite(char *szFormat, ...) {
 	fflush(g_sLogManager.pFile);
 #ifdef AMIGA
 	if(ubWasDiskEnabled)
-		custom.dmacon = BITSET | DMAF_DISK;
+		g_pCustom->dmacon = BITSET | DMAF_DISK;
 #endif // AMIGA
 }
 

@@ -26,12 +26,14 @@ typedef int32_t LONG;
 #define INTERRUPT __amigainterrupt __saveds
 #define REGARG(arg, reg) __reg(reg) arg
 #define CHIP __chip
+#define FAR
 #define INTERRUPT_END do {} while(0)
 #elif defined(__GNUC__)
 #define INTERRUPT
 #define REGARG(arg, reg) arg asm(reg)
 #define CHIP __attribute__((chip))
 #define INTERRUPT_END asm("cmp d0,d0")
+#define FAR __far
 #elif defined(__CODE_CHECKER__)
 // My realtime source checker has problems with GCC asm() expanded from REGARG()
 // being in fn arg list, so I just use blank defines for it
@@ -39,6 +41,7 @@ typedef int32_t LONG;
 #define REGARG(arg, x) arg
 #define CHIP
 #define INTERRUPT_END do {} while(0)
+#define FAR
 #else
 #error "Compiler not supported!"
 #endif

@@ -37,7 +37,7 @@ ifeq ($(ACE_CC), vc)
 	AS_FLAGS = +kick13 -c
 	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
-	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O2
+	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O0
 	ACE_AS = vasm
 	AS_FLAGS = -quiet -x -m68010 -Faout
 	OBJDUMP = m68k-amigaos-objdump -S -d $@ > $@.dasm

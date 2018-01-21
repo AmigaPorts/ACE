@@ -19,8 +19,8 @@ void copCreate(void) {
 	copProcessBlocks();
 	copProcessBlocks();
 	// Update copper-related regs
-	custom.copjmp1 = 1;
-	custom.dmacon = DMAF_SETCLR | DMAF_COPPER;
+	g_pCustom->copjmp1 = 1;
+	g_pCustom->dmacon = DMAF_SETCLR | DMAF_COPPER;
 
 	logBlockEnd("copCreate()");
 }
@@ -29,8 +29,8 @@ void copDestroy(void) {
 	logBlockBegin("copDestroy()");
 
 	// Load system copperlist
-	custom.cop1lc = (ULONG)GfxBase->copinit;
-	custom.copjmp1 = 1;
+	g_pCustom->cop1lc = (ULONG)GfxBase->copinit;
+	g_pCustom->copjmp1 = 1;
 
 	// Free blank copperlist
 	// All others should be freed by user
@@ -47,7 +47,7 @@ void copSwapBuffers(void) {
 	pTmp = pCopList->pFrontBfr;
 	pCopList->pFrontBfr = pCopList->pBackBfr;
 	pCopList->pBackBfr = pTmp;
-	custom.cop1lc = (ULONG)((void *)pCopList->pFrontBfr->pList);
+	g_pCustom->cop1lc = (ULONG)((void *)pCopList->pFrontBfr->pList);
 }
 
 void copDumpCmd(tCopCmd *pCmd) {
@@ -490,11 +490,11 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 
 void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
 	pMoveCmd->bfUnused = 0;
-	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)&custom);
+	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)g_pCustom);
 	pMoveCmd->bfValue = uwValue;
 }
 
-static UWORD __chip s_pBlankSprite[2];
+static UWORD CHIP s_pBlankSprite[2];
 
 tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
 	FUBYTE fubCmdCnt = 0;

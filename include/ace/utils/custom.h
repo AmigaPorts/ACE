@@ -12,8 +12,8 @@
 
 #include <hardware/custom.h> // Custom chip register addresses
 
-// Here was __far attrib from DICE/GCC times. Not needed for VBCC, so it was removed.
-extern struct Custom custom;
+typedef struct Custom tCustom;
+extern tCustom FAR volatile * const g_pCustom;
 
 /**
  * Ray position struct.
@@ -37,7 +37,7 @@ typedef struct {
 
 /**
  * Bitplane display regs with 16-bit access.
- * For use with Copper. Other stuff should use custom.bplpt
+ * For use with Copper. Other stuff should use g_pCustom->bplpt
  */
 extern volatile tCopperUlong * const pSprPtrs;
 extern volatile tCopperUlong * const pBplPtrs;
@@ -126,8 +126,8 @@ typedef struct _tCia {
 #define CIACRB_INMODE  (BV(5) | BV(6))
 #define CIACRB_ALARM   BV(7)
 
-extern volatile tCia * const g_pCiaA;
-extern volatile tCia * const g_pCiaB;
+extern tCia FAR volatile * const g_pCiaA;
+extern tCia FAR volatile * const g_pCiaB;
 
 #endif // AMIGA
 #endif // GUARD_ACE_UTILS_CUSTOM_H

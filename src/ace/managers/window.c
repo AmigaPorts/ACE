@@ -78,8 +78,8 @@ void windowDestroy() {
 #ifdef AMIGA
 
 	// logWrite("Restoring system view...");
-	// custom.cop1lc = (ULONG)GfxBase->copinit;
-	// custom.copjmp1 = 1;
+	// g_pCustom->cop1lc = (ULONG)GfxBase->copinit;
+	// g_pCustom->copjmp1 = 1;
 	// LoadView(g_sWindowManager.pSysView);
 	// WaitTOF();
 	// WaitTOF();

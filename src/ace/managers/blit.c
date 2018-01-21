@@ -13,9 +13,10 @@ tBlitManager g_sBlitManager = {0};
  * NOTE: Can't log inside this fn and all other called by it
  */
 void INTERRUPT blitInterruptHandler(
-	REGARG(struct Custom *cstm, "a0"), REGARG(tBlitManager *pBlitManager, "a1")
+	REGARG(struct Custom volatile *pCustom, "a0"),
+	REGARG(tBlitManager *pBlitManager, "a1")
 ) {
-	cstm->intreq = INTF_BLIT;
+	pCustom->intreq = INTF_BLIT;
 	INTERRUPT_END;
 }
 #endif // AMIGA
@@ -79,9 +80,9 @@ UBYTE blitCheck(
 }
 
 void blitWait(void) {
-		custom.dmacon = BITSET | DMAF_BLITHOG;
+		g_pCustom->dmacon = BITSET | DMAF_BLITHOG;
 		while(!blitIsIdle()) {}
-		custom.dmacon = BITCLR | DMAF_BLITHOG;
+		g_pCustom->dmacon = BITCLR | DMAF_BLITHOG;
 }
 
 /**
@@ -92,7 +93,7 @@ void blitWait(void) {
  */
 UBYTE blitIsIdle(void) {
 	#ifdef AMIGA
-	volatile UWORD * const pDmaConR = &custom.dmaconr;
+	volatile UWORD * const pDmaConR = &g_pCustom->dmaconr;
 	if(!(*pDmaConR & DMAF_BLTDONE))
 		if(!(*pDmaConR & DMAF_BLTDONE))
 			return 1;
@@ -176,23 +177,23 @@ UBYTE blitUnsafeCopy(
 	ubMask &= 0xFF >> (8- (pSrc->Depth < pDst->Depth? pSrc->Depth: pDst->Depth));
 	ubPlane = 0;
 	blitWait();
-	custom.bltcon0 = uwBltCon0;
-	custom.bltcon1 = uwBltCon1;
-	custom.bltafwm = uwFirstMask;
-	custom.bltalwm = uwLastMask;
-	custom.bltbmod = wSrcModulo;
-	custom.bltcmod = wDstModulo;
-	custom.bltdmod = wDstModulo;
-	custom.bltadat = 0xFFFF;
+	g_pCustom->bltcon0 = uwBltCon0;
+	g_pCustom->bltcon1 = uwBltCon1;
+	g_pCustom->bltafwm = uwFirstMask;
+	g_pCustom->bltalwm = uwLastMask;
+	g_pCustom->bltbmod = wSrcModulo;
+	g_pCustom->bltcmod = wDstModulo;
+	g_pCustom->bltdmod = wDstModulo;
+	g_pCustom->bltadat = 0xFFFF;
 	while(ubMask) {
 		if(ubMask & 1) {
 			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-			custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-			custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+			g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
-			custom.bltsize = (wHeight << 6) | uwBlitWords;
+			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}
 		ubMask >>= 1;
 		++ubPlane;
@@ -237,19 +238,19 @@ UBYTE blitUnsafeCopyAligned(
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		wHeight *= pSrc->Depth;
 		blitWait();
-		custom.bltcon0 = uwBltCon0;
-		custom.bltcon1 = 0;
-		custom.bltafwm = 0xFFFF;
-		custom.bltalwm = 0xFFFF;
+		g_pCustom->bltcon0 = uwBltCon0;
+		g_pCustom->bltcon1 = 0;
+		g_pCustom->bltafwm = 0xFFFF;
+		g_pCustom->bltalwm = 0xFFFF;
 
-		custom.bltamod = wSrcModulo;
-		custom.bltdmod = wDstModulo;
+		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltdmod = wDstModulo;
 
 		// This hell of a casting must stay here or else large offsets get bugged!
-		custom.bltapt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
-		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
+		g_pCustom->bltapt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
+		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
 
-		custom.bltsize = (wHeight << 6) | uwBlitWords;
+		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
 	else {
 		UBYTE ubPlane;
@@ -264,19 +265,19 @@ UBYTE blitUnsafeCopyAligned(
 			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
 
 		blitWait();
-		custom.bltcon0 = uwBltCon0;
-		custom.bltcon1 = 0;
-		custom.bltafwm = 0xFFFF;
-		custom.bltalwm = 0xFFFF;
+		g_pCustom->bltcon0 = uwBltCon0;
+		g_pCustom->bltcon1 = 0;
+		g_pCustom->bltafwm = 0xFFFF;
+		g_pCustom->bltalwm = 0xFFFF;
 
-		custom.bltamod = wSrcModulo;
-		custom.bltdmod = wDstModulo;
+		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			custom.bltapt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
-			custom.bltdpt = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
-			custom.bltsize = (wHeight << 6) | uwBlitWords;
+			g_pCustom->bltapt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
+			g_pCustom->bltdpt = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
+			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}
 	}
 #endif // AMIGA
@@ -333,22 +334,22 @@ UBYTE blitUnsafeCopyMask(
 		wHeight *= pSrc->Depth;
 
 		blitWait();
-		custom.bltcon0 = uwBltCon0;
-		custom.bltcon1 = uwBltCon1;
-		custom.bltafwm = uwFirstMask;
-		custom.bltalwm = uwLastMask;
+		g_pCustom->bltcon0 = uwBltCon0;
+		g_pCustom->bltcon1 = uwBltCon1;
+		g_pCustom->bltafwm = uwFirstMask;
+		g_pCustom->bltalwm = uwLastMask;
 
-		custom.bltamod = wSrcModulo;
-		custom.bltbmod = wSrcModulo;
-		custom.bltcmod = wDstModulo;
-		custom.bltdmod = wDstModulo;
+		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltbmod = wSrcModulo;
+		g_pCustom->bltcmod = wDstModulo;
+		g_pCustom->bltdmod = wDstModulo;
 
-		custom.bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
-		custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
-		custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
-		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
+		g_pCustom->bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
+		g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
+		g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
+		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
 
-		custom.bltsize = (wHeight << 6) | uwBlitWords;
+		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
 	else {
 #ifdef GAME_DEBUG
@@ -362,23 +363,23 @@ UBYTE blitUnsafeCopyMask(
 		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 		blitWait();
-		custom.bltcon0 = uwBltCon0;
-		custom.bltcon1 = uwBltCon1;
-		custom.bltafwm = uwFirstMask;
-		custom.bltalwm = uwLastMask;
+		g_pCustom->bltcon0 = uwBltCon0;
+		g_pCustom->bltcon1 = uwBltCon1;
+		g_pCustom->bltafwm = uwFirstMask;
+		g_pCustom->bltalwm = uwLastMask;
 
-		custom.bltamod = wSrcModulo;
-		custom.bltbmod = wSrcModulo;
-		custom.bltcmod = wDstModulo;
-		custom.bltdmod = wDstModulo;
+		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltbmod = wSrcModulo;
+		g_pCustom->bltcmod = wDstModulo;
+		g_pCustom->bltdmod = wDstModulo;
 		for(UBYTE ubPlane = pSrc->Depth; ubPlane--;) {
 			blitWait();
-			custom.bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
-			custom.bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-			custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-			custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			g_pCustom->bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
+			g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+			g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
-			custom.bltsize = (wHeight << 6) | uwBlitWords;
+			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}
 	}
 	#endif // AMIGA
@@ -432,14 +433,14 @@ UBYTE _blitRect(
 	uwBltCon0 = USEC|USED;
 
 	blitWait();
-	custom.bltcon1 = uwBltCon1;
-	custom.bltafwm = uwFirstMask;
-	custom.bltalwm = uwLastMask;
+	g_pCustom->bltcon1 = uwBltCon1;
+	g_pCustom->bltafwm = uwFirstMask;
+	g_pCustom->bltalwm = uwLastMask;
 
-	custom.bltcmod = wDstModulo;
-	custom.bltdmod = wDstModulo;
-	custom.bltadat = 0xFFFF;
-	custom.bltbdat = 0;
+	g_pCustom->bltcmod = wDstModulo;
+	g_pCustom->bltdmod = wDstModulo;
+	g_pCustom->bltadat = 0xFFFF;
+	g_pCustom->bltbdat = 0;
 	ubPlane = 0;
 
 	do {
@@ -448,11 +449,11 @@ UBYTE _blitRect(
 		else
 			ubMinterm = 0x0A;
 		blitWait();
-		custom.bltcon0 = uwBltCon0 | ubMinterm;
+		g_pCustom->bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!
-		custom.bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-		custom.bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-		custom.bltsize = (wHeight << 6) | uwBlitWords;
+		g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		ubColor >>= 1;
 		++ubPlane;
 	}	while(ubPlane != pDst->Depth);
@@ -510,27 +511,27 @@ void blitLine(
 
 	UWORD uwBltSize = (wDx << 6) + 66;
 	UWORD uwBltCon0 = ror16(x1&15, 4);
-	ULONG ulDataOffs = pDst->BytesPerRow * y1 + (x1 >> 3) & ~1;
+	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
 	blitWait();
-	custom.bltafwm = -1;
-	custom.bltalwm = -1;
-	custom.bltadat = 0x8000;
-	custom.bltbdat = uwPattern;
-	custom.bltamod = wDerr - wDx;
-	custom.bltbmod = wDy + wDy;
-	custom.bltcmod = pDst->BytesPerRow;
-	custom.bltdmod = pDst->BytesPerRow;
-	custom.bltcon1 = uwBltCon1;
-	custom.bltapt = (APTR)(LONG)wDerr;
+	g_pCustom->bltafwm = -1;
+	g_pCustom->bltalwm = -1;
+	g_pCustom->bltadat = 0x8000;
+	g_pCustom->bltbdat = uwPattern;
+	g_pCustom->bltamod = wDerr - wDx;
+	g_pCustom->bltbmod = wDy + wDy;
+	g_pCustom->bltcmod = pDst->BytesPerRow;
+	g_pCustom->bltdmod = pDst->BytesPerRow;
+	g_pCustom->bltcon1 = uwBltCon1;
+	g_pCustom->bltapt = (APTR)(LONG)wDerr;
 	for(UBYTE ubPlane = 0; ubPlane != pDst->Depth; ++ubPlane) {
 		UBYTE *pData = pDst->Planes[ubPlane] + ulDataOffs;
 		UWORD uwOp = ((ubColor & BV(ubPlane)) ? BLIT_LINE_OR : BLIT_LINE_ERASE);
 
 		blitWait();
-		custom.bltcon0 = uwBltCon0 | uwOp;
-		custom.bltcpt = pData;
-		custom.bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
-		custom.bltsize = uwBltSize;
+		g_pCustom->bltcon0 = uwBltCon0 | uwOp;
+		g_pCustom->bltcpt = pData;
+		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
+		g_pCustom->bltsize = uwBltSize;
 	}
 #else
 #error "Unimplemented: blitLine()"
