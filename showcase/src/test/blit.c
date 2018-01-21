@@ -137,7 +137,6 @@ void gsTestBlitLoop(void) {
 	// if(s_ubType & TYPE_RECT)
 		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 3);
 	WaitTOF();
-
 }
 
 void gsTestBlitDestroy(void) {
