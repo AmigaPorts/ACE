@@ -12,9 +12,9 @@ tBlitManager g_sBlitManager = {0};
  * Fetches next blit from queue and sets custom registers to its values
  * NOTE: Can't log inside this fn and all other called by it
  */
+FN_HOTSPOT
 void INTERRUPT blitInterruptHandler(
-	REGARG(struct Custom volatile *pCustom, "a0"),
-	REGARG(tBlitManager *pBlitManager, "a1")
+	REGARG(struct Custom volatile *pCustom, "a0")
 ) {
 	pCustom->intreq = INTF_BLIT;
 	INTERRUPT_END;

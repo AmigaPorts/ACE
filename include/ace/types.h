@@ -28,12 +28,16 @@ typedef int32_t LONG;
 #define CHIP __chip
 #define FAR
 #define INTERRUPT_END do {} while(0)
+#define FN_HOTSPOT
+#define FN_COLDSPOT
 #elif defined(__GNUC__)
 #define INTERRUPT
 #define REGARG(arg, reg) arg asm(reg)
 #define CHIP __attribute__((chip))
 #define INTERRUPT_END asm("cmp d0,d0")
 #define FAR __far
+#define FN_HOTSPOT __attribute__((hot))
+#define FN_COLDSPOT __attribute__((cold))
 #elif defined(__CODE_CHECKER__)
 // My realtime source checker has problems with GCC asm() expanded from REGARG()
 // being in fn arg list, so I just use blank defines for it
@@ -42,6 +46,8 @@ typedef int32_t LONG;
 #define CHIP
 #define INTERRUPT_END do {} while(0)
 #define FAR
+#define FN_HOTSPOT
+#define FN_COLDSPOT
 #else
 #error "Compiler not supported!"
 #endif

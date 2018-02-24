@@ -8,7 +8,8 @@
  * Timer VBlank server
  * Increments frame counter
  */
-void INTERRUPT keyIntServer(REGARG(tKeyManager *pManager, "a1")) {
+FN_HOTSPOT
+void INTERRUPT keyIntServer() {
 	UBYTE ubKeyCode = ~g_pCiaA->sdr;
 
 	// Start handshake
@@ -53,7 +54,7 @@ void keyCreate(void) {
 	g_sKeyManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
 	g_sKeyManager.pInt->is_Node.ln_Pri = -60;
 	g_sKeyManager.pInt->is_Node.ln_Name = "ACE_Keyboard_CIA";
-	g_sKeyManager.pInt->is_Data = (APTR)&g_sKeyManager;
+	g_sKeyManager.pInt->is_Data = 0;
 	g_sKeyManager.pInt->is_Code = (void(*)(void))keyIntServer;
 
 	AddIntServer(INTB_PORTS, g_sKeyManager.pInt);

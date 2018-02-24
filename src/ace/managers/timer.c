@@ -11,6 +11,7 @@ tTimerManager g_sTimerManager = {0};
  * Timer VBlank server
  * Increments frame counter
  */
+FN_HOTSPOT
 void INTERRUPT timerVBlankServer(REGARG(UWORD *pCounter, "a1")) {
 	++(*pCounter);
 	INTERRUPT_END;

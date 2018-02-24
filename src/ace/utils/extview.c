@@ -247,8 +247,28 @@ void vPortDestroy(tVPort *pVPort) {
 	logBlockEnd("vPortDestroy()");
 }
 
+
 void vPortUpdateCLUT(tVPort *pVPort) {
-	// TODO: blok palety kolorow, priorytety na copperliscie
+	// TODO: If not same CLUTs on all vports, there are 2 strategies to do them:
+	// 1) Using the copperlist (copblock/raw copper instructions)
+	// 2) By using CPU
+	// 1st approach is better since it will always work, doesn't require any waits
+	// So the only problem is implementing it using copblocks or raw copperlist.
+	// Also some viewports which are one after another may use shared pallette, so
+	// adding CLUT copper instructions between them is unnecessary.
+	// I propose following implementation:
+	// - for quick check, view contains flag VIEW_GLOBAL_CLUT if all viewports use
+	//   same palette
+	// - if VIEW_GLOBAL_CLUT is not found, every vport is checked for
+	// VPORT_HAS_OWN_CLUT and if it's present then cop instructions are created
+	// during vport creation and updated using this fn.
+	// There is a problem that VPorts may change vertical size and position
+	// (like expanding HUD to fullscreen like we did in Goblin Villages).
+	// On copblocks implementing it is somewhat easy, but on raw copperlist
+	// something clever must be done.
+	if(pVPort->uwFlags & VIEWPORT_HAS_OWN_CLUT) {
+		logWrite("TODO: implement vPortUpdateCLUT!\n");
+	}
 }
 
 void vPortWaitForEnd(tVPort *pVPort) {
