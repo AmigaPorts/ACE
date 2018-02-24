@@ -48,20 +48,37 @@ UBYTE blitCheck(
 	UWORD uwLine, char *szFile
 ) {
 #ifdef GAME_DEBUG
-	WORD wSrcWidth, wDstWidth;
+	WORD wSrcWidth, wSrcHeight, wDstWidth, wDstHeight;
 
-	wSrcWidth = pSrc->BytesPerRow << 3;
-	wDstWidth = pDst->BytesPerRow << 3;
-	if(bitmapIsInterleaved(pSrc))
-		wSrcWidth /= pSrc->Depth;
-	if(bitmapIsInterleaved(pDst))
-		wDstWidth /= pDst->Depth;
+	if(pSrc) {
+		wSrcWidth = pSrc->BytesPerRow << 3;
+		if(bitmapIsInterleaved(pSrc)) {
+			wSrcWidth /= pSrc->Depth;
+		}
+		wSrcHeight = pSrc->Rows;
+	}
+	else {
+		wSrcWidth = 0;
+		wSrcHeight = 0;
+	}
+
+	if(pDst) {
+		wDstWidth = pDst->BytesPerRow << 3;
+		if(bitmapIsInterleaved(pDst)) {
+			wDstWidth /= pDst->Depth;
+		}
+		wDstHeight = pDst->Rows;
+	}
+	else {
+		wDstWidth = 0;
+		wDstHeight = 0;
+	}
 
 	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
 		logWrite(
 			"ILLEGAL BLIT Source out of range: "
 			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
-			pSrc,	wSrcWidth, pSrc->Rows, pDst, wDstWidth, pDst->Rows,
+			pSrc,	wSrcWidth, wSrcHeight, pDst, wDstWidth, wDstHeight,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
 		return 0;
@@ -70,11 +87,12 @@ UBYTE blitCheck(
 		logWrite(
 			"ILLEGAL BLIT Dest out of range: "
 			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
-			pSrc, wSrcWidth, pSrc->Rows, pDst, wDstWidth, pDst->Rows,
+			pSrc,	wSrcWidth, wSrcHeight, pDst, wDstWidth, wDstHeight,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
 		return 0;
 	}
+
 #endif
 	return 1;
 }
