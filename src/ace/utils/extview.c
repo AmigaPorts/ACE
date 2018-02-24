@@ -258,19 +258,19 @@ void vPortWaitForEnd(tVPort *pVPort) {
 
 	// Determine VPort end position
 	uwEndPos = pVPort->uwOffsY + pVPort->uwHeight + 0x2C; // Addition from DiWStrt
-	if(vhPosRegs->uwPosY < uwEndPos) {
+	if(g_pRayPos->bfPosY < uwEndPos) {
 		// If current beam is before pos, wait for pos @ current frame
-		while(vhPosRegs->uwPosY < uwEndPos);
+		while(g_pRayPos->bfPosY < uwEndPos) {}
 	}
 	else {
+		// Otherwise wait for pos @ next frame
 		uwCurrFrame = g_sTimerManager.uwFrameCounter;
 		while(
-			vhPosRegs->uwPosY < uwEndPos ||
+			g_pRayPos->bfPosY < uwEndPos ||
 			g_sTimerManager.uwFrameCounter == uwCurrFrame
-		);
+		) {}
 	}
 
-	// Otherwise wait for pos @ next frame
 #endif // AMIGA
 }
 

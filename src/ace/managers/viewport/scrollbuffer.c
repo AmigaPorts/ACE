@@ -90,8 +90,8 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		ulPlaneOffs = uwScrollX + (pManager->pBuffer->BytesPerRow*uwScrollY);
 		for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
 			ulPlaneAddr = (ULONG)(pManager->pBuffer->Planes[i]) + ulPlaneOffs;
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 		}
 		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x30);               // Fetch start
 		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
@@ -110,8 +110,8 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0F00);
 			for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
 				ulPlaneAddr = (ULONG)(pManager->pBuffer->Planes[i]) + uwScrollX;
-				copMove(pCopList, pBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-				copMove(pCopList, pBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+				copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			}
 			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0000);
 		}

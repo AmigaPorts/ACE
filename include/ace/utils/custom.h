@@ -10,10 +10,11 @@
  * Moved to separate file cuz multiple pasting of extern custom is messy
  */
 
+#define REGPTR volatile * const
 #include <hardware/custom.h> // Custom chip register addresses
 
 typedef struct Custom tCustom;
-extern tCustom FAR volatile * const g_pCustom;
+extern tCustom FAR REGPTR g_pCustom;
 
 /**
  * Ray position struct.
@@ -22,13 +23,13 @@ extern tCustom FAR volatile * const g_pCustom;
  * to volatile struct was insufficient.
  */
 typedef struct {
-	volatile unsigned ubLaced:1;   ///< 1 for interlaced screens
-	volatile unsigned uwUnused:14;
-	volatile unsigned uwPosY:9;    ///< PAL: 0..312, NTSC: 0..?
-	volatile unsigned ubPosX:8;    ///< 0..159?
+	volatile unsigned bfLaced:1;   ///< 1 for interlaced screens
+	volatile unsigned bfUnused:14;
+	volatile unsigned bfPosY:9;    ///< PAL: 0..312, NTSC: 0..?
+	volatile unsigned bfPosX:8;    ///< 0..159?
 } tRayPos;
 
-extern volatile tRayPos * const vhPosRegs;
+extern tRayPos FAR REGPTR g_pRayPos;
 
 typedef struct {
 	UWORD uwHi; ///< upper WORD
@@ -39,9 +40,9 @@ typedef struct {
  * Bitplane display regs with 16-bit access.
  * For use with Copper. Other stuff should use g_pCustom->bplpt
  */
-extern volatile tCopperUlong * const pSprPtrs;
-extern volatile tCopperUlong * const pBplPtrs;
-extern volatile tCopperUlong * const pCopLc;
+extern tCopperUlong FAR REGPTR g_pSprFetch;
+extern tCopperUlong FAR REGPTR g_pBplFetch;
+extern tCopperUlong FAR REGPTR g_pCopLc;
 
 /**
  * CIA registers.
@@ -126,8 +127,8 @@ typedef struct _tCia {
 #define CIACRB_INMODE  (BV(5) | BV(6))
 #define CIACRB_ALARM   BV(7)
 
-extern tCia FAR volatile * const g_pCiaA;
-extern tCia FAR volatile * const g_pCiaB;
+extern tCia FAR REGPTR g_pCiaA;
+extern tCia FAR REGPTR g_pCiaB;
 
 #endif // AMIGA
 #endif // GUARD_ACE_UTILS_CUSTOM_H

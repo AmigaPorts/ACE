@@ -67,7 +67,7 @@ ULONG timerGetPrec(void) {
 	#ifdef AMIGA
 	UWORD uwFr1, uwFr2; // frame counts
 	tRayPos sRay;
-	ULONG *pRay = (ULONG*)&sRay, *pReg = (ULONG*)vhPosRegs;
+	ULONG *pRay = (ULONG*)&sRay, *pReg = (ULONG*)g_pRayPos;
 
 	// There are 4 cases how measurments may take place:
 	// a) uwFr1, pRay, uwFr2 on frame A
@@ -79,10 +79,10 @@ ULONG timerGetPrec(void) {
 	uwFr1 = g_sTimerManager.uwFrameCounter;
 	*pRay = *pReg;
 	uwFr2 = g_sTimerManager.uwFrameCounter;
-	if(sRay.uwPosY < 100)
-		return (uwFr2*160*313 + sRay.uwPosY*160 + sRay.ubPosX);
+	if(sRay.bfPosY < 100)
+		return (uwFr2*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
 	else
-		return (uwFr1*160*313 + sRay.uwPosY*160 + sRay.ubPosX);
+		return (uwFr1*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
 	#else
 	return 0;
 	#endif

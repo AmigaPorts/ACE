@@ -513,8 +513,8 @@ tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
 	fubMask = fubSpriteMask;
 	for(FUBYTE i = 0; i != 8; ++i) {
 		if(fubMask & 1) {
-			copMove(pList, pBlock, &pSprPtrs[i].uwHi, ulBlank >> 16);
-			copMove(pList, pBlock, &pSprPtrs[i].uwLo, ulBlank & 0xFFFF);
+			copMove(pList, pBlock, &g_pSprFetch[i].uwHi, ulBlank >> 16);
+			copMove(pList, pBlock, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
 		}
 		fubMask >>= 1;
 	}
@@ -529,8 +529,8 @@ FUBYTE copRawDisableSprites(tCopList *pList, FUBYTE fubSpriteMask, FUWORD fuwCmd
 	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[fuwCmdOffs].sMove;
 	for(FUBYTE i = 0; i != 8; ++i) {
 		if(fubSpriteMask & 1) {
-			copSetMove(pCmd++, &pSprPtrs[i].uwHi, ulBlank >> 16);
-			copSetMove(pCmd++, &pSprPtrs[i].uwLo, ulBlank & 0xFFFF);
+			copSetMove(pCmd++, &g_pSprFetch[i].uwHi, ulBlank >> 16);
+			copSetMove(pCmd++, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
 			fubCmdCnt += 2;
 		}
 		fubSpriteMask >>= 1;

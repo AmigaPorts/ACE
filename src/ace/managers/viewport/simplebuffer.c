@@ -135,8 +135,8 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		ULONG ulPlaneAddr;
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
 			ulPlaneAddr = (ULONG)pManager->pBuffer->Planes[i];
-			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 		// Copy to front buffer since it needs initialization there too
 		CopyMem(
@@ -157,8 +157,8 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		ULONG ulPlaneAddr;
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
 			ulPlaneAddr = (ULONG)pManager->pBuffer->Planes[i];
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
 	logBlockEnd("simplebufferSetBitmap()");
@@ -204,8 +204,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
 			ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplOffs;
-			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
 	else {
@@ -213,8 +213,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
 		for(i = 0; i != pManager->pBuffer->Depth; ++i) {
 			ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplOffs;
-			copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
 }
