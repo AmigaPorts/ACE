@@ -37,7 +37,8 @@ ifeq ($(ACE_CC), vc)
 	AS_FLAGS = +kick13 -c
 	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
-	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O0
+	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O2
+	CC_FLAGS_NO_O = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer
 	ACE_AS = vasm
 	AS_FLAGS = -quiet -x -m68010 -Faout
 	OBJDUMP = m68k-amigaos-objdump -S -d $@ > $@.dasm
@@ -71,6 +72,14 @@ summary:
 	$(ECHO) ========================
 	$(ECHO) ACE Full build completed
 	$(ECHO) ========================
+
+# Disabling optimizations in blit.c - Bebbo GCC debug
+# Show Bebbo optimizations:  -fbbb=+v
+# Disable Bebbo optimizations: -fbbb=-
+$(BUILD_DIR)$(SL)blit.o: $(ACE_SRC_DIR)$(SL)managers$(SL)blit.c
+	$(ECHO) Building $< with -O2
+	@$(ACE_CC) $(CC_FLAGS_NO_O) -O2 -fbbb=- -c -o $@ $<
+	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
 	$(ECHO) Building $<
