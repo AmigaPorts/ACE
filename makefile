@@ -37,7 +37,7 @@ ifeq ($(ACE_CC), vc)
 	AS_FLAGS = +kick13 -c
 	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
-	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O2
+	CC_FLAGS = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer -O3
 	CC_FLAGS_NO_O = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -fomit-frame-pointer
 	ACE_AS = vasm
 	AS_FLAGS = -quiet -x -m68010 -Faout
@@ -73,28 +73,27 @@ summary:
 	$(ECHO) ACE Full build completed
 	$(ECHO) ========================
 
-# Disabling optimizations in blit.c - Bebbo GCC debug
-# Show Bebbo optimizations:  -fbbb=+v
-# Disable Bebbo optimizations: -fbbb=-
-$(BUILD_DIR)$(SL)blit.o: $(ACE_SRC_DIR)$(SL)managers$(SL)blit.c
-	$(ECHO) Building $< with -O2
-	@$(ACE_CC) $(CC_FLAGS_NO_O) -O2 -fbbb=- -c -o $@ $<
-	@$(OBJDUMP)
+# Should something go bad on VBCC/GCC, use this to pinpoint file which doesn't
+# work with optimizations.
+# GCC:
+#   Show Bebbo optimizations:  -fbbb=+v
+#   Disable Bebbo optimizations: -fbbb=-
+# $(BUILD_DIR)$(SL)blit.o: $(ACE_SRC_DIR)$(SL)managers$(SL)blit.c
+# 	$(ECHO) Building $< with -O1
+# 	@$(ACE_CC) $(CC_FLAGS_NO_O) -O1 -c -o $@ $<
+# 	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
-	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
-	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)utils$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
-	@$(OBJDUMP)
 
 $(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.s
 	$(ECHO) Building $<
@@ -103,7 +102,6 @@ $(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.s
 $(BUILD_DIR)$(SL)%.o: $(FIXMATH_SRC_DIR)$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
-	@$(OBJDUMP)
 
 all: hello clear ace summary
 
