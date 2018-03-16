@@ -93,7 +93,7 @@ void _logBlockBegin(char *szBlockName, ...) {
 	va_end(vaArgs);
 
 	logWrite(szStrBfr);
-	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = 0;//timerGetPrec();
+	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
 	logPushIndent();
 	g_sLogManager.ubBlockEmpty = 1;
 }
@@ -165,8 +165,9 @@ void _logAvgEnd(tAvg *pAvg) {
 		pAvg->ulMin = pAvg->pDeltas[pAvg->uwCurrDelta];
 	++pAvg->uwCurrDelta;
 	// Roll
-	if(pAvg->uwCurrDelta == pAvg->uwAllocCount)
+	if(pAvg->uwCurrDelta >= pAvg->uwAllocCount) {
 		pAvg->uwCurrDelta = 0;
+	}
 	pAvg->uwUsedCount = MIN(pAvg->uwAllocCount, pAvg->uwUsedCount + 1);
 }
 
@@ -174,7 +175,6 @@ void _logAvgEnd(tAvg *pAvg) {
  *
  */
 void _logAvgWrite(tAvg *pAvg) {
-	UWORD i;
 	ULONG ulAvg = 0;
 	char szAvg[15];
 	char szMin[15];
@@ -185,8 +185,9 @@ void _logAvgWrite(tAvg *pAvg) {
 		return;
 	}
 	// Calculate average time
-	for(i = pAvg->uwUsedCount; i--;)
+	for(UWORD i = pAvg->uwUsedCount; i--;) {
 		ulAvg += pAvg->pDeltas[i];
+	}
 	ulAvg /= pAvg->uwUsedCount;
 
 	// Display info
@@ -229,8 +230,9 @@ void _logBitMap(struct BitMap *pBitMap) {
 	logWrite("Depth: %hu\n", pBitMap->Depth);
 	logWrite("pad: %u\n", pBitMap->pad);
 	// since Planes is always 8-long, dump all its entries
-	for(i = 0; i != 8; ++i)
+	for(i = 0; i != 8; ++i) {
 		logWrite("Planes[%hu]: %p\n", i, pBitMap->Planes[i]);
+	}
 	logBlockEnd("logBitMap");
 }
 #endif // AMIGA
