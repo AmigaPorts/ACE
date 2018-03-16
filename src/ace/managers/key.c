@@ -55,7 +55,7 @@ void keyCreate(void) {
 	g_sKeyManager.pInt->is_Node.ln_Pri = -60;
 	g_sKeyManager.pInt->is_Node.ln_Name = "ACE_Keyboard_CIA";
 	g_sKeyManager.pInt->is_Data = 0;
-	g_sKeyManager.pInt->is_Code = (void(*)(void))keyIntServer;
+	g_sKeyManager.pInt->is_Code = keyIntServer;
 
 	AddIntServer(INTB_PORTS, g_sKeyManager.pInt);
 #endif // AMIGA

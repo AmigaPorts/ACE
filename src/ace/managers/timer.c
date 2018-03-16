@@ -33,7 +33,7 @@ void timerCreate(void) {
 	g_sTimerManager.pInt->is_Node.ln_Pri = -60;
 	g_sTimerManager.pInt->is_Node.ln_Name = "ACE_Timer_VBL";
 	g_sTimerManager.pInt->is_Data = (APTR)&g_sTimerManager.uwFrameCounter;
-	g_sTimerManager.pInt->is_Code = (void(*)(void))timerVBlankServer;
+	g_sTimerManager.pInt->is_Code = timerVBlankServer;
 
 	AddIntServer(INTB_VERTB, g_sTimerManager.pInt);
 	#endif // AMIGA
