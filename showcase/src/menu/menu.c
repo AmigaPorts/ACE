@@ -108,19 +108,16 @@ void gsMenuDestroy(void) {
 
 void menuDrawBG() {
 	UWORD uwX, uwY;
-	UBYTE ubOdd = 0, ubColor;
+	UBYTE isOdd = 0;
 
 	// Draw checkerboard
 	for(uwY = 0; uwY <= s_pMenuBfr->uBfrBounds.sUwCoord.uwY - 16; uwY += 16) {
 		for(uwX = 0; uwX <= s_pMenuBfr->uBfrBounds.sUwCoord.uwX - 16; uwX += 16) {
-			if(ubOdd)
-				ubColor = 0;
-			else
-				ubColor = 4;
+			UBYTE ubColor = isOdd ? 0 : 4;
 			blitRect(s_pMenuBfr->pBuffer, uwX, uwY, 16, 16, ubColor);
-			ubOdd = !ubOdd;
+			isOdd = !isOdd;
 		}
-		ubOdd = !ubOdd;
+		isOdd = !isOdd;
 	}
 
 	// Draw border
