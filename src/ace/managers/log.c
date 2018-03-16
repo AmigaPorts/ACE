@@ -40,8 +40,8 @@ void _logWrite(char *szFormat, ...) {
 #ifdef AMIGA
 	// Re-enable disk dma if disabled
 	UBYTE ubWasDiskEnabled = 0;
-	if(!(custom.dmaconr & DMAF_DISK)) {
-		custom.dmacon = BITCLR | DMAF_DISK;
+	if(!(g_pCustom->dmaconr & DMAF_DISK)) {
+		g_pCustom->dmacon = BITCLR | DMAF_DISK;
 		ubWasDiskEnabled = 1;
 	}
 #endif // AMIGA
@@ -62,7 +62,7 @@ void _logWrite(char *szFormat, ...) {
 	fflush(g_sLogManager.pFile);
 #ifdef AMIGA
 	if(ubWasDiskEnabled)
-		custom.dmacon = BITSET | DMAF_DISK;
+		g_pCustom->dmacon = BITSET | DMAF_DISK;
 #endif // AMIGA
 }
 
@@ -165,8 +165,9 @@ void _logAvgEnd(tAvg *pAvg) {
 		pAvg->ulMin = pAvg->pDeltas[pAvg->uwCurrDelta];
 	++pAvg->uwCurrDelta;
 	// Roll
-	if(pAvg->uwCurrDelta == pAvg->uwAllocCount)
+	if(pAvg->uwCurrDelta >= pAvg->uwAllocCount) {
 		pAvg->uwCurrDelta = 0;
+	}
 	pAvg->uwUsedCount = MIN(pAvg->uwAllocCount, pAvg->uwUsedCount + 1);
 }
 
@@ -174,8 +175,7 @@ void _logAvgEnd(tAvg *pAvg) {
  *
  */
 void _logAvgWrite(tAvg *pAvg) {
-	UWORD i;
-	ULONG ulAvg;
+	ULONG ulAvg = 0;
 	char szAvg[15];
 	char szMin[15];
 	char szMax[15];
@@ -185,8 +185,9 @@ void _logAvgWrite(tAvg *pAvg) {
 		return;
 	}
 	// Calculate average time
-	for(i = pAvg->uwUsedCount; i--;)
+	for(UWORD i = pAvg->uwUsedCount; i--;) {
 		ulAvg += pAvg->pDeltas[i];
+	}
 	ulAvg /= pAvg->uwUsedCount;
 
 	// Display info
@@ -229,8 +230,9 @@ void _logBitMap(struct BitMap *pBitMap) {
 	logWrite("Depth: %hu\n", pBitMap->Depth);
 	logWrite("pad: %u\n", pBitMap->pad);
 	// since Planes is always 8-long, dump all its entries
-	for(i = 0; i != 8; ++i)
+	for(i = 0; i != 8; ++i) {
 		logWrite("Planes[%hu]: %p\n", i, pBitMap->Planes[i]);
+	}
 	logBlockEnd("logBitMap");
 }
 #endif // AMIGA

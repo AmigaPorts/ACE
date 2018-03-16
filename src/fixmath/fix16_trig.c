@@ -16,13 +16,13 @@ static fix16_t _fix16_atan_cache_value[4096] = { 0 };
 
 fix16_t fix16_sin_parabola(fix16_t inAngle)
 {
-	fix16_t abs_inAngle, abs_retval, retval;
+	fix16_t abs_inAngle, retval;
 	fix16_t mask;
 
 	/* Absolute function */
 	mask = (inAngle >> (sizeof(fix16_t)*CHAR_BIT-1));
 	abs_inAngle = (inAngle + mask) ^ mask;
-	
+
 	/* On 0->PI, sin looks like x² that is :
 	   - centered on PI/2,
 	   - equals 1 on PI/2,
@@ -37,7 +37,7 @@ fix16_t fix16_sin_parabola(fix16_t inAngle)
 	#ifndef FIXMATH_FAST_SIN
 	/* Absolute value of retval */
 	mask = (retval >> (sizeof(fix16_t)*CHAR_BIT-1));
-	abs_retval = (retval + mask) ^ mask;
+	fix16_t abs_retval = (retval + mask) ^ mask;
 	/* So improve its precision by adding some x^4 component to retval */
 	retval += fix16_mul(X4_CORRECTION_COMPONENT, fix16_mul(retval, abs_retval) - retval );
 	#endif

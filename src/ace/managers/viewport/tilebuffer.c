@@ -349,7 +349,6 @@ void tileBufferRedraw(tTileBufferManager *pManager) {
  */
 void tileBufferDrawTile(tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uwTileIdxY) {
 	UWORD uwBfrX, uwBfrY;
-	UWORD uwMarginedWidth, uwMarginedHeight;
 	UBYTE ubAddY;
 
 	uwBfrY = (uwTileIdxY << pManager->ubTileShift) % pManager->uwMarginedHeight;

@@ -19,8 +19,8 @@ void copCreate(void) {
 	copProcessBlocks();
 	copProcessBlocks();
 	// Update copper-related regs
-	custom.copjmp1 = 1;
-	custom.dmacon = DMAF_SETCLR | DMAF_COPPER;
+	g_pCustom->copjmp1 = 1;
+	g_pCustom->dmacon = DMAF_SETCLR | DMAF_COPPER;
 
 	logBlockEnd("copCreate()");
 }
@@ -29,8 +29,8 @@ void copDestroy(void) {
 	logBlockBegin("copDestroy()");
 
 	// Load system copperlist
-	custom.cop1lc = (ULONG)GfxBase->copinit;
-	custom.copjmp1 = 1;
+	g_pCustom->cop1lc = (ULONG)GfxBase->copinit;
+	g_pCustom->copjmp1 = 1;
 
 	// Free blank copperlist
 	// All others should be freed by user
@@ -47,7 +47,7 @@ void copSwapBuffers(void) {
 	pTmp = pCopList->pFrontBfr;
 	pCopList->pFrontBfr = pCopList->pBackBfr;
 	pCopList->pBackBfr = pTmp;
-	custom.cop1lc = (ULONG)((void *)pCopList->pFrontBfr->pList);
+	g_pCustom->cop1lc = (ULONG)((void *)pCopList->pFrontBfr->pList);
 }
 
 void copDumpCmd(tCopCmd *pCmd) {
@@ -434,12 +434,9 @@ UBYTE copUpdateFromBlocks(void) {
 void copProcessBlocks(void) {
 	UBYTE ubNewStatus = 0;
 	tCopList *pCopList;
-	tCopBfr *pBackBfr;
 
 	pCopList = g_sCopManager.pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
-		pBackBfr = pCopList->pBackBfr;
-
 		// Realloc buffer memeory
 		if(pCopList->ubStatus & STATUS_REALLOC)
 			ubNewStatus = copBfrRealloc();
@@ -471,7 +468,7 @@ void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
 	pCopList->ubStatus |= STATUS_UPDATE;
 }
 
-void copMove(tCopList *pCopList, tCopBlock *pBlock, void *pAddr, UWORD uwValue) {
+void copMove(tCopList *pCopList, tCopBlock *pBlock, volatile void *pAddr, UWORD uwValue) {
 
 	copSetMove((tCopMoveCmd*)&pBlock->pCmds[pBlock->uwCurrCount], pAddr, uwValue);
 	++pBlock->uwCurrCount;
@@ -491,13 +488,13 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 	pWaitCmd->bfIsSkip        = 0;
 }
 
-void copSetMove(tCopMoveCmd *pMoveCmd, void *pAddr, UWORD uwValue) {
+void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
 	pMoveCmd->bfUnused = 0;
-	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)&custom);
+	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)g_pCustom);
 	pMoveCmd->bfValue = uwValue;
 }
 
-static UWORD __chip s_pBlankSprite[2];
+static UWORD CHIP s_pBlankSprite[2];
 
 tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
 	FUBYTE fubCmdCnt = 0;
@@ -516,8 +513,8 @@ tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
 	fubMask = fubSpriteMask;
 	for(FUBYTE i = 0; i != 8; ++i) {
 		if(fubMask & 1) {
-			copMove(pList, pBlock, &pSprPtrs[i].uwHi, ulBlank >> 16);
-			copMove(pList, pBlock, &pSprPtrs[i].uwLo, ulBlank & 0xFFFF);
+			copMove(pList, pBlock, &g_pSprFetch[i].uwHi, ulBlank >> 16);
+			copMove(pList, pBlock, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
 		}
 		fubMask >>= 1;
 	}
@@ -532,8 +529,8 @@ FUBYTE copRawDisableSprites(tCopList *pList, FUBYTE fubSpriteMask, FUWORD fuwCmd
 	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[fuwCmdOffs].sMove;
 	for(FUBYTE i = 0; i != 8; ++i) {
 		if(fubSpriteMask & 1) {
-			copSetMove(pCmd++, &pSprPtrs[i].uwHi, ulBlank >> 16);
-			copSetMove(pCmd++, &pSprPtrs[i].uwLo, ulBlank & 0xFFFF);
+			copSetMove(pCmd++, &g_pSprFetch[i].uwHi, ulBlank >> 16);
+			copSetMove(pCmd++, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
 			fubCmdCnt += 2;
 		}
 		fubSpriteMask >>= 1;

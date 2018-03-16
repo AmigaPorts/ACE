@@ -126,17 +126,17 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
 		logWrite("Setting copperlist %p at offs %u: %p\n", pCopList->pBackBfr, pManager->uwCopperOffset, pCmdList);
 		copSetWait(&pCmdList[0].sWait, 0xE2-7*4, pManager->sCommon.pVPort->uwOffsY + 0x2C-1);
-		copSetMove(&pCmdList[1].sMove, &custom.ddfstop, 0x00D0);    // Data fetch
-		copSetMove(&pCmdList[2].sMove, &custom.ddfstrt, uwDDfStrt);
-		copSetMove(&pCmdList[3].sMove, &custom.bpl1mod, uwModulo);  // Bitplane modulo
-		copSetMove(&pCmdList[4].sMove, &custom.bpl2mod, uwModulo);
-		copSetMove(&pCmdList[5].sMove, &custom.bplcon1, 0);         // Shift: 0
+		copSetMove(&pCmdList[1].sMove, &g_pCustom->ddfstop, 0x00D0);    // Data fetch
+		copSetMove(&pCmdList[2].sMove, &g_pCustom->ddfstrt, uwDDfStrt);
+		copSetMove(&pCmdList[3].sMove, &g_pCustom->bpl1mod, uwModulo);  // Bitplane modulo
+		copSetMove(&pCmdList[4].sMove, &g_pCustom->bpl2mod, uwModulo);
+		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, 0);         // Shift: 0
 		UBYTE i;
 		ULONG ulPlaneAddr;
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
 			ulPlaneAddr = (ULONG)pManager->pBuffer->Planes[i];
-			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 		// Copy to front buffer since it needs initialization there too
 		CopyMem(
@@ -148,17 +148,17 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	else {
 		tCopBlock *pBlock = pManager->pCopBlock;
 		pBlock->uwCurrCount = 0; // Rewind to beginning
-		copMove(pCopList, pBlock, &custom.ddfstop, 0x00D0);     // Data fetch
-		copMove(pCopList, pBlock, &custom.ddfstrt, uwDDfStrt);
-		copMove(pCopList, pBlock, &custom.bpl1mod, uwModulo);   // Bitplane modulo
-		copMove(pCopList, pBlock, &custom.bpl2mod, uwModulo);
-		copMove(pCopList, pBlock, &custom.bplcon1, 0);          // Shift: 0
+		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);     // Data fetch
+		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, uwDDfStrt);
+		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, uwModulo);   // Bitplane modulo
+		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, uwModulo);
+		copMove(pCopList, pBlock, &g_pCustom->bplcon1, 0);          // Shift: 0
 		UBYTE i;
 		ULONG ulPlaneAddr;
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
 			ulPlaneAddr = (ULONG)pManager->pBuffer->Planes[i];
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
 	logBlockEnd("simplebufferSetBitmap()");
@@ -201,20 +201,20 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	// TODO could be unified by using copSetMove in copBlock
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW) {
 		tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
-		copSetMove(&pCmdList[5].sMove, &custom.bplcon1, uwShift);
+		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
 			ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplOffs;
-			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
 	else {
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
-		copMove(pCopList, pManager->pCopBlock, &custom.bplcon1, uwShift);
+		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
 		for(i = 0; i != pManager->pBuffer->Depth; ++i) {
 			ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplOffs;
-			copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-			copMove(pCopList, pManager->pCopBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
 }

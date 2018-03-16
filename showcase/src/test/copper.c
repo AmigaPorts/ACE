@@ -22,7 +22,6 @@ tCopBlock *pBar[32];
  * on 12-bit.
  */
 UWORD colorHSV(UBYTE ubH, UBYTE ubS, UBYTE ubV) {
-	UWORD uwRGB;
 	UBYTE ubRegion, ubRem, p, q, t;
 
 	if (ubS == 0) {
@@ -110,13 +109,13 @@ void gsTestCopperCreate(void) {
 	for(i = 0; i != 16; ++i) {
 		copMove(
 			s_pTestCopperView->pCopList, pBar[i],
-			&custom.color[1], colorHSV(0,255,i << 3)
+			&g_pCustom->color[1], colorHSV(0,255,i << 3)
 		);
 	}
 	for(i = 16; i != 32; ++i) {
 		copMove(
 			s_pTestCopperView->pCopList, pBar[i],
-			&custom.color[1], colorHSV(0,255,(31-i) << 3)
+			&g_pCustom->color[1], colorHSV(0,255,(31-i) << 3)
 		);
 	}
 

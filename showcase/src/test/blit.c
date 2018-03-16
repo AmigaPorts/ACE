@@ -93,41 +93,58 @@ void gsTestBlitLoop(void) {
 	}
 
 	// Rect mode
-	if(keyUse(KEY_1))
+	if(keyUse(KEY_1)) {
 		s_ubType = TYPE_RECT;
+	}
 
 	if(s_ubType & TYPE_AUTO) {
-		if(bSpeedX > 0)
-			if(s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX - 16)
+		if(bSpeedX > 0) {
+			if(s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX - 16) {
 				++s_uwX;
-			else
+			}
+			else {
 				bSpeedX = -1;
-		else if(bSpeedX < 0)
-			if(s_uwX)
+			}
+		}
+		else if(bSpeedX < 0) {
+			if(s_uwX) {
 				--s_uwX;
-			else
+			}
+			else {
 				bSpeedX = 1;
+			}
+		}
 
-		if(bSpeedY > 0)
-			if(s_uwY < 256-16)
+		if(bSpeedY > 0) {
+			if(s_uwY < 256-16) {
 				++s_uwY;
-			else
+			}
+			else {
 				bSpeedY = -1;
-		else if(bSpeedY < 0)
-			if(s_uwY)
+			}
+		}
+		else if(bSpeedY < 0) {
+			if(s_uwY) {
 				--s_uwY;
-			else
+			}
+			else {
 				bSpeedY = 1;
+			}
+		}
 	}
 	else {
-		if(s_fnKeyPoll(KEY_UP) && s_uwY)
+		if(s_fnKeyPoll(KEY_UP) && s_uwY) {
 			--s_uwY;
-		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16)
+		}
+		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16) {
 			++s_uwY;
-		if(s_fnKeyPoll(KEY_LEFT) && s_uwX)
+		}
+		if(s_fnKeyPoll(KEY_LEFT) && s_uwX) {
 			--s_uwX;
-		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16)
+		}
+		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16) {
 			++s_uwX;
+		}
 	}
 
 	// Reblit using new type & coords

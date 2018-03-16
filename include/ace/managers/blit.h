@@ -56,7 +56,7 @@ UBYTE blitIsIdle(void);
  */
 void blitWait(void);
 
-BYTE blitUnsafeCopy(
+UBYTE blitUnsafeCopy(
 	IN tBitMap *pSrc,
 	IN WORD wSrcX,
 	IN WORD wSrcY,
@@ -69,7 +69,7 @@ BYTE blitUnsafeCopy(
 	IN UBYTE ubMask
 );
 
-BYTE blitSafeCopy(
+UBYTE blitSafeCopy(
 	IN tBitMap *pSrc,
 	IN WORD wSrcX,
 	IN WORD wSrcY,
@@ -90,7 +90,7 @@ BYTE blitSafeCopy(
 # define blitCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask) blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask)
 #endif
 
-BYTE blitUnsafeCopyAligned(
+UBYTE blitUnsafeCopyAligned(
 	IN tBitMap *pSrc,
 	IN WORD wSrcX,
 	IN WORD wSrcY,
@@ -101,7 +101,7 @@ BYTE blitUnsafeCopyAligned(
 	IN WORD wHeight
 );
 
-BYTE blitSafeCopyAligned(
+UBYTE blitSafeCopyAligned(
 	IN tBitMap *pSrc,
 	IN WORD wSrcX,
 	IN WORD wSrcY,
@@ -120,7 +120,7 @@ BYTE blitSafeCopyAligned(
 #define blitCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight) blitUnsafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight)
 #endif
 
-BYTE blitUnsafeCopyMask(
+UBYTE blitUnsafeCopyMask(
 	IN tBitMap *pSrc,
 	IN WORD wSrcX,
 	IN WORD wSrcY,
@@ -132,7 +132,7 @@ BYTE blitUnsafeCopyMask(
 	IN UWORD *pMsk
 );
 
-BYTE blitSafeCopyMask(
+UBYTE blitSafeCopyMask(
 	IN tBitMap *pSrc,
 	IN WORD wSrcX,
 	IN WORD wSrcY,
@@ -152,7 +152,7 @@ BYTE blitSafeCopyMask(
 # define blitCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk) blitUnsafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk)
 #endif
 
-BYTE _blitRect(
+UBYTE _blitRect(
 	IN tBitMap *pDst,
 	IN WORD wDstX,
 	IN WORD wDstY,
@@ -163,7 +163,8 @@ BYTE _blitRect(
 	IN char *szFile
 );
 
-#define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) _blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor, __LINE__, __FILE__)
+#define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \
+	_blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor, __LINE__, __FILE__)
 
 /**
  * @brief Draws line of given color between two points.

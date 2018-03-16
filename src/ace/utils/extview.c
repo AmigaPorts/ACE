@@ -79,8 +79,11 @@ void viewProcessManagers(tView *pView) {
 
 void viewUpdateCLUT(tView *pView) {
 #ifdef AMIGA
-	if(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)
-		CopyMem(pView->pFirstVPort->pPalette, custom.color, 32*sizeof(UWORD));
+	if(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT) {
+		for(UBYTE i = 0; i != 32; ++i) {
+			g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
+		}
+	}
 	else {
 		// na petli: vPortUpdateCLUT();
 	}
@@ -99,26 +102,26 @@ void viewLoad(tView *pView) {
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		uwDMA = DMAF_RASTER;
-		custom.bplcon0 = 0; // No output
-		custom.fmode = 0;   // AGA fix
+		g_pCustom->bplcon0 = 0; // No output
+		g_pCustom->fmode = 0;   // AGA fix
 		UBYTE i;
 		for(i = 0; i != 6; ++i)
-			custom.bplpt[i] = 0;
-		custom.bpl1mod = 0;
-		custom.bpl2mod = 0;
+			g_pCustom->bplpt[i] = 0;
+		g_pCustom->bpl1mod = 0;
+		g_pCustom->bpl2mod = 0;
 	}
 	else {
 		g_sCopManager.pCopList = pView->pCopList;
-		custom.bplcon0 = (pView->pFirstVPort->ubBPP << 12) | (1 << 9); // BPP + composite output
-		custom.fmode = 0;        // AGA fix
-		custom.diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
-		custom.diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
+		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | (1 << 9); // BPP + composite output
+		g_pCustom->fmode = 0;        // AGA fix
+		g_pCustom->diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
+		g_pCustom->diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
 		viewUpdateCLUT(pView);
 		uwDMA = DMAF_SETCLR | DMAF_RASTER;
 	}
 	copProcessBlocks();
-	custom.copjmp1 = 1;
-	custom.dmacon = uwDMA;
+	g_pCustom->copjmp1 = 1;
+	g_pCustom->dmacon = uwDMA;
 	WaitTOF();
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
@@ -244,8 +247,28 @@ void vPortDestroy(tVPort *pVPort) {
 	logBlockEnd("vPortDestroy()");
 }
 
+
 void vPortUpdateCLUT(tVPort *pVPort) {
-	// TODO: blok palety kolorow, priorytety na copperliscie
+	// TODO: If not same CLUTs on all vports, there are 2 strategies to do them:
+	// 1) Using the copperlist (copblock/raw copper instructions)
+	// 2) By using CPU
+	// 1st approach is better since it will always work, doesn't require any waits
+	// So the only problem is implementing it using copblocks or raw copperlist.
+	// Also some viewports which are one after another may use shared pallette, so
+	// adding CLUT copper instructions between them is unnecessary.
+	// I propose following implementation:
+	// - for quick check, view contains flag VIEW_GLOBAL_CLUT if all viewports use
+	//   same palette
+	// - if VIEW_GLOBAL_CLUT is not found, every vport is checked for
+	// VPORT_HAS_OWN_CLUT and if it's present then cop instructions are created
+	// during vport creation and updated using this fn.
+	// There is a problem that VPorts may change vertical size and position
+	// (like expanding HUD to fullscreen like we did in Goblin Villages).
+	// On copblocks implementing it is somewhat easy, but on raw copperlist
+	// something clever must be done.
+	if(pVPort->uwFlags & VIEWPORT_HAS_OWN_CLUT) {
+		logWrite("TODO: implement vPortUpdateCLUT!\n");
+	}
 }
 
 void vPortWaitForEnd(tVPort *pVPort) {
@@ -255,19 +278,19 @@ void vPortWaitForEnd(tVPort *pVPort) {
 
 	// Determine VPort end position
 	uwEndPos = pVPort->uwOffsY + pVPort->uwHeight + 0x2C; // Addition from DiWStrt
-	if(vhPosRegs->uwPosY < uwEndPos) {
+	if(g_pRayPos->bfPosY < uwEndPos) {
 		// If current beam is before pos, wait for pos @ current frame
-		while(vhPosRegs->uwPosY < uwEndPos);
+		while(g_pRayPos->bfPosY < uwEndPos) {}
 	}
 	else {
+		// Otherwise wait for pos @ next frame
 		uwCurrFrame = g_sTimerManager.uwFrameCounter;
 		while(
-			vhPosRegs->uwPosY < uwEndPos ||
+			g_pRayPos->bfPosY < uwEndPos ||
 			g_sTimerManager.uwFrameCounter == uwCurrFrame
-		);
+		) {}
 	}
 
-	// Otherwise wait for pos @ next frame
 #endif // AMIGA
 }
 

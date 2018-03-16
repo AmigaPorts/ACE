@@ -85,19 +85,19 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
-		copMove(pCopList, pBlock, &custom.color[0], 0x0F0);
-		copMove(pCopList, pBlock, &custom.bplcon1, uwOffsX);            // Bitplane shift
+		copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0F0);
+		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX);            // Bitplane shift
 		ulPlaneOffs = uwScrollX + (pManager->pBuffer->BytesPerRow*uwScrollY);
 		for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
 			ulPlaneAddr = (ULONG)(pManager->pBuffer->Planes[i]) + ulPlaneOffs;
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
-			copMove(pCopList, pBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
+			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 		}
-		copMove(pCopList, pBlock, &custom.ddfstrt, 0x30);               // Fetch start
-		copMove(pCopList, pBlock, &custom.bpl1mod, pManager->uwModulo); // Odd planes modulo
-		copMove(pCopList, pBlock, &custom.bpl2mod, pManager->uwModulo); // Even planes modulo
-		copMove(pCopList, pBlock, &custom.ddfstop, 0x00D0);             // Fetch stop
-		copMove(pCopList, pBlock, &custom.color[0], 0x000);
+		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x30);               // Fetch start
+		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
+		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
+		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);             // Fetch stop
+		copMove(pCopList, pBlock, &g_pCustom->color[0], 0x000);
 
 		// Copper block after Y-break
 		pBlock = pManager->pBreakBlock;
@@ -106,14 +106,14 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		if (pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
 			// logWrite("Break calc: %u - %u == %u, vpHeight: %u\n", pManager->uwBmAvailHeight, uwScrollY, pManager->uwBmAvailHeight - uwScrollY, uwVpHeight);
 			copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
-			// copMove(pCopList, pBlock, &custom.bplcon1, uwOffsX); // potrzebne?
-			copMove(pCopList, pBlock, &custom.color[0], 0x0F00);
+			// copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX); // potrzebne?
+			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0F00);
 			for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
 				ulPlaneAddr = (ULONG)(pManager->pBuffer->Planes[i]) + uwScrollX;
-				copMove(pCopList, pBlock, &pBplPtrs[i].uwHi, ulPlaneAddr >> 16);
-				copMove(pCopList, pBlock, &pBplPtrs[i].uwLo, ulPlaneAddr & 0xFFFF);
+				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+				copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			}
-			copMove(pCopList, pBlock, &custom.color[0], 0x0000);
+			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0000);
 		}
 		else
 			copBlockWait(pCopList, pBlock, 0x7F, 0xFF);
@@ -162,10 +162,9 @@ void scrollBufferBlitMask(
 	tScrollBufferManager *pDstManager, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UWORD *pMsk
 ) {
-	UBYTE ubAddY;
 	// TODO: if area is visible
 	wDstY %= pDstManager->uwBmAvailHeight;
-	ubAddY = wDstX/(pDstManager->pBuffer->BytesPerRow<<3);
+	// UBYTE ubAddY = wDstX/(pDstManager->pBuffer->BytesPerRow<<3);
 	wDstY %= (pDstManager->pBuffer->BytesPerRow<<3);
 
 	if(wDstY + wHeight <= pDstManager->uwBmAvailHeight) {

@@ -1,14 +1,19 @@
 #include <ace/utils/custom.h>
+#include <stddef.h>
 
 #ifdef AMIGA
 
-volatile tRayPos * const vhPosRegs = (APTR)&custom.vposr;
+#define CUSTOM_BASE 0xDFF000
 
-volatile tCopperUlong * const pBplPtrs = (APTR)&custom.bplpt;
-volatile tCopperUlong * const pSprPtrs = (APTR)&custom.sprpt;
-volatile tCopperUlong * const pCopLc = (APTR)&custom.cop1lc;
+tCustom FAR REGPTR g_pCustom = (tCustom REGPTR)CUSTOM_BASE;
 
-volatile tCia * const g_pCiaA = (tCia*)0x0bfe001;
-volatile tCia * const g_pCiaB = (tCia*)0x0bfd000;
+tRayPos FAR REGPTR g_pRayPos = (tRayPos REGPTR)(CUSTOM_BASE + offsetof(tCustom, vposr));
+
+tCopperUlong FAR REGPTR g_pBplFetch = (tCopperUlong REGPTR)(CUSTOM_BASE + offsetof(tCustom, bplpt));
+tCopperUlong FAR REGPTR g_pSprFetch = (tCopperUlong REGPTR)(CUSTOM_BASE + offsetof(tCustom, sprpt));
+tCopperUlong FAR REGPTR g_pCopLc = (tCopperUlong REGPTR)(CUSTOM_BASE + offsetof(tCustom, cop1lc));
+
+tCia FAR REGPTR g_pCiaA = (tCia*)0xBFE001;
+tCia FAR REGPTR g_pCiaB = (tCia*)0xBFD000;
 
 #endif // AMIGA

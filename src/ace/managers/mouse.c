@@ -12,7 +12,7 @@ void mouseCreate(UBYTE ubPortFlags) {
 	g_sMouseManager.ubPortFlags = ubPortFlags;
 
 #ifdef AMIGA
-	g_sMouseManager.uwPrevPotGo = custom.potinp;
+	g_sMouseManager.uwPrevPotGo = g_pCustom->potinp;
 	UWORD uwPotMask = 0;
 
 	// Enable RMB & MMB
@@ -20,7 +20,7 @@ void mouseCreate(UBYTE ubPortFlags) {
 		uwPotMask |= BV(11) | BV(10) | BV(9) | BV(8);
 	if(ubPortFlags & MOUSE_PORT_2)
 		uwPotMask |= BV(15) | BV(14) | BV(13) | BV(12);
-	custom.potgo = (custom.potinp & (0xFFFF ^ uwPotMask)) | uwPotMask;
+	g_pCustom->potgo = (g_pCustom->potinp & (0xFFFF ^ uwPotMask)) | uwPotMask;
 
 	// Amiga Hardware Reference Manual suggests that pos should be polled every
 	// vblank, so there could be some interrupt init.
@@ -40,7 +40,7 @@ void mouseDestroy(void) {
 #ifdef AMIGA
 	// Should mouse manager be interrupt driven, interrupt handler deletion will
 	// be here.
-	custom.potgo = g_sMouseManager.uwPrevPotGo;
+	g_pCustom->potgo = g_sMouseManager.uwPrevPotGo;
 #endif // AMIGA
 }
 
@@ -89,14 +89,14 @@ void mouseProcess(void) {
 
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_1) {
 		mouseProcessPort(
-			MOUSE_PORT_1, custom.joy0dat,
-			g_pCiaA->pra & BV(6), custom.potinp & BV(10), custom.potinp & BV(8)
+			MOUSE_PORT_1, g_pCustom->joy0dat,
+			BTST(g_pCiaA->pra, 6), BTST(g_pCustom->potinp, 10), BTST(g_pCustom->potinp, 8)
 		);
 	}
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_2) {
 		mouseProcessPort(
-			MOUSE_PORT_2, custom.joy1dat,
-			g_pCiaA->pra & BV(7), custom.potinp & BV(14), custom.potinp & BV(12)
+			MOUSE_PORT_2, g_pCustom->joy1dat,
+			BTST(g_pCiaA->pra, 7), BTST(g_pCustom->potinp, 14), BTST(g_pCustom->potinp, 12)
 		);
 	}
 

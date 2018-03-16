@@ -4,7 +4,7 @@
 
 /* Functions */
 
-tFont *fontCreate(char *szFontName) {
+tFont *fontCreate(const char *szFontName) {
 	FILE *pFontFile;
 	tFont *pFont;
 	logBlockBegin("fontCreate(szFontName: %s)", szFontName);
@@ -61,9 +61,9 @@ void fontDestroy(tFont *pFont) {
 	logBlockEnd("fontDestroy()");
 }
 
-tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
+tTextBitMap *fontCreateTextBitMap(tFont *pFont, const char *szText) {
 	tTextBitMap *pTextBitMap;
-	char *p;
+	UBYTE *p;
 	UWORD uwX;
 	UWORD uwY = pFont->uwHeight;
 
@@ -71,7 +71,7 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 	pTextBitMap = memAllocFastClear(sizeof(tTextBitMap));
 
 	// Text width measurement
-	for (p = szText; *(p); ++p) {
+	for (p = (UBYTE*)szText; *(p); ++p) {
 		if(*p == '\n') {
 			uwY += pFont->uwHeight;
 		} else {
@@ -83,7 +83,7 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
 	pTextBitMap->pBitMap = bitmapCreate(pTextBitMap->uwActualWidth, uwY, 1, BMF_CLEAR);
 
 	// Draw text on bitmap buffer
-	for (p = szText, uwX = 0, uwY = 0; *(p); ++p) {
+	for (p = (UBYTE*)szText, uwX = 0, uwY = 0; *(p); ++p) {
 		if(*p == '\n') {
 			uwX = 0;
 			uwY += pFont->uwHeight;
@@ -162,7 +162,7 @@ void fontDrawTextBitMap(tBitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWO
 
 void fontDrawStr(
 	tBitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY,
-	char *szText, UBYTE ubColor, UBYTE ubFlags
+	const char *szText, UBYTE ubColor, UBYTE ubFlags
 ) {
 	logBlockBegin(
 		"fontDrawStr(pDest: %p, pFont: %p, uwX: %hu, uwY: %hu, szText: '%s', "

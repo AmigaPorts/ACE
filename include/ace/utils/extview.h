@@ -50,6 +50,11 @@
 #define VIEW_FLAG_COPLIST_RAW 2
 
 /**
+ * Viewport flags.
+ */
+#define VIEWPORT_HAS_OWN_CLUT 1
+
+/**
  *  Viewport manager IDs.
  *  Number determines processing order. Camera is last, so rest may see
  *  a difference between its current and previous position

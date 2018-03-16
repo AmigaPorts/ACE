@@ -230,7 +230,7 @@ void copBlockWait(
 void copMove(
 	IN tCopList *pCopList,
 	INOUT tCopBlock *pBlock,
-	IN void *pReg,
+	IN volatile void *pReg,
 	IN UWORD uwValue
 );
 
@@ -265,7 +265,7 @@ void copSetWait(
  */
 void copSetMove(
 	INOUT tCopMoveCmd *pMoveCmd,
-	void *pReg,
+	volatile void *pReg,
 	UWORD uwValue
 );
 
