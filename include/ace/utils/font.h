@@ -61,7 +61,7 @@ typedef struct _tTextBitMap {
  *  @see fontDestroy()
  */
 tFont *fontCreate(
-	IN char *szFontName
+	IN const char *szFontName
 );
 
 /**
@@ -89,7 +89,7 @@ void fontDestroy(
  */
 tTextBitMap *fontCreateTextBitMap(
 	IN tFont *pFont,
-	IN char *szText
+	IN const char *szText
 );
 
 /**
@@ -146,7 +146,7 @@ void fontDrawStr(
 	IN tFont *pFont,
 	IN UWORD uwX,
 	IN UWORD uwY,
-	IN char *szText,
+	IN const char *szText,
 	IN UBYTE ubColor,
 	IN UBYTE ubFlags
 );

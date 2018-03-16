@@ -4,7 +4,7 @@
 
 /* Functions */
 
-tFont *fontCreate(char *szFontName) {
+tFont *fontCreate(const char *szFontName) {
 	FILE *pFontFile;
 	tFont *pFont;
 	logBlockBegin("fontCreate(szFontName: %s)", szFontName);
@@ -61,7 +61,7 @@ void fontDestroy(tFont *pFont) {
 	logBlockEnd("fontDestroy()");
 }
 
-tTextBitMap *fontCreateTextBitMap(tFont *pFont, char *szText) {
+tTextBitMap *fontCreateTextBitMap(tFont *pFont, const char *szText) {
 	tTextBitMap *pTextBitMap;
 	UBYTE *p;
 	UWORD uwX;
@@ -162,7 +162,7 @@ void fontDrawTextBitMap(tBitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWO
 
 void fontDrawStr(
 	tBitMap *pDest, tFont *pFont, UWORD uwX, UWORD uwY,
-	char *szText, UBYTE ubColor, UBYTE ubFlags
+	const char *szText, UBYTE ubColor, UBYTE ubFlags
 ) {
 	logBlockBegin(
 		"fontDrawStr(pDest: %p, pFont: %p, uwX: %hu, uwY: %hu, szText: '%s', "
