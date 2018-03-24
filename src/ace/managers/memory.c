@@ -1,4 +1,5 @@
 #include <ace/managers/memory.h>
+#include <ace/managers/system.h>
 #include <ace/utils/file.h>
 
 /* Globals */
@@ -32,6 +33,7 @@ void _memCreate(void) {
 }
 
 void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
+	systemUse();
 	tMemEntry *pNext;
 	// Add mem usage entry
 	pNext = s_pMemTail;
@@ -65,7 +67,8 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	}
 	// filePrintf(s_pMemLog, "usage: CHIP: %lu, FAST: %lu\n", s_ulChipUsage, s_ulFastUsage);
 
-	fflush(s_pMemLog);
+	fileFlush(s_pMemLog);
+	systemUnuse();
 }
 
 void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
@@ -82,10 +85,11 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 			s_pMemLog, "ERR: can't find memory allocated at %p (%s:%u)\n",
 			pAddr, szFile, uwLine
 		);
-		fflush(s_pMemLog);
+		fileFlush(s_pMemLog);
 		return;
 	}
 
+	systemUse();
 	// unlink entry from list
 	if(pPrev)
 		pPrev->pNext = pCurr->pNext;
@@ -105,16 +109,19 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	);
 
 	// Update mem usage counter
-	if(TypeOfMem(pAddr) & MEMF_CHIP)
+	if(TypeOfMem(pAddr) & MEMF_CHIP) {
 		s_ulChipUsage -= ulSize;
-	else
+	}
+	else {
 		s_ulFastUsage -= ulSize;
-	// filePrintf(s_pMemLog, "Usage: CHIP: %lu, FAST: %lu\n", s_ulChipUsage, s_ulFastUsage);
+	}
 
-	fflush(s_pMemLog);
+	fileFlush(s_pMemLog);
+	systemUnuse();
 }
 
 void _memDestroy(void) {
+	systemUse();
 	filePrintf(
 		s_pMemLog, "\n=============== MEMORY MANAGER DESTROY ==============\n"
 	);
@@ -130,6 +137,7 @@ void _memDestroy(void) {
 	);
 	fileClose(s_pMemLog);
 	s_pMemLog = 0;
+	systemUnuse();
 }
 
 void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
@@ -145,10 +153,12 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 			s_ulChipPeakUsage, s_ulFastPeakUsage
 		);
 #ifdef AMIGA
+		systemUse();
 		filePrintf(
 			s_pMemLog, "Largest available chunk of given type: %lu\n",
 			AvailMem(ulFlags | MEMF_LARGEST)
 		);
+		systemUnuse();
 #endif // AMIGA
 		return 0;
 	}
@@ -162,17 +172,23 @@ void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, char *szFile) {
 }
 
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
+	systemUse();
+	void *pResult;
 	#ifdef AMIGA
-	return AllocMem(ulSize, ulFlags);
+	pResult = AllocMem(ulSize, ulFlags);
 	#else
-	return malloc(ulSize);
+	pResult =  malloc(ulSize);
 	#endif // AMIGA
+	systemUnuse();
+	return pResult;
 }
 
 void _memFreeRls(void *pMem, ULONG ulSize) {
+	systemUse();
 	#ifdef AMIGA
 	FreeMem(pMem, ulSize);
 	#else
 	free(pMem);
 	#endif // AMIGA
+	systemUnuse();
 }
