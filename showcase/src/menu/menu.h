@@ -23,7 +23,7 @@ void gsMenuCreate(void);
 void gsMenuLoop(void);
 void gsMenuDestroy(void);
 
-void menuDrawBG(void);
+void menuDrawBg(void);
 
 void menuShowMain(void);
 void menuSelectMain(void);

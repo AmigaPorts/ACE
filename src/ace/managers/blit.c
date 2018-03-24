@@ -112,9 +112,11 @@ void blitWait(void) {
 UBYTE blitIsIdle(void) {
 	#ifdef AMIGA
 	volatile UWORD * const pDmaConR = &g_pCustom->dmaconr;
-	if(!(*pDmaConR & DMAF_BLTDONE))
-		if(!(*pDmaConR & DMAF_BLTDONE))
+	if(!(*pDmaConR & DMAF_BLTDONE)) {
+		if(!(*pDmaConR & DMAF_BLTDONE)) {
 			return 1;
+		}
+	}
 	return 0;
 	#else
 		return 1;

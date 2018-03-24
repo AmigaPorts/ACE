@@ -70,10 +70,12 @@ void gsMenuLoop(void) {
 	UBYTE ubSelected;
 
 	if (keyUse(KEY_ESCAPE)) {
-		if(s_ubMenuType == MENU_MAIN)
+		if(s_ubMenuType == MENU_MAIN) {
 			gameClose();
-		else
+		}
+		else {
 			menuShowMain();
+		}
 		return;
 	}
 
@@ -106,7 +108,8 @@ void gsMenuDestroy(void) {
 	viewDestroy(s_pMenuView);
 }
 
-void menuDrawBG() {
+void menuDrawBg() {
+	logBlockBegin("menuDrawBg()");
 	UWORD uwX, uwY;
 	UBYTE isOdd = 0;
 
@@ -127,13 +130,15 @@ void menuDrawBG() {
 	blitLine(s_pMenuBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
 	blitLine(s_pMenuBfr->pBuffer, 0, 0, 0, uwMaxY, 1, 0xFFFF, 0);
 	blitLine(s_pMenuBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
+	logBlockEnd("menuDrawBg()");
 }
 
 /******************************************************* Main menu definition */
 
 void menuShowMain(void) {
+	logWrite("menuShowMain\n");
 	// Draw BG
-	menuDrawBG();
+	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBuffer, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
@@ -171,7 +176,7 @@ void menuSelectMain(void) {
 
 void menuShowTests(void) {
 	// Draw BG
-	menuDrawBG();
+	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBuffer, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
@@ -230,7 +235,7 @@ void menuSelectTests(void) {
 
 void menuShowExamples(void) {
 	// Draw BG
-	menuDrawBG();
+	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBuffer, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,

@@ -33,6 +33,8 @@ void systemUse(void);
 
 void systemUnuse(void);
 
+void systemDump(void);
+
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;

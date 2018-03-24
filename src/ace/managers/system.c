@@ -5,6 +5,8 @@
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 
+// There are hardware interrupt vectors
+// Some may be triggered by more than one event - there are 15 events
 // http://eab.abime.net/showthread.php?p=1081007
 // http://ada.untergrund.net/?p=boardthread&id=31
 // http://palbo.dk/dataskolen/maskinsprog/english/letter_09.pdf
@@ -12,8 +14,9 @@
 //---------------------------------------------------------------------- DEFINES
 
 // First OS interrupt is at offset 0x64 - each is 4 bytes wide
-#define SYSTEM_OS_INT_FIRST (0x64/4)
-#define SYSTEM_OS_INT_COUNT 7
+#define SYSTEM_INT_VECTOR_FIRST (0x64/4)
+#define SYSTEM_INT_VECTOR_COUNT 7
+#define SYSTEM_INT_HANDLER_COUNT 15
 
 //------------------------------------------------------------------------ TYPES
 
@@ -38,13 +41,13 @@ void HWINTERRUPT int4Handler(void);
 void HWINTERRUPT int5Handler(void);
 void HWINTERRUPT int6Handler(void);
 void HWINTERRUPT int7Handler(void);
-tHwIntVector s_pAceHwInterrupts[SYSTEM_OS_INT_COUNT] = {
+static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int1Handler, int2Handler, int3Handler, int4Handler,
 	int5Handler, int6Handler, int7Handler
 };
-static tHwIntVector s_pOsHwInterrupts[SYSTEM_OS_INT_COUNT] = {0};
+static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static volatile tHwIntVector * const s_pHwVectors = 0;
-static volatile tAceInterrupt s_pAceInterrupts[15] = {{0}};
+static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static volatile UWORD s_uwAceInts = 0;
 
 // Manager logic vars
@@ -182,11 +185,6 @@ void systemCreate(void) {
 	// Reset active system uses counter so that systemUnuse will do a takeover
 	s_wSystemUses = 1;
 	systemUnuse();
-
-	for(UBYTE i = 0; i < 50; ++i) {
-		while(g_pRayPos->bfPosY < 200) {};
-		while(g_pRayPos->bfPosY > 50) {};
-	}
 }
 
 /**
@@ -238,9 +236,9 @@ void systemUnuse(void) {
 
 		// Save OS interrupt vectors and enable ACE's
 		g_pCustom->intreq = 0x7FFF;
-		for(UWORD i = 0; i < SYSTEM_OS_INT_COUNT; ++i) {
-			s_pOsHwInterrupts[i] = s_pHwVectors[SYSTEM_OS_INT_FIRST + i];
-			s_pHwVectors[SYSTEM_OS_INT_FIRST + i] = s_pAceHwInterrupts[i];
+		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
+			s_pOsHwInterrupts[i] = s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i];
+			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pAceHwInterrupts[i];
 		}
 
 		// Enable needed DMA (and interrupt) channels
@@ -266,8 +264,8 @@ void systemUse(void) {
 		g_pCustom->dmacon = s_uwOsMinDma;
 
 		// Restore interrupt vectors
-		for(UWORD i = 0; i < SYSTEM_OS_INT_COUNT; ++i) {
-			s_pHwVectors[SYSTEM_OS_INT_FIRST + i] = s_pOsHwInterrupts[i];
+		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
+			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pOsHwInterrupts[i];
 		}
 		// restore old DMA/INTENA/ADKCON etc. settings
 		// All interrupts but only needed DMA
@@ -308,3 +306,17 @@ void systemSetInt(
 // void systemSetDma(UBYTE ubDmaNumber, UBYTE isEnabled) {
 // 	// TODO
 // }
+
+void systemDump(void) {
+	// logBlockBegin("systemDump()");
+
+	logWrite("OS Usage counter: %hd\n", s_wSystemUses);
+	// for(UWORD i = 0; i < SYSTEM_INT_HANDLER_COUNT; ++i) {
+	// 	logWrite(
+	// 		"Int %hu: code %p, data %p\n", i,
+	// 		s_pAceInterrupts[i].pHandler, s_pAceInterrupts[i].pData
+	// 	);
+	// }
+
+	// logBlockEnd("systemDump()");
+}
