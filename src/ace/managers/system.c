@@ -54,10 +54,12 @@ const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
 
+FN_HOTSPOT
 void HWINTERRUPT int1Handler(void) {
 	// Soft / diskBlk / TBE
 }
 
+FN_HOTSPOT
 void HWINTERRUPT int2Handler(void) {
 	// Parallel, keyboard, mouse, "some of disk functions"
 	// ACE only uses it for keyboard so no decision taking here atm
@@ -71,6 +73,7 @@ void HWINTERRUPT int2Handler(void) {
 	g_pCustom->intreq = INTF_PORTS;
 }
 
+FN_HOTSPOT
 void HWINTERRUPT int3Handler(void) {
 	// VBL / Copper / Blitter
 	UWORD uwIntReq = g_pCustom->intreqr;
@@ -108,18 +111,22 @@ void HWINTERRUPT int3Handler(void) {
 	g_pCustom->intreq = INTF_INTEN | INTF_VERTB | INTF_BLIT | INTF_COPER;
 }
 
+FN_HOTSPOT
 void HWINTERRUPT int4Handler(void) {
 	// Audio
 }
 
+FN_HOTSPOT
 void HWINTERRUPT int5Handler(void) {
 	// DskSyn / RBF
 }
 
+FN_HOTSPOT
 void HWINTERRUPT int6Handler(void) {
 	// CIA B
 }
 
+FN_HOTSPOT
 void HWINTERRUPT int7Handler(void) {
 	// EXTERNAL
 }
@@ -141,7 +148,9 @@ void systemKill(const char *szMsg) {
  */
 void systemCreate(void) {
 
-	// save the system copperlists and flush the view
+	// Disable as much of OS stuff as possible so that it won't trash stuff when
+	// re-enabled periodically.
+	// Save the system copperlists and flush the view
 	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
 	if (!GfxBase) {
 		return;
