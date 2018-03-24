@@ -5,6 +5,7 @@
 #include <ace/managers/joy.h>
 #include <ace/managers/game.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/system.h>
 #include <ace/utils/extview.h>
 #include <ace/generic/screen.h>
 
@@ -95,6 +96,9 @@ void gsMenuLoop(void) {
 				case MENU_EXAMPLES: menuSelectExamples(); return;
 			}
 	}
+	static UBYTE ubColor = 1;
+	g_pCustom->color[4] = (ubColor << 8) | (ubColor << 4) | (ubColor);
+	ubColor = (ubColor+1) & 7;
 }
 
 void gsMenuDestroy(void) {
