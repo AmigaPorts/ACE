@@ -44,7 +44,8 @@ tHwIntVector s_pAceHwInterrupts[SYSTEM_OS_INT_COUNT] = {
 };
 static tHwIntVector s_pOsHwInterrupts[SYSTEM_OS_INT_COUNT] = {0};
 static volatile tHwIntVector * const s_pHwVectors = 0;
-tAceInterrupt s_pAceInterrupts[15] = {{0}};
+static volatile tAceInterrupt s_pAceInterrupts[15] = {{0}};
+static volatile UWORD s_uwAceInts = 0;
 
 // Manager logic vars
 WORD s_wSystemUses;
@@ -233,7 +234,7 @@ void systemUnuse(void) {
 		// Game's bitplanes & copperlists are still used so don't disable them
 		// Wait for vbl before disabling sprite DMA
 		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
-		g_pCustom->dmacon = 0x7FFF ^ (DMAF_COPPER | DMAF_RASTER | DMAF_MASTER);
+		g_pCustom->dmacon = s_uwOsMinDma;
 
 		// Save OS interrupt vectors and enable ACE's
 		g_pCustom->intreq = 0x7FFF;
@@ -259,10 +260,10 @@ void systemUnuse(void) {
 
 void systemUse(void) {
 	if(!s_wSystemUses) {
-		// disable app interrupts/dma
+		// Disable app interrupts/dma, keep display-related DMA
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
-		g_pCustom->dmacon = 0x7FFF ^ (DMAF_COPPER | DMAF_RASTER | DMAF_MASTER);
+		g_pCustom->dmacon = s_uwOsMinDma;
 
 		// Restore interrupt vectors
 		for(UWORD i = 0; i < SYSTEM_OS_INT_COUNT; ++i) {
