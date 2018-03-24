@@ -1,4 +1,5 @@
 #include <ace/managers/system.h>
+#include <stdlib.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 #include <ace/utils/custom.h>
@@ -47,6 +48,9 @@ tAceInterrupt s_pAceInterrupts[15] = {{0}};
 
 // Manager logic vars
 WORD s_wSystemUses;
+struct GfxBase *GfxBase = 0;
+struct View *s_pOsView;
+const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
 
@@ -122,16 +126,51 @@ void HWINTERRUPT int7Handler(void) {
 
 //-------------------------------------------------------------------- FUNCTIONS
 
+void systemKill(const char *szMsg) {
+	printf("ERR: SYSKILL: %s", szMsg);
+	logWrite("ERR: SYSKILL: %s", szMsg);
+
+	if(GfxBase) {
+		CloseLibrary((struct Library *) GfxBase);
+	}
+	exit(EXIT_FAILURE);
+}
+
 /**
  * @brief The startup code to give ACE somewhat initial state.
  */
 void systemCreate(void) {
+
 	// save the system copperlists and flush the view
-	// copCreate();
+	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
+	if (!GfxBase) {
+		return;
+		systemKill("Can't open Gfx Library!\n");
+	}
+	s_pOsView = GfxBase->ActiView;
+	WaitTOF();
+	LoadView(NULL);
+	WaitTOF();
+
+
+	// get VBR location on 68010+ machine
+	// TODO VBR
+
+	// save the state of the hardware registers (INTENA, DMA, ADKCON etc.)
+	s_uwOsIntEna = g_pCustom->intenar;
+	s_uwOsDmaCon = g_pCustom->dmaconr;
+
+	// Disable interrupts (this is the actual "kill system/OS" part)
+	g_pCustom->intena = 0x7FFF;
+	g_pCustom->intreq = 0x7FFF;
+
+	// Disable all DMA - only once
+	// Wait for vbl before disabling sprite DMA
+	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+	g_pCustom->dmacon = 0x7FFF;
 
 	// Reset active system uses counter so that systemUnuse will do a takeover
 	s_wSystemUses = 1;
-
 	systemUnuse();
 
 	for(UBYTE i = 0; i < 50; ++i) {
@@ -154,7 +193,6 @@ void systemDestroy(void) {
 	g_pCustom->intreq = 0x7FFF;
 
 	// restore system copperlists
-	// copDestroy();
 
 	if(s_wSystemUses != 0) {
 		logWrite("ERR: unclosed system usage count: %hd", s_wSystemUses);
@@ -163,27 +201,32 @@ void systemDestroy(void) {
 
 	systemUse();
 
+	// Restore all OS DMA
+	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsDmaCon;
+
 	// restore old view
+	WaitTOF();
+	LoadView(s_pOsView);
+	WaitTOF();
+
+	logWrite("Closing graphics.library...");
+	CloseLibrary((struct Library *) GfxBase);
+	logWrite("OK\n");
 }
 
 void systemUnuse(void) {
 	--s_wSystemUses;
 	if(!s_wSystemUses) {
-		// get VBR location on 68010+ machine
-
-		// save the state of the hardware registers (INTENA, DMA, ADKCON etc.)
-		s_uwOsIntEna = g_pCustom->intenar;
-		s_uwOsDmaCon = g_pCustom->dmaconr;
-
 		// Disable interrupts (this is the actual "kill system/OS" part)
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 
+		// Game's bitplanes & copperlists are still used so don't disable them
 		// Wait for vbl before disabling sprite DMA
 		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
-		g_pCustom->dmacon = 0x7FFF;
+		g_pCustom->dmacon = 0x7FFF ^ (DMAF_COPPER | DMAF_RASTER | DMAF_MASTER);
 
-		// Save OS interrupt vectors
+		// Save OS interrupt vectors and enable ACE's
 		g_pCustom->intreq = 0x7FFF;
 		for(UWORD i = 0; i < SYSTEM_OS_INT_COUNT; ++i) {
 			s_pOsHwInterrupts[i] = s_pHwVectors[SYSTEM_OS_INT_FIRST + i];
@@ -210,13 +253,15 @@ void systemUse(void) {
 		// disable app interrupts/dma
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
-		g_pCustom->dmacon = 0x7FFF; // ^ (DMAF_COPPER | DMAF_RASTER);
+		g_pCustom->dmacon = 0x7FFF ^ (DMAF_COPPER | DMAF_RASTER | DMAF_MASTER);
 
-		// restore old DMA/INTENA/ADKCON etc. settings
+		// Restore interrupt vectors
 		for(UWORD i = 0; i < SYSTEM_OS_INT_COUNT; ++i) {
 			s_pHwVectors[SYSTEM_OS_INT_FIRST + i] = s_pOsHwInterrupts[i];
 		}
-		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsDmaCon;
+		// restore old DMA/INTENA/ADKCON etc. settings
+		// All interrupts but only needed DMA
+		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | (s_uwOsDmaCon & s_uwOsMinDma);
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN  | s_uwOsIntEna;
 	}
 	++s_wSystemUses;

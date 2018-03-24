@@ -7,7 +7,6 @@
 
 #include <ace/managers/timer.h>
 #include <ace/managers/key.h>
-#include <ace/managers/window.h>
 
 #include <ace/utils/extview.h>
 

@@ -1,4 +1,5 @@
 #include <ace/managers/game.h>
+#include <ace/managers/system.h> // systemKill
 
 /* Globals */
 tGameManager g_sGameManager;
@@ -107,5 +108,5 @@ void gameDestroy(void) {
 
 void gameKill(char *szError) {
 	gameDestroy();
-	windowKill(szError);
+	systemKill(szError);
 }
