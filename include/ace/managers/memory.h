@@ -1,7 +1,6 @@
 #ifndef GUARD_ACE_MANAGER_MEMORY_H
 #define GUARD_ACE_MANAGER_MEMORY_H
 
-#include <stdio.h>            // FILE and related fns
 #ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <exec/memory.h>      // MEMF_CLEAR etc

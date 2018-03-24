@@ -1,4 +1,5 @@
 #include <ace/managers/memory.h>
+#include <ace/utils/file.h>
 
 /* Globals */
 
@@ -11,7 +12,7 @@ static UWORD s_uwLastId = 0;
 
 /* Vars */
 tMemEntry *s_pMemTail;
-FILE *s_pMemLog;
+tFile *s_pMemLog;
 ULONG s_ulChipUsage, s_ulChipPeakUsage, s_ulFastUsage, s_ulFastPeakUsage;
 
 /* Functions */
@@ -27,7 +28,7 @@ void _memCreate(void) {
 	s_ulFastUsage = 0;
 	s_ulFastPeakUsage = 0;
 	s_uwLastId = 0;
-	s_pMemLog = fopen("memory.log", "w");
+	s_pMemLog = fileOpen("memory.log", "w");
 }
 
 void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
@@ -41,12 +42,12 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	s_pMemTail->pNext = pNext;
 
 	if(TypeOfMem(pAddr) & MEMF_CHIP)
-		fprintf(
+		filePrintf(
 			s_pMemLog, "Allocated CHIP memory %hu@%p, size %lu (%s:%u)\n",
 			s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
 		);
 	else
-		fprintf(
+		filePrintf(
 			s_pMemLog, "Allocated FAST memory %hu@%p, size %lu (%s:%u)\n",
 			s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
 		);
@@ -62,7 +63,7 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 		if(s_ulFastUsage > s_ulFastPeakUsage)
 			s_ulFastPeakUsage = s_ulFastUsage;
 	}
-	// fprintf(s_pMemLog, "usage: CHIP: %lu, FAST: %lu\n", s_ulChipUsage, s_ulFastUsage);
+	// filePrintf(s_pMemLog, "usage: CHIP: %lu, FAST: %lu\n", s_ulChipUsage, s_ulFastUsage);
 
 	fflush(s_pMemLog);
 }
@@ -77,7 +78,7 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 		pCurr = pCurr->pNext;
 	}
 	if(pCurr->pAddr != pAddr) {
-		fprintf(
+		filePrintf(
 			s_pMemLog, "ERR: can't find memory allocated at %p (%s:%u)\n",
 			pAddr, szFile, uwLine
 		);
@@ -93,12 +94,12 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 
 	// remove entry
 	if(ulSize != pCurr->ulSize) {
-		fprintf(
+		filePrintf(
 			s_pMemLog, "WARNING: memFree size mismatch at memory %hu@%p: %lu, should be %lu (%s:%u)\n",
 			pCurr->uwId, pAddr, ulSize, pCurr->ulSize, szFile, uwLine
 		);
 	}
-	fprintf(
+	filePrintf(
 		s_pMemLog, "freed memory %hu@%p, size %lu (%s:%u)\n",
 		pCurr->uwId, pAddr, ulSize, szFile, uwLine
 	);
@@ -108,18 +109,26 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 		s_ulChipUsage -= ulSize;
 	else
 		s_ulFastUsage -= ulSize;
-	// fprintf(s_pMemLog, "Usage: CHIP: %lu, FAST: %lu\n", s_ulChipUsage, s_ulFastUsage);
+	// filePrintf(s_pMemLog, "Usage: CHIP: %lu, FAST: %lu\n", s_ulChipUsage, s_ulFastUsage);
 
 	fflush(s_pMemLog);
 }
 
 void _memDestroy(void) {
-	fprintf(s_pMemLog, "\n=============== MEMORY MANAGER DESTROY ==============\n");
-	fprintf(s_pMemLog, "If something is deallocated past here, you're a wuss!\n");
-	while(s_pMemTail)
+	filePrintf(
+		s_pMemLog, "\n=============== MEMORY MANAGER DESTROY ==============\n"
+	);
+	filePrintf(
+		s_pMemLog, "If something is deallocated past here, you're a wuss!\n"
+	);
+	while(s_pMemTail) {
 		_memEntryDelete(s_pMemTail->pAddr, s_pMemTail->ulSize, 0, "memoryDestroy");
-	fprintf(s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n", s_ulChipPeakUsage, s_ulFastPeakUsage);
-	fclose(s_pMemLog);
+	}
+	filePrintf(
+		s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n",
+		s_ulChipPeakUsage, s_ulFastPeakUsage
+	);
+	fileClose(s_pMemLog);
 	s_pMemLog = 0;
 }
 
@@ -127,13 +136,19 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 	void *pAddr;
 	pAddr = _memAllocRls(ulSize, ulFlags);
 	if(!pAddr) {
-		fprintf(
+		filePrintf(
 			s_pMemLog, "ERR: couldn't allocate %lu bytes! (%s:%u)\n",
 			ulSize, szFile, uwLine
 		);
-		fprintf(s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n", s_ulChipPeakUsage, s_ulFastPeakUsage);
+		filePrintf(
+			s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n",
+			s_ulChipPeakUsage, s_ulFastPeakUsage
+		);
 #ifdef AMIGA
-		fprintf(s_pMemLog, "Largest available chunk of given type: %lu\n", AvailMem(ulFlags | MEMF_LARGEST));
+		filePrintf(
+			s_pMemLog, "Largest available chunk of given type: %lu\n",
+			AvailMem(ulFlags | MEMF_LARGEST)
+		);
 #endif // AMIGA
 		return 0;
 	}

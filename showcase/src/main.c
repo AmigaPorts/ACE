@@ -12,11 +12,11 @@
 #include "menu/menu.h"
 
 int main(void) {
+	systemCreate();
 	memCreate();
 	logOpen();
 	timerCreate();
 
-	windowCreate();
 	blitManagerCreate();
 	copCreate();
 
@@ -35,10 +35,10 @@ int main(void) {
 
 	copDestroy();
 	blitManagerDestroy();
-	windowDestroy();
 
 	timerDestroy();
 	logClose();
 	memDestroy();
+	systemDestroy();
 	return EXIT_SUCCESS;
 }

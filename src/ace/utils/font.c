@@ -1,15 +1,16 @@
 #include <ace/utils/font.h>
+#include <ace/utils/file.h>
 
 /* Globals */
 
 /* Functions */
 
 tFont *fontCreate(const char *szFontName) {
-	FILE *pFontFile;
+	tFile *pFontFile;
 	tFont *pFont;
 	logBlockBegin("fontCreate(szFontName: %s)", szFontName);
 
-	pFontFile = fopen(szFontName, "r");
+	pFontFile = fileOpen(szFontName, "r");
 	if (!pFontFile) {
 		logBlockEnd("fontCreate()");
 		return 0;
@@ -18,31 +19,33 @@ tFont *fontCreate(const char *szFontName) {
 	pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont) {
 		logBlockEnd("fontCreate()");
-		fclose(pFontFile);
+		fileClose(pFontFile);
 		return 0;
 	}
 
-	fread(pFont, 2 * sizeof(UWORD) + sizeof(UBYTE), 1, pFontFile);
+	fileRead(pFontFile, pFont, 2 * sizeof(UWORD) + sizeof(UBYTE));
 	logWrite("Addr: %p, data width: %upx, chars: %u, font height: %upx\n", pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight);
 
 	pFont->pCharOffsets = memAllocFast(sizeof(UWORD) * pFont->ubChars);
-	fread(pFont->pCharOffsets, sizeof(UWORD), pFont->ubChars, pFontFile);
+	fileRead(pFontFile, pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 
 	pFont->pRawData = memAllocChip(sizeof(tBitMap));
 #ifdef AMIGA
 	InitBitMap(pFont->pRawData, 1, pFont->uwWidth, pFont->uwHeight);
 
 	pFont->pRawData->Planes[0] = AllocRaster(pFont->uwWidth, pFont->uwHeight);
-	fread(pFont->pRawData->Planes[0], 1, (pFont->uwWidth >> 3) * pFont->uwHeight, pFontFile);
+	fileRead(
+		pFontFile, pFont->pRawData->Planes[0], (pFont->uwWidth >> 3) * pFont->uwHeight
+	);
 #else
 	logWrite("ERR: Unimplemented\n");
 	memFree(pFont, sizeof(tFont));
-	fclose(pFontFile);
+	fileClose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return 0;
 #endif // AMIGA
 
-	fclose(pFontFile);
+	fileClose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return pFont;
 }
