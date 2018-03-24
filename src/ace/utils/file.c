@@ -4,46 +4,69 @@
 
 tFile *fileOpen(const char *szPath, const char *szMode) {
 	systemUse();
-	return fopen(szPath, szMode);
+	FILE *pFile = fopen(szPath, szMode);
+	systemUnuse();
+	return pFile;
 }
 
 void fileClose(tFile *pFile) {
+	systemUse();
 	fclose(pFile);
 	systemUnuse();
 }
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
-	return fread(pDest, ulSize, 1, pFile);
+	systemUse();
+	ULONG ulResult = fread(pDest, ulSize, 1, pFile);
+	systemUnuse();
+	return ulResult;
 }
 
 ULONG fileWrite(tFile *pFile, void *pSrc, ULONG ulSize) {
-	return fwrite(pSrc, ulSize, 1, pFile);
+	systemUse();
+	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
+	systemUnuse();
+	return ulResult;
 }
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
-	return fseek(pFile, ulPos, wMode);
+	systemUse();
+	ULONG ulResult = fseek(pFile, ulPos, wMode);
+	systemUnuse();
+	return ulResult;
 }
 
 ULONG fileGetPos(tFile *pFile) {
-	return ftell(pFile);
+	systemUse();
+	ULONG ulResult = ftell(pFile);
+	systemUnuse();
+	return ulResult;
 }
 
 UBYTE fileIsEof(tFile *pFile) {
-	return feof(pFile);
+	systemUse();
+	UBYTE ubResult = feof(pFile);
+	systemUnuse();
+	return ubResult;
 }
 
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
-	return vfprintf(pFile, szFmt, vaArgs);
+	systemUse();
+	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
+	systemUnuse();
+	return lResult;
 }
 
 LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
 	va_list vaArgs;
 	va_start(vaArgs, szFmt);
-	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
+	LONG lResult = fileVaPrintf(pFile, szFmt, vaArgs);
 	va_end(vaArgs);
 	return lResult;
 }
 
 void fileFlush(tFile *pFile) {
+	systemUse();
 	fflush(pFile);
+	systemUnuse();
 }
