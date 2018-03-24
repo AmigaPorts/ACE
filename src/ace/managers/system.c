@@ -280,11 +280,7 @@ void systemSetInt(
 ) {
 
 	// Disable interrupts during handler swap to ensure atomic op
-	UBYTE isIntEnabled = 0;
-	if(g_pCustom->intenar & INTF_INTEN) {
-		isIntEnabled = 1;
-		g_pCustom->intena = INTF_INTEN;
-	}
+	g_pCustom->intena = 0x7FFF;
 
 	s_pAceInterrupts[ubIntNumber].pData = pIntData;
 	s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
@@ -298,9 +294,10 @@ void systemSetInt(
 	}
 
 	// Reenable interrupts if they were enabled
-	if(isIntEnabled) {
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
-	}
+	g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
+		INTF_BLIT | INTF_COPER | INTF_VERTB |
+		INTF_PORTS
+	);
 }
 
 // void systemSetDma(UBYTE ubDmaNumber, UBYTE isEnabled) {
