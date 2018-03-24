@@ -1,5 +1,6 @@
 #include <ace/managers/timer.h>
 #include <ace/managers/log.h>
+#include <ace/managers/system.h>
 
 /* Globals */
 tTimerManager g_sTimerManager = {0};
@@ -12,7 +13,11 @@ tTimerManager g_sTimerManager = {0};
  * Increments frame counter
  */
 FN_HOTSPOT
-void INTERRUPT timerVBlankServer(REGARG(UWORD *pCounter, "a1")) {
+void INTERRUPT timerVBlankServer(
+	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
+	REGARG(volatile void *pData, "a1")
+) {
+	UWORD *pCounter = (UWORD*)pData;
 	++(*pCounter);
 	INTERRUPT_END;
 }
@@ -24,29 +29,14 @@ void INTERRUPT timerVBlankServer(REGARG(UWORD *pCounter, "a1")) {
  */
 void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
-
-	#ifdef AMIGA
-	// CHIP is PUBLIC.
-	g_sTimerManager.pInt = memAllocChipClear(sizeof(struct Interrupt));
-
-	g_sTimerManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
-	g_sTimerManager.pInt->is_Node.ln_Pri = -60;
-	g_sTimerManager.pInt->is_Node.ln_Name = "ACE_Timer_VBL";
-	g_sTimerManager.pInt->is_Data = (APTR)&g_sTimerManager.uwFrameCounter;
-	g_sTimerManager.pInt->is_Code = timerVBlankServer;
-
-	AddIntServer(INTB_VERTB, g_sTimerManager.pInt);
-	#endif // AMIGA
+	systemSetInt(INTB_VERTB, timerVBlankServer, &g_sTimerManager.uwFrameCounter);
 }
 
 /**
  * Removes Vertical Blank server
  */
 void timerDestroy(void) {
-	#ifdef AMIGA
-	RemIntServer(INTB_VERTB, g_sTimerManager.pInt);
-	memFree(g_sTimerManager.pInt, sizeof(struct Interrupt));
-	#endif // AMIGA
+	systemSetInt(INTB_VERTB, 0, 0);
 }
 
 /**

@@ -1,5 +1,6 @@
 #include <ace/managers/key.h>
 #include <ace/managers/memory.h>
+#include <ace/managers/system.h>
 #include <ace/utils/custom.h>
 #include <hardware/intbits.h> // INTB_PORTS
 #define KEY_RELEASED_BIT 1
@@ -9,7 +10,10 @@
  * Increments frame counter
  */
 FN_HOTSPOT
-void INTERRUPT keyIntServer() {
+void INTERRUPT keyIntServer(
+	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
+	UNUSED_ARG REGARG(volatile void *pData, "a1")
+) {
 	UBYTE ubKeyCode = ~g_pCiaA->sdr;
 
 	// Start handshake
@@ -48,24 +52,11 @@ const UBYTE g_pToAscii[] = {
 };
 
 void keyCreate(void) {
-#ifdef AMIGA
-	g_sKeyManager.pInt = memAllocChipClear(sizeof(struct Interrupt)); // CHIP is PUBLIC.
-
-	g_sKeyManager.pInt->is_Node.ln_Type = NT_INTERRUPT;
-	g_sKeyManager.pInt->is_Node.ln_Pri = -60;
-	g_sKeyManager.pInt->is_Node.ln_Name = "ACE_Keyboard_CIA";
-	g_sKeyManager.pInt->is_Data = 0;
-	g_sKeyManager.pInt->is_Code = keyIntServer;
-
-	AddIntServer(INTB_PORTS, g_sKeyManager.pInt);
-#endif // AMIGA
+	systemSetInt(INTB_PORTS, keyIntServer, 0);
 }
 
 void keyDestroy(void) {
-#ifdef AMIGA
-	RemIntServer(INTB_PORTS, g_sKeyManager.pInt);
-	memFree(g_sKeyManager.pInt, sizeof(struct Interrupt));
-#endif // AMIGA
+	systemSetInt(INTB_PORTS, 0, 0);
 }
 
 void keyProcess(void) {

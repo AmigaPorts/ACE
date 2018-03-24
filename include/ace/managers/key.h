@@ -136,7 +136,6 @@
 /* ******************************************************************** TYPES */
 
 typedef struct {
-	struct Interrupt *pInt;
 	UBYTE pStates[103];
 	UBYTE ubLastKey;
 } tKeyManager;

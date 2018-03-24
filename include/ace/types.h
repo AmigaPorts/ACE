@@ -23,6 +23,8 @@ typedef int32_t LONG;
 #define INOUT /* Input/output parameter. */
 
 #if  defined(__VBCC__)
+#define UNUSED_ARG
+#define HWINTERRUPT __interrupt
 #define INTERRUPT __amigainterrupt __saveds
 #define REGARG(arg, reg) __reg(reg) arg
 #define CHIP __chip
@@ -31,16 +33,24 @@ typedef int32_t LONG;
 #define FN_HOTSPOT
 #define FN_COLDSPOT
 #elif defined(__GNUC__)
-#define INTERRUPT
+#define HWINTERRUPT __interrupt
+#define UNUSED_ARG __attribute__((unused))
+// Interrupt macros for OS interrupts (handlers)
+// #define INTERRUPT
+// #define INTERRUPT_END asm("cmp d0,d0")
+// Interrupt macros for non-OS interrupts (servers)
+#define INTERRUPT __attribute__((interrupt))
+#define INTERRUPT_END
 #define REGARG(arg, reg) arg asm(reg)
 #define CHIP __attribute__((chip))
-#define INTERRUPT_END asm("cmp d0,d0")
 #define FAR __far
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
 #elif defined(__CODE_CHECKER__)
 // My realtime source checker has problems with GCC asm() expanded from REGARG()
 // being in fn arg list, so I just use blank defines for it
+#define HWINTERRUPT
+#define UNUSED_ARG __attribute__((unused))
 #define INTERRUPT
 #define REGARG(arg, x) arg
 #define CHIP
