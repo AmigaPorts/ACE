@@ -8,7 +8,7 @@
 #endif // AMIGA
 
 /* Globals */
-tLogManager g_sLogManager;
+tLogManager g_sLogManager = {0};
 
 /* Functions */
 
