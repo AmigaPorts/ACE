@@ -12,20 +12,19 @@
 
 /* Types */
 
-typedef void (*tVoidFn)(void);
+typedef void (*tGameCb)(void);
 
 typedef struct _tGameState {
-	tVoidFn pCreateCallback;
-	tVoidFn pLoopCallback;
-	tVoidFn pDestroyCallback;
-	tView *pView;
+	tGameCb cbCreate;
+	tGameCb cbLoop;
+	tGameCb cbDestroy;
 	struct _tGameState *pPrev;
 } tGameState;
 
 typedef struct {
 	UBYTE ubStateCount;
+	UBYTE isRunning;
 	tGameState *pStateFirst;
-	UBYTE ubIsRunning;
 } tGameManager;
 
 /* Globals */
@@ -41,21 +40,21 @@ void gameDestroy(void);
 UBYTE gameIsRunning(void);
 
 void gamePushState(
-	IN tVoidFn pCreateCallback,
-	IN tVoidFn pLoopCallback,
-	IN tVoidFn pDestroyCallback
+	IN tGameCb cbCreate,
+	IN tGameCb cbLoop,
+	IN tGameCb cbDestroy
 );
 
 void gamePopState(void);
 
 void gameChangeState(
-	IN tVoidFn pCreateCallback,
-	IN tVoidFn pLoopCallback,
-	IN tVoidFn pDestroyCallback
+	IN tGameCb cbCreate,
+	IN tGameCb cbLoop,
+	IN tGameCb cbDestroy
 );
 
 void gameChangeLoop(
-	IN tVoidFn pLoopCallback
+	IN tGameCb cbLoop
 );
 
 void gameProcess(void);
