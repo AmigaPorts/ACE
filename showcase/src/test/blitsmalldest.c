@@ -88,7 +88,7 @@ void gsTestBlitSmallDestLoop(void) {
 		blitCopyAligned(s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBuffer, 16, 16, 32, 32);
 	}
 
-	WaitTOF();
+	vPortWaitForEnd(s_pTestBlitVPort);
 
 }
 

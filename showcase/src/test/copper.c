@@ -151,7 +151,7 @@ void gsTestCopperLoop(void) {
 	++ubHue;
 
 	copProcessBlocks();
-	WaitTOF();
+	vPortWaitForEnd(s_pTestCopperVPort);
 }
 
 void gsTestCopperDestroy(void) {

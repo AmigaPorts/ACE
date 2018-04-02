@@ -85,7 +85,7 @@ void gsTestLinesLoop(void) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 	}
 
-	WaitTOF();
+	vPortWaitForEnd(s_pVPort);
 }
 
 void gsTestLinesDestroy(void) {
