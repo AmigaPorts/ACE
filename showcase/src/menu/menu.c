@@ -102,9 +102,21 @@ void gsMenuLoop(void) {
 	}
 	vPortWaitForEnd(s_pMenuVPort);
 
+	static UBYTE ubFrameCnt = 0;
 	static UBYTE ubColor = 1;
+	static BYTE bDir = 1;
+	++ubFrameCnt;
+	if(ubFrameCnt == 7) {
+		if(ubColor >= 7) {
+			bDir = -1;
+		}
+		else if(ubColor <= 1) {
+			bDir = 1;
+		}
+		ubColor += bDir;
+		ubFrameCnt = 0;
+	}
 	g_pCustom->color[4] = (ubColor << 8) | (ubColor << 4) | (ubColor);
-	ubColor = (ubColor+1) & 7;
 }
 
 void gsMenuDestroy(void) {
