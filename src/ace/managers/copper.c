@@ -21,7 +21,7 @@ void copCreate(void) {
 	copProcessBlocks();
 	// Update copper-related regs
 	g_pCustom->copjmp1 = 1;
-	g_pCustom->dmacon = DMAF_SETCLR | DMAF_COPPER;
+	systemSetDma(DMAB_COPPER, 1);
 
 	logBlockEnd("copCreate()");
 }

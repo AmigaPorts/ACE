@@ -25,6 +25,7 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 ULONG fileWrite(tFile *pFile, void *pSrc, ULONG ulSize) {
 	systemUse();
 	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
+	fflush(pFile);
 	systemUnuse();
 	return ulResult;
 }
@@ -53,6 +54,7 @@ UBYTE fileIsEof(tFile *pFile) {
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
+	fflush(pFile);
 	systemUnuse();
 	return lResult;
 }

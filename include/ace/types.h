@@ -1,6 +1,11 @@
 #ifndef GUARD_ACE_TYPES_H
 #define GUARD_ACE_TYPES_H
 
+// Full OS takeover
+#define CONFIG_SYSTEM_OS_TAKEOVER
+// OS-friendly (old) mode
+// #define CONFIG_SYSTEM_OS_FRIENDLY // TODO: implement
+
 #ifdef AMIGA
 #include <exec/types.h>
 #else
@@ -23,9 +28,15 @@ typedef int32_t LONG;
 #define INOUT /* Input/output parameter. */
 
 #if  defined(__VBCC__)
-#define UNUSED_ARG
-#define HWINTERRUPT __interrupt
+#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 #define INTERRUPT __amigainterrupt __saveds
+#define INTERRUPT_END do {} while(0)
+#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
+#error "Unimplemented OS takeover for VBCC!"
+#endif
+
+#define HWINTERRUPT __interrupt
+#define UNUSED_ARG
 #define REGARG(arg, reg) __reg(reg) arg
 #define CHIP __chip
 #define FAR
@@ -33,14 +44,18 @@ typedef int32_t LONG;
 #define FN_HOTSPOT
 #define FN_COLDSPOT
 #elif defined(__GNUC__)
-#define HWINTERRUPT __interrupt
-#define UNUSED_ARG __attribute__((unused))
+#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 // Interrupt macros for OS interrupts (handlers)
-// #define INTERRUPT
-// #define INTERRUPT_END asm("cmp d0,d0")
-// Interrupt macros for non-OS interrupts (servers)
-#define INTERRUPT __attribute__((interrupt))
-#define INTERRUPT_END
+#define INTERRUPT
+#define INTERRUPT_END asm("cmp d0,d0")
+#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
+// Interrupt macros for ACE interrupts
+#define INTERRUPT
+#define INTERRUPT_END do {} while(0)
+#endif
+
+#define HWINTERRUPT __attribute__((interrupt))
+#define UNUSED_ARG __attribute__((unused))
 #define REGARG(arg, reg) arg asm(reg)
 #define CHIP __attribute__((chip))
 #define FAR __far
@@ -49,12 +64,12 @@ typedef int32_t LONG;
 #elif defined(__CODE_CHECKER__)
 // My realtime source checker has problems with GCC asm() expanded from REGARG()
 // being in fn arg list, so I just use blank defines for it
+#define INTERRUPT
+#define INTERRUPT_END do {} while(0)
 #define HWINTERRUPT
 #define UNUSED_ARG __attribute__((unused))
-#define INTERRUPT
 #define REGARG(arg, x) arg
 #define CHIP
-#define INTERRUPT_END do {} while(0)
 #define FAR
 #define FN_HOTSPOT
 #define FN_COLDSPOT

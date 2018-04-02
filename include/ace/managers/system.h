@@ -35,6 +35,17 @@ void systemUnuse(void);
 
 void systemDump(void);
 
+void systemSetInt(
+	IN UBYTE ubIntNumber,
+	IN tAceIntHandler pHandler,
+	IN volatile void *pIntData
+);
+
+void systemSetDma(
+	IN UBYTE ubDmaBit,
+	IN UBYTE isEnabled
+);
+
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;

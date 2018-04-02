@@ -98,10 +98,10 @@ void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 #ifdef AMIGA
 	WaitTOF();
-	ULONG uwDMA;
+	UBYTE isEnabledDma;
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
-		uwDMA = DMAF_RASTER;
+		isEnabledDma = 0;
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->fmode = 0;   // AGA fix
 		UBYTE i;
@@ -117,11 +117,11 @@ void viewLoad(tView *pView) {
 		g_pCustom->diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
 		g_pCustom->diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
 		viewUpdateCLUT(pView);
-		uwDMA = DMAF_SETCLR | DMAF_RASTER;
+		isEnabledDma = 1;
 	}
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
-	g_pCustom->dmacon = uwDMA;
+	systemSetDma(DMAB_RASTER, isEnabledDma);
 	WaitTOF();
 #endif // AMIGA
 	logBlockEnd("viewLoad()");

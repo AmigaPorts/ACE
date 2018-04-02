@@ -82,6 +82,7 @@ void _logClose() {
 void _logBlockBegin(char *szBlockName, ...) {
 	if(g_sLogManager.ubShutUp)
 		return;
+	systemUse();
 	char szFmtBfr[512];
 	char szStrBfr[1024];
 	// make format string
@@ -120,6 +121,8 @@ void _logBlockEnd(char *szBlockName) {
 	else
 		logWrite("Block end: %s, time: %s\n", szBlockName, g_sLogManager.szTimeBfr);
 	g_sLogManager.ubBlockEmpty = 0;
+	systemUnuse();
+	systemDump();
 }
 
 // Average logging

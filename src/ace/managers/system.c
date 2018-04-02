@@ -32,6 +32,7 @@ typedef struct _tAceInterrupt {
 // Saved regs
 UWORD s_uwOsIntEna;
 UWORD s_uwOsDmaCon;
+UWORD s_uwAceDmaCon = 0;
 
 // Interrupts
 void HWINTERRUPT int1Handler(void);
@@ -69,10 +70,26 @@ void HWINTERRUPT int2Handler(void) {
 	// ACE only uses it for keyboard so no decision taking here atm
 	// TODO: this could be re-enabled with vblank since we don't need it
 	// to retrigger during same frame.
-	if(s_pAceInterrupts[INTB_PORTS].pHandler) {
-		s_pAceInterrupts[INTB_PORTS].pHandler(
-			g_pCustom, s_pAceInterrupts[INTB_PORTS].pData
-		);
+	UBYTE ubIcrA = g_pCiaA->icr; // Read clears interrupt flags
+	if(ubIcrA & CIAICR_SERIAL) {
+		// Keyboard
+		if(s_pAceInterrupts[INTB_PORTS].pHandler) {
+			s_pAceInterrupts[INTB_PORTS].pHandler(
+				g_pCustom, s_pAceInterrupts[INTB_PORTS].pData
+			);
+		}
+	}
+	if(ubIcrA & CIAICR_FLAG) {
+
+	}
+	if(ubIcrA & CIAICR_TIMER_A) {
+
+	}
+	if(ubIcrA & CIAICR_TIMER_B) {
+
+	}
+	if(ubIcrA & CIAICR_TOD) {
+
 	}
 	g_pCustom->intreq = INTF_PORTS;
 }
@@ -112,7 +129,7 @@ void HWINTERRUPT int3Handler(void) {
 		}
 		uwReqClr |= INTF_BLIT;
 	}
-	g_pCustom->intreq = INTF_INTEN | INTF_VERTB | INTF_BLIT | INTF_COPER;
+	g_pCustom->intreq = uwReqClr;
 }
 
 FN_HOTSPOT
@@ -180,7 +197,7 @@ void systemCreate(void) {
 	// Disable all DMA - only once
 	// Wait for vbl before disabling sprite DMA
 	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
-	g_pCustom->dmacon = 0x7FFF;
+	g_pCustom->dmacon = 0x07FF;
 
 	// Reset active system uses counter so that systemUnuse will do a takeover
 	s_wSystemUses = 1;
@@ -197,7 +214,7 @@ void systemDestroy(void) {
 
 	// Wait for vbl before disabling sprite DMA
 	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
-	g_pCustom->dmacon = 0x7FFF;
+	g_pCustom->dmacon = 0x07FF;
 	g_pCustom->intreq = 0x7FFF;
 
 	// restore system copperlists
@@ -242,6 +259,7 @@ void systemUnuse(void) {
 		}
 
 		// Enable needed DMA (and interrupt) channels
+		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
 		// Everything that's supported by ACE to simplify things for now
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
 			INTF_BLIT | INTF_COPER | INTF_VERTB |
@@ -262,6 +280,7 @@ void systemUse(void) {
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 		g_pCustom->dmacon = s_uwOsMinDma;
+		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
 
 		// Restore interrupt vectors
 		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
@@ -278,40 +297,56 @@ void systemUse(void) {
 void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 ) {
-
-	// Disable interrupts during handler swap to ensure atomic op
-	g_pCustom->intena = 0x7FFF;
-
+	// Disable ACE handler during data swap to ensure atomic op
+	s_pAceInterrupts[ubIntNumber].pHandler = 0;
 	s_pAceInterrupts[ubIntNumber].pData = pIntData;
-	s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
+
 	if(pHandler) {
 		// Handler was passed - enable listening for given interrupt
-		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		// g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
 	}
 	else {
 		// No handler given - disable this interrupt
-		g_pCustom->intena = BV(ubIntNumber);
+		// g_pCustom->intena = BV(ubIntNumber);
 	}
 
-	// Reenable interrupts if they were enabled
-	g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
-		INTF_BLIT | INTF_COPER | INTF_VERTB |
-		INTF_PORTS
-	);
+	// Re-enable handler or disable it if 0 was passed
+	s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 }
 
-// void systemSetDma(UBYTE ubDmaNumber, UBYTE isEnabled) {
-// 	// TODO
-// }
+void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled) {
+	if(isEnabled) {
+		s_uwAceDmaCon |= BV(ubDmaBit);
+	}
+	else {
+		s_uwAceDmaCon &= ~BV(ubDmaBit);
+	}
+	if(!s_wSystemUses) {
+		g_pCustom->dmacon = BV(ubDmaBit);
+	}
+}
 
 void systemDump(void) {
 	// logBlockBegin("systemDump()");
 
 	logWrite("OS Usage counter: %hd\n", s_wSystemUses);
+
+	// Print handlers
+	// logWrite("ACE handlers:\n");
 	// for(UWORD i = 0; i < SYSTEM_INT_HANDLER_COUNT; ++i) {
 	// 	logWrite(
-	// 		"Int %hu: code %p, data %p\n", i,
-	// 		s_pAceInterrupts[i].pHandler, s_pAceInterrupts[i].pData
+	// 		"Int %hu: code %p, data %p\n",
+	// 		i, s_pAceInterrupts[i].pHandler, s_pAceInterrupts[i].pData
+	// 	);
+	// }
+
+	// Print vectors
+	// logWrite("Vectors:\n");
+	// for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
+	// 	logWrite(
+	// 		"vec %hu: ACE %p, OS %p, curr %p\n",
+	// 		i, s_pAceHwInterrupts[i], s_pOsHwInterrupts[i],
+	// 		s_pHwVectors[SYSTEM_INT_VECTOR_FIRST+ i]
 	// 	);
 	// }
 

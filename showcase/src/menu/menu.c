@@ -28,6 +28,7 @@ static tMenuList *s_pMenuList; /// Menu list
 static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 
 void gsMenuCreate(void) {
+	logBlockBegin("gsMenuCreate");
 	// Prepare view & viewport
 	s_pMenuView = viewCreate(0,
 		TAG_VIEW_GLOBAL_CLUT, 1,
@@ -65,6 +66,7 @@ void gsMenuCreate(void) {
 
 	// Display view with its viewports
 	viewLoad(s_pMenuView);
+	logBlockEnd("gsMenuCreate");
 }
 
 void gsMenuLoop(void) {
@@ -81,10 +83,12 @@ void gsMenuLoop(void) {
 	}
 
 	// Menu list nav - up & down
-	if(keyUse(KEY_UP) || joyUse(JOY1_UP))
+	if(keyUse(KEY_UP) || joyUse(JOY1_UP)) {
 		menuListMove(s_pMenuList, -1);
-	else if(keyUse(KEY_DOWN) || joyUse(JOY1_DOWN))
+	}
+	else if(keyUse(KEY_DOWN) || joyUse(JOY1_DOWN)) {
 		menuListMove(s_pMenuList, +1);
+	}
 
 	// Menu list selection
 	else if(keyUse(KEY_RETURN) || joyUse(JOY1_FIRE)) {
@@ -96,6 +100,8 @@ void gsMenuLoop(void) {
 				case MENU_EXAMPLES: menuSelectExamples(); return;
 			}
 	}
+	vPortWaitForEnd(s_pMenuVPort);
+
 	static UBYTE ubColor = 1;
 	g_pCustom->color[4] = (ubColor << 8) | (ubColor << 4) | (ubColor);
 	ubColor = (ubColor+1) & 7;

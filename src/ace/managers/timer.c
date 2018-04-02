@@ -29,7 +29,9 @@ void INTERRUPT timerVBlankServer(
  */
 void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
-	systemSetInt(INTB_VERTB, timerVBlankServer, &g_sTimerManager.uwFrameCounter);
+	systemSetInt(
+		INTB_VERTB, timerVBlankServer, &g_sTimerManager.uwFrameCounter
+	);
 }
 
 /**

@@ -1,9 +1,31 @@
 #include <ace/managers/key.h>
+#include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
 #include <hardware/intbits.h> // INTB_PORTS
 #define KEY_RELEASED_BIT 1
+
+static inline void keyIntSetState(
+	tKeyManager *pManager, UBYTE ubKeyCode, UBYTE ubKeyState
+) {
+	pManager->pStates[ubKeyCode] = ubKeyState;
+	if(ubKeyState == KEY_ACTIVE) {
+		pManager->ubLastKey = ubKeyCode;
+	}
+}
+
+static inline UBYTE keyIntCheck(const tKeyManager *pManager, UBYTE ubKeyCode) {
+	return pManager->pStates[ubKeyCode] != KEY_NACTIVE;
+}
+
+UBYTE keyCheck(UBYTE ubKeyCode) {
+	return keyIntCheck(&g_sKeyManager, ubKeyCode);
+}
+
+void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState) {
+	keyIntSetState(&g_sKeyManager, ubKeyCode, ubKeyState);
+}
 
 /**
  * Timer VBlank server
@@ -12,8 +34,10 @@
 FN_HOTSPOT
 void INTERRUPT keyIntServer(
 	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
-	UNUSED_ARG REGARG(volatile void *pData, "a1")
+	REGARG(volatile void *pData, "a1")
 ) {
+	tKeyManager *pKeyManager = (tKeyManager*)pData;
+
 	UBYTE ubKeyCode = ~g_pCiaA->sdr;
 
 	// Start handshake
@@ -24,14 +48,15 @@ void INTERRUPT keyIntServer(
 	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
 	ubKeyCode >>= 1;
 
-	if(ubKeyReleased)
-		keySetState(ubKeyCode, KEY_NACTIVE);
-	else if (!keyCheck(ubKeyCode))
-		keySetState(ubKeyCode, KEY_ACTIVE);
+	if(ubKeyReleased) {
+		keyIntSetState(pKeyManager, ubKeyCode, KEY_NACTIVE);
+	}
+	else if (!keyIntCheck(pKeyManager, ubKeyCode)) {
+		keyIntSetState(pKeyManager, ubKeyCode, KEY_ACTIVE);
+	}
 
 	// End handshake
-	while(uwStart - ((g_pCiaA->tbhi << 8) | g_pCiaA->tblo) < 65)
-		continue;
+	while(uwStart - ((g_pCiaA->tbhi << 8) | g_pCiaA->tblo) < 65) {}
 	g_pCiaA->cra &= ~CIACRA_SPMODE;
 	INTERRUPT_END;
 }
@@ -52,11 +77,15 @@ const UBYTE g_pToAscii[] = {
 };
 
 void keyCreate(void) {
-	systemSetInt(INTB_PORTS, keyIntServer, 0);
+	logBlockBegin("keyCreate()");
+	systemSetInt(INTB_PORTS, keyIntServer, &g_sKeyManager);
+	logBlockEnd("keyCreate()");
 }
 
 void keyDestroy(void) {
+	logBlockBegin("keyDestroy()");
 	systemSetInt(INTB_PORTS, 0, 0);
+	logBlockEnd("keyDestroy()");
 }
 
 void keyProcess(void) {

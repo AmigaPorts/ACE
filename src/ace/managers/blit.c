@@ -6,35 +6,30 @@
 
 tBlitManager g_sBlitManager = {0};
 
-#ifdef AMIGA
-/**
- * Blit interrupt handler
- * Fetches next blit from queue and sets custom registers to its values
- * NOTE: Can't log inside this fn and all other called by it
- */
-FN_HOTSPOT
-void INTERRUPT blitInterruptHandler(
-	REGARG(struct Custom volatile *pCustom, "a0")
-) {
-	pCustom->intreq = INTF_BLIT;
-	INTERRUPT_END;
-}
-#endif // AMIGA
-
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
-#ifdef AMIGA
+#if defined(AMIGA)
+#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 	OwnBlitter();
 	blitWait();
+#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
+	systemSetDma(DMAB_BLITTER, 1);
+#else
+#error "Undefined blitter manager behavior!"
+#endif
 #endif // AMIGA
 	logBlockEnd("blitManagerCreate");
 }
 
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
-#ifdef AMIGA
+#if defined(AMIGA)
+#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 	blitWait();
 	DisownBlitter();
+#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
+	systemSetDma(DMAB_BLITTER, 0);
+#endif
 #endif //AMIGA
 	logBlockEnd("blitManagerDestroy");
 }
@@ -98,22 +93,19 @@ UBYTE blitCheck(
 }
 
 void blitWait(void) {
-		g_pCustom->dmacon = BITSET | DMAF_BLITHOG;
-		while(!blitIsIdle()) {}
-		g_pCustom->dmacon = BITCLR | DMAF_BLITHOG;
+	systemSetDma(DMAB_BLITHOG, 1);
+	while(!blitIsIdle()) {}
+	systemSetDma(DMAB_BLITHOG, 0);
 }
 
 /**
  * Checks if blitter is idle
  * Polls 2 times - A1000 Agnus bug workaround
- * @todo Make it inline assembly or dmaconr volatile so compiler won't
- * 'optimize' it.
  */
 UBYTE blitIsIdle(void) {
 	#ifdef AMIGA
-	volatile UWORD * const pDmaConR = &g_pCustom->dmaconr;
-	if(!(*pDmaConR & DMAF_BLTDONE)) {
-		if(!(*pDmaConR & DMAF_BLTDONE)) {
+	if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
+		if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
 			return 1;
 		}
 	}
