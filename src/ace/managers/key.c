@@ -51,7 +51,7 @@ void INTERRUPT keyIntServer(
 	if(ubKeyReleased) {
 		keyIntSetState(pKeyManager, ubKeyCode, KEY_NACTIVE);
 	}
-	else if (!keyIntCheck(pKeyManager, ubKeyCode)) {
+	else {
 		keyIntSetState(pKeyManager, ubKeyCode, KEY_ACTIVE);
 	}
 
