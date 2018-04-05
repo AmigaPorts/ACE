@@ -33,7 +33,7 @@ typedef struct _tAvg {
 typedef struct _tLogManager {
 	tFile *pFile;
 	UBYTE ubIndent;
-	UBYTE ubIsLastWasInline;
+	UBYTE wasLastInline;
 	ULONG pTimeStack[256];
 	char szTimeBfr[255];
 	UBYTE ubBlockEmpty;

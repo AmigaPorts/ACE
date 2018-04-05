@@ -20,7 +20,7 @@ tLogManager g_sLogManager = {0};
 void _logOpen() {
 	g_sLogManager.pFile = fileOpen(LOG_FILE_NAME, "w");
 	g_sLogManager.ubIndent = 0;
-	g_sLogManager.ubIsLastWasInline = 0;
+	g_sLogManager.wasLastInline = 0;
 	g_sLogManager.ubBlockEmpty = 1;
 	g_sLogManager.ubShutUp = 0;
 }
@@ -48,13 +48,13 @@ void _logWrite(char *szFormat, ...) {
 	}
 #endif // AMIGA
 	g_sLogManager.ubBlockEmpty = 0;
-	if (!g_sLogManager.ubIsLastWasInline) {
+	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
 		while (ubLogIndent--)
 			fileWrite(g_sLogManager.pFile, "\t", 1);
 	}
 
-	g_sLogManager.ubIsLastWasInline = szFormat[strlen(szFormat) - 1] != '\n';
+	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
 
 	va_list vaArgs;
 	va_start(vaArgs, szFormat);
@@ -81,8 +81,9 @@ void _logClose() {
 
 // Log blocks
 void _logBlockBegin(char *szBlockName, ...) {
-	if(g_sLogManager.ubShutUp)
+	if(g_sLogManager.ubShutUp) {
 		return;
+	}
 	systemUse();
 	char szFmtBfr[512];
 	char szStrBfr[1024];
@@ -100,11 +101,14 @@ void _logBlockBegin(char *szBlockName, ...) {
 	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
 	logPushIndent();
 	g_sLogManager.ubBlockEmpty = 1;
+	systemUnuse();
 }
 
 void _logBlockEnd(char *szBlockName) {
-	if(g_sLogManager.ubShutUp)
+	if(g_sLogManager.ubShutUp) {
 		return;
+	}
+	systemUse();
 	logPopIndent();
 	timerFormatPrec(
 		g_sLogManager.szTimeBfr,
@@ -115,12 +119,13 @@ void _logBlockEnd(char *szBlockName) {
 	);
 	if(g_sLogManager.ubBlockEmpty) {
 		// empty block - collapse to single line
-		g_sLogManager.ubIsLastWasInline = 1;
+		g_sLogManager.wasLastInline = 1;
 		fileSeek(g_sLogManager.pFile, -1, SEEK_CUR);
 		logWrite("...OK, time: %s\n", g_sLogManager.szTimeBfr);
 	}
-	else
+	else {
 		logWrite("Block end: %s, time: %s\n", szBlockName, g_sLogManager.szTimeBfr);
+	}
 	g_sLogManager.ubBlockEmpty = 0;
 	systemUnuse();
 }
