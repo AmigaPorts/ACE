@@ -1,4 +1,5 @@
 #include <ace/managers/blit.h>
+#include <ace/managers/system.h>
 
 #define BLIT_LINE_OR ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define BLIT_LINE_XOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))

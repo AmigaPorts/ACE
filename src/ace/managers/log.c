@@ -1,6 +1,7 @@
-#include <ace/macros.h>
-#include <string.h>
 #include <ace/managers/log.h>
+#include <string.h>
+#include <ace/macros.h>
+#include <ace/managers/system.h>
 #ifdef GAME_DEBUG
 
 #ifdef AMIGA

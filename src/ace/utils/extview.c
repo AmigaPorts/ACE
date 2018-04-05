@@ -1,5 +1,6 @@
 #include <ace/utils/extview.h>
 #include <limits.h>
+#include <ace/managers/system.h>
 #include <ace/utils/tag.h>
 #include <ace/generic/screen.h>
 
