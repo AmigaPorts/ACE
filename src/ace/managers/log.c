@@ -123,7 +123,6 @@ void _logBlockEnd(char *szBlockName) {
 		logWrite("Block end: %s, time: %s\n", szBlockName, g_sLogManager.szTimeBfr);
 	g_sLogManager.ubBlockEmpty = 0;
 	systemUnuse();
-	systemDump();
 }
 
 // Average logging

@@ -45,9 +45,11 @@ void menuListSetEntry(tMenuList *pList, UBYTE ubIdx, UBYTE ubDisplay, char *szTe
 	pEntry->szText = szText;
 
 	// Update text bitmap
-	if(pEntry->pBitMap)
+	if(pEntry->pBitMap) {
 		fontDestroyTextBitMap(pEntry->pBitMap);
-	pEntry->pBitMap = fontCreateTextBitMap(pList->pFont, szText);
+	}
+	pEntry->pBitMap = fontCreateTextBitMapFromStr(pList->pFont, szText);
+	fontFillTextBitMap(pList->pFont, pEntry->pBitMap, szText);
 }
 
 void menuListDrawPos(tMenuList *pList, UBYTE ubIdx) {
