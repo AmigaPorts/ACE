@@ -18,25 +18,24 @@ tFont *fontCreate(const char *szFontName) {
 
 	pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont) {
-		logBlockEnd("fontCreate()");
 		fileClose(pFontFile);
+		logBlockEnd("fontCreate()");
 		return 0;
 	}
 
 	fileRead(pFontFile, pFont, 2 * sizeof(UWORD) + sizeof(UBYTE));
-	logWrite("Addr: %p, data width: %upx, chars: %u, font height: %upx\n", pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight);
+	logWrite(
+		"Addr: %p, data width: %upx, chars: %u, font height: %upx\n",
+		pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight
+	);
 
 	pFont->pCharOffsets = memAllocFast(sizeof(UWORD) * pFont->ubChars);
 	fileRead(pFontFile, pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 
-	pFont->pRawData = memAllocChip(sizeof(tBitMap));
+	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
 #ifdef AMIGA
-	InitBitMap(pFont->pRawData, 1, pFont->uwWidth, pFont->uwHeight);
-
-	pFont->pRawData->Planes[0] = AllocRaster(pFont->uwWidth, pFont->uwHeight);
-	fileRead(
-		pFontFile, pFont->pRawData->Planes[0], (pFont->uwWidth >> 3) * pFont->uwHeight
-	);
+	UWORD uwPlaneByteSize = (pFont->uwWidth+15)/8  * pFont->uwHeight;
+	fileRead(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
 #else
 	logWrite("ERR: Unimplemented\n");
 	memFree(pFont, sizeof(tFont));
@@ -53,10 +52,7 @@ tFont *fontCreate(const char *szFontName) {
 void fontDestroy(tFont *pFont) {
 	logBlockBegin("fontDestroy(pFont: %p)", pFont);
 	if (pFont) {
-#ifdef AMIGA
-		FreeRaster(pFont->pRawData->Planes[0], pFont->pRawData->BytesPerRow << 3, pFont->pRawData->Rows);
-#endif // AMIGA
-		memFree(pFont->pRawData, sizeof(tBitMap));
+		bitmapDestroy(pFont->pRawData);
 		memFree(pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 		memFree(pFont, sizeof(tFont));
 		pFont = 0;
@@ -77,7 +73,8 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, const char *szText) {
 	for (p = (UBYTE*)szText; *(p); ++p) {
 		if(*p == '\n') {
 			uwY += pFont->uwHeight;
-		} else {
+		}
+		else {
 			pTextBitMap->uwActualWidth += (pFont->pCharOffsets[(*p) + 1] - pFont->pCharOffsets[*p]) + 1;
 		}
 	}
@@ -90,7 +87,8 @@ tTextBitMap *fontCreateTextBitMap(tFont *pFont, const char *szText) {
 		if(*p == '\n') {
 			uwX = 0;
 			uwY += pFont->uwHeight;
-		} else {
+		}
+		else {
 			blitCopy(
 				pFont->pRawData, pFont->pCharOffsets[*p], 0,
 				pTextBitMap->pBitMap, uwX, uwY,
@@ -108,43 +106,51 @@ void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
 	memFree(pTextBitMap, sizeof(tTextBitMap));
 }
 
-void fontDrawTextBitMap(tBitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags) {
-	UBYTE i;
-	UBYTE ubMinterm;
-	tBitMap sTmpDest;
-
+void fontDrawTextBitMap(
+	tBitMap *pDest, tTextBitMap *pTextBitMap,
+	UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags
+) {
 	// Alignment flags
-	if (ubFlags & FONT_RIGHT)
+	if (ubFlags & FONT_RIGHT) {
 		uwX -= pTextBitMap->uwActualWidth;
-	else if (ubFlags & FONT_HCENTER)
+	}
+	else if (ubFlags & FONT_HCENTER) {
 		uwX -= pTextBitMap->uwActualWidth>>1;
-	if(ubFlags & FONT_BOTTOM)
+	}
+	if(ubFlags & FONT_BOTTOM) {
 		uwY -= pTextBitMap->pBitMap->Rows;
-	else if(ubFlags & FONT_VCENTER)
+	}
+	else if(ubFlags & FONT_VCENTER) {
 		uwY -= pTextBitMap->pBitMap->Rows>>1;
+	}
 
-	if(ubFlags & FONT_SHADOW)
+	if(ubFlags & FONT_SHADOW) {
 		fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY+1, 0, FONT_COOKIE);
+	}
 
 	// Helper destination bitmap
-#ifdef AMIGA
+	tBitMap sTmpDest;
+#if defined(AMIGA)
 	InitBitMap(&sTmpDest, 1, pDest->BytesPerRow<<3, pDest->Rows);
+#else
+#error "Something is missing here!"
 #endif
 
 	// Text-drawing loop
-	for (i = 0; i != pDest->Depth; ++i) {
+	UBYTE isCookie = ubFlags & FONT_COOKIE;
+	UBYTE isLazy = ubFlags & FONT_LAZY;
+	UBYTE ubMinterm;
+	for (UBYTE i = 0; i != pDest->Depth; ++i) {
 		// Determine minterm for given bitplane
-		if(ubFlags & FONT_COOKIE) {
-			if(ubColor & 1)
-				ubMinterm = 0xEA;
-			else
-				ubMinterm = 0x2A;
+		if(isCookie) {
+			ubMinterm = ubColor & 1 ? 0xEA : 0x2A;
 		}
 		else {
-			if(ubColor & 1)
+			if(ubColor & 1) {
 				ubMinterm = 0xC0;
+			}
 			else {
-				if(ubFlags & FONT_LAZY) {
+				if(isLazy) {
 					ubColor >>= 1;
 					continue;
 				}
@@ -154,8 +160,7 @@ void fontDrawTextBitMap(tBitMap *pDest, tTextBitMap *pTextBitMap, UWORD uwX, UWO
 		// Blit on given bitplane
 		sTmpDest.Planes[0] = pDest->Planes[i];
 		blitCopy(
-			pTextBitMap->pBitMap, 0, 0,
-			&sTmpDest, uwX, uwY,
+			pTextBitMap->pBitMap, 0, 0, &sTmpDest, uwX, uwY,
 			pTextBitMap->uwActualWidth, pTextBitMap->pBitMap->Rows,
 			ubMinterm, 0x01
 		);
