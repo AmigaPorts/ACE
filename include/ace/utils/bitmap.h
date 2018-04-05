@@ -1,11 +1,20 @@
 #ifndef GUARD_ACE_UTIL_BITMAP_H
 #define GUARD_ACE_UTIL_BITMAP_H
 
-#include <stdio.h> // FILE etc
 #include <ace/types.h>
 
+// File has its own 'flags' field - could be used in new ACE bitmap struct
+#define BITMAP_INTERLEAVED 1
+// FEATURE PROPOSAL:
+// If set, ubBpp shows how many bitplanes are in bitmap, but after last one
+// there is mask attached. Could be useful with c2p transforms - mask could be
+// rotated with bitmap. Mask would be attached and detached with
+// bitmapAttachMask() and bitmapDetachMask() fns.
+#define BITMAP_MASK_ATTACHED 2
+
+/* Types */
+
 #ifdef AMIGA
-#include <ace/types.h> // Amiga typedefs
 #include <clib/graphics_protos.h> // BitMap etc
 typedef struct BitMap tBitMap;
 #else
@@ -24,13 +33,20 @@ typedef struct _tBitMap {
 #define BMF_MINPLANES   (1 << 4)
 #endif // AMIGA
 
-#include <ace/managers/log.h>
-#include <ace/managers/memory.h>
-#include <ace/utils/custom.h>
-
-#define BITMAP_INTERLEAVED 1
-
-/* Types */
+/**
+ * @brief New bitmap format.
+ * Don't use until adopted into entire engine - this struct is more like feature
+ * request or memo.
+ */
+typedef struct _tAceBitmap {
+	UWORD uwWidth; ///< Actual width, in pixels.
+	UWORD uwHeight;
+	UWORD uwBytesPerRow; ///< Useful during raw ops, faster than (uwWidth+15)>>3.
+	                     /// Perhaps uwWordsPerRow would be more useful?
+	UBYTE ubBpp;
+	UBYTE ubFlags; ///< Interleaved or not
+	UWORD *pPlanes[8]; ///< OCS uses up to 6, AGA up to 8
+} tAceBitmap;
 
 /* Globals */
 

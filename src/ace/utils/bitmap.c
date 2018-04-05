@@ -1,7 +1,11 @@
 #include <ace/utils/bitmap.h>
+#include <ace/managers/blit.h>
+#include <ace/managers/log.h>
+#include <ace/managers/memory.h>
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
-#include <ace/managers/blit.h>
+#include <ace/utils/custom.h>
+
 
 /* Globals */
 
