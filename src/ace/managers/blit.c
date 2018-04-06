@@ -38,12 +38,11 @@ void blitManagerDestroy(void) {
 /**
  * Checks if blit is allowable at coords at given source and destination
  */
-UBYTE blitCheck(
+UBYTE _blitCheck(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UWORD uwLine, char *szFile
 ) {
-#ifdef GAME_DEBUG
 	WORD wSrcWidth, wSrcHeight, wDstWidth, wDstHeight;
 
 	if(pSrc) {
@@ -88,8 +87,6 @@ UBYTE blitCheck(
 		);
 		return 0;
 	}
-
-#endif
 	return 1;
 }
 
