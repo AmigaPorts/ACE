@@ -241,8 +241,9 @@ void vPortDestroy(tVPort *pVPort) {
 			memFree(pVPort, sizeof(tVPort));
 			break;
 		}
-		else
+		else {
 			logWrite("\n");
+		}
 		pPrevVPort = pCurrVPort;
 		pCurrVPort = pCurrVPort->pNext;
 	}

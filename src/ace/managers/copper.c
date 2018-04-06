@@ -52,16 +52,18 @@ void copSwapBuffers(void) {
 }
 
 void copDumpCmd(tCopCmd *pCmd) {
-		if(pCmd->sWait.bfIsWait)
+		if(pCmd->sWait.bfIsWait) {
 			logWrite(
 				"@%p: %08X - WAIT: %hu,%hu\n",
 				pCmd, pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY
 			);
-		else
+		}
+		else {
 			logWrite(
 				"@%p: %08X - MOVE: %03X := %04X\n",
 				pCmd, pCmd->ulCode,  pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue
 			);
+		}
 }
 
 void copDumpBlocks(void) {
@@ -81,8 +83,9 @@ void copDumpBlocks(void) {
 	logWrite("Copper block count: %u\n", pCopList->uwBlockCount);
 	pBlock = pCopList->pFirstBlock;
 	while(pBlock) {
-		if(pBlock->ubDisabled)
-		logWrite("DISABLED ");
+		if(pBlock->ubDisabled) {
+			logWrite("DISABLED ");
+		}
 		logWrite(
 			"Block %p starts at %u,%u and has %u/%u cmds:\n",
 			pBlock, pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY,
@@ -90,8 +93,9 @@ void copDumpBlocks(void) {
 		);
 		logPushIndent();
 		pCmds = pBlock->pCmds;
-		for(i = 0; i != pBlock->uwCurrCount; ++i)
+		for(i = 0; i != pBlock->uwCurrCount; ++i) {
 			copDumpCmd(&pCmds[i]);
+		}
 
 		logPopIndent();
 		pBlock = pBlock->pNext;
@@ -154,8 +158,9 @@ tCopList *copListCreate(void *pTagList, ...) {
 		pCopList->pBackBfr->pList = memAllocChip(pCopList->pBackBfr->uwAllocSize);
 		copSetWait(&pCopList->pBackBfr->pList[ulListSize].sWait, 0xFF, 0xFF);
 	}
-	else
+	else {
 		logWrite("BLOCK mode\n");
+	}
 
 	logBlockEnd("copListCreate()");
 	va_end(vaTags);
@@ -176,13 +181,15 @@ void copListDestroy(tCopList *pCopList) {
 		copBlockDestroy(pCopList, pCopList->pFirstBlock);
 
 	// Free front buffer
-	if(pCopList->pFrontBfr->uwAllocSize)
+	if(pCopList->pFrontBfr->uwAllocSize) {
 		memFree(pCopList->pFrontBfr->pList, pCopList->pFrontBfr->uwAllocSize);
+	}
 	memFree(pCopList->pFrontBfr, sizeof(tCopBfr));
 
 	// Free back buffer
-	if(pCopList->pBackBfr->uwAllocSize)
+	if(pCopList->pBackBfr->uwAllocSize) {
 		memFree(pCopList->pBackBfr->pList, pCopList->pBackBfr->uwAllocSize);
+	}
 	memFree(pCopList->pBackBfr, sizeof(tCopBfr));
 
 	// Free main struct
@@ -229,19 +236,23 @@ void copBlockDestroy(tCopList *pCopList, tCopBlock *pBlock) {
 	logBlockBegin("copBlockDestroy(pCopList: %p, pBlock: %p)", pCopList, pBlock);
 
 	// Remove from list
-	if(pBlock == pCopList->pFirstBlock)
+	if(pBlock == pCopList->pFirstBlock) {
 		pCopList->pFirstBlock = pBlock->pNext;
+	}
 	else {
 		tCopBlock *pCurr;
 
 		pCurr = pCopList->pFirstBlock;
-		while(pCurr->pNext && pCurr->pNext != pBlock)
+		while(pCurr->pNext && pCurr->pNext != pBlock) {
 			pCurr = pCurr->pNext;
+		}
 
-		if(pCurr->pNext)
+		if(pCurr->pNext) {
 			pCurr->pNext = pBlock->pNext;
-		else
+		}
+		else {
 			logWrite("ERR: Can't find block %p\n", pBlock);
+		}
 	}
 
 	// Free mem
@@ -277,8 +288,9 @@ UBYTE copBfrRealloc(void) {
 	pBackBfr = pCopList->pBackBfr;
 
 	// Free memory
-	if(pBackBfr->uwAllocSize)
+	if(pBackBfr->uwAllocSize) {
 		memFree(pBackBfr->pList, pBackBfr->uwAllocSize);
+	}
 
 	// Calculate new list size
 	if(pCopList->ubStatus & STATUS_REALLOC_CURR) {
@@ -393,12 +405,15 @@ UBYTE copUpdateFromBlocks(void) {
 
 	// Do full merge on remaining blocks
 	for(; pBlock; pBlock = pBlock->pNext) {
-		if(pBlock->ubDisabled)
+		if(pBlock->ubDisabled) {
 			continue;
-		if(pBlock->ubResized)
+		}
+		if(pBlock->ubResized) {
 			--pBlock->ubResized;
-		if(pBlock->ubUpdated)
+		}
+		if(pBlock->ubUpdated) {
 			--pBlock->ubUpdated;
+		}
 
 		// Update WAIT
 		if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
@@ -408,11 +423,17 @@ UBYTE copUpdateFromBlocks(void) {
 				++uwListPos;
 				ubWasLimitY = 1;
 			}
-			copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
+			copSetWait(
+				(tCopWaitCmd*)&pBackBfr->pList[uwListPos],
+				pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF
+			);
 			++uwListPos;
 		}
 		else {
-			copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
+			copSetWait(
+				(tCopWaitCmd*)&pBackBfr->pList[uwListPos],
+				pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY
+			);
 			++uwListPos;
 		}
 
@@ -427,8 +448,9 @@ UBYTE copUpdateFromBlocks(void) {
 
 	pCopList->pBackBfr->uwCmdCount = uwListPos;
 
-	if(pCopList->ubStatus & STATUS_UPDATE_CURR)
+	if(pCopList->ubStatus & STATUS_UPDATE_CURR) {
 		return STATUS_UPDATE_PREV;
+	}
 	return 0;
 }
 
@@ -439,19 +461,22 @@ void copProcessBlocks(void) {
 	pCopList = g_sCopManager.pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
 		// Realloc buffer memeory
-		if(pCopList->ubStatus & STATUS_REALLOC)
+		if(pCopList->ubStatus & STATUS_REALLOC) {
 			ubNewStatus = copBfrRealloc();
+		}
 
 		// Sort blocks if needed
-		if(pCopList->ubStatus & STATUS_REORDER)
+		if(pCopList->ubStatus & STATUS_REORDER) {
 			copReorderBlocks();
+		}
 
 	// logWrite("New front buffer dump\n");
 	// copDumpBfr(pCopList->pFrontBfr);
 
 		// Update buffer data
-		if(pCopList->ubStatus & STATUS_UPDATE)
+		if(pCopList->ubStatus & STATUS_UPDATE) {
 			ubNewStatus |= copUpdateFromBlocks();
+		}
 	}
 
 	// Swap copper buffers
@@ -470,7 +495,6 @@ void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
 }
 
 void copMove(tCopList *pCopList, tCopBlock *pBlock, volatile void *pAddr, UWORD uwValue) {
-
 	copSetMove((tCopMoveCmd*)&pBlock->pCmds[pBlock->uwCurrCount], pAddr, uwValue);
 	++pBlock->uwCurrCount;
 
