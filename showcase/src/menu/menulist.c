@@ -40,7 +40,10 @@ tMenuList *menuListCreate(
 }
 
 void menuListDestroy(tMenuList *pList) {
-	menuListResetCount(pList, 0);
+	for(UBYTE i = 0; i < pList->ubMaxCount; ++i) {
+		fontDestroyTextBitMap(pList->pEntries[i].pBitMap);
+	}
+	memFree(pList->pEntries, pList->ubMaxCount * sizeof(tMenuEntry));
 	memFree(pList, sizeof(tMenuList));
 }
 

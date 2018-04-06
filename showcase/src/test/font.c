@@ -19,7 +19,7 @@ tSimpleBufferManager *s_pTestFontBfr;
 char s_szSentence[20];
 
 tFont *s_pFontUI;
-tTextBitMap *s_pGlyph, *s_pGlyphCode;
+tTextBitMap *s_pGlyph = 0, *s_pGlyphCode = 0;
 UBYTE s_ubPage;
 
 void gsTestFontCreate(void) {
@@ -134,6 +134,7 @@ void gsTestFontSentenceLoop(void) {
 void gsTestFontDestroy(void) {
 	// Free fonts
 	fontDestroyTextBitMap(s_pGlyphCode);
+	fontDestroyTextBitMap(s_pGlyph);
 	fontDestroy(s_pFontUI);
 
 	// Destroy buffer, view & viewport
