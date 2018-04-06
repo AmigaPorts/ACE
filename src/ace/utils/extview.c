@@ -49,12 +49,14 @@ tView *viewCreate(void *pTags, ...) {
 void viewDestroy(tView *pView) {
 	logBlockBegin("viewDestroy(pView: %p)", pView);
 #ifdef AMIGA
-	if(g_sCopManager.pCopList == pView->pCopList)
+	if(g_sCopManager.pCopList == pView->pCopList) {
 		viewLoad(0);
+	}
 
 	// Free all attached viewports
-	while(pView->pFirstVPort)
+	while(pView->pFirstVPort) {
 		vPortDestroy(pView->pFirstVPort);
+	}
 
 	// Free view
 	logWrite("Freeing copperlists...\n");
