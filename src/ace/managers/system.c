@@ -317,12 +317,15 @@ void systemSetInt(
 void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled) {
 	if(isEnabled) {
 		s_uwAceDmaCon |= BV(ubDmaBit);
+		if(!s_wSystemUses) {
+			g_pCustom->dmacon = DMAF_SETCLR | BV(ubDmaBit);
+		}
 	}
 	else {
 		s_uwAceDmaCon &= ~BV(ubDmaBit);
-	}
-	if(!s_wSystemUses) {
-		g_pCustom->dmacon = BV(ubDmaBit);
+		if(!s_wSystemUses) {
+			g_pCustom->dmacon = BV(ubDmaBit);
+		}
 	}
 }
 
