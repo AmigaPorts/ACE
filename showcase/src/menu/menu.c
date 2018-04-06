@@ -28,6 +28,7 @@ static tMenuList *s_pMenuList; /// Menu list
 static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 
 void gsMenuCreate(void) {
+	systemUse();
 	logBlockBegin("gsMenuCreate");
 	// Prepare view & viewport
 	s_pMenuView = viewCreate(0,
@@ -57,11 +58,12 @@ void gsMenuCreate(void) {
 
 	// Prepare menu lists
 	s_pMenuList = menuListCreate(
-		160, 100, 3, 2,
+		160, 100, 10, 2,
 		s_pMenuFont, FONT_HCENTER|FONT_COOKIE|FONT_SHADOW,
 		1, 2, 3,
 		s_pMenuBfr->pBuffer
 	);
+	systemUnuse();
 	menuShowMain();
 
 	// Display view with its viewports
@@ -93,7 +95,7 @@ void gsMenuLoop(void) {
 	// Menu list selection
 	else if(keyUse(KEY_RETURN) || joyUse(JOY1_FIRE)) {
 		ubSelected = s_pMenuList->ubSelected;
-		if(s_pMenuList->pEntries[ubSelected].ubDisplay == MENULIST_ENABLED)
+		if(s_pMenuList->pEntries[ubSelected].ubDisplayMode == MENULIST_ENABLED)
 			switch(s_ubMenuType) {
 				case MENU_MAIN: menuSelectMain(); return;
 				case MENU_TESTS: menuSelectTests(); return;
@@ -170,7 +172,7 @@ void menuShowMain(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 3);
+	menuListResetCount(s_pMenuList, 3);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Tests");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_DISABLED, "Examples");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Quit");
@@ -208,7 +210,7 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 7);
+	menuListResetCount(s_pMenuList, 7);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
@@ -267,7 +269,7 @@ void menuShowExamples(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 1);
+	menuListResetCount(s_pMenuList, 1);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	s_ubMenuType = MENU_EXAMPLES;
 

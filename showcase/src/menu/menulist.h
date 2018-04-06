@@ -16,24 +16,25 @@
 typedef void (*tMenuActivateCb)(void);
 
 typedef struct _tMenuEntry {
-	char *szText;                    /// Displayed text
-	UBYTE ubDisplay;                 /// 0 to disable
+	char *szText;        ///< Displayed text
+	UBYTE ubDisplayMode; ///< see MENULIST_* defines
 	tTextBitMap *pBitMap;
 } tMenuEntry;
 
 typedef struct _tMenuList {
-	tUwCoordYX sCoord;            /// Top-left point of list,
-	                              /// centering must be done by ubFontFlags
-	tMenuEntry *pEntries;         /// Entry array
-	tBitMap *pDestBitMap;         /// BitMap to redraw on
-	tFont *pFont;                 /// Font for drawing list
-	UBYTE ubFontFlags;            /// Font flags for drawing list
-	UBYTE ubColor;                /// Color idx for drawing list
-	UBYTE ubColorDisabled;        /// Ditto, disabled pos
-	UBYTE ubColorSelected;        /// Ditto, selected pos
-	UBYTE ubSpacing;              /// Y-space between positions
-	UBYTE ubCount;                /// Entry count on list
-	UBYTE ubSelected;             /// Currently selected entry
+	tUwCoordYX sCoord;     ///< Top-left point of list,
+	                       ///< centering must be done by ubFontFlags
+	tMenuEntry *pEntries;  ///< Entry array
+	tBitMap *pDestBitMap;  ///< BitMap to redraw on
+	tFont *pFont;          ///< Font for drawing list
+	UBYTE ubFontFlags;     ///< Font flags for drawing list
+	UBYTE ubColor;         ///< Color idx for drawing list
+	UBYTE ubColorDisabled; ///< Ditto, disabled pos
+	UBYTE ubColorSelected; ///< Ditto, selected pos
+	UBYTE ubSpacing;       ///< Y-space between positions
+	UBYTE ubCount;         ///< Entry count on list
+	UBYTE ubMaxCount;
+	UBYTE ubSelected;      ///< Currently selected entry
 } tMenuList;
 
 typedef void (*tMenuSelectCb)(
@@ -83,7 +84,7 @@ void menuListMove(
 	IN BYTE bMoveDir
 );
 
-void menuListResetEntries(tMenuList *pList, UBYTE ubCount);
+void menuListResetCount(tMenuList *pList, UBYTE ubCount);
 
 /* ****************************************************************** INLINES */
 
