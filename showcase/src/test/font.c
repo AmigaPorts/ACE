@@ -13,14 +13,14 @@
 #include "main.h"
 #include "menu/menu.h"
 
-tView *s_pTestFontView;
-tVPort *s_pTestFontVPort;
-tSimpleBufferManager *s_pTestFontBfr;
-char s_szSentence[20];
+static tView *s_pTestFontView;
+static tVPort *s_pTestFontVPort;
+static tSimpleBufferManager *s_pTestFontBfr;
 
-tFont *s_pFontUI;
-tTextBitMap *s_pGlyph = 0, *s_pGlyphCode = 0;
-UBYTE s_ubPage;
+static char s_szSentence[20];
+static tFont *s_pFontUI;
+static tTextBitMap *s_pGlyph, *s_pGlyphCode;
+static UBYTE s_ubPage;
 
 void gsTestFontCreate(void) {
 	// Prepare view & viewport
@@ -47,6 +47,7 @@ void gsTestFontCreate(void) {
 
 	// Load fonts
 	s_pFontUI = fontCreate("data/fonts/silkscreen.fnt");
+	s_pGlyph = 0;
 	s_pGlyph = fontCreateTextBitMap(100, s_pFontUI->uwHeight);
 	s_pGlyphCode = fontCreateTextBitMap(100, s_pFontUI->uwHeight);
 	systemUnuse();
@@ -171,8 +172,8 @@ void testFontDrawTable() {
 		UBYTE ubCharIdx = s_ubPage*64+i;
 		// Char - crashes because of font rendering bugs
 		if(
-			(s_ubPage || i) && // Not a null char
-			pFont->pCharOffsets[ubCharIdx] != pFont->pCharOffsets[ubCharIdx+1] &&
+			ubCharIdx && // Not a null char
+			pFont->pCharOffsets[ubCharIdx] < pFont->pCharOffsets[ubCharIdx+1] &&
 			ubCharIdx < pFont->ubChars
 		) {
 			sprintf(szCodeBfr, "%c", ubCharIdx);

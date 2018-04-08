@@ -37,7 +37,7 @@ ifeq ($(ACE_CC), vc)
 	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
 	CC_FLAGS_NO_O = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -Wextra -fomit-frame-pointer
-	CC_FLAGS = $(CC_FLAGS_NO_O) -O0 -fverbose-asm
+	CC_FLAGS = $(CC_FLAGS_NO_O) -O3 -fverbose-asm
 	ACE_AS = vasmm68k_mot
 	AS_FLAGS = -quiet -x -m68010 -Faout -ID:\prg\kompilatory\bebbo\m68k-amigaos\sys-include
 	OBJDUMP = m68k-amigaos-objdump -S -l -D $@ > $@.dasm

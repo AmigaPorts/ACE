@@ -28,7 +28,9 @@ tFont *fontCreate(const char *szFontName) {
 		return 0;
 	}
 
-	fileRead(pFontFile, pFont, 2 * sizeof(UWORD) + sizeof(UBYTE));
+	fileRead(pFontFile, &pFont->uwWidth, sizeof(UWORD));
+	fileRead(pFontFile, &pFont->uwHeight, sizeof(UWORD));
+	fileRead(pFontFile, &pFont->ubChars, sizeof(UBYTE));
 	logWrite(
 		"Addr: %p, data width: %upx, chars: %u, font height: %upx\n",
 		pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight
@@ -60,7 +62,6 @@ void fontDestroy(tFont *pFont) {
 		bitmapDestroy(pFont->pRawData);
 		memFree(pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 		memFree(pFont, sizeof(tFont));
-		pFont = 0;
 	}
 	logBlockEnd("fontDestroy()");
 }

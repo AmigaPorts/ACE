@@ -168,7 +168,6 @@ void systemKill(const char *szMsg) {
  * @brief The startup code to give ACE somewhat initial state.
  */
 void systemCreate(void) {
-
 	// Disable as much of OS stuff as possible so that it won't trash stuff when
 	// re-enabled periodically.
 	// Save the system copperlists and flush the view
@@ -179,9 +178,8 @@ void systemCreate(void) {
 	}
 	s_pOsView = GfxBase->ActiView;
 	WaitTOF();
-	LoadView(NULL);
+	LoadView(0);
 	WaitTOF();
-
 
 	// get VBR location on 68010+ machine
 	// TODO VBR
@@ -300,15 +298,6 @@ void systemSetInt(
 	// Disable ACE handler during data swap to ensure atomic op
 	s_pAceInterrupts[ubIntNumber].pHandler = 0;
 	s_pAceInterrupts[ubIntNumber].pData = pIntData;
-
-	if(pHandler) {
-		// Handler was passed - enable listening for given interrupt
-		// g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
-	}
-	else {
-		// No handler given - disable this interrupt
-		// g_pCustom->intena = BV(ubIntNumber);
-	}
 
 	// Re-enable handler or disable it if 0 was passed
 	s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
