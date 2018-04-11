@@ -57,6 +57,18 @@ LONG filePrintf(
 	IN ...
 );
 
+LONG fileVaScanf(
+	IN tFile *pFile,
+	IN const char *szFmt,
+	OUT va_list vaArgs
+);
+
+LONG fileScanf(
+	IN tFile *pFile,
+	IN const char *szFmt,
+	OUT ...
+);
+
 void fileFlush(
 	IN tFile *pFile
 );

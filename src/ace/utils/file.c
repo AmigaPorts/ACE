@@ -67,6 +67,21 @@ LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
 	return lResult;
 }
 
+LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
+	systemUse();
+	LONG lResult = vfscanf(pFile, szFmt, vaArgs);
+	systemUnuse();
+	return lResult;
+}
+
+LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
+	va_list vaArgs;
+	va_start(vaArgs, szFmt);
+	LONG lResult = fileVaScanf(pFile, szFmt, vaArgs);
+	va_end(vaArgs);
+	return lResult;
+}
+
 void fileFlush(tFile *pFile) {
 	systemUse();
 	fflush(pFile);
