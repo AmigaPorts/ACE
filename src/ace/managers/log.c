@@ -39,14 +39,6 @@ void _logWrite(char *szFormat, ...) {
 	if (!g_sLogManager.pFile)
 		return;
 
-#ifdef AMIGA
-	// Re-enable disk dma if disabled
-	UBYTE ubWasDiskEnabled = 0;
-	if(!(g_pCustom->dmaconr & DMAF_DISK)) {
-		g_pCustom->dmacon = BITCLR | DMAF_DISK;
-		ubWasDiskEnabled = 1;
-	}
-#endif // AMIGA
 	g_sLogManager.ubBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
@@ -62,10 +54,6 @@ void _logWrite(char *szFormat, ...) {
 	va_end(vaArgs);
 
 	fileFlush(g_sLogManager.pFile);
-#ifdef AMIGA
-	if(ubWasDiskEnabled)
-		g_pCustom->dmacon = BITSET | DMAF_DISK;
-#endif // AMIGA
 }
 
 void _logClose() {
@@ -128,6 +116,7 @@ void _logBlockEnd(char *szBlockName) {
 	}
 	g_sLogManager.ubBlockEmpty = 0;
 	systemUnuse();
+	systemDump();
 }
 
 // Average logging
