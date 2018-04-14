@@ -33,6 +33,7 @@ typedef struct _tAceInterrupt {
 UWORD s_uwOsIntEna;
 UWORD s_uwOsDmaCon;
 UWORD s_uwAceDmaCon = 0;
+UWORD s_uwOsInitialDma;
 
 // Interrupts
 void HWINTERRUPT int1Handler(void);
@@ -187,6 +188,7 @@ void systemCreate(void) {
 	// save the state of the hardware registers (INTENA, DMA, ADKCON etc.)
 	s_uwOsIntEna = g_pCustom->intenar;
 	s_uwOsDmaCon = g_pCustom->dmaconr;
+	s_uwOsInitialDma = s_uwOsDmaCon;
 
 	// Disable interrupts (this is the actual "kill system/OS" part)
 	g_pCustom->intena = 0x7FFF;
@@ -225,7 +227,7 @@ void systemDestroy(void) {
 	systemUse();
 
 	// Restore all OS DMA
-	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsDmaCon;
+	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// restore old view
 	WaitTOF();
@@ -306,14 +308,28 @@ void systemSetInt(
 void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled) {
 	if(isEnabled) {
 		s_uwAceDmaCon |= BV(ubDmaBit);
+		s_uwOsDmaCon |= BV(ubDmaBit);
 		if(!s_wSystemUses) {
 			g_pCustom->dmacon = DMAF_SETCLR | BV(ubDmaBit);
+		}
+		else {
+			if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
+				g_pCustom->dmacon = DMAF_SETCLR | BV(ubDmaBit);
+			}
 		}
 	}
 	else {
 		s_uwAceDmaCon &= ~BV(ubDmaBit);
+		if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
+			s_uwOsDmaCon &= ~BV(ubDmaBit);
+		}
 		if(!s_wSystemUses) {
 			g_pCustom->dmacon = BV(ubDmaBit);
+		}
+		else {
+			if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
+				g_pCustom->dmacon = BV(ubDmaBit);
+			}
 		}
 	}
 }

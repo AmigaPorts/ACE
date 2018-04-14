@@ -30,6 +30,7 @@ void copDestroy(void) {
 	logBlockBegin("copDestroy()");
 
 	// Load system copperlist
+	systemSetDma(DMAB_COPPER, 0);
 	g_pCustom->cop1lc = (ULONG)GfxBase->copinit;
 	g_pCustom->copjmp1 = 1;
 
