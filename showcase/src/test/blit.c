@@ -4,6 +4,7 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
+#include <ace/managers/system.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/generic/screen.h>
 #include "main.h"
@@ -46,6 +47,7 @@ void gsTestBlitCreate(void) {
 	s_fnKeyPoll = keyUse;
 
 	// Display view with its viewports
+	systemUnuse();
 	viewLoad(s_pTestBlitView);
 }
 
@@ -157,6 +159,8 @@ void gsTestBlitLoop(void) {
 }
 
 void gsTestBlitDestroy(void) {
+	viewLoad(0);
+	systemUse();
 	// Destroy buffer, view & viewport
 	viewDestroy(s_pTestBlitView);
 }

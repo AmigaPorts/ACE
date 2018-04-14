@@ -83,7 +83,7 @@ void viewProcessManagers(tView *pView) {
 void viewUpdateCLUT(tView *pView) {
 #ifdef AMIGA
 	if(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT) {
-		for(UBYTE i = 0; i != 32; ++i) {
+		for(UBYTE i = 0; i < 32; ++i) {
 			g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 		}
 	}
@@ -101,14 +101,11 @@ void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 #if defined(AMIGA)
 	while(g_pRayPos->bfPosY < 300) {}
-	UBYTE isEnabledDma;
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
-		isEnabledDma = 0;
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->fmode = 0;   // AGA fix
-		UBYTE i;
-		for(i = 0; i != 6; ++i) {
+		for(UBYTE i = 0; i < 6; ++i) {
 			g_pCustom->bplpt[i] = 0;
 		}
 		g_pCustom->bpl1mod = 0;
@@ -116,16 +113,15 @@ void viewLoad(tView *pView) {
 	}
 	else {
 		g_sCopManager.pCopList = pView->pCopList;
-		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | (1 << 9); // BPP + composite output
+		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		g_pCustom->fmode = 0;        // AGA fix
 		g_pCustom->diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
 		g_pCustom->diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
 		viewUpdateCLUT(pView);
-		isEnabledDma = 1;
 	}
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
-	systemSetDma(DMAB_RASTER, isEnabledDma);
+	systemSetDma(DMAB_RASTER, pView != 0);
 	while(g_pRayPos->bfPosY < 300) {}
 #endif // AMIGA
 	logBlockEnd("viewLoad()");

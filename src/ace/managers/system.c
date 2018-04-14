@@ -197,16 +197,18 @@ void systemCreate(void) {
 	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
 	g_pCustom->dmacon = 0x07FF;
 
-	// Reset active system uses counter so that systemUnuse will do a takeover
+	// Unuse system so that it gets backed up once and then re-enable
+	// as little as needed
 	s_wSystemUses = 1;
 	systemUnuse();
+	systemUse();
 }
 
 /**
  * @brief Cleanup after app, restore anything that systemCreate took over.
  */
 void systemDestroy(void) {
-	// disable app interrupts
+	// disable all interrupts
 	g_pCustom->intena = 0x7FFF;
 	g_pCustom->intreq = 0x7FFF;
 
@@ -215,13 +217,11 @@ void systemDestroy(void) {
 	g_pCustom->dmacon = 0x07FF;
 	g_pCustom->intreq = 0x7FFF;
 
-	// restore system copperlists
-
+	// Start waking up OS
 	if(s_wSystemUses != 0) {
 		logWrite("ERR: unclosed system usage count: %hd", s_wSystemUses);
 		s_wSystemUses = 0;
 	}
-
 	systemUse();
 
 	// Restore all OS DMA

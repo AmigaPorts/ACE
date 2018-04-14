@@ -24,7 +24,6 @@ static UBYTE s_ubPage;
 
 void gsTestFontCreate(void) {
 	// Prepare view & viewport
-	systemUse();
 	s_pTestFontView = viewCreate(0,
 		TAG_VIEW_GLOBAL_CLUT, 1,
 		TAG_DONE
@@ -50,7 +49,6 @@ void gsTestFontCreate(void) {
 	s_pGlyph = 0;
 	s_pGlyph = fontCreateTextBitMap(100, s_pFontUI->uwHeight);
 	s_pGlyphCode = fontCreateTextBitMap(100, s_pFontUI->uwHeight);
-	systemUnuse();
 
 	// Loop vars
 	s_ubPage = 0;
@@ -58,6 +56,7 @@ void gsTestFontCreate(void) {
 	memset(s_szSentence, 0, 20);
 
 	// Display view with its viewports
+	systemUnuse();
 	viewLoad(s_pTestFontView);
 }
 
@@ -133,6 +132,7 @@ void gsTestFontSentenceLoop(void) {
 }
 
 void gsTestFontDestroy(void) {
+	systemUse();
 	// Free fonts
 	fontDestroyTextBitMap(s_pGlyphCode);
 	fontDestroyTextBitMap(s_pGlyph);
