@@ -159,6 +159,7 @@ void menuDrawBg() {
 /******************************************************* Main menu definition */
 
 void menuShowMain(void) {
+	systemUse();
 	logWrite("menuShowMain\n");
 	// Draw BG
 	menuDrawBg();
@@ -179,6 +180,7 @@ void menuShowMain(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectMain(void) {
@@ -198,6 +200,7 @@ void menuSelectMain(void) {
 /******************************************************* Test menu definition */
 
 void menuShowTests(void) {
+	systemUse();
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
@@ -221,6 +224,7 @@ void menuShowTests(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectTests(void) {
@@ -257,6 +261,7 @@ void menuSelectTests(void) {
 /*************************************************** Examples menu definition */
 
 void menuShowExamples(void) {
+	systemUse();
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
@@ -274,6 +279,7 @@ void menuShowExamples(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectExamples(void) {
