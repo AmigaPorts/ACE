@@ -97,7 +97,8 @@ tTextBitMap *fontCreateTextBitMapFromStr(const tFont *pFont, const char *szText)
 			uwMaxWidth = MAX(uwMaxWidth, uwWidth);
 		}
 	}
-	tTextBitMap *pTextBitMap = fontCreateTextBitMap(uwWidth, uwHeight);;
+	tTextBitMap *pTextBitMap = fontCreateTextBitMap(uwWidth, uwHeight);
+	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	logBlockEnd("fontCreateTextBitMapFromStr()");
 	return pTextBitMap;
 }

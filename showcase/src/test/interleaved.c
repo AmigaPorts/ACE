@@ -13,7 +13,6 @@ static tVPort *s_pTestInterleavedVPort;
 static tSimpleBufferManager *s_pTestInterleavedBfr;
 
 void gsTestInterleavedCreate(void) {
-	systemUse();
 	s_pTestInterleavedView = viewCreate(0,
 		TAG_VIEW_GLOBAL_CLUT, 1,
 		TAG_DONE
@@ -34,8 +33,8 @@ void gsTestInterleavedCreate(void) {
 	bitmapLoadFromFile(
 		s_pTestInterleavedBfr->pBuffer, "data/32c_pal_interleaved.bm", 0, 0
 	);
-	systemUnuse();
 
+	systemUnuse();
 	viewLoad(s_pTestInterleavedView);
 }
 
@@ -47,5 +46,6 @@ void gsTestInterleavedLoop(void) {
 }
 
 void gsTestInterleavedDestroy(void) {
+	systemUse();
 	viewDestroy(s_pTestInterleavedView);
 }

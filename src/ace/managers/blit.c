@@ -10,28 +10,20 @@ tBlitManager g_sBlitManager = {0};
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 #if defined(AMIGA)
-#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 	OwnBlitter();
 	blitWait();
-#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
 	systemSetDma(DMAB_BLITTER, 1);
-#else
-#error "Undefined blitter manager behavior!"
 #endif
-#endif // AMIGA
 	logBlockEnd("blitManagerCreate");
 }
 
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
 #if defined(AMIGA)
-#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 	blitWait();
 	DisownBlitter();
-#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
 	systemSetDma(DMAB_BLITTER, 0);
 #endif
-#endif //AMIGA
 	logBlockEnd("blitManagerDestroy");
 }
 

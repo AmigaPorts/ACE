@@ -28,7 +28,6 @@ static tMenuList *s_pMenuList; /// Menu list
 static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 
 void gsMenuCreate(void) {
-	systemUse();
 	logBlockBegin("gsMenuCreate");
 	// Prepare view & viewport
 	s_pMenuView = viewCreate(0,
@@ -63,12 +62,12 @@ void gsMenuCreate(void) {
 		1, 2, 3,
 		s_pMenuBfr->pBuffer
 	);
-	systemUnuse();
 	menuShowMain();
 
 	// Display view with its viewports
 	viewLoad(s_pMenuView);
 	logBlockEnd("gsMenuCreate");
+	systemUnuse();
 }
 
 void gsMenuLoop(void) {
@@ -122,14 +121,14 @@ void gsMenuLoop(void) {
 }
 
 void gsMenuDestroy(void) {
-	// Destroy menu list
+	systemUse();
+	logBlockBegin("gsMenuDestroy()");
+
 	menuListDestroy(s_pMenuList);
-
-	// Free font
 	fontDestroy(s_pMenuFont);
-
-	// Destroy buffer, view & viewport
 	viewDestroy(s_pMenuView);
+
+	logBlockEnd("gsMenuDestroy()");
 }
 
 void menuDrawBg() {
@@ -160,6 +159,7 @@ void menuDrawBg() {
 /******************************************************* Main menu definition */
 
 void menuShowMain(void) {
+	systemUse();
 	logWrite("menuShowMain\n");
 	// Draw BG
 	menuDrawBg();
@@ -180,6 +180,7 @@ void menuShowMain(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectMain(void) {
@@ -199,6 +200,7 @@ void menuSelectMain(void) {
 /******************************************************* Test menu definition */
 
 void menuShowTests(void) {
+	systemUse();
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
@@ -222,6 +224,7 @@ void menuShowTests(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectTests(void) {
@@ -258,6 +261,7 @@ void menuSelectTests(void) {
 /*************************************************** Examples menu definition */
 
 void menuShowExamples(void) {
+	systemUse();
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
@@ -275,6 +279,7 @@ void menuShowExamples(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectExamples(void) {

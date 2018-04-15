@@ -116,7 +116,6 @@ void _logBlockEnd(char *szBlockName) {
 	}
 	g_sLogManager.ubBlockEmpty = 0;
 	systemUnuse();
-	systemDump();
 }
 
 // Average logging
