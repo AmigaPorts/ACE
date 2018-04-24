@@ -46,10 +46,10 @@ void copSwapBuffers(void) {
 	tCopList *pCopList;
 
 	pCopList = g_sCopManager.pCopList;
+	g_pCustom->cop1lc = (ULONG)((void *)pCopList->pBackBfr->pList);
 	pTmp = pCopList->pFrontBfr;
 	pCopList->pFrontBfr = pCopList->pBackBfr;
 	pCopList->pBackBfr = pTmp;
-	g_pCustom->cop1lc = (ULONG)((void *)pCopList->pFrontBfr->pList);
 }
 
 void copDumpCmd(tCopCmd *pCmd) {
@@ -456,11 +456,9 @@ UBYTE copUpdateFromBlocks(void) {
 }
 
 void copProcessBlocks(void) {
-	UBYTE ubNewStatus = 0;
-	tCopList *pCopList;
-
-	pCopList = g_sCopManager.pCopList;
+	tCopList *pCopList = g_sCopManager.pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
+		UBYTE ubNewStatus = 0;
 		// Realloc buffer memeory
 		if(pCopList->ubStatus & STATUS_REALLOC) {
 			ubNewStatus = copBfrRealloc();
@@ -471,20 +469,16 @@ void copProcessBlocks(void) {
 			copReorderBlocks();
 		}
 
-	// logWrite("New front buffer dump\n");
-	// copDumpBfr(pCopList->pFrontBfr);
-
 		// Update buffer data
 		if(pCopList->ubStatus & STATUS_UPDATE) {
 			ubNewStatus |= copUpdateFromBlocks();
 		}
+		// Update status code
+		pCopList->ubStatus = ubNewStatus;
 	}
 
 	// Swap copper buffers
 	copSwapBuffers();
-
-	// Update status code
-	pCopList->ubStatus = ubNewStatus;
 }
 
 void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {

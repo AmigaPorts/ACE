@@ -256,9 +256,10 @@ void bitmapDump(tBitMap *pBitMap) {
 }
 
 void bitmapSave(tBitMap *pBitMap, char *szPath) {
+	systemUse();
 	logBlockBegin("bitmapSave(pBitMap: %p, szPath: %s)", pBitMap, szPath);
 
-	FILE *pFile = fileOpen(szPath, "wb");
+	tFile *pFile = fileOpen(szPath, "wb");
 	if(!pFile) {
 		logWrite("ERR: Couldn't save bitmap at '%s'\n", szPath);
 		logBlockEnd("bitmapSave()");
@@ -394,6 +395,7 @@ void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	}
 
 	fileClose(pOut);
+	systemUnuse();
 }
 
 UWORD bitmapGetByteWidth(tBitMap *pBitMap) {
