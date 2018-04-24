@@ -142,7 +142,7 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		CopyMem(
 			&pCopList->pBackBfr->pList[pManager->uwCopperOffset],
 			&pCopList->pFrontBfr->pList[pManager->uwCopperOffset],
-			6+2*pManager->sCommon.pVPort->ubBPP*sizeof(tCopCmd)
+			(6+2*pManager->sCommon.pVPort->ubBPP)*sizeof(tCopCmd)
 		);
 	}
 	else {
