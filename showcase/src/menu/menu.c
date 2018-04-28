@@ -5,6 +5,7 @@
 #include <ace/managers/joy.h>
 #include <ace/managers/game.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/system.h>
 #include <ace/utils/extview.h>
 #include <ace/generic/screen.h>
 
@@ -27,6 +28,7 @@ static tMenuList *s_pMenuList; /// Menu list
 static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 
 void gsMenuCreate(void) {
+	logBlockBegin("gsMenuCreate");
 	// Prepare view & viewport
 	s_pMenuView = viewCreate(0,
 		TAG_VIEW_GLOBAL_CLUT, 1,
@@ -55,7 +57,7 @@ void gsMenuCreate(void) {
 
 	// Prepare menu lists
 	s_pMenuList = menuListCreate(
-		160, 100, 3, 2,
+		160, 100, 10, 2,
 		s_pMenuFont, FONT_HCENTER|FONT_COOKIE|FONT_SHADOW,
 		1, 2, 3,
 		s_pMenuBfr->pBuffer
@@ -64,49 +66,73 @@ void gsMenuCreate(void) {
 
 	// Display view with its viewports
 	viewLoad(s_pMenuView);
+	logBlockEnd("gsMenuCreate");
+	systemUnuse();
 }
 
 void gsMenuLoop(void) {
 	UBYTE ubSelected;
 
 	if (keyUse(KEY_ESCAPE)) {
-		if(s_ubMenuType == MENU_MAIN)
+		if(s_ubMenuType == MENU_MAIN) {
 			gameClose();
-		else
+		}
+		else {
 			menuShowMain();
+		}
 		return;
 	}
 
 	// Menu list nav - up & down
-	if(keyUse(KEY_UP) || joyUse(JOY1_UP))
+	if(keyUse(KEY_UP) || joyUse(JOY1_UP)) {
 		menuListMove(s_pMenuList, -1);
-	else if(keyUse(KEY_DOWN) || joyUse(JOY1_DOWN))
+	}
+	else if(keyUse(KEY_DOWN) || joyUse(JOY1_DOWN)) {
 		menuListMove(s_pMenuList, +1);
+	}
 
 	// Menu list selection
 	else if(keyUse(KEY_RETURN) || joyUse(JOY1_FIRE)) {
 		ubSelected = s_pMenuList->ubSelected;
-		if(s_pMenuList->pEntries[ubSelected].ubDisplay == MENULIST_ENABLED)
+		if(s_pMenuList->pEntries[ubSelected].ubDisplayMode == MENULIST_ENABLED)
 			switch(s_ubMenuType) {
 				case MENU_MAIN: menuSelectMain(); return;
 				case MENU_TESTS: menuSelectTests(); return;
 				case MENU_EXAMPLES: menuSelectExamples(); return;
 			}
 	}
+	vPortWaitForEnd(s_pMenuVPort);
+
+	static UBYTE ubFrameCnt = 0;
+	static UBYTE ubColor = 1;
+	static BYTE bDir = 1;
+	++ubFrameCnt;
+	if(ubFrameCnt == 7) {
+		if(ubColor >= 7) {
+			bDir = -1;
+		}
+		else if(ubColor <= 1) {
+			bDir = 1;
+		}
+		ubColor += bDir;
+		ubFrameCnt = 0;
+	}
+	g_pCustom->color[4] = (ubColor << 8) | (ubColor << 4) | (ubColor);
 }
 
 void gsMenuDestroy(void) {
-	// Destroy menu list
+	systemUse();
+	logBlockBegin("gsMenuDestroy()");
+
 	menuListDestroy(s_pMenuList);
-
-	// Free font
 	fontDestroy(s_pMenuFont);
-
-	// Destroy buffer, view & viewport
 	viewDestroy(s_pMenuView);
+
+	logBlockEnd("gsMenuDestroy()");
 }
 
-void menuDrawBG() {
+void menuDrawBg() {
+	logBlockBegin("menuDrawBg()");
 	UWORD uwX, uwY;
 	UBYTE isOdd = 0;
 
@@ -127,13 +153,16 @@ void menuDrawBG() {
 	blitLine(s_pMenuBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
 	blitLine(s_pMenuBfr->pBuffer, 0, 0, 0, uwMaxY, 1, 0xFFFF, 0);
 	blitLine(s_pMenuBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
+	logBlockEnd("menuDrawBg()");
 }
 
 /******************************************************* Main menu definition */
 
 void menuShowMain(void) {
+	systemUse();
+	logWrite("menuShowMain\n");
 	// Draw BG
-	menuDrawBG();
+	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBuffer, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
@@ -143,7 +172,7 @@ void menuShowMain(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 3);
+	menuListResetCount(s_pMenuList, 3);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Tests");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_DISABLED, "Examples");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Quit");
@@ -151,6 +180,7 @@ void menuShowMain(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectMain(void) {
@@ -170,8 +200,9 @@ void menuSelectMain(void) {
 /******************************************************* Test menu definition */
 
 void menuShowTests(void) {
+	systemUse();
 	// Draw BG
-	menuDrawBG();
+	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBuffer, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
@@ -181,7 +212,7 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 7);
+	menuListResetCount(s_pMenuList, 7);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
@@ -193,6 +224,7 @@ void menuShowTests(void) {
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectTests(void) {
@@ -229,8 +261,9 @@ void menuSelectTests(void) {
 /*************************************************** Examples menu definition */
 
 void menuShowExamples(void) {
+	systemUse();
 	// Draw BG
-	menuDrawBG();
+	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBuffer, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
@@ -240,12 +273,13 @@ void menuShowExamples(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetEntries(s_pMenuList, 1);
+	menuListResetCount(s_pMenuList, 1);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	s_ubMenuType = MENU_EXAMPLES;
 
 	// Redraw list
 	menuListDraw(s_pMenuList);
+	systemUnuse();
 }
 
 void menuSelectExamples(void) {

@@ -12,7 +12,7 @@ tSimpleBufferManager *simpleBufferCreate(
 	UWORD uwBoundWidth, uwBoundHeight;
 	UBYTE ubBitmapFlags;
 
-	logBlockBegin("simpleBufferManagerCreate(pTags: %p, ...)", pTags);
+	logBlockBegin("simpleBufferCreate(pTags: %p, ...)", pTags);
 	va_start(vaTags, pTags);
 
 	// Init manager
@@ -80,12 +80,12 @@ tSimpleBufferManager *simpleBufferCreate(
 
 	// Add manager to VPort
 	vPortAddManager(pVPort, (tVpManager*)pManager);
-	logBlockEnd("simpleBufferManagerCreate()");
+	logBlockEnd("simpleBufferCreate()");
 	va_end(vaTags);
 	return pManager;
 
 fail:
-	logBlockEnd("simpleBufferManagerCreate()");
+	logBlockEnd("simpleBufferCreate()");
 	va_end(vaTags);
 	return 0;
 }
@@ -142,7 +142,7 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		CopyMem(
 			&pCopList->pBackBfr->pList[pManager->uwCopperOffset],
 			&pCopList->pFrontBfr->pList[pManager->uwCopperOffset],
-			6+2*pManager->sCommon.pVPort->ubBPP*sizeof(tCopCmd)
+			(6+2*pManager->sCommon.pVPort->ubBPP)*sizeof(tCopCmd)
 		);
 	}
 	else {
@@ -165,11 +165,12 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 }
 
 void simpleBufferDestroy(tSimpleBufferManager *pManager) {
+	logBlockBegin("simpleBufferDestroy()");
 	logWrite("Destroying bitmap...\n");
 	bitmapDestroy(pManager->pBuffer);
 	logWrite("Freeing mem...\n");
 	memFree(pManager, sizeof(tSimpleBufferManager));
-	logWrite("Done\n");
+	logBlockEnd("simpleBufferDestroy()");
 }
 
 void simpleBufferProcess(tSimpleBufferManager *pManager) {

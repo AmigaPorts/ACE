@@ -1,4 +1,5 @@
 #include <ace/managers/blit.h>
+#include <ace/managers/system.h>
 
 #define BLIT_LINE_OR ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define BLIT_LINE_XOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
@@ -6,48 +7,34 @@
 
 tBlitManager g_sBlitManager = {0};
 
-#ifdef AMIGA
-/**
- * Blit interrupt handler
- * Fetches next blit from queue and sets custom registers to its values
- * NOTE: Can't log inside this fn and all other called by it
- */
-FN_HOTSPOT
-void INTERRUPT blitInterruptHandler(
-	REGARG(struct Custom volatile *pCustom, "a0")
-) {
-	pCustom->intreq = INTF_BLIT;
-	INTERRUPT_END;
-}
-#endif // AMIGA
-
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
-#ifdef AMIGA
+#if defined(AMIGA)
 	OwnBlitter();
 	blitWait();
-#endif // AMIGA
+	systemSetDma(DMAB_BLITTER, 1);
+#endif
 	logBlockEnd("blitManagerCreate");
 }
 
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
-#ifdef AMIGA
+#if defined(AMIGA)
 	blitWait();
 	DisownBlitter();
-#endif //AMIGA
+	systemSetDma(DMAB_BLITTER, 0);
+#endif
 	logBlockEnd("blitManagerDestroy");
 }
 
 /**
  * Checks if blit is allowable at coords at given source and destination
  */
-UBYTE blitCheck(
+UBYTE _blitCheck(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UWORD uwLine, char *szFile
 ) {
-#ifdef GAME_DEBUG
 	WORD wSrcWidth, wSrcHeight, wDstWidth, wDstHeight;
 
 	if(pSrc) {
@@ -92,29 +79,26 @@ UBYTE blitCheck(
 		);
 		return 0;
 	}
-
-#endif
 	return 1;
 }
 
 void blitWait(void) {
-		g_pCustom->dmacon = BITSET | DMAF_BLITHOG;
-		while(!blitIsIdle()) {}
-		g_pCustom->dmacon = BITCLR | DMAF_BLITHOG;
+	systemSetDma(DMAB_BLITHOG, 1);
+	while(!blitIsIdle()) {}
+	systemSetDma(DMAB_BLITHOG, 0);
 }
 
 /**
  * Checks if blitter is idle
  * Polls 2 times - A1000 Agnus bug workaround
- * @todo Make it inline assembly or dmaconr volatile so compiler won't
- * 'optimize' it.
  */
 UBYTE blitIsIdle(void) {
 	#ifdef AMIGA
-	volatile UWORD * const pDmaConR = &g_pCustom->dmaconr;
-	if(!(*pDmaConR & DMAF_BLTDONE))
-		if(!(*pDmaConR & DMAF_BLTDONE))
+	if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
+		if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
 			return 1;
+		}
+	}
 	return 0;
 	#else
 		return 1;

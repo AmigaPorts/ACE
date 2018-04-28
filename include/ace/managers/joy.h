@@ -6,9 +6,6 @@
 /* Types */
 #define JPORT1 1
 #define JPORT2 2
-#define JOYADDR1 ((WORD *) (0xdff008 + 2 * JPORT1))
-#define JOYADDR2 ((WORD *) (0xdff008 + 2 * JPORT2))
-#define CIAADDR ((UBYTE *) 0xbfe001)
 
 // enum sux cuz is using 16/32bit int
 // typedef enum {
@@ -110,15 +107,5 @@ UBYTE joyUse(
 void joyProcess(void);
 
 void joyClose(void);
-
-extern LONG getport(void); // Get parallel port access
-
-extern void freeport(void); // Free parallel port access
-
-extern UBYTE rdport(void); // Read port data
-
-extern UBYTE rdbusy(void); // Read BUSY state (0/1)
-
-extern UBYTE rdsel(void); // Read SEL state (0/1)
 
 #endif

@@ -1,16 +1,16 @@
 #ifndef GUARD_ACE_MANAGER_LOG_H
 #define GUARD_ACE_MANAGER_LOG_H
 
-#include <stdio.h>                // fopen etc
-#include <string.h>               // strlen etc
-#include <stdarg.h>               // va_list etc
+#include <string.h> // strlen etc
+#include <stdarg.h> // va_list etc
 #ifdef AMIGA
-#include <clib/exec_protos.h>     // Amiga typedefs
+#include <clib/exec_protos.h> // Amiga typedefs
 #include <clib/graphics_protos.h> // Amiga typedefs
 #endif // AMIGA
 
 #include <ace/types.h>
 #include <ace/managers/timer.h>
+#include <ace/utils/file.h>
 
 #ifndef LOG_FILE_NAME
 #define LOG_FILE_NAME "game.log"
@@ -18,8 +18,7 @@
 
 /* Types */
 
-
-typedef struct {
+typedef struct _tAvg {
 	UWORD uwAllocCount;
 	UWORD uwUsedCount;
 	UWORD uwCurrDelta;
@@ -31,10 +30,10 @@ typedef struct {
 } tAvg;
 
 
-typedef struct {
-	FILE *pFile;
+typedef struct _tLogManager {
+	tFile *pFile;
 	UBYTE ubIndent;
-	UBYTE ubIsLastWasInline;
+	UBYTE wasLastInline;
 	ULONG pTimeStack[256];
 	char szTimeBfr[255];
 	UBYTE ubBlockEmpty;

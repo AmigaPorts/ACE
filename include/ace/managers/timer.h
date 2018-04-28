@@ -20,7 +20,6 @@
  * and still calling timerProcess during pause loop
  */
 typedef struct {
-	struct Interrupt *pInt;        /// Must be PUBLIC memory
 	ULONG ulGameTicks;             /// Actual ticks passed in game
 	ULONG ulLastTime;              /// Internal - used to update ulGameTicks
 	volatile UWORD uwFrameCounter; /// Incremented by VBlank interrupt

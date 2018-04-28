@@ -3,6 +3,7 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/game.h>
+#include <ace/managers/system.h>
 #include <ace/utils/custom.h>
 #include <fixmath/fixmath.h>
 #include "menu/menu.h"
@@ -78,6 +79,7 @@ void gsTestLinesCreate(void) {
 	);
 
 	viewLoad(s_pView);
+	systemUnuse();
 }
 
 void gsTestLinesLoop(void) {
@@ -85,9 +87,10 @@ void gsTestLinesLoop(void) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 	}
 
-	WaitTOF();
+	vPortWaitForEnd(s_pVPort);
 }
 
 void gsTestLinesDestroy(void) {
+	systemUse();
 	viewDestroy(s_pView);
 }

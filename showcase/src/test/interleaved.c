@@ -4,6 +4,7 @@
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/key.h>
 #include <ace/managers/game.h>
+#include <ace/managers/system.h>
 #include "main.h"
 #include "menu/menu.h"
 
@@ -26,10 +27,14 @@ void gsTestInterleavedCreate(void) {
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
 		TAG_DONE
 	);
-	paletteLoad("data/amidb32.plt", s_pTestInterleavedVPort->pPalette, 1 << SHOWCASE_BPP);
-	bitmapLoadFromFile(s_pTestInterleavedBfr->pBuffer, "data/32c_pal_interleaved.bm", 0, 0);
-	// bitmapSaveBMP(s_pTestInterleavedBfr->pBuffer, s_pTestInterleavedVPort->pPalette, "dump.bmp");
+	paletteLoad(
+		"data/amidb32.plt", s_pTestInterleavedVPort->pPalette, 1 << SHOWCASE_BPP
+	);
+	bitmapLoadFromFile(
+		s_pTestInterleavedBfr->pBuffer, "data/32c_pal_interleaved.bm", 0, 0
+	);
 
+	systemUnuse();
 	viewLoad(s_pTestInterleavedView);
 }
 
@@ -41,5 +46,6 @@ void gsTestInterleavedLoop(void) {
 }
 
 void gsTestInterleavedDestroy(void) {
+	systemUse();
 	viewDestroy(s_pTestInterleavedView);
 }

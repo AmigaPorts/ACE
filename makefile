@@ -24,7 +24,6 @@ SL= $(strip $(SLASH))
 ACE_PARENT = $(ACE_ROOT)$(SL)..
 
 ACE_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)ace
-PARIO_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)pario
 FIXMATH_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)fixmath
 
 ACE_INC_DIR = $(ACE_ROOT)$(SL)include
@@ -38,10 +37,10 @@ ifeq ($(ACE_CC), vc)
 	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
 	CC_FLAGS_NO_O = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -Wextra -fomit-frame-pointer
-	CC_FLAGS = $(CC_FLAGS_NO_O) -O3
+	CC_FLAGS = $(CC_FLAGS_NO_O) -O3 -fverbose-asm
 	ACE_AS = vasmm68k_mot
 	AS_FLAGS = -quiet -x -m68010 -Faout -ID:\prg\kompilatory\bebbo\m68k-amigaos\sys-include
-	OBJDUMP = m68k-amigaos-objdump -S -d $@ > $@.dasm
+	OBJDUMP = m68k-amigaos-objdump -S -l -D $@ > $@.dasm
 endif
 
 BUILD_DIR = build
@@ -53,13 +52,10 @@ ACE_FILES = $(wildcard \
 )
 ACE_OBJS = $(addprefix $(BUILD_DIR)$(SL), $(notdir $(ACE_FILES:.c=.o)))
 
-PARIO_FILES = $(wildcard $(PARIO_SRC_DIR)/*.s)
-PARIO_OBJS = $(addprefix $(BUILD_DIR)$(SL), $(notdir $(PARIO_FILES:.s=.o)))
-
 FIXMATH_FILES = $(wildcard $(FIXMATH_SRC_DIR)/*.c)
 FIXMATH_OBJS = $(addprefix $(BUILD_DIR)$(SL), $(notdir $(FIXMATH_FILES:.c=.o)))
 
-ace: $(ACE_OBJS) $(FIXMATH_OBJS) $(PARIO_OBJS)
+ace: $(ACE_OBJS) $(FIXMATH_OBJS)
 
 hello:
 	$(NEWLINE)
@@ -86,6 +82,7 @@ summary:
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
+	@$(ACE_CC) $(CC_FLAGS) -S -o $@.s $<
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
 	$(ECHO) Building $<
@@ -94,10 +91,6 @@ $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)utils$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
-
-$(BUILD_DIR)$(SL)%.o: $(PARIO_SRC_DIR)$(SL)%.s
-	$(ECHO) Building $<
-	@$(ACE_AS) $(AS_FLAGS) -o $@ $<
 
 $(BUILD_DIR)$(SL)%.o: $(FIXMATH_SRC_DIR)$(SL)%.c
 	$(ECHO) Building $<

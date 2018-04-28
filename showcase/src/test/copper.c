@@ -6,6 +6,7 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
+#include <ace/managers/system.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include "main.h"
 #include "menu/menu.h"
@@ -121,6 +122,7 @@ void gsTestCopperCreate(void) {
 
 	// Display view with its viewports
 	viewLoad(s_pTestCopperView);
+	systemUnuse();
 }
 
 void gsTestCopperLoop(void) {
@@ -151,10 +153,11 @@ void gsTestCopperLoop(void) {
 	++ubHue;
 
 	copProcessBlocks();
-	WaitTOF();
+	vPortWaitForEnd(s_pTestCopperVPort);
 }
 
 void gsTestCopperDestroy(void) {
+	systemUse();
 	// Destroy buffer, view & viewport
 	viewDestroy(s_pTestCopperView);
 }

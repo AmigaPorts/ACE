@@ -136,7 +136,6 @@
 /* ******************************************************************** TYPES */
 
 typedef struct {
-	struct Interrupt *pInt;
 	UBYTE pStates[103];
 	UBYTE ubLastKey;
 } tKeyManager;
@@ -170,14 +169,10 @@ void keyProcess(void);
  * @param ubKeyCode: Code of key, which state should be changed.
  * @param ubKeyState: Key state (KEY_ACTIVE, KEY_NACTIVE or KEY_USED).
  */
-static inline void keySetState(
+void keySetState(
 	IN UBYTE ubKeyCode,
 	IN UBYTE ubKeyState
-) {
-	g_sKeyManager.pStates[ubKeyCode] = ubKeyState;
-	if(ubKeyState == KEY_ACTIVE)
-		g_sKeyManager.ubLastKey = ubKeyCode;
-}
+);
 
 /**
  * Polls state of key with given code.
@@ -185,11 +180,9 @@ static inline void keySetState(
  * @return 1 if key is pressed, otherwise 0.
  * @see keyUse()
  */
-static inline UBYTE keyCheck(
+UBYTE keyCheck(
 	IN UBYTE ubKeyCode
-) {
-	return g_sKeyManager.pStates[ubKeyCode] != KEY_NACTIVE;
-}
+);
 
 /**
  * Checks if given key was recently pressed.

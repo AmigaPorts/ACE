@@ -39,13 +39,16 @@ typedef struct _tFont {
 } tFont;
 
 /**
- *  @brief The 1bpp bitmap buffer containing text assembled from glyps.
- *  Since text assembly from chars is time-consuming process, it is usually
- *  better to store once assembled text for future redraws.
+ * @brief The 1bpp bitmap buffer containing text assembled from glyphs.
+ * Since text assembly from chars is time-consuming process, it is usually
+ * better to store once assembled text for future redraws.
+ * Buffer may be bigger than contained text, hence proper dimensions are stored
+ * separately.
  */
 typedef struct _tTextBitMap {
 	tBitMap *pBitMap;    ///< Word-aligned bitmap buffer with pre-drawn text.
 	UWORD uwActualWidth; ///< Actual text width for precise blitting.
+	UWORD uwActualHeight; ///< Actual text height for precise blitting.
 } tTextBitMap;
 
 /* Globals */
@@ -75,6 +78,11 @@ void fontDestroy(
 	IN tFont *pFont
 );
 
+tTextBitMap *fontCreateTextBitMap(
+	IN UWORD uwWidth,
+	IN UWORD uwHeight
+);
+
 /**
  *  @brief Creates text bitmap with specified font, containing given text.
  *  Treat as cache - allows faster reblit of text without need
@@ -84,11 +92,18 @@ void fontDestroy(
  *  @param szText String to be printed on bitmap buffer.
  *  @return Newly-created text bitmap pointer.
  *
- *  @see fontDestroyTextbitMap()
+ *  @see fontCreateTextBitMap()
+ *  @see fontDestroyTextBitMap()
  *  @see fontDrawTextBitMap()
  */
-tTextBitMap *fontCreateTextBitMap(
-	IN tFont *pFont,
+tTextBitMap *fontCreateTextBitMapFromStr(
+	IN const tFont *pFont,
+	IN const char *szText
+);
+
+void fontFillTextBitMap(
+	IN const tFont *pFont,
+	INOUT tTextBitMap *pTextBitMap,
 	IN const char *szText
 );
 
@@ -143,7 +158,7 @@ void fontDrawTextBitMap(
  */
 void fontDrawStr(
 	IN tBitMap *pDest,
-	IN tFont *pFont,
+	IN const tFont *pFont,
 	IN UWORD uwX,
 	IN UWORD uwY,
 	IN const char *szText,

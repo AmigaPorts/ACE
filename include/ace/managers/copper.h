@@ -26,7 +26,6 @@
 
 #include <ace/types.h>
 #include <ace/managers/log.h>
-#include <ace/managers/window.h>
 #include <ace/utils/custom.h>
 
 // Since copperlist is double buffered, status flags must be propagated for 2 passes

@@ -7,6 +7,7 @@
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/viewport/simplebuffer.h>
+#include <ace/managers/system.h>
 #include <ace/generic/screen.h>
 #include "main.h"
 #include "menu/menu.h"
@@ -62,6 +63,7 @@ void gsTestBlitSmallDestCreate(void) {
 
 	// Display view with its viewports
 	viewLoad(s_pTestBlitView);
+	systemUnuse();
 }
 
 void gsTestBlitSmallDestLoop(void) {
@@ -88,11 +90,11 @@ void gsTestBlitSmallDestLoop(void) {
 		blitCopyAligned(s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBuffer, 16, 16, 32, 32);
 	}
 
-	WaitTOF();
-
+	vPortWaitForEnd(s_pTestBlitVPort);
 }
 
 void gsTestBlitSmallDestDestroy(void) {
+	systemUse();
 	// Destroy buffer, view & viewport
 	viewDestroy(s_pTestBlitView);
 

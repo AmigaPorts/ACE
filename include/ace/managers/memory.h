@@ -1,7 +1,6 @@
 #ifndef GUARD_ACE_MANAGER_MEMORY_H
 #define GUARD_ACE_MANAGER_MEMORY_H
 
-#include <stdio.h>            // FILE and related fns
 #ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <exec/memory.h>      // MEMF_CLEAR etc
@@ -58,6 +57,7 @@ void _memFreeRls(void *pMem, ULONG ulSize);
 # define memEntryDelete(pAddr, ulSize)
 #endif // GAME_DEBUG
 
+// Shorthands
 #define memAllocFast(ulSize) memAlloc(ulSize, 0)
 #define memAllocChip(ulSize) memAlloc(ulSize, MEMF_CHIP)
 #define memAllocFastClear(ulSize) memAlloc(ulSize, MEMF_CLEAR)
