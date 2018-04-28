@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 /**
  *  ACE bitmap converter tool.
  *  Allows converting from widely used image file formats to ACE bitmap (.bm).
@@ -241,7 +245,7 @@ void writeMask(
 		for(x = 0; x != uwWidth; ++x) {
 			// Determine color
 			ulPos = y*uwWidth*3 + x*3;
-			
+
 			uwPixelBuffer <<= 1;
 			if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
 				uwPixelBuffer |= 1;
@@ -296,7 +300,7 @@ void writeMaskInterleaved(
 			uwPixelBuffer = 0;
 			for(x = 0; x != uwWidth; ++x) {
 				ulPos = y*uwWidth*3 + x*3;
-				
+
 				uwPixelBuffer <<= 1;
 				if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
 					uwPixelBuffer |= 1;
@@ -308,7 +312,7 @@ void writeMaskInterleaved(
 		}
 	}
 
-	fclose(pFileOut);	
+	fclose(pFileOut);
 }
 
 uint8_t paletteLoad(char *szPath, tColor *pPalette) {
@@ -355,12 +359,12 @@ int determineArgs(int argc, char *argv[]) {
 	g_szMaskOutputPath[0] = 0;
 	g_uwMaskR = 0xFFFF;
 	ubMode = 0;
-	
+
 	if(argc < 3) {
 		printf("ERR: too few arguments\n");
 		return 0;
 	}
-	
+
 	// First one must be a path to known palette type
 	szExt = strrchr(argv[1], '.');
 	if(!szExt) {
@@ -452,7 +456,7 @@ int determineArgs(int argc, char *argv[]) {
 		g_szMaskOutputPath[uwPathLen] = '\0';
 		strcat(g_szMaskOutputPath, "_mask.bm");
 	}
-	
+
 	return 1;
 }
 
@@ -515,7 +519,7 @@ int main(int argc, char *argv[]) {
 		}
 		else {
 			printf("Writing bitmap mask to %s...\n", g_szMaskOutputPath);
-			writeMask(pImgIn, uwWidth, uwHeight);			
+			writeMask(pImgIn, uwWidth, uwHeight);
 		}
 	}
 
