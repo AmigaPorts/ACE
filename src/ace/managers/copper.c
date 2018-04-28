@@ -55,8 +55,9 @@ void copSwapBuffers(void) {
 void copDumpCmd(tCopCmd *pCmd) {
 		if(pCmd->sWait.bfIsWait) {
 			logWrite(
-				"@%p: %08X - WAIT: %hu,%hu\n",
-				pCmd, pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY
+				"@%p: %08X - WAIT: %hu,%hu%s\n",
+				pCmd, pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY,
+				!pCmd->sWait.bfBlitterIgnore ? " & blit done" : ""
 			);
 		}
 		else {
@@ -68,21 +69,22 @@ void copDumpCmd(tCopCmd *pCmd) {
 }
 
 void copDumpBlocks(void) {
-	UWORD i;
-	tCopList *pCopList;
-	tCopBlock *pBlock;
-	tCopCmd *pCmds;
-
+	systemUse();
 	logBlockBegin("copDumpBlocks()");
 
-	pCopList = g_sCopManager.pCopList;
-	logWrite("Copperlist %p cmd count: %u/%u\n", pCopList, pCopList->pFrontBfr->uwCmdCount, pCopList->pFrontBfr->uwAllocSize>>2);
-	pCmds = pCopList->pFrontBfr->pList;
-	for(i = 0; i != pCopList->pFrontBfr->uwCmdCount; ++i)
+	tCopList *pCopList = g_sCopManager.pCopList;
+	logWrite(
+		"Copperlist %p cmd count: %u/%u\n",
+		pCopList, pCopList->pFrontBfr->uwCmdCount,
+		pCopList->pFrontBfr->uwAllocSize / 4
+	);
+	tCopCmd *pCmds = pCopList->pFrontBfr->pList;
+	for(UWORD i = 0; i < pCopList->pFrontBfr->uwCmdCount; ++i) {
 		copDumpCmd(&pCmds[i]);
+	}
 
 	logWrite("Copper block count: %u\n", pCopList->uwBlockCount);
-	pBlock = pCopList->pFirstBlock;
+	tCopBlock *pBlock = pCopList->pFirstBlock;
 	while(pBlock) {
 		if(pBlock->ubDisabled) {
 			logWrite("DISABLED ");
@@ -94,7 +96,7 @@ void copDumpBlocks(void) {
 		);
 		logPushIndent();
 		pCmds = pBlock->pCmds;
-		for(i = 0; i != pBlock->uwCurrCount; ++i) {
+		for(UWORD i = 0; i < pBlock->uwCurrCount; ++i) {
 			copDumpCmd(&pCmds[i]);
 		}
 
@@ -103,11 +105,13 @@ void copDumpBlocks(void) {
 	}
 
 	logBlockEnd("copDumpBlocks()");
+	systemUnuse();
 }
 
 void copDumpBfr(tCopBfr *pBfr) {
 	UWORD i;
 
+	systemUse();
 	logBlockBegin("copDumpBfr(pBfr: %p)", pBfr);
 	logWrite("Alloc size: %u, cmd count: %u\n", pBfr->uwAllocSize, pBfr->uwCmdCount);
 	for(i = 0; i != pBfr->uwCmdCount; ++i) {
@@ -115,6 +119,7 @@ void copDumpBfr(tCopBfr *pBfr) {
 	}
 
 	logBlockEnd("copDumpBfr");
+	systemUnuse();
 }
 
 tCopList *copListCreate(void *pTagList, ...) {
@@ -151,12 +156,12 @@ tCopList *copListCreate(void *pTagList, ...) {
 		// Front bfr
 		pCopList->pFrontBfr->uwCmdCount = ulListSize+1;
 		pCopList->pFrontBfr->uwAllocSize = (ulListSize+1)*sizeof(tCopCmd);
-		pCopList->pFrontBfr->pList = memAllocChip(pCopList->pFrontBfr->uwAllocSize);
+		pCopList->pFrontBfr->pList = memAllocChipClear(pCopList->pFrontBfr->uwAllocSize);
 		copSetWait(&pCopList->pFrontBfr->pList[ulListSize].sWait, 0xFF, 0xFF);
 		// Back bfr
 		pCopList->pBackBfr->uwCmdCount = ulListSize+1;
 		pCopList->pBackBfr->uwAllocSize = (ulListSize+1)*sizeof(tCopCmd);
-		pCopList->pBackBfr->pList = memAllocChip(pCopList->pBackBfr->uwAllocSize);
+		pCopList->pBackBfr->pList = memAllocChipClear(pCopList->pBackBfr->uwAllocSize);
 		copSetWait(&pCopList->pBackBfr->pList[ulListSize].sWait, 0xFF, 0xFF);
 	}
 	else {
