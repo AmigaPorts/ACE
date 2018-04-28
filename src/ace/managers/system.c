@@ -270,12 +270,12 @@ void systemUnuse(void) {
 			INTF_PORTS
 		);
 	}
-// #ifdef GAME_DEBUG
+#if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
 		logWrite("ERR: System uses less than 0!\n");
 		s_wSystemUses = 0;
 	}
-// #endif
+#endif
 }
 
 void systemUse(void) {

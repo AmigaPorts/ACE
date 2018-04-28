@@ -45,7 +45,7 @@ void _memFreeRls(void *pMem, ULONG ulSize);
  * Macros for enabling or disabling logging
  */
 
-#ifdef GAME_DEBUG
+#ifdef ACE_DEBUG
 # define memAlloc(ulSize, ulFlags) _memAllocDbg(ulSize, ulFlags, __LINE__, __FILE__)
 # define memFree(pMem, ulSize) _memFreeDbg(pMem, ulSize, __LINE__, __FILE__)
 # define memCreate() _memCreate()
@@ -59,7 +59,7 @@ void _memFreeRls(void *pMem, ULONG ulSize);
 # define memDestroy()
 # define memEntryAdd(pAddr, ulSize)
 # define memEntryDelete(pAddr, ulSize)
-#endif // GAME_DEBUG
+#endif // ACE_DEBUG
 
 // Shorthands
 #define memAllocFast(ulSize) memAlloc(ulSize, 0)

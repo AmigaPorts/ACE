@@ -30,14 +30,22 @@ ACE_INC_DIR = $(ACE_ROOT)$(SL)include
 
 ACE_CC ?= vc
 
+TARGET_DEFINES =
+TARGET ?= release
+ifeq ($(TARGET), debug)
+	TARGET_DEFINES += -DACE_DEBUG
+endif
+
+CC_FLAGS_COMMON = -I$(ACE_INC_DIR) -DAMIGA $(TARGET_DEFINES)
 ifeq ($(ACE_CC), vc)
-	CC_FLAGS = +kick13 -c99 -I$(ACE_INC_DIR) -DAMIGA
+	CC_FLAGS = $(CC_FLAGS_COMMON) +kick13 -c99
 	ACE_AS = vc
 	AS_FLAGS = +kick13 -c
 	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
-	CC_FLAGS_NO_O = -std=gnu11 -I$(ACE_INC_DIR) -DAMIGA -noixemul -Wall -Wextra -fomit-frame-pointer
-	CC_FLAGS = $(CC_FLAGS_NO_O) -O3 -fverbose-asm
+	CC_FLAGS_NO_O = $(CC_FLAGS_COMMON) -std=gnu11 -DAMIGA \
+		-noixemul -Wall -Wextra -fomit-frame-pointer
+	CC_FLAGS = $(CC_FLAGS_NO_O) $(TARGET_DEFINES) -O3 -fverbose-asm
 	ACE_AS = vasmm68k_mot
 	AS_FLAGS = -quiet -x -m68010 -Faout -ID:\prg\kompilatory\bebbo\m68k-amigaos\sys-include
 	OBJDUMP = m68k-amigaos-objdump -S -l -D $@ > $@.dasm
@@ -78,11 +86,12 @@ summary:
 # 	$(ECHO) Building $< with -O1
 # 	@$(ACE_CC) $(CC_FLAGS_NO_O) -O1 -c -o $@ $<
 # 	@$(OBJDUMP)
+# For GCC assembly dump use:
+# @$(ACE_CC) $(CC_FLAGS) -S -o $@.s $<
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)%.c
 	$(ECHO) Building $<
 	@$(ACE_CC) $(CC_FLAGS) -c -o $@ $<
-	@$(ACE_CC) $(CC_FLAGS) -S -o $@.s $<
 
 $(BUILD_DIR)$(SL)%.o: $(ACE_SRC_DIR)$(SL)managers$(SL)viewport$(SL)%.c
 	$(ECHO) Building $<
@@ -102,6 +111,8 @@ clear:
 	$(NEWLINE)
 	$(ECHO) Removing old objs...
 	$(ECHO) "a" > $(BUILD_DIR)$(SL)foo.o
+	$(ECHO) "a" > $(BUILD_DIR)$(SL)foo.s
 	$(ECHO) "a" > $(BUILD_DIR)$(SL)foo.dasm
 	$(RM) $(BUILD_DIR)$(SL)*.o
+	$(RM) $(BUILD_DIR)$(SL)*.s
 	$(RM) $(BUILD_DIR)$(SL)*.dasm

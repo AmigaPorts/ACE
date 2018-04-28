@@ -24,8 +24,6 @@ typedef int16_t WORD;
 typedef int32_t LONG;
 #endif // AMIGA
 
-#define GAME_DEBUG
-
 /* Docs */
 #define IN    /* Input parameter. Passed pointer contents is const */
 #define OUT   /* Output parameter. Passed pointer contents will be changed. */

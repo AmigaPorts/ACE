@@ -44,7 +44,7 @@ typedef struct _tLogManager {
 	UBYTE ubShutUp;
 } tLogManager;
 
-#ifdef GAME_DEBUG
+#ifdef ACE_DEBUG
 /* Globals */
 extern tLogManager g_sLogManager;
 
@@ -128,6 +128,6 @@ void _logBitMap(
 # define logBitMap(pBitMap)
 #endif// AMIGA
 
-#endif // GAME_DEBUG
+#endif // ACE_DEBUG
 
 #endif // GUARD_ACE_MANAGER_LOG_H

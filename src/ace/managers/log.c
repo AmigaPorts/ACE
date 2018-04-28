@@ -6,7 +6,7 @@
 #include <string.h>
 #include <ace/macros.h>
 #include <ace/managers/system.h>
-#ifdef GAME_DEBUG
+#ifdef ACE_DEBUG
 
 #ifdef AMIGA
 #include <hardware/dmabits.h>
@@ -239,4 +239,4 @@ void _logBitMap(struct BitMap *pBitMap) {
 }
 #endif // AMIGA
 
-#endif // GAME_DEBUG
+#endif // ACE_DEBUG

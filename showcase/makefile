@@ -26,6 +26,14 @@ endif
 SL= $(strip $(SLASH))
 SRC_DIR = $(CURR_DIR)$(SL)src
 
+TARGET_DEFINES =
+TARGET ?= RELEASE
+ifeq ($(TARGET), debug)
+	ACE_TARGET = debug
+else
+	ACE_TARGET = release
+endif
+
 # Directories
 TMP_DIR = $(CURR_DIR)$(SL)build
 ACE_DIR = ..
@@ -34,13 +42,15 @@ ACE_DIR = ..
 SHOWCASE_CC ?= vc
 
 INCLUDES = -I$(SRC_DIR) -I$(ACE_DIR)/include
+CC_FLAGS_COMMON = $(INCLUDES) -DAMIGA $(TARGET_DEFINES)
 ifeq ($(SHOWCASE_CC), vc)
-	CC_FLAGS = +kick13 -c99 $(INCLUDES) -DAMIGA
+	CC_FLAGS = $(CC_FLAGS_COMMON) +kick13 -c99
 	ACE_AS = vc
 	AS_FLAGS = +kick13 -c
 	OBJDUMP =
 else ifeq ($(SHOWCASE_CC), m68k-amigaos-gcc)
-	CC_FLAGS = -std=gnu11 $(INCLUDES) -DAMIGA -noixemul -Wall -Wextra -fomit-frame-pointer -O3
+	CC_FLAGS = $(CC_FLAGS_COMMON) -std=gnu11 -noixemul -Wall -Wextra \
+		-fomit-frame-pointer -O3
 	ACE_AS = vasm
 	AS_FLAGS = -quiet -x -m68010 -Faout
 	OBJDUMP = m68k-amigaos-objdump -S -d $@ > $@.dasm
@@ -57,9 +67,8 @@ SHOWCASE_FILES = $(SHOWCASE_MAIN_FILES) $(SHOWCASE_TEST_FILES)
 SHOWCASE_OBJS = $(SHOWCASE_MAIN_OBJS) $(SHOWCASE_TEST_OBJS)
 ACE_OBJS = $(wildcard $(ACE_DIR)/build/*.o)
 
-#
 ace: $(ACE_OBJS)
-	-make -C $(ACE_DIR) all ACE_CC=$(SHOWCASE_CC)
+	-make -C $(ACE_DIR) all ACE_CC=$(SHOWCASE_CC) TARGET=$(ACE_TARGET)
 	$(NEWLINE)
 	$(ECHO) Copying ACE objs
 	@$(CP) $(ACE_DIR)$(SL)build$(SL)*.o $(TMP_DIR) $(QUIETCOPY)

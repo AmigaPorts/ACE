@@ -358,14 +358,14 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
 	else {
-#ifdef GAME_DEBUG
+#ifdef ACE_DEBUG
 		if(
 			(bitmapIsInterleaved(pSrc) && !bitmapIsInterleaved(pDst)) ||
 			(!bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst))
 		) {
 			logWrite("WARN: Inefficient blit via mask with %p, %p\n", pSrc, pDst);
 		}
-#endif // GAME_DEBUG
+#endif // ACE_DEBUG
 		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 		blitWait();
