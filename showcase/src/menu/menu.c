@@ -135,7 +135,7 @@ void gsMenuDestroy(void) {
 	logBlockEnd("gsMenuDestroy()");
 }
 
-void menuDrawBg() {
+void menuDrawBg(void) {
 	logBlockBegin("menuDrawBg()");
 	UWORD uwX, uwY;
 	UBYTE isOdd = 0;

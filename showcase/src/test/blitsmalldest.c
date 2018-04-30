@@ -24,7 +24,7 @@ static tBitMap *s_pRefBitmap;
 static tBitMap *s_pDstBitmap;
 UBYTE ubFrameIdx;
 
-void prepareRefBitmap() {
+void prepareRefBitmap(void) {
 	// s_pRefBitmap = bitmapCreateFromFile("data/blitToSmall.bm");
 	UBYTE ubBlockWidth = 32;
 	UBYTE ubBlockHeight = 32;

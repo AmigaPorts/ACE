@@ -34,7 +34,7 @@ ULONG ulRand(void) {
 }
 
 // UWORD is faster on Amiga
-UBYTE ubRand() {
+UBYTE ubRand(void) {
 	return uwRand() ^ 0xFF;
 }
 

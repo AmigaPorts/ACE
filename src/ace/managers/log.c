@@ -21,7 +21,7 @@ tLogManager g_sLogManager = {0};
  * Base debug functions
  */
 
-void _logOpen() {
+void _logOpen(void) {
 	g_sLogManager.pFile = fileOpen(LOG_FILE_NAME, "w");
 	g_sLogManager.ubIndent = 0;
 	g_sLogManager.wasLastInline = 0;
@@ -29,11 +29,11 @@ void _logOpen() {
 	g_sLogManager.ubShutUp = 0;
 }
 
-void _logPushIndent() {
+void _logPushIndent(void) {
 	++g_sLogManager.ubIndent;
 }
 
-void _logPopIndent() {
+void _logPopIndent(void) {
 	--g_sLogManager.ubIndent;
 }
 
@@ -46,8 +46,9 @@ void _logWrite(char *szFormat, ...) {
 	g_sLogManager.ubBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
-		while (ubLogIndent--)
+		while (ubLogIndent--) {
 			fileWrite(g_sLogManager.pFile, "\t", 1);
+		}
 	}
 
 	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
@@ -60,7 +61,7 @@ void _logWrite(char *szFormat, ...) {
 	fileFlush(g_sLogManager.pFile);
 }
 
-void _logClose() {
+void _logClose(void) {
 	if (g_sLogManager.pFile) {
 		fileClose(g_sLogManager.pFile);
 	}

@@ -9,17 +9,17 @@
 /* Globals */
 
 /* Functions */
-void inputOpen() {
+void inputOpen(void) {
 	joyOpen();
 	keyCreate();
 }
 
-void inputProcess() {
+void inputProcess(void) {
 	joyProcess();
 	keyProcess();
 }
 
-void inputClose() {
+void inputClose(void) {
 	keyDestroy();
 	joyClose();
 }

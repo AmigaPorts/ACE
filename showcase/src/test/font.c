@@ -146,7 +146,7 @@ void gsTestFontDestroy(void) {
 	viewDestroy(s_pTestFontView);
 }
 
-void testFontDrawTable() {
+void testFontDrawTable(void) {
 	tFont *pFont;
 	UWORD i;
 	char szCodeBfr[3];
