@@ -253,8 +253,10 @@ void bitmapDump(tBitMap *pBitMap) {
 		pBitMap->BytesPerRow, pBitMap->Rows, pBitMap->Flags,
 		pBitMap->Depth, pBitMap->pad
 	);
-	for(i = 0; i != pBitMap->Depth; ++i)
+	// since Planes is always 8-long, dump all its entries
+	for(i = 0; i != pBitMap->Depth; ++i) {
 		logWrite("Bitplane %hu addr: %p\n", i, pBitMap->Planes[i]);
+	}
 
 	logBlockEnd("bitmapDump()");
 }

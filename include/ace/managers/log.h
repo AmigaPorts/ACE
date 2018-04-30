@@ -7,18 +7,9 @@
 
 #include <string.h> // strlen etc
 #include <stdarg.h> // va_list etc
-#ifdef AMIGA
-#include <clib/exec_protos.h> // Amiga typedefs
-#include <clib/graphics_protos.h> // Amiga typedefs
-#endif // AMIGA
-
 #include <ace/types.h>
 #include <ace/managers/timer.h>
 #include <ace/utils/file.h>
-
-#ifndef LOG_FILE_NAME
-#define LOG_FILE_NAME "game.log"
-#endif
 
 /* Types */
 
@@ -81,15 +72,6 @@ void _logAvgWrite(tAvg *pAvg);
 
 /* Functions - struct dump */
 
-#ifdef AMIGA
-void _logUCopList(
-	IN struct UCopList *pUCopList
-);
-void _logBitMap(
-	IN struct BitMap *pBitMap
-);
-#endif // AMIGA
-
 #define logOpen() _logOpen()
 #define logClose() _logClose()
 #define logPushIndent() _logPushIndent()
@@ -105,8 +87,6 @@ void _logBitMap(
 #define logAvgEnd(pAvg) _logAvgEnd(pAvg)
 #define logAvgWrite(pAvg) _logAvgWrite(pAvg)
 
-#define logUCopList(pUCopList) _logUCopList(pUCopList)
-#define logBitMap(pBitMap) _logBitMap(pBitMap)
 #else
 #define logOpen()
 #define logClose()
@@ -122,12 +102,6 @@ void _logBitMap(
 #define logAvgBegin(pAvg)
 #define logAvgEnd(pAvg)
 #define logAvgWrite(pAvg)
-
-# ifdef AMIGA
-#define logUCopList(pUCopList)
-# define logBitMap(pBitMap)
-#endif// AMIGA
-
 #endif // ACE_DEBUG
 
 #endif // GUARD_ACE_MANAGER_LOG_H

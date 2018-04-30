@@ -4,6 +4,7 @@
 
 #include <ace/managers/system.h>
 #include <stdlib.h>
+#include <clib/graphics_protos.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 #include <ace/utils/custom.h>
