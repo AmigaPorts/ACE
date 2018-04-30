@@ -161,8 +161,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 		pVPort->uwOffsY += pPrevVPort->uwHeight;
 		pPrevVPort = pPrevVPort->pNext;
 	}
-	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT))
+	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)) {
 		pVPort->uwOffsY += 2; // TODO: not always required?
+	}
 	ULONG ulAddOffsY = tagGet(pTagList, vaTags, TAG_VPORT_OFFSET_TOP, 0);
 	pVPort->uwOffsY += ulAddOffsY;
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
@@ -197,8 +198,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	UWORD *pSrcPalette = (UWORD*)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
 	if(pSrcPalette) {
 		UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
-		if(uwPaletteSize == 0xFFFF)
+		if(uwPaletteSize == 0xFFFF) {
 			logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
+		}
 		else if(!uwPaletteSize || uwPaletteSize > 32) {
 			logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
 		}
@@ -317,8 +319,9 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	tVpManager *pVpCurr = pVPort->pFirstManager;
 	// przewin przed menedzer o wyzszym numerze niz wstawiany
 	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
-		if(pVpCurr->ubId <= pVpManager->ubId)
+		if(pVpCurr->ubId <= pVpManager->ubId) {
 			pVpCurr = pVpCurr->pNext;
+		}
 	}
 	pVpManager->pNext = pVpCurr->pNext;
 	pVpCurr->pNext = pVpManager;
@@ -353,8 +356,9 @@ tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {
 
 	pManager = pVPort->pFirstManager;
 	while(pManager) {
-		if(pManager->ubId == ubId)
+		if(pManager->ubId == ubId) {
 			return pManager;
+		}
 		pManager = pManager->pNext;
 	}
 	return 0;

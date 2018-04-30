@@ -160,8 +160,9 @@ void gsTestBlitLoop(void) {
 	if(s_ubType & TYPE_SAVEBG) {
 		//TODO: Save BG beneath new bob
 	}
-	// if(s_ubType & TYPE_RECT)
+	// if(s_ubType & TYPE_RECT) {
 		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 3);
+	// }
 	vPortWaitForEnd(s_pTestBlitVPort);
 }
 

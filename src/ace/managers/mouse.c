@@ -20,10 +20,12 @@ void mouseCreate(UBYTE ubPortFlags) {
 	UWORD uwPotMask = 0;
 
 	// Enable RMB & MMB
-	if(ubPortFlags & MOUSE_PORT_1)
+	if(ubPortFlags & MOUSE_PORT_1) {
 		uwPotMask |= BV(11) | BV(10) | BV(9) | BV(8);
-	if(ubPortFlags & MOUSE_PORT_2)
+	}
+	if(ubPortFlags & MOUSE_PORT_2) {
 		uwPotMask |= BV(15) | BV(14) | BV(13) | BV(12);
+	}
 	g_pCustom->potgo = (g_pCustom->potinp & (0xFFFF ^ uwPotMask)) | uwPotMask;
 
 	// Amiga Hardware Reference Manual suggests that pos should be polled every

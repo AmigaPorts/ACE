@@ -77,10 +77,12 @@ void gsTestBlitSmallDestLoop(void) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 		return;
 	}
-	if(keyUse(KEY_RIGHT))
+	if(keyUse(KEY_RIGHT)) {
 		bUpdate += 1;
-	if(keyUse(KEY_LEFT))
+	}
+	if(keyUse(KEY_LEFT)) {
 		bUpdate -=1;
+	}
 
 	if(bUpdate && ubFrameIdx + bUpdate > -1 && ubFrameIdx + bUpdate < 16) {
 		ubFrameIdx += bUpdate;

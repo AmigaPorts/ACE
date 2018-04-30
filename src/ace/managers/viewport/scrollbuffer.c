@@ -151,8 +151,9 @@ void scrollBufferReset(tScrollBufferManager *pManager, UBYTE ubMarginWidth, UWOR
 	pManager->uwBmAvailHeight = ubMarginWidth * blockCountCeil(uwVpHeight, ubMarginWidth) + ubMarginWidth*4;
 
 	// Destroy old buffer bitmap
-	if(pManager->pBuffer)
+	if(pManager->pBuffer) {
 		bitmapDestroy(pManager->pBuffer);
+	}
 
 	// Create new buffer bitmap
 	uwCalcWidth = uwVpWidth + ubMarginWidth*4;

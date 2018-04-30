@@ -38,10 +38,12 @@ void _logPopIndent(void) {
 }
 
 void _logWrite(char *szFormat, ...) {
-	if(g_sLogManager.ubShutUp)
+	if(g_sLogManager.ubShutUp) {
 		return;
-	if (!g_sLogManager.pFile)
+	}
+	if (!g_sLogManager.pFile) {
 		return;
+	}
 
 	g_sLogManager.ubBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
@@ -162,10 +164,12 @@ void _logAvgEnd(tAvg *pAvg) {
 	// Calculate timestamp
 	pAvg->pDeltas[pAvg->uwCurrDelta] = timerGetDelta(pAvg->ulStartTime, timerGetPrec());
 	// Update min/max
-	if(pAvg->pDeltas[pAvg->uwCurrDelta] > pAvg->ulMax)
+	if(pAvg->pDeltas[pAvg->uwCurrDelta] > pAvg->ulMax) {
 		pAvg->ulMax = pAvg->pDeltas[pAvg->uwCurrDelta];
-	if(pAvg->pDeltas[pAvg->uwCurrDelta] < pAvg->ulMin)
+	}
+	if(pAvg->pDeltas[pAvg->uwCurrDelta] < pAvg->ulMin) {
 		pAvg->ulMin = pAvg->pDeltas[pAvg->uwCurrDelta];
+	}
 	++pAvg->uwCurrDelta;
 	// Roll
 	if(pAvg->uwCurrDelta >= pAvg->uwAllocCount) {

@@ -50,8 +50,9 @@ tSimpleBufferManager *simpleBufferCreate(
 
 	// Find camera manager, create if not exists
 	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	if(!pManager->pCameraManager)
+	if(!pManager->pCameraManager) {
 		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
+	}
 
 	pCopList = pVPort->pView->pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {

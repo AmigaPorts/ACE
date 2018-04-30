@@ -92,8 +92,9 @@ ULONG timerGetPrec(void) {
  * For use on both precise and frame time
  */
 ULONG timerGetDelta(ULONG ulStart, ULONG ulStop) {
-	if(ulStop >= ulStart)
+	if(ulStop >= ulStart) {
 		return ulStop-ulStart;
+	}
 	return (0xFFFFFFFF - ulStart) + ulStop;
 }
 

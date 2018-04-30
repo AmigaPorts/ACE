@@ -56,9 +56,15 @@ void printUsage(char *szPrgName) {
 }
 
 int16_t findColor(uint8_t *pRGB, tColor *pPalette, uint8_t ubColorCount) {
-	while(ubColorCount--)
-		if(pPalette[ubColorCount].ubR == pRGB[0] && pPalette[ubColorCount].ubG == pRGB[1] && pPalette[ubColorCount].ubB == pRGB[2])
+	while(ubColorCount--) {
+		if(
+			pPalette[ubColorCount].ubR == pRGB[0] &&
+			pPalette[ubColorCount].ubG == pRGB[1] &&
+			pPalette[ubColorCount].ubB == pRGB[2]
+		) {
 			return ubColorCount;
+		}
+	}
 	return -1;
 }
 
@@ -85,8 +91,9 @@ void writePlanarInterleaved(
 	}
 
 	ubPlaneCount = 1;
-	for(i = 2; i < ubColorCount; i <<= 1)
+	for(i = 2; i < ubColorCount; i <<= 1) {
 		++ubPlaneCount;
+	}
 
 	// Write .bm header
 	writeByte(uwWidth >> 8, pFileOut);
@@ -96,8 +103,9 @@ void writePlanarInterleaved(
 	writeByte(ubPlaneCount, pFileOut);
 	writeByte(0, pFileOut); // Version
 	writeByte(1, pFileOut); // Flags
-	for(i = 0; i != 2; ++i)
+	for(i = 0; i != 2; ++i) {
 		writeByte(0, pFileOut);
+	}
 
 	// Write bitplanes - from LSB to MSB
 	for(y = 0; y != uwHeight; ++y) {
@@ -159,8 +167,9 @@ void writePlanar(
 	}
 
 	ubPlaneCount = 1;
-	for(i = 2; i < ubColorCount; i <<= 1)
+	for(i = 2; i < ubColorCount; i <<= 1) {
 		++ubPlaneCount;
+	}
 
 	// Write .bm header
 	writeByte(uwWidth >> 8, pFileOut);
@@ -170,8 +179,9 @@ void writePlanar(
 	writeByte(ubPlaneCount, pFileOut);
 	writeByte(0, pFileOut); // Version
 	writeByte(0, pFileOut); // Flags
-	for(i = 0; i != 2; ++i)
+	for(i = 0; i != 2; ++i) {
 		writeByte(0, pFileOut);
+	}
 
 	// Write bitplanes - from LSB to MSB
 	for(ubPlane = 0; ubPlane != ubPlaneCount; ++ubPlane) {
@@ -240,8 +250,9 @@ void writeMask(
 	writeByte(ubPlaneCount, pFileOut);
 	writeByte(0, pFileOut); // Version
 	writeByte(0, pFileOut); // Flags
-	for(i = 0; i != 2; ++i)
+	for(i = 0; i != 2; ++i) {
 		writeByte(0, pFileOut);
+	}
 
 	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
@@ -251,8 +262,9 @@ void writeMask(
 			ulPos = y*uwWidth*3 + x*3;
 
 			uwPixelBuffer <<= 1;
-			if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
+			if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB) {
 				uwPixelBuffer |= 1;
+			}
 			if((x & 0xF) == 0xF) {
 				writeByte(uwPixelBuffer >> 8, pFileOut);
 				writeByte(uwPixelBuffer & 0xFF, pFileOut);
@@ -284,8 +296,9 @@ void writeMaskInterleaved(
 	}
 
 	ubBpp = 1;
-	for(i = 2; i < uwPaletteCount; i <<= 1)
+	for(i = 2; i < uwPaletteCount; i <<= 1) {
 		++ubBpp;
+	}
 
 	// Write .bm header
 	writeByte(uwWidth >> 8, pFileOut);
@@ -295,8 +308,9 @@ void writeMaskInterleaved(
 	writeByte(ubBpp, pFileOut);
 	writeByte(0, pFileOut); // Version
 	writeByte(1, pFileOut); // Flags
-	for(i = 0; i != 2; ++i)
+	for(i = 0; i != 2; ++i) {
 		writeByte(0, pFileOut);
+	}
 
 	// Write mask data
 	for(y = 0; y != uwHeight; ++y) {
@@ -306,8 +320,9 @@ void writeMaskInterleaved(
 				ulPos = y*uwWidth*3 + x*3;
 
 				uwPixelBuffer <<= 1;
-				if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB)
+				if(pImgData[ulPos] != g_uwMaskR || pImgData[ulPos+1] != g_uwMaskG || pImgData[ulPos+2] != g_uwMaskB) {
 					uwPixelBuffer |= 1;
+				}
 				if((x & 0xF) == 0xF) {
 					writeByte(uwPixelBuffer >> 8, pFileOut);
 					writeByte(uwPixelBuffer & 0xFF, pFileOut);
@@ -346,8 +361,9 @@ int inExtArray(char **pExts, char *szValue) {
 
 	i = 0;
 	while(*pExts[i]) {
-		if(!strcmp(pExts[i], szValue))
+		if(!strcmp(pExts[i], szValue)) {
 			return i;
+		}
 		++i;
 	}
 	return -1;
@@ -549,8 +565,9 @@ void writePlanes(FILE *pFileOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHe
 			for(x = 0; x != uwWidth; ++x) {
 				uwOutBfr <<= 1;
 				ubColor = getColorIdx(pPalette, ubBpp, pData[y*uwWidth + x]);
-				if(ubColor & ubCheckBit)
+				if(ubColor & ubCheckBit) {
 					uwOutBfr |= 1;
+				}
 				if(x & 0xF == 0xF) {
 					// Write filled word buffer - watch out for endians!
 					uint8_t ubByteBfr;
@@ -581,8 +598,9 @@ void sth(FILE *pFileOut, uint8_t *pData, uint16_t uwWidth, uint16_t uwHeight, ui
 		for(x = 0; x != uwWidth; ++x) {
 			uwOutBfr <<= 1;
 			ubColor = getColorIdx(pPalette, ubBpp, pData[y*uwWidth + x]);
-			if(ubColor == ubMaskColor)
+			if(ubColor == ubMaskColor) {
 				uwOutBfr |= 1;
+			}
 			if(x & 0xF == 0xF) {
 				// Write filled word buffer - watch out for endians!
 				uint8_t ubByteBfr;

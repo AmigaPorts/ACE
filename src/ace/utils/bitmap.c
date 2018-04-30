@@ -226,16 +226,17 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 }
 
 void bitmapDestroy(tBitMap *pBitMap) {
-	UBYTE i;
 	logBlockBegin("bitmapDestroy(pBitMap: %p)", pBitMap);
-	if (pBitMap) {
+	if(pBitMap) {
 #ifdef AMIGA
 		blitWait();
 #endif
-		if(bitmapIsInterleaved(pBitMap))
+		if(bitmapIsInterleaved(pBitMap)) {
 			pBitMap->Depth = 1;
-		for (i = pBitMap->Depth; i--;)
+		}
+		for(UBYTE i = pBitMap->Depth; i--;) {
 			memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*pBitMap->Rows);
+		}
 		memFree(pBitMap, sizeof(tBitMap));
 	}
 	logBlockEnd("bitmapDestroy()");

@@ -22,8 +22,9 @@ void printSupportedExtensions(void) {
 void trimEnd(char *str) {
 	char *c;
 
-	for(c = &(str[strlen(str)-1]); strchr("\n\r ", *c) && c >= str; --c)
+	for(c = &(str[strlen(str)-1]); strchr("\n\r ", *c) && c >= str; --c) {
 		*c = '\0';
+	}
 }
 
 uint16_t paletteLoadFromGpl(FILE *pFile, tColor *pPalette) {
@@ -43,10 +44,12 @@ uint16_t paletteLoadFromGpl(FILE *pFile, tColor *pPalette) {
 		fgets(szBuffer, 255, pFile);
 		trimEnd(szBuffer);
 		pComment = strchr(szBuffer, '#');
-		if(pComment)
+		if(pComment) {
 			*pComment = '\0';
-		if(!strlen(szBuffer))
+		}
+		if(!strlen(szBuffer)) {
 			continue;
+		}
 		if(szBuffer == strstr(szBuffer, "Name:") || szBuffer == strstr(szBuffer, "Columns:")) {
 			// ignore
 			continue;
@@ -109,8 +112,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Determine output path
-	if(argc == 3)
+	if(argc == 3) {
 		szOut = argv[2];
+	}
 	else {
 		szOut = malloc((unsigned)(szExt - argv[1]) + 4+1); // filename + ".plt" + \0
 		memcpy(szOut, argv[1], szExt - argv[1]);

@@ -56,13 +56,15 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	// Update mem usage counter
 	if(TypeOfMem(pAddr) & MEMF_CHIP) {
 		s_ulChipUsage += ulSize;
-		if(s_ulChipUsage > s_ulChipPeakUsage)
+		if(s_ulChipUsage > s_ulChipPeakUsage) {
 			s_ulChipPeakUsage = s_ulChipUsage;
+		}
 	}
 	else {
 		s_ulFastUsage += ulSize;
-		if(s_ulFastUsage > s_ulFastPeakUsage)
+		if(s_ulFastUsage > s_ulFastPeakUsage) {
 			s_ulFastPeakUsage = s_ulFastUsage;
+		}
 	}
 
 	fileFlush(s_pMemLog);

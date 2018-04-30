@@ -98,12 +98,13 @@ void gsMenuLoop(void) {
 	// Menu list selection
 	else if(keyUse(KEY_RETURN) || joyUse(JOY1_FIRE)) {
 		ubSelected = s_pMenuList->ubSelected;
-		if(s_pMenuList->pEntries[ubSelected].ubDisplayMode == MENULIST_ENABLED)
+		if(s_pMenuList->pEntries[ubSelected].ubDisplayMode == MENULIST_ENABLED) {
 			switch(s_ubMenuType) {
 				case MENU_MAIN: menuSelectMain(); return;
 				case MENU_TESTS: menuSelectTests(); return;
 				case MENU_EXAMPLES: menuSelectExamples(); return;
 			}
+		}
 	}
 	vPortWaitForEnd(s_pMenuVPort);
 

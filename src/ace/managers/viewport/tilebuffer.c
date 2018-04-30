@@ -51,8 +51,9 @@ tTileBufferManager *tileBufferCreate(
 	// find camera manager, create if not exists
 	// camera created in scroll bfr
 	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	// if(!(pManager->pCameraManager = (tCameraManager*)extVPortGetManager(pVPort, VPM_CAMERA)))
+	// if(!(pManager->pCameraManager = (tCameraManager*)extVPortGetManager(pVPort, VPM_CAMERA))) {
 		// pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwTileX << ubTileShift, uwTileY << ubTileShift);
+	// }
 	// TODO: reset camera bounds?
 
 	// nie tutaj bo kamera jeszcze musi zosta� ustawiona
@@ -104,14 +105,16 @@ void tileBufferReset(tTileBufferManager *pManager,
 	pManager->uTileBounds.sUwCoord.uwY = uwTileY;
 	if(uwTileX && uwTileY) {
 		pManager->pTileData = memAllocFast(uwTileX * sizeof(BYTE*));
-		for(uwCol = uwTileX; uwCol--;)
+		for(uwCol = uwTileX; uwCol--;) {
 			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(UBYTE));
+		}
 	}
 
 	// Load new tileset
 	if(szTileSetFileName) {
-		if(pManager->pTileSet)
+		if(pManager->pTileSet) {
 			bitmapDestroy(pManager->pTileSet);
+		}
 		pManager->pTileSet = bitmapCreateFromFile(szTileSetFileName);
 	}
 
@@ -129,8 +132,9 @@ void tileBufferReset(tTileBufferManager *pManager,
 	pManager->pMarginOppositeY = &pManager->sMarginU;
 
 	// Reset scrollManager, create if not exists
-	if(!(pManager->pScrollManager = (tScrollBufferManager*)vPortGetManager(pManager->sCommon.pVPort, VPM_SCROLL)))
+	if(!(pManager->pScrollManager = (tScrollBufferManager*)vPortGetManager(pManager->sCommon.pVPort, VPM_SCROLL))) {
 		pManager->pScrollManager = scrollBufferCreate(pManager->sCommon.pVPort, pManager->ubTileSize, uwTileX << ubTileShift, uwTileY << ubTileShift);
+	}
 	else {
 		scrollBufferReset(
 			pManager->pScrollManager, pManager->ubTileSize,
@@ -188,8 +192,9 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					);
 					++pManager->pMarginX->wTileCurr;
 					uwTileOffsY = (uwTileOffsY + ubTileSize);
-					if(uwTileOffsY >= pManager->uwMarginedHeight)
+					if(uwTileOffsY >= pManager->uwMarginedHeight) {
 						uwTileOffsY -= pManager->uwMarginedHeight;
+					}
 				}
 			}
 			// Prepare new column redraw data
@@ -203,8 +208,9 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				// Prepare new column for redraw
 				pManager->pMarginX->wTileCurr = (pManager->pCameraManager->uPos.sUwCoord.uwY >> ubTileShift) - 2;
 				pManager->pMarginX->wTileEnd = pManager->pMarginX->wTileCurr + pManager->ubMarginXLength;
-				if(pManager->pMarginX->wTileCurr < 0)
+				if(pManager->pMarginX->wTileCurr < 0) {
 					pManager->pMarginX->wTileCurr = 0;
+				}
 			}
 			// Modify margin data on opposite side
 			if(wDeltaX < 0) {
@@ -277,10 +283,12 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				// Prepare new row for redraw
 				pManager->pMarginY->wTileCurr = (pManager->pCameraManager->uPos.sUwCoord.uwX >> ubTileShift) - 2;
 				pManager->pMarginY->wTileEnd = pManager->pMarginY->wTileCurr + pManager->ubMarginYLength;
-				if(pManager->pMarginY->wTileCurr < 0)
+				if(pManager->pMarginY->wTileCurr < 0) {
 					pManager->pMarginY->wTileCurr = 0;
-				if(pManager->pMarginY->wTileEnd >= pManager->uTileBounds.sUwCoord.uwX)
+				}
+				if(pManager->pMarginY->wTileEnd >= pManager->uTileBounds.sUwCoord.uwX) {
 					pManager->pMarginY->wTileEnd = pManager->uTileBounds.sUwCoord.uwX-1;
+				}
 			}
 			// Modify opposite margin data
 			if(wDeltaY > 0) {
@@ -382,8 +390,9 @@ void tileBufferDrawTileQuick(tTileBufferManager *pManager, UWORD uwTileIdxX, UWO
 		pManager->pScrollManager->pBuffer, uwBfrX, uwBfrY,
 		pManager->ubTileSize, pManager->ubTileSize
 	);
-	if(pManager->pTileDrawCallback)
+	if(pManager->pTileDrawCallback) {
 		pManager->pTileDrawCallback(uwTileIdxX, uwTileIdxY, pManager->pScrollManager->pBuffer, uwBfrX, uwBfrY);
+	}
 }
 
 /**
@@ -408,16 +417,19 @@ void tileBufferInvalidateRect(tTileBufferManager *pManager, UWORD uwX, UWORD uwY
 	uwVisEndY = uwVisStartY + (pManager->sCommon.pVPort->uwHeight >> pManager->ubTileShift);
 
 	for(uwX = uwStartX; uwX <= uwEndX; ++uwX) {
-		if(uwX < uwVisStartX)
+		if(uwX < uwVisStartX) {
 			continue;
-		if(uwX > uwVisEndX)
+		}
+		if(uwX > uwVisEndX) {
 			break;
+		}
 		ubAddY = (uwX << pManager->ubTileShift) / pManager->uwMarginedWidth;
 		uwVisX = (uwX << pManager->ubTileShift) % pManager->uwMarginedWidth;
 		uwVisY = (uwStartY << pManager->ubTileShift) % pManager->uwMarginedHeight;
 		for(uwY = uwStartY; uwY <= uwEndY; ++uwY) {
-			if(uwY < uwVisStartY)
+			if(uwY < uwVisStartY) {
 				continue;
+			}
 			if(uwY > uwVisEndY) {
 				logWrite("\n");
 				logWrite("camera Y: %u, uwMarginedHeight: %u\n", pManager->pCameraManager->uPos.sUwCoord.uwY, pManager->uwMarginedHeight);
@@ -428,8 +440,9 @@ void tileBufferInvalidateRect(tTileBufferManager *pManager, UWORD uwX, UWORD uwY
 			}
 			tileBufferDrawTileQuick(pManager, uwX, uwY, uwVisX, uwVisY + ubAddY);
 			uwVisY += pManager->ubTileSize;
-			if(uwVisY >= pManager->uwMarginedHeight)
+			if(uwVisY >= pManager->uwMarginedHeight) {
 				uwVisY -= pManager->uwMarginedHeight;
+			}
 		}
 	}
 }

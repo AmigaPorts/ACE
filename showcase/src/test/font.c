@@ -121,7 +121,7 @@ void gsTestFontSentenceLoop(void) {
 		}
 	}
 
-	for(UBYTE i = 0; i < ubAllowedCharsCount; ++i)
+	for(UBYTE i = 0; i < ubAllowedCharsCount; ++i) {
 		if(keyUse(szAllowedChars[i])) {
 			UBYTE ubSentenceLength = strlen(s_szSentence);
 			if(ubSentenceLength != 20) {
@@ -129,6 +129,7 @@ void gsTestFontSentenceLoop(void) {
 				isRedrawNeeded = 1;
 			}
 		}
+	}
 
 	if(isRedrawNeeded) {
 		testFontDrawSentence();
