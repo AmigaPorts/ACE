@@ -68,22 +68,28 @@ static void mouseProcessPort(
 	g_sMouseManager.pMice[ubPort].ubPrevHwY = ubPosY;
 
 	// Left button state
-	if(ubStateLmb)
+	if(ubStateLmb) {
 		mouseSetButton(ubPort, MOUSE_LMB, MOUSE_NACTIVE);
-	else if(!mouseCheck(ubPort, MOUSE_LMB))
+	}
+	else if(!mouseCheck(ubPort, MOUSE_LMB)) {
 		mouseSetButton(ubPort, MOUSE_LMB, MOUSE_ACTIVE);
+	}
 
 	// Right button state
-	if(ubStateRmb)
+	if(ubStateRmb) {
 		mouseSetButton(ubPort, MOUSE_RMB, MOUSE_NACTIVE);
-	else if(!mouseCheck(ubPort, MOUSE_RMB))
+	}
+	else if(!mouseCheck(ubPort, MOUSE_RMB)) {
 		mouseSetButton(ubPort, MOUSE_RMB, MOUSE_ACTIVE);
+	}
 
 	// Middle button state
-	if(ubStateMmb)
+	if(ubStateMmb) {
 		mouseSetButton(ubPort, MOUSE_MMB, MOUSE_NACTIVE);
-	else if(!mouseCheck(ubPort, MOUSE_MMB))
+	}
+	else if(!mouseCheck(ubPort, MOUSE_MMB)) {
 		mouseSetButton(ubPort, MOUSE_MMB, MOUSE_ACTIVE);
+	}
 }
 
 void mouseProcess(void) {

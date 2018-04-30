@@ -16,7 +16,7 @@ fix16_t fix16_sqrt(fix16_t inValue)
 	uint32_t result = 0;
 	uint32_t bit;
 	uint8_t  n;
-	
+
 	// Many numbers will be less than 15, so
 	// this gives a good balance between time spent
 	// in if vs. time spent in the while loop
@@ -25,9 +25,9 @@ fix16_t fix16_sqrt(fix16_t inValue)
 		bit = (uint32_t)1 << 30;
 	else
 		bit = (uint32_t)1 << 18;
-	
+
 	while (bit > num) bit >>= 2;
-	
+
 	// The main part is executed twice, in order to avoid
 	// using 64 bit values in computations.
 	for (n = 0; n < 2; n++)
@@ -46,7 +46,7 @@ fix16_t fix16_sqrt(fix16_t inValue)
 			}
 			bit >>= 2;
 		}
-		
+
 		if (n == 0)
 		{
 			// Then process it again to get the lowest 8 bits.
@@ -67,7 +67,7 @@ fix16_t fix16_sqrt(fix16_t inValue)
 				num <<= 16;
 				result <<= 16;
 			}
-			
+
 			bit = 1 << 14;
 		}
 	}
@@ -79,6 +79,6 @@ fix16_t fix16_sqrt(fix16_t inValue)
 		result++;
 	}
 #endif
-	
+
 	return (neg ? -(fix16_t)result : (fix16_t)result);
 }

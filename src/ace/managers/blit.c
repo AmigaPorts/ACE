@@ -265,10 +265,12 @@ UBYTE blitUnsafeCopyAligned(
 			// Since you're using this fn for speed
 			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
 		}
-		if(bitmapIsInterleaved(pSrc))
+		if(bitmapIsInterleaved(pSrc)) {
 			wSrcModulo += pSrc->BytesPerRow * (pSrc->Depth-1);
-		else if(bitmapIsInterleaved(pDst))
+		}
+		else if(bitmapIsInterleaved(pDst)) {
 			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
+		}
 
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0;
@@ -450,10 +452,7 @@ UBYTE _blitRect(
 	ubPlane = 0;
 
 	do {
-		if(ubColor & 1)
-			ubMinterm = 0xFA;
-		else
-			ubMinterm = 0x0A;
+		ubMinterm = (ubColor & 1) ? 0xFA : 0x0A;
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!

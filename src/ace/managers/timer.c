@@ -76,10 +76,12 @@ ULONG timerGetPrec(void) {
 	uwFr1 = g_sTimerManager.uwFrameCounter;
 	*pRay = *pReg;
 	uwFr2 = g_sTimerManager.uwFrameCounter;
-	if(sRay.bfPosY < 100)
+	if(sRay.bfPosY < 100) {
 		return (uwFr2*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
-	else
+	}
+	else {
 		return (uwFr1*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
+	}
 	#else
 	return 0;
 	#endif
@@ -122,10 +124,12 @@ void timerProcess(void) {
 
 	ulCurrentTime = timerGet();
 	if(!g_sTimerManager.ubPaused) {
-		if(ulCurrentTime > g_sTimerManager.ulLastTime)
+		if(ulCurrentTime > g_sTimerManager.ulLastTime) {
 			g_sTimerManager.ulGameTicks += ulCurrentTime - g_sTimerManager.ulLastTime;
-		else
+		}
+		else {
 			g_sTimerManager.ulGameTicks += (0xFFFF - g_sTimerManager.ulLastTime) + ulCurrentTime + 1;
+		}
 	}
 	g_sTimerManager.ulLastTime = ulCurrentTime;
 }

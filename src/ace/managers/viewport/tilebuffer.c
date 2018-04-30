@@ -131,8 +131,12 @@ void tileBufferReset(tTileBufferManager *pManager,
 	// Reset scrollManager, create if not exists
 	if(!(pManager->pScrollManager = (tScrollBufferManager*)vPortGetManager(pManager->sCommon.pVPort, VPM_SCROLL)))
 		pManager->pScrollManager = scrollBufferCreate(pManager->sCommon.pVPort, pManager->ubTileSize, uwTileX << ubTileShift, uwTileY << ubTileShift);
-	else
-		scrollBufferReset(pManager->pScrollManager, pManager->ubTileSize, uwTileX << ubTileShift, uwTileY << ubTileShift);
+	else {
+		scrollBufferReset(
+			pManager->pScrollManager, pManager->ubTileSize,
+			uwTileX << ubTileShift, uwTileY << ubTileShift
+		);
+	}
 
 	pManager->uwMarginedWidth = pManager->sCommon.pVPort->uwWidth + (4 << ubTileShift);
 	pManager->uwMarginedHeight = pManager->pScrollManager->uwBmAvailHeight;
@@ -203,10 +207,12 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					pManager->pMarginX->wTileCurr = 0;
 			}
 			// Modify margin data on opposite side
-			if(wDeltaX < 0)
+			if(wDeltaX < 0) {
 				--pManager->pMarginOppositeX->wTileCurr;
-			else
+			}
+			else {
 				++pManager->pMarginOppositeX->wTileCurr;
+			}
 			pManager->pMarginOppositeX->wTileCurr = 0;
 			pManager->pMarginOppositeX->wTileEnd = 0;
 		}
@@ -277,10 +283,12 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					pManager->pMarginY->wTileEnd = pManager->uTileBounds.sUwCoord.uwX-1;
 			}
 			// Modify opposite margin data
-			if(wDeltaY > 0)
+			if(wDeltaY > 0) {
 				++pManager->pMarginOppositeY->wTileOffs;
-			else
+			}
+			else {
 				--pManager->pMarginOppositeY->wTileOffs;
+			}
 			pManager->pMarginOppositeY->wTileCurr = 0;
 			pManager->pMarginOppositeY->wTileEnd = 0;
 		}

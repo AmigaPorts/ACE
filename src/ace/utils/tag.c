@@ -34,8 +34,9 @@ ULONG tagGet(void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnN
 			va_end(vaWorkList);
 			return tagGet(pNext, 0, ulTagToFind, ulOnNotFound);
 		}
-		else
+		else {
 			va_arg(vaWorkList, ULONG);
+		}
 	} while(ulTagName != TAG_DONE);
 	va_end(vaWorkList);
 	return ulOnNotFound;

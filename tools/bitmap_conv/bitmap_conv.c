@@ -115,14 +115,16 @@ void writePlanarInterleaved(
 						);
 						return;
 					}
-					else
+					else {
 						wColorIdx = 0;
+					}
 				}
 
 				// Write to bitplane
 				uwPixelBuffer <<= 1;
-				if(wColorIdx & (1 << ubPlane))
+				if(wColorIdx & (1 << ubPlane)) {
 					uwPixelBuffer |= 1;
+				}
 				if((x & 0xF) == 0xF) {
 					writeByte(uwPixelBuffer >> 8, pFileOut);
 					writeByte(uwPixelBuffer & 0xFF, pFileOut);
@@ -187,14 +189,16 @@ void writePlanar(
 						);
 						return;
 					}
-					else
+					else {
 						wColorIdx = 0;
+					}
 				}
 
 				// Write to bitplane
 				uwPixelBuffer <<= 1;
-				if(wColorIdx & (1 << ubPlane))
+				if(wColorIdx & (1 << ubPlane)) {
 					uwPixelBuffer |= 1;
+				}
 				if((x & 0xF) == 0xF) {
 					writeByte(uwPixelBuffer >> 8, pFileOut);
 					writeByte(uwPixelBuffer & 0xFF, pFileOut);

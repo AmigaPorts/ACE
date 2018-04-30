@@ -67,18 +67,21 @@ void gsTestBlitLoop(void) {
 	if(s_ubType & TYPE_SAVEBG) {
 		//TODO: Restore BG
 	}
-	else
+	else {
 		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 0);
+	}
 
 	// Update type
 
 	// Rapid movement
 	if(keyUse(KEY_R)) {
 		s_ubType ^= TYPE_RAPID;
-		if(s_ubType & TYPE_RAPID)
+		if(s_ubType & TYPE_RAPID) {
 			s_fnKeyPoll = keyCheck;
-		else
+		}
+		else {
 			s_fnKeyPoll = keyUse;
+		}
 	}
 
 	// Auto movement

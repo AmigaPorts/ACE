@@ -32,8 +32,9 @@ tView *viewCreate(void *pTags, ...) {
 		);
 		pView->uwFlags |= VIEW_FLAG_COPLIST_RAW;
 	}
-	else
+	else {
 		pView->pCopList = copListCreate(0, TAG_DONE);
+	}
 
 	// Additional CLUT tags
 	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_CLUT, 0)) {
@@ -169,8 +170,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	// Get dimensions
 	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
 	pVPort->uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
-	if(pVPort->uwHeight == uwDefaultHeight)
+	if(pVPort->uwHeight == uwDefaultHeight) {
 		pVPort->uwHeight = SCREEN_PAL_HEIGHT-pVPort->uwOffsY;
+	}
 	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 	logWrite(
 		"Dimensions: %ux%u@%hu\n", pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBPP
@@ -184,8 +186,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	}
 	else {
 		pPrevVPort = pView->pFirstVPort;
-		while(pPrevVPort->pNext)
+		while(pPrevVPort->pNext) {
 			pPrevVPort = pPrevVPort->pNext;
+		}
 		pPrevVPort->pNext = pVPort;
 		logWrite("VPort added after %p\n", pPrevVPort);
 	}
@@ -196,10 +199,12 @@ tVPort *vPortCreate(void *pTagList, ...) {
 		UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
 		if(uwPaletteSize == 0xFFFF)
 			logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
-		else if(!uwPaletteSize || uwPaletteSize > 32)
+		else if(!uwPaletteSize || uwPaletteSize > 32) {
 			logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
-		else
+		}
+		else {
 			memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
+		}
 	}
 
 	va_end(vaTags);
@@ -227,16 +232,19 @@ void vPortDestroy(tVPort *pVPort) {
 			logWrite(" gotcha!\n");
 
 			// Remove from list
-			if(pPrevVPort)
+			if(pPrevVPort) {
 				pPrevVPort->pNext = pCurrVPort->pNext;
-			else
+			}
+			else {
 				pView->pFirstVPort = pCurrVPort->pNext;
+			}
 			--pView->ubVpCount;
 
 			// Destroy managers
 			logBlockBegin("Destroying managers");
-			while(pCurrVPort->pFirstManager)
+			while(pCurrVPort->pFirstManager) {
 				vPortRmManager(pCurrVPort, pCurrVPort->pFirstManager);
+			}
 			logBlockEnd("Destroying managers");
 
 			// Free stuff

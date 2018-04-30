@@ -35,10 +35,15 @@ tScrollBufferManager *scrollBufferCreate(tVPort *pVPort, UBYTE ubMarginWidth, UW
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 
 	// Find camera manager, create if not exists
-	if(!(pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA)))
-		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
-	else
+	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
+	if(!pManager) {
+		pManager->pCameraManager = cameraCreate(
+			pVPort, 0, 0, uwBoundWidth, uwBoundHeight
+		);
+	}
+	else {
 		cameraReset(pManager->pCameraManager, 0,0, uwBoundWidth, uwBoundHeight);
+	}
 
 	// TODO: Set copperlist to current camera pos?
 
@@ -119,9 +124,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			}
 			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0000);
 		}
-		else
+		else {
 			copBlockWait(pCopList, pBlock, 0x7F, 0xFF);
-
+		}
 
 		pManager->uwVpHeightPrev = uwVpHeight;
 		copProcessBlocks();

@@ -47,16 +47,11 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	s_pMemTail->uwId = s_uwLastId++;
 	s_pMemTail->pNext = pNext;
 
-	if(TypeOfMem(pAddr) & MEMF_CHIP)
-		filePrintf(
-			s_pMemLog, "Allocated CHIP memory %hu@%p, size %lu (%s:%u)\n",
-			s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
-		);
-	else
-		filePrintf(
-			s_pMemLog, "Allocated FAST memory %hu@%p, size %lu (%s:%u)\n",
-			s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
-		);
+	filePrintf(
+		s_pMemLog, "Allocated %s memory %hu@%p, size %lu (%s:%u)\n",
+		(TypeOfMem(pAddr) & MEMF_CHIP) ? "CHIP" : "FAST",
+		s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
+	);
 
 	// Update mem usage counter
 	if(TypeOfMem(pAddr) & MEMF_CHIP) {
@@ -69,7 +64,6 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 		if(s_ulFastUsage > s_ulFastPeakUsage)
 			s_ulFastPeakUsage = s_ulFastUsage;
 	}
-	// filePrintf(s_pMemLog, "usage: CHIP: %lu, FAST: %lu\n", s_ulChipUsage, s_ulFastUsage);
 
 	fileFlush(s_pMemLog);
 	systemUnuse();
@@ -95,10 +89,12 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 
 	systemUse();
 	// unlink entry from list
-	if(pPrev)
+	if(pPrev) {
 		pPrev->pNext = pCurr->pNext;
-	else
+	}
+	else {
 		s_pMemTail = pCurr->pNext;
+	}
 
 	// remove entry
 	if(ulSize != pCurr->ulSize) {

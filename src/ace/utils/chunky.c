@@ -40,8 +40,9 @@ void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 	for(ubPlane = 0; ubPlane != pOut->Depth; ++ubPlane) {
 		for(ubPixel = 0; ubPixel != 16; ++ubPixel) {
 			uwPlanarBuffer <<= 1;
-			if(pIn[ubPixel] & (1<<ubPlane))
+			if(pIn[ubPixel] & (1<<ubPlane)) {
 				uwPlanarBuffer |= 1;
+			}
 		}
 		pPlane = (UWORD*)(pOut->Planes[ubPlane]);
 		pPlane[ulOffset] = uwPlanarBuffer;
@@ -78,10 +79,12 @@ void chunkyRotate(
 			u = fix16_to_int(fix16_mul(fCos, fDx) - fix16_mul(fSin, fDy) + fCx + fHalf);
 			v = fix16_to_int(fix16_mul(fSin, fDx) + fix16_mul(fCos, fDy) + fCy + fHalf);
 
-			if(u < 0 || v < 0 || u >= wWidth || v >= wHeight)
+			if(u < 0 || v < 0 || u >= wWidth || v >= wHeight) {
 				pDest[y*wWidth + x] = ubBgColor;
-			else
+			}
+			else {
 				pDest[y*wWidth + x] = pSource[v*wWidth + u];
+			}
 		}
 	}
 }

@@ -193,8 +193,9 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		uwShift = 15-(pCameraManager->uPos.sUwCoord.uwX & 0xF);
 		uwShift = (uwShift << 4) | uwShift;
 	}
-	else
+	else {
 		uwShift = 0;
+	}
 
 	// X offset on bitplane
 	ulBplOffs = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;

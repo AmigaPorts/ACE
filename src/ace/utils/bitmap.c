@@ -41,29 +41,35 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 			logBlockEnd("bitmapCreate()");
 			return 0;
 		}
-		for(i = 1; i != ubDepth; ++i)
+		for(i = 1; i != ubDepth; ++i) {
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
+		}
 
-		if (ubFlags & BMF_CLEAR)
+		if (ubFlags & BMF_CLEAR) {
 			memset(pBitMap->Planes[0], 0, pBitMap->Rows * pBitMap->BytesPerRow);
+		}
 	}
-	else
+	else {
 		for(i = ubDepth; i--;) {
 			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
 			if(!pBitMap->Planes[i]) {
 				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth-i+1,ubDepth);
-				while(++i != ubDepth)
+				while(++i != ubDepth) {
 					memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*uwHeight);
+				}
 				memFree(pBitMap, sizeof(tBitMap));
 				logBlockEnd("bitmapCreate()");
 				return 0;
 			}
-			if (ubFlags & BMF_CLEAR)
+			if (ubFlags & BMF_CLEAR) {
 				memset(pBitMap->Planes[i], 0, pBitMap->Rows * pBitMap->BytesPerRow);
+			}
 		}
+	}
 
-	if (ubFlags & BMF_CLEAR)
+	if (ubFlags & BMF_CLEAR) {
 		blitWait();
+	}
 
 	logBlockEnd("bitmapCreate()");
 	return pBitMap;

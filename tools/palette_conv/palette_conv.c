@@ -101,10 +101,12 @@ int main(int argc, char *argv[]) {
 	}
 	fclose(pFile);
 
-	if(!uwColorCount)
+	if(!uwColorCount) {
 		printf("ERROR: read 0 colors\n");
-	else
+	}
+	else {
 		printf("Read %hu colors\n", uwColorCount);
+	}
 
 	// Determine output path
 	if(argc == 3)
