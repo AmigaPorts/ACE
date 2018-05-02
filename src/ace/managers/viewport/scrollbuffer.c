@@ -36,7 +36,7 @@ tScrollBufferManager *scrollBufferCreate(tVPort *pVPort, UBYTE ubMarginWidth, UW
 
 	// Find camera manager, create if not exists
 	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	if(!pManager) {
+	if(!pManager->pCameraManager) {
 		pManager->pCameraManager = cameraCreate(
 			pVPort, 0, 0, uwBoundWidth, uwBoundHeight
 		);
