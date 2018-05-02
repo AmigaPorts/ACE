@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/utils/tag.h>
 
@@ -46,8 +50,9 @@ tSimpleBufferManager *simpleBufferCreate(
 
 	// Find camera manager, create if not exists
 	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	if(!pManager->pCameraManager)
+	if(!pManager->pCameraManager) {
 		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
+	}
 
 	pCopList = pVPort->pView->pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
@@ -189,8 +194,9 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		uwShift = 15-(pCameraManager->uPos.sUwCoord.uwX & 0xF);
 		uwShift = (uwShift << 4) | uwShift;
 	}
-	else
+	else {
 		uwShift = 0;
+	}
 
 	// X offset on bitplane
 	ulBplOffs = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;

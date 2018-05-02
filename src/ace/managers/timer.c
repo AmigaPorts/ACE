@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/timer.h>
 #include <ace/managers/log.h>
 #include <ace/managers/system.h>
@@ -72,10 +76,12 @@ ULONG timerGetPrec(void) {
 	uwFr1 = g_sTimerManager.uwFrameCounter;
 	*pRay = *pReg;
 	uwFr2 = g_sTimerManager.uwFrameCounter;
-	if(sRay.bfPosY < 100)
+	if(sRay.bfPosY < 100) {
 		return (uwFr2*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
-	else
+	}
+	else {
 		return (uwFr1*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
+	}
 	#else
 	return 0;
 	#endif
@@ -86,8 +92,9 @@ ULONG timerGetPrec(void) {
  * For use on both precise and frame time
  */
 ULONG timerGetDelta(ULONG ulStart, ULONG ulStop) {
-	if(ulStop >= ulStart)
+	if(ulStop >= ulStart) {
 		return ulStop-ulStart;
+	}
 	return (0xFFFFFFFF - ulStart) + ulStop;
 }
 
@@ -118,10 +125,12 @@ void timerProcess(void) {
 
 	ulCurrentTime = timerGet();
 	if(!g_sTimerManager.ubPaused) {
-		if(ulCurrentTime > g_sTimerManager.ulLastTime)
+		if(ulCurrentTime > g_sTimerManager.ulLastTime) {
 			g_sTimerManager.ulGameTicks += ulCurrentTime - g_sTimerManager.ulLastTime;
-		else
+		}
+		else {
 			g_sTimerManager.ulGameTicks += (0xFFFF - g_sTimerManager.ulLastTime) + ulCurrentTime + 1;
+		}
 	}
 	g_sTimerManager.ulLastTime = ulCurrentTime;
 }
@@ -162,5 +171,5 @@ void timerWaitUs(UWORD uwUsCnt) {
 	// timerGetPrec(): One tick equals: PAL - 0.40us, NTSC - 0.45us
 	ULONG ulStart = timerGetPrec();
 	UWORD uwTickCnt = uwUsCnt*2/5;
-	while(timerGetPrec() - ulStart < uwTickCnt);
+	while(timerGetPrec() - ulStart < uwTickCnt) {}
 }

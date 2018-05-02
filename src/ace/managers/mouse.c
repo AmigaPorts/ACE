@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/mouse.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
@@ -16,10 +20,12 @@ void mouseCreate(UBYTE ubPortFlags) {
 	UWORD uwPotMask = 0;
 
 	// Enable RMB & MMB
-	if(ubPortFlags & MOUSE_PORT_1)
+	if(ubPortFlags & MOUSE_PORT_1) {
 		uwPotMask |= BV(11) | BV(10) | BV(9) | BV(8);
-	if(ubPortFlags & MOUSE_PORT_2)
+	}
+	if(ubPortFlags & MOUSE_PORT_2) {
 		uwPotMask |= BV(15) | BV(14) | BV(13) | BV(12);
+	}
 	g_pCustom->potgo = (g_pCustom->potinp & (0xFFFF ^ uwPotMask)) | uwPotMask;
 
 	// Amiga Hardware Reference Manual suggests that pos should be polled every
@@ -64,22 +70,28 @@ static void mouseProcessPort(
 	g_sMouseManager.pMice[ubPort].ubPrevHwY = ubPosY;
 
 	// Left button state
-	if(ubStateLmb)
+	if(ubStateLmb) {
 		mouseSetButton(ubPort, MOUSE_LMB, MOUSE_NACTIVE);
-	else if(!mouseCheck(ubPort, MOUSE_LMB))
+	}
+	else if(!mouseCheck(ubPort, MOUSE_LMB)) {
 		mouseSetButton(ubPort, MOUSE_LMB, MOUSE_ACTIVE);
+	}
 
 	// Right button state
-	if(ubStateRmb)
+	if(ubStateRmb) {
 		mouseSetButton(ubPort, MOUSE_RMB, MOUSE_NACTIVE);
-	else if(!mouseCheck(ubPort, MOUSE_RMB))
+	}
+	else if(!mouseCheck(ubPort, MOUSE_RMB)) {
 		mouseSetButton(ubPort, MOUSE_RMB, MOUSE_ACTIVE);
+	}
 
 	// Middle button state
-	if(ubStateMmb)
+	if(ubStateMmb) {
 		mouseSetButton(ubPort, MOUSE_MMB, MOUSE_NACTIVE);
-	else if(!mouseCheck(ubPort, MOUSE_MMB))
+	}
+	else if(!mouseCheck(ubPort, MOUSE_MMB)) {
 		mouseSetButton(ubPort, MOUSE_MMB, MOUSE_ACTIVE);
+	}
 }
 
 void mouseProcess(void) {

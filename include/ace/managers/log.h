@@ -1,20 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #ifndef GUARD_ACE_MANAGER_LOG_H
 #define GUARD_ACE_MANAGER_LOG_H
 
 #include <string.h> // strlen etc
 #include <stdarg.h> // va_list etc
-#ifdef AMIGA
-#include <clib/exec_protos.h> // Amiga typedefs
-#include <clib/graphics_protos.h> // Amiga typedefs
-#endif // AMIGA
-
 #include <ace/types.h>
 #include <ace/managers/timer.h>
 #include <ace/utils/file.h>
-
-#ifndef LOG_FILE_NAME
-#define LOG_FILE_NAME "game.log"
-#endif
 
 /* Types */
 
@@ -40,7 +35,7 @@ typedef struct _tLogManager {
 	UBYTE ubShutUp;
 } tLogManager;
 
-#ifdef GAME_DEBUG
+#ifdef ACE_DEBUG
 /* Globals */
 extern tLogManager g_sLogManager;
 
@@ -77,15 +72,6 @@ void _logAvgWrite(tAvg *pAvg);
 
 /* Functions - struct dump */
 
-#ifdef AMIGA
-void _logUCopList(
-	IN struct UCopList *pUCopList
-);
-void _logBitMap(
-	IN struct BitMap *pBitMap
-);
-#endif // AMIGA
-
 #define logOpen() _logOpen()
 #define logClose() _logClose()
 #define logPushIndent() _logPushIndent()
@@ -101,8 +87,6 @@ void _logBitMap(
 #define logAvgEnd(pAvg) _logAvgEnd(pAvg)
 #define logAvgWrite(pAvg) _logAvgWrite(pAvg)
 
-#define logUCopList(pUCopList) _logUCopList(pUCopList)
-#define logBitMap(pBitMap) _logBitMap(pBitMap)
 #else
 #define logOpen()
 #define logClose()
@@ -118,12 +102,6 @@ void _logBitMap(
 #define logAvgBegin(pAvg)
 #define logAvgEnd(pAvg)
 #define logAvgWrite(pAvg)
-
-# ifdef AMIGA
-#define logUCopList(pUCopList)
-# define logBitMap(pBitMap)
-#endif// AMIGA
-
-#endif // GAME_DEBUG
+#endif // ACE_DEBUG
 
 #endif // GUARD_ACE_MANAGER_LOG_H

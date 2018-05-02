@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "menu/menu.h"
 
 #include <ace/managers/viewport/simplebuffer.h>
@@ -94,12 +98,13 @@ void gsMenuLoop(void) {
 	// Menu list selection
 	else if(keyUse(KEY_RETURN) || joyUse(JOY1_FIRE)) {
 		ubSelected = s_pMenuList->ubSelected;
-		if(s_pMenuList->pEntries[ubSelected].ubDisplayMode == MENULIST_ENABLED)
+		if(s_pMenuList->pEntries[ubSelected].ubDisplayMode == MENULIST_ENABLED) {
 			switch(s_ubMenuType) {
 				case MENU_MAIN: menuSelectMain(); return;
 				case MENU_TESTS: menuSelectTests(); return;
 				case MENU_EXAMPLES: menuSelectExamples(); return;
 			}
+		}
 	}
 	vPortWaitForEnd(s_pMenuVPort);
 
@@ -131,7 +136,7 @@ void gsMenuDestroy(void) {
 	logBlockEnd("gsMenuDestroy()");
 }
 
-void menuDrawBg() {
+void menuDrawBg(void) {
 	logBlockBegin("menuDrawBg()");
 	UWORD uwX, uwY;
 	UBYTE isOdd = 0;

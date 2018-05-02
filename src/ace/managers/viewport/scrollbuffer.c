@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/viewport/scrollbuffer.h>
 
 #ifdef AMIGA
@@ -31,10 +35,15 @@ tScrollBufferManager *scrollBufferCreate(tVPort *pVPort, UBYTE ubMarginWidth, UW
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 
 	// Find camera manager, create if not exists
-	if(!(pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA)))
-		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
-	else
+	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
+	if(!pManager->pCameraManager) {
+		pManager->pCameraManager = cameraCreate(
+			pVPort, 0, 0, uwBoundWidth, uwBoundHeight
+		);
+	}
+	else {
 		cameraReset(pManager->pCameraManager, 0,0, uwBoundWidth, uwBoundHeight);
+	}
 
 	// TODO: Set copperlist to current camera pos?
 
@@ -115,9 +124,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			}
 			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0000);
 		}
-		else
+		else {
 			copBlockWait(pCopList, pBlock, 0x7F, 0xFF);
-
+		}
 
 		pManager->uwVpHeightPrev = uwVpHeight;
 		copProcessBlocks();
@@ -142,8 +151,9 @@ void scrollBufferReset(tScrollBufferManager *pManager, UBYTE ubMarginWidth, UWOR
 	pManager->uwBmAvailHeight = ubMarginWidth * blockCountCeil(uwVpHeight, ubMarginWidth) + ubMarginWidth*4;
 
 	// Destroy old buffer bitmap
-	if(pManager->pBuffer)
+	if(pManager->pBuffer) {
 		bitmapDestroy(pManager->pBuffer);
+	}
 
 	// Create new buffer bitmap
 	uwCalcWidth = uwVpWidth + ubMarginWidth*4;

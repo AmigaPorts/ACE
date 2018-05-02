@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/utils/extview.h>
 #include <limits.h>
 #include <ace/managers/system.h>
@@ -28,8 +32,9 @@ tView *viewCreate(void *pTags, ...) {
 		);
 		pView->uwFlags |= VIEW_FLAG_COPLIST_RAW;
 	}
-	else
+	else {
 		pView->pCopList = copListCreate(0, TAG_DONE);
+	}
 
 	// Additional CLUT tags
 	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_CLUT, 0)) {
@@ -156,8 +161,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 		pVPort->uwOffsY += pPrevVPort->uwHeight;
 		pPrevVPort = pPrevVPort->pNext;
 	}
-	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT))
+	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)) {
 		pVPort->uwOffsY += 2; // TODO: not always required?
+	}
 	ULONG ulAddOffsY = tagGet(pTagList, vaTags, TAG_VPORT_OFFSET_TOP, 0);
 	pVPort->uwOffsY += ulAddOffsY;
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
@@ -165,8 +171,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	// Get dimensions
 	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
 	pVPort->uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
-	if(pVPort->uwHeight == uwDefaultHeight)
+	if(pVPort->uwHeight == uwDefaultHeight) {
 		pVPort->uwHeight = SCREEN_PAL_HEIGHT-pVPort->uwOffsY;
+	}
 	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 	logWrite(
 		"Dimensions: %ux%u@%hu\n", pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBPP
@@ -180,8 +187,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	}
 	else {
 		pPrevVPort = pView->pFirstVPort;
-		while(pPrevVPort->pNext)
+		while(pPrevVPort->pNext) {
 			pPrevVPort = pPrevVPort->pNext;
+		}
 		pPrevVPort->pNext = pVPort;
 		logWrite("VPort added after %p\n", pPrevVPort);
 	}
@@ -190,12 +198,15 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	UWORD *pSrcPalette = (UWORD*)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
 	if(pSrcPalette) {
 		UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
-		if(uwPaletteSize == 0xFFFF)
+		if(uwPaletteSize == 0xFFFF) {
 			logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
-		else if(!uwPaletteSize || uwPaletteSize > 32)
+		}
+		else if(!uwPaletteSize || uwPaletteSize > 32) {
 			logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
-		else
+		}
+		else {
 			memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
+		}
 	}
 
 	va_end(vaTags);
@@ -223,16 +234,19 @@ void vPortDestroy(tVPort *pVPort) {
 			logWrite(" gotcha!\n");
 
 			// Remove from list
-			if(pPrevVPort)
+			if(pPrevVPort) {
 				pPrevVPort->pNext = pCurrVPort->pNext;
-			else
+			}
+			else {
 				pView->pFirstVPort = pCurrVPort->pNext;
+			}
 			--pView->ubVpCount;
 
 			// Destroy managers
 			logBlockBegin("Destroying managers");
-			while(pCurrVPort->pFirstManager)
+			while(pCurrVPort->pFirstManager) {
 				vPortRmManager(pCurrVPort, pCurrVPort->pFirstManager);
+			}
 			logBlockEnd("Destroying managers");
 
 			// Free stuff
@@ -305,8 +319,9 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	tVpManager *pVpCurr = pVPort->pFirstManager;
 	// przewin przed menedzer o wyzszym numerze niz wstawiany
 	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
-		if(pVpCurr->ubId <= pVpManager->ubId)
+		if(pVpCurr->ubId <= pVpManager->ubId) {
 			pVpCurr = pVpCurr->pNext;
+		}
 	}
 	pVpManager->pNext = pVpCurr->pNext;
 	pVpCurr->pNext = pVpManager;
@@ -341,8 +356,9 @@ tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {
 
 	pManager = pVPort->pFirstManager;
 	while(pManager) {
-		if(pManager->ubId == ubId)
+		if(pManager->ubId == ubId) {
 			return pManager;
+		}
 		pManager = pManager->pNext;
 	}
 	return 0;

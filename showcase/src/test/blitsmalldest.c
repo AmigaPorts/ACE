@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "test/blitsmalldest.h"
 
 #include <ace/utils/extview.h>
@@ -20,7 +24,7 @@ static tBitMap *s_pRefBitmap;
 static tBitMap *s_pDstBitmap;
 UBYTE ubFrameIdx;
 
-void prepareRefBitmap() {
+void prepareRefBitmap(void) {
 	// s_pRefBitmap = bitmapCreateFromFile("data/blitToSmall.bm");
 	UBYTE ubBlockWidth = 32;
 	UBYTE ubBlockHeight = 32;
@@ -73,10 +77,12 @@ void gsTestBlitSmallDestLoop(void) {
 		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
 		return;
 	}
-	if(keyUse(KEY_RIGHT))
+	if(keyUse(KEY_RIGHT)) {
 		bUpdate += 1;
-	if(keyUse(KEY_LEFT))
+	}
+	if(keyUse(KEY_LEFT)) {
 		bUpdate -=1;
+	}
 
 	if(bUpdate && ubFrameIdx + bUpdate > -1 && ubFrameIdx + bUpdate < 16) {
 		ubFrameIdx += bUpdate;

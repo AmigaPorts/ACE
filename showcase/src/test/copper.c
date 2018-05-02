@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "test/blit.h"
 
 #include <ace/utils/extview.h>
@@ -105,15 +109,16 @@ void gsTestCopperCreate(void) {
 		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
 
-	for(i = 0; i != 32; ++i)
+	for(i = 0; i < 32; ++i) {
 		pBar[i] = copBlockCreate(s_pTestCopperView->pCopList, 1, 0, 50+i);
-	for(i = 0; i != 16; ++i) {
+	}
+	for(i = 0; i < 16; ++i) {
 		copMove(
 			s_pTestCopperView->pCopList, pBar[i],
 			&g_pCustom->color[1], colorHSV(0,255,i << 3)
 		);
 	}
-	for(i = 16; i != 32; ++i) {
+	for(i = 16; i < 32; ++i) {
 		copMove(
 			s_pTestCopperView->pCopList, pBar[i],
 			&g_pCustom->color[1], colorHSV(0,255,(31-i) << 3)
@@ -136,19 +141,24 @@ void gsTestCopperLoop(void) {
 		return;
 	}
 
-	if(uwY >= 280)
+	if(uwY >= 280) {
 		bDir = -1;
-	if(uwY <= 30)
+	}
+	if(uwY <= 30) {
 		bDir = 1;
+	}
 
 	uwY += 2*bDir;
 
-	for(i = 0; i != 32; ++i)
+	for(i = 0; i < 32; ++i) {
 		copBlockWait(s_pTestCopperView->pCopList, pBar[i], 0, uwY+i);
-	for(i = 0; i != 16; ++i)
+	}
+	for(i = 0; i < 16; ++i) {
 		pBar[i]->pCmds[0].sMove.bfValue = colorHSV(ubHue,255,(i << 4) | i);
-	for(i = 16; i != 32; ++i)
+	}
+	for(i = 16; i < 32; ++i) {
 		pBar[i]->pCmds[0].sMove.bfValue = colorHSV(ubHue,255,((31-i) << 4) | (31-i));
+	}
 
 	++ubHue;
 

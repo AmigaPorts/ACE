@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 
@@ -209,8 +213,9 @@ UBYTE blitSafeCopy(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask, UWORD uwLine, char *szFile
 ) {
-	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile))
+	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
+	}
 	return blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask);
 }
 
@@ -261,10 +266,12 @@ UBYTE blitUnsafeCopyAligned(
 			// Since you're using this fn for speed
 			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
 		}
-		if(bitmapIsInterleaved(pSrc))
+		if(bitmapIsInterleaved(pSrc)) {
 			wSrcModulo += pSrc->BytesPerRow * (pSrc->Depth-1);
-		else if(bitmapIsInterleaved(pDst))
+		}
+		else if(bitmapIsInterleaved(pDst)) {
 			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
+		}
 
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0;
@@ -354,14 +361,14 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
 	else {
-#ifdef GAME_DEBUG
+#ifdef ACE_DEBUG
 		if(
 			(bitmapIsInterleaved(pSrc) && !bitmapIsInterleaved(pDst)) ||
 			(!bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst))
 		) {
 			logWrite("WARN: Inefficient blit via mask with %p, %p\n", pSrc, pDst);
 		}
-#endif // GAME_DEBUG
+#endif // ACE_DEBUG
 		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 		blitWait();
@@ -393,8 +400,9 @@ UBYTE blitSafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UWORD *pMsk, UWORD uwLine, char *szFile
 ) {
-	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile))
+	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
+	}
 	return blitUnsafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk);
 }
 
@@ -411,8 +419,9 @@ UBYTE _blitRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubColor, UWORD uwLine, char *szFile
 ) {
-	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile))
+	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
+	}
 #ifdef AMIGA
 
 	// Helper vars
@@ -446,10 +455,7 @@ UBYTE _blitRect(
 	ubPlane = 0;
 
 	do {
-		if(ubColor & 1)
-			ubMinterm = 0xFA;
-		else
-			ubMinterm = 0x0A;
+		ubMinterm = (ubColor & 1) ? 0xFA : 0x0A;
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!
@@ -473,8 +479,9 @@ void blitLine(
 	// https://github.com/cahirwpz/demoscene/blob/master/a500/base/libsys/blt-line.c
 
 	UWORD uwBltCon1 = LINEMODE;
-	if(isOneDot)
+	if(isOneDot) {
 		uwBltCon1 |= ONEDOT;
+	}
 
 	// Always draw the line downwards.
 	if (y1 > y2) {

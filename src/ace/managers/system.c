@@ -1,5 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/system.h>
 #include <stdlib.h>
+#include <clib/graphics_protos.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 #include <ace/utils/custom.h>
@@ -266,12 +271,12 @@ void systemUnuse(void) {
 			INTF_PORTS
 		);
 	}
-// #ifdef GAME_DEBUG
+#if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
 		logWrite("ERR: System uses less than 0!\n");
 		s_wSystemUses = 0;
 	}
-// #endif
+#endif
 }
 
 void systemUse(void) {

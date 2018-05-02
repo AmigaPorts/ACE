@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/utils/tag.h>
 #include <ace/managers/log.h>
 
@@ -30,8 +34,9 @@ ULONG tagGet(void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnN
 			va_end(vaWorkList);
 			return tagGet(pNext, 0, ulTagToFind, ulOnNotFound);
 		}
-		else
+		else {
 			va_arg(vaWorkList, ULONG);
+		}
 	} while(ulTagName != TAG_DONE);
 	va_end(vaWorkList);
 	return ulOnNotFound;

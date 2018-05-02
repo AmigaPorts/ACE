@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "test/font.h"
 
 #include <ace/managers/game.h>
@@ -117,7 +121,7 @@ void gsTestFontSentenceLoop(void) {
 		}
 	}
 
-	for(UBYTE i = 0; i < ubAllowedCharsCount; ++i)
+	for(UBYTE i = 0; i < ubAllowedCharsCount; ++i) {
 		if(keyUse(szAllowedChars[i])) {
 			UBYTE ubSentenceLength = strlen(s_szSentence);
 			if(ubSentenceLength != 20) {
@@ -125,6 +129,7 @@ void gsTestFontSentenceLoop(void) {
 				isRedrawNeeded = 1;
 			}
 		}
+	}
 
 	if(isRedrawNeeded) {
 		testFontDrawSentence();
@@ -142,7 +147,7 @@ void gsTestFontDestroy(void) {
 	viewDestroy(s_pTestFontView);
 }
 
-void testFontDrawTable() {
+void testFontDrawTable(void) {
 	tFont *pFont;
 	UWORD i;
 	char szCodeBfr[3];

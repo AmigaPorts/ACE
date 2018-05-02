@@ -1,11 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/utils/bitmap.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/log.h>
 #include <ace/managers/memory.h>
+#include <ace/managers/system.h>
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/custom.h>
-
 
 /* Globals */
 
@@ -37,29 +41,35 @@ tBitMap *bitmapCreate(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlag
 			logBlockEnd("bitmapCreate()");
 			return 0;
 		}
-		for(i = 1; i != ubDepth; ++i)
+		for(i = 1; i != ubDepth; ++i) {
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
+		}
 
-		if (ubFlags & BMF_CLEAR)
+		if (ubFlags & BMF_CLEAR) {
 			memset(pBitMap->Planes[0], 0, pBitMap->Rows * pBitMap->BytesPerRow);
+		}
 	}
-	else
+	else {
 		for(i = ubDepth; i--;) {
 			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
 			if(!pBitMap->Planes[i]) {
 				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth-i+1,ubDepth);
-				while(++i != ubDepth)
+				while(++i != ubDepth) {
 					memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*uwHeight);
+				}
 				memFree(pBitMap, sizeof(tBitMap));
 				logBlockEnd("bitmapCreate()");
 				return 0;
 			}
-			if (ubFlags & BMF_CLEAR)
+			if (ubFlags & BMF_CLEAR) {
 				memset(pBitMap->Planes[i], 0, pBitMap->Rows * pBitMap->BytesPerRow);
+			}
 		}
+	}
 
-	if (ubFlags & BMF_CLEAR)
+	if (ubFlags & BMF_CLEAR) {
 		blitWait();
+	}
 
 	logBlockEnd("bitmapCreate()");
 	return pBitMap;
@@ -216,16 +226,17 @@ tBitMap *bitmapCreateFromFile(char *szFilePath) {
 }
 
 void bitmapDestroy(tBitMap *pBitMap) {
-	UBYTE i;
 	logBlockBegin("bitmapDestroy(pBitMap: %p)", pBitMap);
-	if (pBitMap) {
+	if(pBitMap) {
 #ifdef AMIGA
 		blitWait();
 #endif
-		if(bitmapIsInterleaved(pBitMap))
+		if(bitmapIsInterleaved(pBitMap)) {
 			pBitMap->Depth = 1;
-		for (i = pBitMap->Depth; i--;)
+		}
+		for(UBYTE i = pBitMap->Depth; i--;) {
 			memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*pBitMap->Rows);
+		}
 		memFree(pBitMap, sizeof(tBitMap));
 	}
 	logBlockEnd("bitmapDestroy()");
@@ -249,8 +260,10 @@ void bitmapDump(tBitMap *pBitMap) {
 		pBitMap->BytesPerRow, pBitMap->Rows, pBitMap->Flags,
 		pBitMap->Depth, pBitMap->pad
 	);
-	for(i = 0; i != pBitMap->Depth; ++i)
+	// since Planes is always 8-long, dump all its entries
+	for(i = 0; i != pBitMap->Depth; ++i) {
 		logWrite("Bitplane %hu addr: %p\n", i, pBitMap->Planes[i]);
+	}
 
 	logBlockEnd("bitmapDump()");
 }

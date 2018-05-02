@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "test/blit.h"
 #include <ace/utils/extview.h>
 #include <ace/managers/game.h>
@@ -63,18 +67,21 @@ void gsTestBlitLoop(void) {
 	if(s_ubType & TYPE_SAVEBG) {
 		//TODO: Restore BG
 	}
-	else
+	else {
 		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 0);
+	}
 
 	// Update type
 
 	// Rapid movement
 	if(keyUse(KEY_R)) {
 		s_ubType ^= TYPE_RAPID;
-		if(s_ubType & TYPE_RAPID)
+		if(s_ubType & TYPE_RAPID) {
 			s_fnKeyPoll = keyCheck;
-		else
+		}
+		else {
 			s_fnKeyPoll = keyUse;
+		}
 	}
 
 	// Auto movement
@@ -153,8 +160,9 @@ void gsTestBlitLoop(void) {
 	if(s_ubType & TYPE_SAVEBG) {
 		//TODO: Save BG beneath new bob
 	}
-	// if(s_ubType & TYPE_RECT)
+	// if(s_ubType & TYPE_RECT) {
 		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 3);
+	// }
 	vPortWaitForEnd(s_pTestBlitVPort);
 }
 

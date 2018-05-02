@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -17,16 +21,17 @@ void printSupportedExtensions(void) {
 
 void trimEnd(char *str) {
 	char *c;
-	
-	for(c = &(str[strlen(str)-1]); strchr("\n\r ", *c) && c >= str; --c)
+
+	for(c = &(str[strlen(str)-1]); strchr("\n\r ", *c) && c >= str; --c) {
 		*c = '\0';
+	}
 }
 
 uint16_t paletteLoadFromGpl(FILE *pFile, tColor *pPalette) {
 	char szBuffer[255];
 	char *pComment;
 	tColor *pColor;
-	
+
 	fgets(szBuffer, 255, pFile);
 	trimEnd(szBuffer);
 	if(strcmp(szBuffer, "GIMP Palette")) {
@@ -39,10 +44,12 @@ uint16_t paletteLoadFromGpl(FILE *pFile, tColor *pPalette) {
 		fgets(szBuffer, 255, pFile);
 		trimEnd(szBuffer);
 		pComment = strchr(szBuffer, '#');
-		if(pComment)
+		if(pComment) {
 			*pComment = '\0';
-		if(!strlen(szBuffer))
+		}
+		if(!strlen(szBuffer)) {
 			continue;
+		}
 		if(szBuffer == strstr(szBuffer, "Name:") || szBuffer == strstr(szBuffer, "Columns:")) {
 			// ignore
 			continue;
@@ -65,14 +72,14 @@ int main(int argc, char *argv[]) {
 	uint16_t uwColorCount;
 	uint8_t i, ubXR, ubGB;
 	FILE *pFile;
-	
+
 	// No args?
 	if(argc == 1) {
 		printf("Usage: %s source_path [dest_path.pal]\n", argv[0]);
 		printSupportedExtensions();
 		return 0;
 	}
-	
+
 	// Determine file extension
 	szExt = strrchr(argv[1], '.');
 	if(!szExt) {
@@ -96,22 +103,25 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	fclose(pFile);
-	
-	if(!uwColorCount)
+
+	if(!uwColorCount) {
 		printf("ERROR: read 0 colors\n");
-	else
+	}
+	else {
 		printf("Read %hu colors\n", uwColorCount);
-	
+	}
+
 	// Determine output path
-	if(argc == 3)
+	if(argc == 3) {
 		szOut = argv[2];
+	}
 	else {
 		szOut = malloc((unsigned)(szExt - argv[1]) + 4+1); // filename + ".plt" + \0
 		memcpy(szOut, argv[1], szExt - argv[1]);
 		szOut[szExt - argv[1]] = '\0';
 		strcat(szOut, ".plt");
 	}
-	
+
 	// Write ACE palette
 	printf("Writing to %s...\n", szOut);
 	pFile = fopen(szOut, "wb");

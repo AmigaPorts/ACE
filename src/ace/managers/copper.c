@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/copper.h>
 #ifdef AMIGA
 #include <stdarg.h>
@@ -183,8 +187,9 @@ void copListDestroy(tCopList *pCopList) {
 	logBlockBegin("copListDestroy(pCopList: %p)", pCopList);
 
 	// Free copperlist buffers
-	while(pCopList->pFirstBlock)
+	while(pCopList->pFirstBlock) {
 		copBlockDestroy(pCopList, pCopList->pFirstBlock);
+	}
 
 	// Free front buffer
 	if(pCopList->pFrontBfr->uwAllocSize) {
@@ -226,8 +231,9 @@ tCopBlock *copBlockCreate(tCopList *pCopList, UWORD uwMaxCmds, UWORD uwWaitX, UW
 		tCopBlock *pPrev;
 
 		pPrev = pCopList->pFirstBlock;
-		while(pPrev->pNext && pPrev->pNext->uWaitPos.ulYX < pBlock->uWaitPos.ulYX)
+		while(pPrev->pNext && pPrev->pNext->uWaitPos.ulYX < pBlock->uWaitPos.ulYX) {
 			pPrev = pPrev->pNext;
+		}
 		pBlock->pNext = pPrev->pNext;
 		pPrev->pNext = pBlock;
 	}
@@ -302,8 +308,9 @@ UBYTE copBfrRealloc(void) {
 	if(pCopList->ubStatus & STATUS_REALLOC_CURR) {
 
 		pBackBfr->uwAllocSize = 0;
-		for(pBlock = pCopList->pFirstBlock; pBlock; pBlock = pBlock->pNext)
+		for(pBlock = pCopList->pFirstBlock; pBlock; pBlock = pBlock->pNext) {
 			pBackBfr->uwAllocSize += pBlock->uwMaxCmds;
+		}
 		pBackBfr->uwAllocSize += pCopList->uwBlockCount + 1; // all WAITs + double WAIT
 		pBackBfr->uwAllocSize *= sizeof(tCopCmd);
 		// Pass realloc to next buffer
@@ -527,8 +534,9 @@ tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
 
 	// Determine instruction count
 	for(FUBYTE i = 0; i != 8; ++i) {
-		if(fubMask & 1)
+		if(fubMask & 1) {
 			fubCmdCnt += 2;
+		}
 		fubMask >>= 1;
 	}
 

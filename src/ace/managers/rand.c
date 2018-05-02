@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <ace/managers/rand.h>
 
 /* Globals */
@@ -30,7 +34,7 @@ ULONG ulRand(void) {
 }
 
 // UWORD is faster on Amiga
-UBYTE ubRand() {
+UBYTE ubRand(void) {
 	return uwRand() ^ 0xFF;
 }
 
@@ -45,7 +49,7 @@ UBYTE ubRandMinMax(UBYTE ubMin, UBYTE ubMax) {
 UWORD uwRand(void) {
 	UWORD uwT = g_sRandManager.uwRandX ^ (g_sRandManager.uwRandX << 11);
 	g_sRandManager.uwRandX = g_sRandManager.uwRandY;
-	g_sRandManager.uwRandY = g_sRandManager.uwRandZ; 
+	g_sRandManager.uwRandY = g_sRandManager.uwRandZ;
 	g_sRandManager.uwRandZ = g_sRandManager.uwRandW;
 	return g_sRandManager.uwRandW = (g_sRandManager.uwRandW ^ (g_sRandManager.uwRandW >> 19)) ^ (uwT ^ (uwT >> 8));
 }

@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #ifndef GUARD_ACE_TYPES_H
 #define GUARD_ACE_TYPES_H
 
@@ -19,8 +23,6 @@ typedef int8_t  BYTE;
 typedef int16_t WORD;
 typedef int32_t LONG;
 #endif // AMIGA
-
-#define GAME_DEBUG
 
 /* Docs */
 #define IN    /* Input parameter. Passed pointer contents is const */
