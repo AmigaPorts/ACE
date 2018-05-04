@@ -70,7 +70,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags,	...);
  *
  *  @todo Realloc copper buffer to reflect BPP change.
  */
-void simpleBufferSetBitmap(tSimpleBufferManager *pManager,	tBitMap *pBitMap);
+void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap);
 
 void simpleBufferDestroy(tSimpleBufferManager *pManager);
 
