@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obone at http://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef _ACE_UTILS_CHUNKY_H_
 #define _ACE_UTILS_CHUNKY_H_
@@ -10,8 +10,8 @@
 #include <fixmath/fix16.h>
 
 /**
- * @brief Returns color indices for 16 colora row starting from supplied
- *         coords.
+ * @brief Returns color indices for 16 colors in a row starting from supplied
+ *        coords.
  *
  * @param pBitMap Bitmap, from which pixel colors will be read
  * @param uwX     Starting X coord, always word-aligned.
@@ -46,7 +46,7 @@ UBYTE chunkyFromPlanar(tBitMap *pBitMap, UWORD uwX, UWORD uwY);
  *
  * @param pSource   Source chunky pixels.
  * @param pDest     Destination chunky pixels.
- * @param      Sine value of rotation angle.
+ * @param fSin      Sine value of rotation angle.
  * @param fCos      Cosine value of rotation angle.
  * @param ubBgColor Background color to use if rotation goes out of source.
  * @param wWidth    Source/destination chunky map width.
@@ -64,7 +64,7 @@ void chunkyRotate(
  * This function assumes that chunky pixels are of same depth as bitmap.
  * Higher chunky bits will thus be ignored.
  *
- * @param Source chunky pixels.
+ * @param pIn  Source chunky pixels.
  * @param uwX  Destination start X coordinate.
  * @param uwY  Destination Y coordinate.
  * @param pOut Destination bitmap.

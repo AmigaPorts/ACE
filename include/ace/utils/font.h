@@ -98,7 +98,7 @@ tTextBitMap *fontCreateTextBitMapFromStr(
 );
 
 void fontFillTextBitMap(
-	const tFont *pFont, tTextBitMap *pTextBitMap,	const char *szText
+	const tFont *pFont, tTextBitMap *pTextBitMap, const char *szText
 );
 
 /**

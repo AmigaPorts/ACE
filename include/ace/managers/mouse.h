@@ -92,9 +92,7 @@ static inline void mouseSetBounds(
  * @param ubMousePort: Mouse to be polled. Use one of MOUSE_PORT_* values.
  * @return Mouse's current X position relative to top-left screen pos.
  */
-static inline UWORD mouseGetX(
-	UBYTE ubMousePort
-) {
+static inline UWORD mouseGetX(UBYTE ubMousePort) {
 	return g_sMouseManager.pMice[ubMousePort].uwX;
 }
 
@@ -103,9 +101,7 @@ static inline UWORD mouseGetX(
  * @param ubMousePort: Mouse to be polled. Use one of MOUSE_PORT_* values.
  * @return Mouse's current X position relative to top-left screen pos.
  */
-static inline UWORD mouseGetY(
-	UBYTE ubMousePort
-) {
+static inline UWORD mouseGetY(UBYTE ubMousePort) {
 	return g_sMouseManager.pMice[ubMousePort].uwY;
 }
 

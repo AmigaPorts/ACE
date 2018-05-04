@@ -41,9 +41,7 @@ typedef struct _tMenuList {
 	UBYTE ubSelected;      ///< Currently selected entry
 } tMenuList;
 
-typedef void (*tMenuSelectCb)(
-	struct _tMenuList *pList, UBYTE ubPosIdx
-);
+typedef void (*tMenuSelectCb)(struct _tMenuList *pList, UBYTE ubPosIdx);
 
 /* ****************************************************************** GLOBALS */
 
