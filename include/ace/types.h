@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_TYPES_H
-#define GUARD_ACE_TYPES_H
+#ifndef _ACE_TYPES_H_
+#define _ACE_TYPES_H_
 
 // Full OS takeover
 #define CONFIG_SYSTEM_OS_TAKEOVER
@@ -23,11 +23,6 @@ typedef int8_t  BYTE;
 typedef int16_t WORD;
 typedef int32_t LONG;
 #endif // AMIGA
-
-/* Docs */
-#define IN    /* Input parameter. Passed pointer contents is const */
-#define OUT   /* Output parameter. Passed pointer contents will be changed. */
-#define INOUT /* Input/output parameter. */
 
 #if  defined(__VBCC__)
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
@@ -136,4 +131,4 @@ typedef struct _tUwAbsRect {
 	UWORD uwX2;
 } tUwAbsRect;
 
-#endif // GUARD_ACE_TYPES_H
+#endif // _ACE_TYPES_H_

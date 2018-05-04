@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTILS_FILE_H
-#define GUARD_ACE_UTILS_FILE_H
+#ifndef _ACE_UTILS_FILE_H_
+#define _ACE_UTILS_FILE_H_
 
 #include <stdio.h>
 #include <ace/types.h>
@@ -14,67 +14,28 @@
 
 typedef FILE tFile;
 
-tFile *fileOpen(
-	IN const char *szPath,
-	IN const char *szMode
-);
+tFile *fileOpen(const char *szPath, const char *szMode);
 
-void fileClose(
-	IN tFile *pFile
-);
+void fileClose(tFile *pFile);
 
-ULONG fileRead(
-	IN tFile *pFile,
-	OUT void *pDest,
-	IN ULONG ulSize
-);
+ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize);
 
-ULONG fileWrite(
-	IN tFile *pFile,
-	IN void *pSrc,
-	IN ULONG ulSize
-);
+ULONG fileWrite(tFile *pFile, void *pSrc, ULONG ulSize);
 
-ULONG fileSeek(
-	IN tFile *pFile,
-	IN ULONG ulPos,
-	IN WORD wMode
-);
+ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode);
 
-ULONG fileGetPos(
-	IN tFile *pFile
-);
+ULONG fileGetPos(tFile *pFile);
 
-UBYTE fileIsEof(
-	IN tFile *pFile
-);
+UBYTE fileIsEof(tFile *pFile);
 
-LONG fileVaPrintf(
-	IN tFile *pFile,
-	IN const char *szFmt,
-	IN va_list vaArgs
-);
+LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs);
 
-LONG filePrintf(
-	IN tFile *pFile,
-	IN const char *szFmt,
-	IN ...
-);
+LONG filePrintf(tFile *pFile, const char *szFmt, ...);
 
-LONG fileVaScanf(
-	IN tFile *pFile,
-	IN const char *szFmt,
-	OUT va_list vaArgs
-);
+LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs);
 
-LONG fileScanf(
-	IN tFile *pFile,
-	IN const char *szFmt,
-	OUT ...
-);
+LONG fileScanf(tFile *pFile,const char *szFmt, ...);
 
-void fileFlush(
-	IN tFile *pFile
-);
+void fileFlush(tFile *pFile);
 
-#endif // GUARD_ACE_UTILS_FILE_H
+#endif // _ACE_UTILS_FILE_H_

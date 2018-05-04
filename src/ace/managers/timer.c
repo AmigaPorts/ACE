@@ -28,9 +28,6 @@ void INTERRUPT timerVBlankServer(
 
 #endif // AMIGA
 
-/**
- * Creates Vertical Blank server for counting frames
- */
 void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
 	systemSetInt(
@@ -38,28 +35,14 @@ void timerCreate(void) {
 	);
 }
 
-/**
- * Removes Vertical Blank server
- */
 void timerDestroy(void) {
 	systemSetInt(INTB_VERTB, 0, 0);
 }
 
-/**
- * Gets current time based on frame number
- * One tick equals: PAL - 20ms, NTSC - 16.67ms
- * Max time capacity: 33 months
- */
 ULONG timerGet(void) {
 	return g_sTimerManager.uwFrameCounter;
 }
 
-/**
- * Gets as precise current time as possible
- * Implementation based on ray position and frame number
- * One tick equals: PAL - 0.40us, NTSC - 0.45us
- * Max time capacity: 1715s (28,5 min)
- */
 ULONG timerGetPrec(void) {
 	#ifdef AMIGA
 	UWORD uwFr1, uwFr2; // frame counts
@@ -87,10 +70,6 @@ ULONG timerGetPrec(void) {
 	#endif
 }
 
-/**
- * Gets time difference between two times
- * For use on both precise and frame time
- */
 ULONG timerGetDelta(ULONG ulStart, ULONG ulStop) {
 	if(ulStop >= ulStart) {
 		return ulStop-ulStart;
@@ -98,18 +77,11 @@ ULONG timerGetDelta(ULONG ulStart, ULONG ulStop) {
 	return (0xFFFFFFFF - ulStart) + ulStop;
 }
 
-/**
- * Returns if timer has passed without updating its state
- */
-BYTE timerPeek(ULONG *pTimer, ULONG ulTimerDelay) {
+UBYTE timerPeek(ULONG *pTimer, ULONG ulTimerDelay) {
 	return (*pTimer + ulTimerDelay) <= g_sTimerManager.ulGameTicks;
 }
 
-/**
- * Returns if timer has passed
- * If passed, its state gets resetted and countdown starts again
- */
-BYTE timerCheck(ULONG *pTimer, ULONG ulTimerDelay) {
+UBYTE timerCheck(ULONG *pTimer, ULONG ulTimerDelay) {
 	if (timerPeek(pTimer, ulTimerDelay)) {
 		*pTimer = g_sTimerManager.ulGameTicks;
 		return 1;
@@ -117,9 +89,6 @@ BYTE timerCheck(ULONG *pTimer, ULONG ulTimerDelay) {
 	return 0;
 }
 
-/**
- * Updates game ticks if game not paused
- */
 void timerProcess(void) {
 	ULONG ulCurrentTime;
 
@@ -135,11 +104,6 @@ void timerProcess(void) {
 	g_sTimerManager.ulLastTime = ulCurrentTime;
 }
 
-/**
- * Formats precise time to human readable form on supplied buffer
- * Current version works correctly only on ulPrecTime < 0xFFFFFFFF/4 (7 min)
- * and there seems to be no easy fix for this
- */
 void timerFormatPrec(char *szBfr, ULONG ulPrecTime) {
 	ULONG ulResult, ulRest;
 	if(ulPrecTime > 0xFFFFFFFF>>2) {

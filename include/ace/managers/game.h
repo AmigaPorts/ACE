@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGER_GAME_H
-#define GUARD_ACE_MANAGER_GAME_H
+#ifndef _ACE_MANAGERS_GAME_H_
+#define _ACE_MANAGERS_GAME_H_
 
 #include <ace/types.h> // Amiga typedefs
 
@@ -43,30 +43,18 @@ void gameDestroy(void);
 
 UBYTE gameIsRunning(void);
 
-void gamePushState(
-	IN tGameCb cbCreate,
-	IN tGameCb cbLoop,
-	IN tGameCb cbDestroy
-);
+void gamePushState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy);
 
 void gamePopState(void);
 
-void gameChangeState(
-	IN tGameCb cbCreate,
-	IN tGameCb cbLoop,
-	IN tGameCb cbDestroy
-);
+void gameChangeState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy);
 
-void gameChangeLoop(
-	IN tGameCb cbLoop
-);
+void gameChangeLoop(tGameCb cbLoop);
 
 void gameProcess(void);
 
 void gameClose(void);
 
-void gameKill(
-	IN char *szError
-);
+void gameKill(char *szError);
 
-#endif
+#endif // _ACE_MANAGERS_GAME_H_

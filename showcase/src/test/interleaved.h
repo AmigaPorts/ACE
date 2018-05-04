@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_SHOWCASE_TEST_INTERLEAVED_H
-#define GUARD_SHOWCASE_TEST_INTERLEAVED_H
+#ifndef _SHOWCASE_TEST_INTERLEAVED_H_
+#define _SHOWCASE_TEST_INTERLEAVED_H_
 
 #include <ace/types.h>
 
@@ -11,4 +11,4 @@ void gsTestInterleavedCreate(void);
 void gsTestInterleavedLoop(void);
 void gsTestInterleavedDestroy(void);
 
-#endif // GUARD_SHOWCASE_TEST_INTERLEAVED_H
+#endif // _SHOWCASE_TEST_INTERLEAVED_H_

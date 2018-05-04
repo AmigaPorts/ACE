@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTIL_PALETTE_H
-#define GUARD_ACE_UTIL_PALETTE_H
+#ifndef _ACE_UTILS_PALETTE_H
+#define _ACE_UTILS_PALETTE_H
 
 /**
  *  Palette utilities.
@@ -24,11 +24,7 @@
  *  @param pPalette    Palette destination pointer.
  *  @param ubMaxLength Maximum number of colors in palette.
  */
-void paletteLoad(
-	IN char *szFileName,
-	OUT UWORD *pPalette,
-	IN UBYTE ubMaxLength
-);
+void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
 
 /**
  *  @brief Dims palette to given brightness level.
@@ -37,17 +33,8 @@ void paletteLoad(
  *  @param ubColorCount Number of colors in palette.
  *  @param ubLevel      Brightness level - 15 for no dim, 0 for total blackness.
  */
-void paletteDim(
-	IN UWORD *pSource,
-	OUT UWORD *pDest,
-	IN UBYTE ubColorCount,
-	IN UBYTE ubLevel
-);
+void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel);
 
-void paletteDump(
-	IN UWORD *pPalette,
-	IN FUBYTE fubColorCnt,
-	IN char *szPath
-);
+void paletteDump(UWORD *pPalette, FUBYTE fubColorCnt, char *szPath);
 
-#endif
+#endif // _ACE_UTILS_PALETTE_H

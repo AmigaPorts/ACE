@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGER_LOG_H
-#define GUARD_ACE_MANAGER_LOG_H
+#ifndef _ACE_MANAGERS_LOG_H_
+#define _ACE_MANAGERS_LOG_H_
 
 #include <string.h> // strlen etc
 #include <stdarg.h> // va_list etc
@@ -47,20 +47,12 @@ void _logClose(void);
 void _logPushIndent(void);
 void _logPopIndent(void);
 
-void _logWrite(
-	IN char *szFormat,
-	IN ...
-);
+void _logWrite(char *szFormat, ...);
 
 /* Functions - block logging */
 
-void _logBlockBegin(
-	IN char *szBlockName,
-	IN ...
-);
-void _logBlockEnd(
-	IN char *szBlockName
-);
+void _logBlockBegin(char *szBlockName, ...);
+void _logBlockEnd(char *szBlockName);
 
 /* Functions - average block time */
 
@@ -104,4 +96,4 @@ void _logAvgWrite(tAvg *pAvg);
 #define logAvgWrite(pAvg)
 #endif // ACE_DEBUG
 
-#endif // GUARD_ACE_MANAGER_LOG_H
+#endif // _ACE_MANAGERS_LOG_H_

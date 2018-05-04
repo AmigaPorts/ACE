@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTIL_BITMAP_H
-#define GUARD_ACE_UTIL_BITMAP_H
+#ifndef _ACE_UTILS_BITMAP_H_
+#define _ACE_UTILS_BITMAP_H_
 
 #include <ace/types.h>
 
@@ -72,10 +72,7 @@ typedef struct _tAceBitmap {
  *  @see bitmapLoadFromFile
  */
 tBitMap* bitmapCreate(
-	IN UWORD uwWidth,
-	IN UWORD uwHeight,
-	IN UBYTE ubDepth,
-	IN UBYTE ubFlags
+	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
 );
 
 /**
@@ -92,10 +89,7 @@ tBitMap* bitmapCreate(
  *  @see bitmapCreateFromFile
  */
 void bitmapLoadFromFile(
-	IN tBitMap *pBitMap,
-	IN char *szFilePath,
-	IN UWORD uwStartX,
-	IN UWORD uwStartY
+	tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWORD uwStartY
 );
 
 /**
@@ -110,9 +104,7 @@ void bitmapLoadFromFile(
  *  @see bitmapCreate
  *  @see bitmapDestroy
  */
-tBitMap* bitmapCreateFromFile(
-	IN char *szFileName
-);
+tBitMap* bitmapCreateFromFile(char *szFileName);
 
 /**
  *  @brief Destroys given bitmap, freeing its resources to OS.
@@ -124,9 +116,7 @@ tBitMap* bitmapCreateFromFile(
  *  @see bitmapCreate
  *  @see bitmapCreateFromFile
  */
-void bitmapDestroy(
-	IN tBitMap *pBitMap
-);
+void bitmapDestroy(tBitMap *pBitMap);
 
 /**
  *  @brief Checks if given bitmap is interleaved.
@@ -135,9 +125,7 @@ void bitmapDestroy(
  *  @param pBitMap Bitmap to be checked.
  *  @return non-zero if bitmap is interleaved, otherwise zero.
  */
-BYTE bitmapIsInterleaved(
-	IN tBitMap *pBitMap
-);
+BYTE bitmapIsInterleaved(tBitMap *pBitMap);
 
 /**
  *  @brief Saves basic Bitmap information to log file.
@@ -146,19 +134,14 @@ BYTE bitmapIsInterleaved(
  *
  *  @see bitmapSaveBMP
  */
-void bitmapDump(
-	IN tBitMap *pBitMap
-);
+void bitmapDump(tBitMap *pBitMap);
 
 /**
  * Saves bitmap in ACE .bm format.
  * @param pBitMap Bitmap to be saved.
  * @param szPath  Path of destination file.
  */
-void bitmapSave(
-	IN tBitMap *pBitMap,
-	IN char *szPath
-);
+void bitmapSave(tBitMap *pBitMap, char *szPath);
 
 /**
  *  @brief Saves given Bitmap as BMP file.
@@ -168,11 +151,7 @@ void bitmapSave(
  *  @param pPalette   Palette to be used during export.
  *  @param szFilePath Destination file path.
  */
-void bitmapSaveBmp(
-	IN tBitMap *pBitMap,
-	IN UWORD *pPalette,
-	IN char *szFileName
-);
+void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFileName);
 
 /**
  *  @brief Returns bitmap width in bytes.
@@ -181,4 +160,4 @@ void bitmapSaveBmp(
  */
 UWORD bitmapGetByteWidth(tBitMap *pBitMap);
 
-#endif // GUARD_ACE_UTIL_BITMAP_H
+#endif // _ACE_UTILS_BITMAP_H_

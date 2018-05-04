@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGER_BLIT_H
-#define GUARD_ACE_MANAGER_BLIT_H
+#ifndef _ACE_MANAGERS_BLIT_H_
+#define _ACE_MANAGERS_BLIT_H_
 
 /**
  * The mighty blitter manager
@@ -61,31 +61,18 @@ UBYTE blitIsIdle(void);
 void blitWait(void);
 
 UBYTE blitUnsafeCopy(
-	IN tBitMap *pSrc,
-	IN WORD wSrcX,
-	IN WORD wSrcY,
-	IN tBitMap *pDst,
-	IN WORD wDstX,
-	IN WORD wDstY,
-	IN WORD wWidth,
-	IN WORD wHeight,
-	IN UBYTE ubMinterm,
-	IN UBYTE ubMask
+	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	tBitMap *pDst, WORD wDstX, WORD wDstY,
+	WORD wWidth, WORD wHeight,
+	UBYTE ubMinterm, UBYTE ubMask
 );
 
 UBYTE blitSafeCopy(
-	IN tBitMap *pSrc,
-	IN WORD wSrcX,
-	IN WORD wSrcY,
-	IN tBitMap *pDst,
-	IN WORD wDstX,
-	IN WORD wDstY,
-	IN WORD wWidth,
-	IN WORD wHeight,
-	IN UBYTE ubMinterm,
-	IN UBYTE ubMask,
-	IN UWORD uwLine,
-	IN char *szFile
+	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	tBitMap *pDst, WORD wDstX, WORD wDstY,
+	WORD wWidth, WORD wHeight,
+	UBYTE ubMinterm, UBYTE ubMask,
+	UWORD uwLine, char *szFile
 );
 
 #ifdef ACE_DEBUG
@@ -97,27 +84,16 @@ UBYTE blitSafeCopy(
 #endif
 
 UBYTE blitUnsafeCopyAligned(
-	IN tBitMap *pSrc,
-	IN WORD wSrcX,
-	IN WORD wSrcY,
-	IN tBitMap *pDst,
-	IN WORD wDstX,
-	IN WORD wDstY,
-	IN WORD wWidth,
-	IN WORD wHeight
+	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	tBitMap *pDst, WORD wDstX, WORD wDstY,
+	WORD wWidth, WORD wHeight
 );
 
 UBYTE blitSafeCopyAligned(
-	IN tBitMap *pSrc,
-	IN WORD wSrcX,
-	IN WORD wSrcY,
-	IN tBitMap *pDst,
-	IN WORD wDstX,
-	IN WORD wDstY,
-	IN WORD wWidth,
-	IN WORD wHeight,
-	IN UWORD uwLine,
-	IN char *szFile
+	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	tBitMap *pDst, WORD wDstX, WORD wDstY,
+	WORD wWidth, WORD wHeight,
+	UWORD uwLine, char *szFile
 );
 
 #ifdef ACE_DEBUG
@@ -127,29 +103,16 @@ UBYTE blitSafeCopyAligned(
 #endif
 
 UBYTE blitUnsafeCopyMask(
-	IN tBitMap *pSrc,
-	IN WORD wSrcX,
-	IN WORD wSrcY,
-	IN tBitMap *pDst,
-	IN WORD wDstX,
-	IN WORD wDstY,
-	IN WORD wWidth,
-	IN WORD wHeight,
-	IN UWORD *pMsk
+	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	tBitMap *pDst, WORD wDstX, WORD wDstY,
+	WORD wWidth, WORD wHeight, UWORD *pMsk
 );
 
 UBYTE blitSafeCopyMask(
-	IN tBitMap *pSrc,
-	IN WORD wSrcX,
-	IN WORD wSrcY,
-	IN tBitMap *pDst,
-	IN WORD wDstX,
-	IN WORD wDstY,
-	IN WORD wWidth,
-	IN WORD wHeight,
-	IN UWORD *pMsk,
-	IN UWORD uwLine,
-	IN char *szFile
+	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	tBitMap *pDst, WORD wDstX, WORD wDstY,
+	WORD wWidth, WORD wHeight, UWORD *pMsk,
+	UWORD uwLine, char *szFile
 );
 
 #ifdef ACE_DEBUG
@@ -159,14 +122,9 @@ UBYTE blitSafeCopyMask(
 #endif
 
 UBYTE _blitRect(
-	IN tBitMap *pDst,
-	IN WORD wDstX,
-	IN WORD wDstY,
-	IN WORD wWidth,
-	IN WORD wHeight,
-	IN UBYTE ubColor,
-	IN UWORD uwLine,
-	IN char *szFile
+	tBitMap *pDst, WORD wDstX, WORD wDstY,
+	WORD wWidth, WORD wHeight, UBYTE ubColor,
+	UWORD uwLine, char *szFile
 );
 
 #define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \
@@ -188,14 +146,8 @@ UBYTE _blitRect(
  * @param isOneDot: If set to 1, draws fill-friendly lines.
  */
 void blitLine(
-	IN tBitMap *pDst,
-	IN WORD x1,
-	IN WORD y1,
-	IN WORD x2,
-	IN WORD y2,
-	IN UBYTE ubColor,
-	IN UWORD uwPattern,
-	IN UBYTE isOneDot
+	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
+	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 );
 
-#endif // GUARD_ACE_MANAGER_BLIT_H
+#endif // _ACE_MANAGERS_BLIT_H_

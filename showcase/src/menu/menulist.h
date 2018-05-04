@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_SHOWCASE_MENU_MENULIST_H
-#define GUARD_SHOWCASE_MENU_MENULIST_H
+#ifndef _SHOWCASE_MENU_MENULIST_H_
+#define _SHOWCASE_MENU_MENULIST_H_
 
 #include <ace/types.h>
 #include <ace/types.h>
@@ -41,52 +41,30 @@ typedef struct _tMenuList {
 	UBYTE ubSelected;      ///< Currently selected entry
 } tMenuList;
 
-typedef void (*tMenuSelectCb)(
-	IN struct _tMenuList *pList,
-	IN UBYTE ubPosIdx
-);
+typedef void (*tMenuSelectCb)(struct _tMenuList *pList, UBYTE ubPosIdx);
 
 /* ****************************************************************** GLOBALS */
 
 /* **************************************************************** FUNCTIONS */
 
 tMenuList *menuListCreate(
-	IN UWORD uwX,
-	IN UWORD uwY,
-	IN UBYTE ubCount,
-	IN UBYTE ubSpacing,
-	IN tFont *pFont,
-	IN UBYTE ubFontFlags,
-	IN UBYTE ubColor,
-	IN UBYTE ubColorDisabled,
-	IN UBYTE ubColorSelected,
-	IN tBitMap *pDestBitMap
+	UWORD uwX, UWORD uwY, UBYTE ubCount, UBYTE ubSpacing,
+	tFont *pFont, UBYTE ubFontFlags,
+	UBYTE ubColor, UBYTE ubColorDisabled, UBYTE ubColorSelected,
+	tBitMap *pDestBitMap
 );
 
-void menuListDestroy(
-	IN tMenuList *pList
-);
+void menuListDestroy(tMenuList *pList);
 
 void menuListSetEntry(
-	IN tMenuList *pList,
-	IN UBYTE ubIdx,
-	IN UBYTE ubDisplay,
-	IN char *szText
+	tMenuList *pList, UBYTE ubIdx, UBYTE ubDisplay, char *szText
 );
 
-void menuListDrawPos(
-	IN tMenuList *pList,
-	IN UBYTE ubIdx
-);
+void menuListDrawPos(tMenuList *pList, UBYTE ubIdx);
 
-void menuListDraw(
-	IN tMenuList *pList
-);
+void menuListDraw(tMenuList *pList);
 
-void menuListMove(
-	IN tMenuList *pList,
-	IN BYTE bMoveDir
-);
+void menuListMove(tMenuList *pList, BYTE bMoveDir);
 
 void menuListResetCount(tMenuList *pList, UBYTE ubCount);
 
@@ -94,4 +72,4 @@ void menuListResetCount(tMenuList *pList, UBYTE ubCount);
 
 /* ******************************************************************* MACROS */
 
-#endif
+#endif // _SHOWCASE_MENU_MENULIST_H_

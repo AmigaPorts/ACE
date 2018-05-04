@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGERS_SYSTEM_H
-#define GUARD_ACE_MANAGERS_SYSTEM_H
+#ifndef _ACE_MANAGERS_SYSTEM_H_
+#define _ACE_MANAGERS_SYSTEM_H_
 
 #include <graphics/gfxbase.h> // Required for GfxBase
 #include <ace/types.h>
@@ -23,14 +23,10 @@ void systemCreate(void);
 
 void systemDestroy(void);
 
-void systemKill(
-	IN const char *szMsg
-);
+void systemKill(const char *szMsg);
 
 void systemSetInt(
-	IN UBYTE ubIntNumber,
-	IN tAceIntHandler pHandler,
-	INOUT volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
 void systemUse(void);
@@ -40,18 +36,13 @@ void systemUnuse(void);
 void systemDump(void);
 
 void systemSetInt(
-	IN UBYTE ubIntNumber,
-	IN tAceIntHandler pHandler,
-	IN volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
-void systemSetDma(
-	IN UBYTE ubDmaBit,
-	IN UBYTE isEnabled
-);
+void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled);
 
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;
 
-#endif // GUARD_ACE_MANAGERS_SYSTEM_H
+#endif // _ACE_MANAGERS_SYSTEM_H_

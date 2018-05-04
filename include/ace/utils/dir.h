@@ -21,9 +21,7 @@ typedef struct _tDir {
  * @see dirClose()
  * @see dirRead()
  */
-tDir *dirOpen(
-	IN const char *szPath
-);
+tDir *dirOpen(const char *szPath);
 
 /**
  * @brief Reads next file name in given directory to buffer of specified length.
@@ -39,11 +37,7 @@ tDir *dirOpen(
  * @see dirOpen()
  * @see dirClose()
  */
-UBYTE dirRead(
-	IN tDir *pDir,
-	OUT char *szFileName,
-	IN UWORD uwFileNameMax
-);
+UBYTE dirRead(tDir *pDir, char *szFileName, UWORD uwFileNameMax);
 
 /**
  * @brief Closes directory handle.
@@ -53,6 +47,4 @@ UBYTE dirRead(
  *
  * @see dirOpen()
  */
-void dirClose(
-	IN tDir *pDir
-);
+void dirClose(tDir *pDir);

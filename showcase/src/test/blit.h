@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_SHOWCASE_TEST_BLIT_H
-#define GUARD_SHOWCASE_TEST_BLIT_H
+#ifndef _SHOWCASE_TEST_BLIT_H_
+#define _SHOWCASE_TEST_BLIT_H_
 
 #include <ace/types.h>
 #include <ace/types.h>
@@ -29,4 +29,4 @@ void gsTestBlitDestroy(void);
 
 /* ******************************************************************* MACROS */
 
-#endif
+#endif // _SHOWCASE_TEST_BLIT_H_

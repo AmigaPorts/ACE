@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGER_VIEWPORT_SIMPLEBUFFER_H
-#define GUARD_ACE_MANAGER_VIEWPORT_SIMPLEBUFFER_H
+#ifndef _ACE_MANAGERS_VIEWPORT_SIMPLEBUFFER_H_
+#define _ACE_MANAGERS_VIEWPORT_SIMPLEBUFFER_H_
 
 #ifdef AMIGA
 
@@ -58,10 +58,7 @@ typedef struct {
  *  @see simpleBufferDestroy
  *  @see simpleBufferSetBitmap
  */
-tSimpleBufferManager *simpleBufferCreate(
-	IN void *pTags,
-	IN ...
-);
+tSimpleBufferManager *simpleBufferCreate(void *pTags,	...);
 
  /**
  *  @brief Sets new bitmap to be displayed by buffer manager.
@@ -73,26 +70,16 @@ tSimpleBufferManager *simpleBufferCreate(
  *
  *  @todo Realloc copper buffer to reflect BPP change.
  */
-void simpleBufferSetBitmap(
-	IN tSimpleBufferManager *pManager,
-	IN tBitMap *pBitMap
-);
+void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap);
 
-void simpleBufferDestroy(
-	IN tSimpleBufferManager *pManager
-);
+void simpleBufferDestroy(tSimpleBufferManager *pManager);
 
-void simpleBufferProcess(
-	IN tSimpleBufferManager *pManager
-);
+void simpleBufferProcess(tSimpleBufferManager *pManager);
 
 UBYTE simpleBufferIsRectVisible(
-	IN tSimpleBufferManager *pManager,
-	IN UWORD uwX,
-	IN UWORD uwY,
-	IN UWORD uwWidth,
-	IN UWORD uwHeight
+	tSimpleBufferManager *pManager,
+	UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
 );
 
 #endif // AMIGA
-#endif // GUARD_ACE_MANAGER_VIEWPORT_SIMPLEBUFFER_H
+#endif // _ACE_MANAGERS_VIEWPORT_SIMPLEBUFFER_H_
