@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTIL_ENDIAN_H
-#define GUARD_ACE_UTIL_ENDIAN_H
+#ifndef _ACE_UTILS_ENDIAN_H_
+#define _ACE_UTILS_ENDIAN_H_
 
 /**
  *  Endian conversion functions.
@@ -48,4 +48,4 @@ static inline ULONG endianIntel32(ULONG ulIn) {
 #endif // AMIGA
 }
 
-#endif
+#endif // _ACE_UTILS_ENDIAN_H_

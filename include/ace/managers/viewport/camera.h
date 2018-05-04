@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGER_VIEWPORT_CAMERA_H
-#define GUARD_ACE_MANAGER_VIEWPORT_CAMERA_H
+#ifndef _ACE_MANAGERS_VIEWPORT_CAMERA_H_
+#define _ACE_MANAGERS_VIEWPORT_CAMERA_H_
 
 /**
  * 2D Camera manager
@@ -50,4 +50,4 @@ WORD cameraGetDeltaX(tCameraManager *pManager);
 
 WORD cameraGetDeltaY(tCameraManager *pManager);
 
-#endif
+#endif // _ACE_MANAGERS_VIEWPORT_CAMERA_H_

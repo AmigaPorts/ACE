@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_GENERIC_SCREEN_H
-#define GUARD_ACE_GENERIC_SCREEN_H
+#ifndef _ACE_GENERIC_SCREEN_H_
+#define _ACE_GENERIC_SCREEN_H_
 
 #define SCREEN_PAL_WIDTH 320
 #define SCREEN_PAL_HEIGHT 256
@@ -15,4 +15,4 @@
 #define SCREEN_NTSC_HIRES_WIDTH 640
 #define SCREEN_HTSC_LACED_HEIGHT 400
 
-#endif // GUARD_ACE_GENERIC_SCREEN_H
+#endif // _ACE_GENERIC_SCREEN_H_

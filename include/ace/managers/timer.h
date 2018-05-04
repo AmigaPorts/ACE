@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGER_TIMER_H
-#define GUARD_ACE_MANAGER_TIMER_H
+#ifndef _ACE_MANAGERS_TIMER_H_
+#define _ACE_MANAGERS_TIMER_H_
 
 #ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
@@ -94,4 +94,4 @@ void timerFormatPrec(char *szBfr, ULONG ulPrecTime);
  */
 void timerWaitUs(UWORD uwUsCnt);
 
-#endif
+#endif // _ACE_MANAGERS_TIMER_H_

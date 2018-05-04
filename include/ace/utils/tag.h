@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTILS_TAG_H
-#define GUARD_ACE_UTILS_TAG_H
+#ifndef _ACE_UTILS_TAG_H_
+#define _ACE_UTILS_TAG_H_
 
 /**
  * Util for handling AmigaOS tag list pattern.
@@ -38,4 +38,4 @@ ULONG tagGet(
 	void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNotFound
 );
 
-#endif // GUARD_ACE_UTILS_TAG_H
+#endif // _ACE_UTILS_TAG_H_

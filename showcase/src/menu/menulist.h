@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_SHOWCASE_MENU_MENULIST_H
-#define GUARD_SHOWCASE_MENU_MENULIST_H
+#ifndef _SHOWCASE_MENU_MENULIST_H_
+#define _SHOWCASE_MENU_MENULIST_H_
 
 #include <ace/types.h>
 #include <ace/types.h>
@@ -74,4 +74,4 @@ void menuListResetCount(tMenuList *pList, UBYTE ubCount);
 
 /* ******************************************************************* MACROS */
 
-#endif
+#endif // _SHOWCASE_MENU_MENULIST_H_

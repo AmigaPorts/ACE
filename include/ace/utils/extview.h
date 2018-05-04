@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTIL_EXTVIEW_H
-#define GUARD_ACE_UTIL_EXTVIEW_H
+#ifndef _ACE_UTILS_EXTVIEW_H_
+#define _ACE_UTILS_EXTVIEW_H_
 
 /**
  *  View, viewport & viewport manager base functions.
@@ -243,4 +243,4 @@ void extViewFadeOut(tView *pView);
 
 void extViewFadeIn(tView *pView);
 
-#endif
+#endif // _ACE_UTILS_EXTVIEW_H_

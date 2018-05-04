@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MACROS_H
-#define GUARD_ACE_MACROS_H
+#ifndef _ACE_MACROS_H_
+#define _ACE_MACROS_H_
 
 #include <ace/types.h>
 
@@ -82,4 +82,4 @@ static inline ULONG ror32(ULONG ulIn, UBYTE ubRot) {
 	(y) >= ar.uwY1 && (y) <= ar.uwY2     \
 )
 
-#endif // GUARD_ACE_MACROS_H
+#endif // _ACE_MACROS_H_

@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_MANAGER_INPUT_H
-#define GUARD_MANAGER_INPUT_H
+#ifndef _SHOWCASE_INPUT_H_
+#define _SHOWCASE_INPUT_H_
 
 /* Types */
 
@@ -16,4 +16,4 @@ void inputProcess(void);
 
 void inputClose(void);
 
-#endif
+#endif // _SHOWCASE_INPUT_H_

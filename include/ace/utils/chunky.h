@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obone at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTIL_CHUNKY_H
-#define GUARD_ACE_UTIL_CHUNKY_H
+#ifndef _ACE_UTILS_CHUNKY_H_
+#define _ACE_UTILS_CHUNKY_H_
 
 #include <ace/types.h>
 #include <ace/utils/bitmap.h>
@@ -90,4 +90,4 @@ void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
  */
 void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
 
-#endif
+#endif // _ACE_UTILS_CHUNKY_H_

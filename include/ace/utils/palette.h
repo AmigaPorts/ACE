@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_UTIL_PALETTE_H
-#define GUARD_ACE_UTIL_PALETTE_H
+#ifndef _ACE_UTILS_PALETTE_H
+#define _ACE_UTILS_PALETTE_H
 
 /**
  *  Palette utilities.
@@ -37,4 +37,4 @@ void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel)
 
 void paletteDump(UWORD *pPalette, FUBYTE fubColorCnt, char *szPath);
 
-#endif
+#endif // _ACE_UTILS_PALETTE_H

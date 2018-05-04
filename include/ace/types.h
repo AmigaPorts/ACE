@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_TYPES_H
-#define GUARD_ACE_TYPES_H
+#ifndef _ACE_TYPES_H_
+#define _ACE_TYPES_H_
 
 // Full OS takeover
 #define CONFIG_SYSTEM_OS_TAKEOVER
@@ -131,4 +131,4 @@ typedef struct _tUwAbsRect {
 	UWORD uwX2;
 } tUwAbsRect;
 
-#endif // GUARD_ACE_TYPES_H
+#endif // _ACE_TYPES_H_

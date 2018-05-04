@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GUARD_ACE_MANAGER_MEMORY_H
-#define GUARD_ACE_MANAGER_MEMORY_H
+#ifndef _ACE_MANAGERS_MEMORY_H_
+#define _ACE_MANAGERS_MEMORY_H_
 
 #ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
@@ -69,4 +69,4 @@ void _memFreeRls(void *pMem, ULONG ulSize);
 #define memAllocChipFlags(ulSize, ulFlags) memAlloc(ulSize, MEMF_CHIP | ulFlags)
 #define memAllocFastFlags(ulSize, ulFlags) memAlloc(ulSize, ulFlags)
 
-#endif
+#endif // _ACE_MANAGERS_MEMORY_H_
