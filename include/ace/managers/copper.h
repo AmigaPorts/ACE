@@ -180,7 +180,7 @@ void copProcessBlocks(void);
  *
  *  @return Pointer to resulting copBlock.
  */
-tCopBlock *copBlockDisableSprites(tCopList *pList,FUBYTE fubSpriteMask);
+tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask);
 
 /********************* Copperblock cmd functions ******************************/
 
@@ -205,7 +205,9 @@ void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY);
  *  @param pReg     Custom chip register address to be set
  *  @param uwValue  New register's value.
  */
-void copMove(tCopList *pCopList, tCopBlock *pBlock, volatile void *pReg, UWORD uwValue);
+void copMove(
+	tCopList *pCopList, tCopBlock *pBlock, volatile void *pReg, UWORD uwValue
+);
 
 /********************* Lowlevel-ish cmd functions *****************************/
 
