@@ -11,33 +11,6 @@
 #define JPORT1 1
 #define JPORT2 2
 
-// enum sux cuz is using 16/32bit int
-// typedef enum {
-	// JOY1_FIRE,
-	// JOY1_UP,
-	// JOY1_DOWN,
-	// JOY1_LEFT,
-	// JOY1_RIGHT,
-
-	// JOY2_FIRE,
-	// JOY2_UP,
-	// JOY2_DOWN,
-	// JOY2_LEFT,
-	// JOY2_RIGHT,
-
-	// JOY3_FIRE,
-	// JOY3_UP,
-	// JOY3_DOWN,
-	// JOY3_LEFT,
-	// JOY3_RIGHT,
-
-	// JOY4_FIRE,
-	// JOY4_UP,
-	// JOY4_DOWN,
-	// JOY4_LEFT,
-	// JOY4_RIGHT
-// } tJoyCode;
-
 #define JOY1_FIRE 0
 #define JOY1_UP 1
 #define JOY1_DOWN 2
@@ -74,13 +47,6 @@
 #define JOY3 10
 #define JOY4 15
 
-// enum sux cuz is using 16/32bit int
-// typedef enum {
-	// JOY_NACTIVE,
-	// JOY_USED,
-	// JOY_ACTIVE,
-// } tJoyState;
-
 #define JOY_NACTIVE 0
 #define JOY_USED 1
 #define JOY_ACTIVE 2
@@ -95,18 +61,11 @@ extern tJoyManager g_sJoyManager;
 /* Functions */
 void joyOpen(void);
 
-void joySetState(
-	IN UBYTE ubJoyCode,
-	IN UBYTE ubJoyState
-);
+void joySetState(UBYTE ubJoyCode, UBYTE ubJoyState);
 
-UBYTE joyPeek(
-	IN UBYTE ubJoyCode
-);
+UBYTE joyPeek(UBYTE ubJoyCode);
 
-UBYTE joyUse(
-	IN UBYTE ubJoyCode
-);
+UBYTE joyUse(UBYTE ubJoyCode);
 
 void joyProcess(void);
 

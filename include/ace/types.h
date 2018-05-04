@@ -24,11 +24,6 @@ typedef int16_t WORD;
 typedef int32_t LONG;
 #endif // AMIGA
 
-/* Docs */
-#define IN    /* Input parameter. Passed pointer contents is const */
-#define OUT   /* Output parameter. Passed pointer contents will be changed. */
-#define INOUT /* Input/output parameter. */
-
 #if  defined(__VBCC__)
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 #define INTERRUPT __amigainterrupt __saveds

@@ -143,36 +143,28 @@ typedef struct _tVPort {
  *  @see vCreate()
  *  @see vPortDestroy()
  */
-void viewDestroy(
-	IN tView *pView
-);
+void viewDestroy(tView *pView);
 
 /**
  *  @brief Processes all viewport managers attached to view's viewports.
  *
  *  @param pView View to be processed.
  */
-void viewProcessManagers(
-	IN tView *pView
-);
+void viewProcessManagers(tView *pView);
 
 /**
  *  Updates CLUT for every viewport attached to view.
  *
  *  @param pView View to be updated.
  */
-void viewUpdateCLUT(
-	IN tView *pView
-);
+void viewUpdateCLUT(tView *pView);
 
 /**
  *  Sets given view as current and displays it on screen.
  *
  *  @param pView View to be set as current.
  */
-void viewLoad(
-	IN tView *pView
-);
+void viewLoad(tView *pView);
 
 /*=========================== Viewport functions =============================*/
 
@@ -196,9 +188,7 @@ void viewLoad(
  *
  *  @see vPortCreate()
  */
-void vPortDestroy(
-	IN tVPort *pVPort
-);
+void vPortDestroy(tVPort *pVPort);
 
 /**
  *  @brief Waits for display beam to pass given VPort.
@@ -207,9 +197,7 @@ void vPortDestroy(
  *
  *  @todo Make view offset dependent on DiWStrt.
  */
-void vPortWaitForEnd(
-	IN tVPort *pVPort
-);
+void vPortWaitForEnd(tVPort *pVPort);
 
 /*=========================== Viewport manager functions =====================*/
 
@@ -222,10 +210,7 @@ void vPortWaitForEnd(
  *  @see vPortRmManager()
  *  @see vPortGetManager()
  */
-void vPortAddManager(
-	IN tVPort *pVPort,
-	IN tVpManager *pVpManager
-);
+void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager);
 
 /**
  *  @brief Detaches specified manager from VPort and calls its destroy callback.
@@ -235,10 +220,7 @@ void vPortAddManager(
  *
  *  @see vPortAddManager()
  */
-void vPortRmManager(
-	IN tVPort *pVPort,
-	IN tVpManager *pVpManager
-);
+void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager);
 
 /**
  *  @brief Returns maanger with given ID attached to specified VPort.
@@ -247,27 +229,18 @@ void vPortRmManager(
  *  @param ubId   VPort manager ID to be found.
  *  @return if found, pointer to VPort manager, otherwise zero.
  */
-tVpManager *vPortGetManager(
-	IN tVPort *pVPort,
-	IN UBYTE ubId
-);
+tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId);
 
 /*=========================== Viewport copperblock functions =================*/
 
-struct UCopList *vPortAddCopperBlock(
-	IN tVPort *pVPort,
-	IN UWORD uwLength
-);
+struct UCopList *vPortAddCopperBlock(tVPort *pVPort, UWORD uwLength);
 
-void vPortRmCopperBlock(
-	IN tVPort *pVPort,
-	IN struct UCopList *pUCopList
-);
+void vPortRmCopperBlock(tVPort *pVPort, struct UCopList *pUCopList);
 
 /*=========================== View fade functions ============================*/
 
-void extViewFadeOut(IN tView *pView);
+void extViewFadeOut(tView *pView);
 
-void extViewFadeIn(IN tView *pView);
+void extViewFadeIn(tView *pView);
 
 #endif

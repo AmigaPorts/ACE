@@ -43,30 +43,18 @@ void gameDestroy(void);
 
 UBYTE gameIsRunning(void);
 
-void gamePushState(
-	IN tGameCb cbCreate,
-	IN tGameCb cbLoop,
-	IN tGameCb cbDestroy
-);
+void gamePushState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy);
 
 void gamePopState(void);
 
-void gameChangeState(
-	IN tGameCb cbCreate,
-	IN tGameCb cbLoop,
-	IN tGameCb cbDestroy
-);
+void gameChangeState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy);
 
-void gameChangeLoop(
-	IN tGameCb cbLoop
-);
+void gameChangeLoop(tGameCb cbLoop);
 
 void gameProcess(void);
 
 void gameClose(void);
 
-void gameKill(
-	IN char *szError
-);
+void gameKill(char *szError);
 
 #endif

@@ -22,12 +22,14 @@
  */
 tTileBufferManager *tileBufferCreate(
 	tVPort *pVPort,
-	UWORD uwTileX, UWORD uwTileY,
-	// UWORD uwCameraX, UWORD uwCameraY,
-	UBYTE ubTileShift, char *szTileSetFileName,
-	fnTileDrawCallback pTileDrawCallback
+	UWORD uwTileX, UWORD uwTileY, UBYTE ubTileShift,
+	char *szTileSetFileName, tCbTileDraw cbTileDraw
 ) {
-	logBlockBegin("tileBufferCreate(pVPort: %p, uwTileX: %u, uwTileY: %u, ubTileShift: %hu, szTilesetFileName: %s, pTileDrawCallback: %p)", pVPort, uwTileX, uwTileY, ubTileShift, szTileSetFileName, pTileDrawCallback);
+	logBlockBegin(
+		"tileBufferCreate(pVPort: %p, uwTileX: %u, uwTileY: %u, ubTileShift: %hu, "
+		"szTilesetFileName: %s, cbTileDraw: %p)",
+		pVPort, uwTileX, uwTileY, ubTileShift, szTileSetFileName, cbTileDraw
+	);
 	tTileBufferManager *pManager;
 
 	// Feed struct with args
@@ -40,7 +42,7 @@ tTileBufferManager *tileBufferCreate(
 
 	pManager->ubTileShift = ubTileShift;
 	pManager->ubTileSize = 1 << ubTileShift;
-	pManager->pTileDrawCallback = pTileDrawCallback;
+	pManager->cbTileDraw = cbTileDraw;
 
 	pManager->pTileData = 0;
 	pManager->pTileSet = 0;
@@ -390,8 +392,8 @@ void tileBufferDrawTileQuick(tTileBufferManager *pManager, UWORD uwTileIdxX, UWO
 		pManager->pScrollManager->pBuffer, uwBfrX, uwBfrY,
 		pManager->ubTileSize, pManager->ubTileSize
 	);
-	if(pManager->pTileDrawCallback) {
-		pManager->pTileDrawCallback(uwTileIdxX, uwTileIdxY, pManager->pScrollManager->pBuffer, uwBfrX, uwBfrY);
+	if(pManager->cbTileDraw) {
+		pManager->cbTileDraw(uwTileIdxX, uwTileIdxY, pManager->pScrollManager->pBuffer, uwBfrX, uwBfrY);
 	}
 }
 

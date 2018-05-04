@@ -47,20 +47,12 @@ void _logClose(void);
 void _logPushIndent(void);
 void _logPopIndent(void);
 
-void _logWrite(
-	IN char *szFormat,
-	IN ...
-);
+void _logWrite(char *szFormat, ...);
 
 /* Functions - block logging */
 
-void _logBlockBegin(
-	IN char *szBlockName,
-	IN ...
-);
-void _logBlockEnd(
-	IN char *szBlockName
-);
+void _logBlockBegin(char *szBlockName, ...);
+void _logBlockEnd(char *szBlockName);
 
 /* Functions - average block time */
 

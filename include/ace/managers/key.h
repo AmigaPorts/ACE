@@ -173,10 +173,7 @@ void keyProcess(void);
  * @param ubKeyCode: Code of key, which state should be changed.
  * @param ubKeyState: Key state (KEY_ACTIVE, KEY_NACTIVE or KEY_USED).
  */
-void keySetState(
-	IN UBYTE ubKeyCode,
-	IN UBYTE ubKeyState
-);
+void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState);
 
 /**
  * Polls state of key with given code.
@@ -184,9 +181,7 @@ void keySetState(
  * @return 1 if key is pressed, otherwise 0.
  * @see keyUse()
  */
-UBYTE keyCheck(
-	IN UBYTE ubKeyCode
-);
+UBYTE keyCheck(UBYTE ubKeyCode);
 
 /**
  * Checks if given key was recently pressed.
@@ -195,9 +190,7 @@ UBYTE keyCheck(
  * @return 1 if key was recently pressed, otherwise 0.
  * @see keyCheck()
  */
-static inline UBYTE keyUse(
-	IN UBYTE ubKeyCode
-) {
+static inline UBYTE keyUse(UBYTE ubKeyCode) {
 	if (g_sKeyManager.pStates[ubKeyCode] == KEY_ACTIVE) {
 		g_sKeyManager.pStates[ubKeyCode] = KEY_USED;
 		return 1;

@@ -23,12 +23,8 @@
 #define FRAMETILE_SE 32,32
 
 void bmFrameDraw(
-	IN tBitMap *pFrameSet,
-	IN tBitMap *pDest,
-	IN UWORD uwX,
-	IN UWORD uwY,
-	IN UBYTE ubTileWidth,
-	IN UBYTE ubTileHeight
+	tBitMap *pFrameSet, tBitMap *pDest,
+	UWORD uwX, UWORD uwY, UBYTE ubTileWidth, UBYTE ubTileHeight
 );
 
 #endif

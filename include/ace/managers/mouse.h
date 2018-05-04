@@ -55,9 +55,7 @@ extern tMouseManager g_sMouseManager;
  * @see mouseDestroy()
  * @see mouseProcess()
  */
-void mouseCreate(
-	IN UBYTE ubPortFlags
-);
+void mouseCreate(UBYTE ubPortFlags);
 
 /**
  * Cleans up after mouse maanger.
@@ -80,11 +78,7 @@ void mouseProcess(void);
  * @param uwHiY: Maximum cursor Y position.
  */
 static inline void mouseSetBounds(
-	IN UBYTE ubMousePort,
-	IN UWORD uwLoX,
-	IN UWORD uwLoY,
-	IN UWORD uwHiX,
-	IN UWORD uwHiY
+	UBYTE ubMousePort, UWORD uwLoX, UWORD uwLoY, UWORD uwHiX, UWORD uwHiY
 ) {
 	g_sMouseManager.pMice[ubMousePort].sBounds.uwX1 = uwLoX;
 	g_sMouseManager.pMice[ubMousePort].sBounds.uwY1 = uwLoY;
@@ -99,7 +93,7 @@ static inline void mouseSetBounds(
  * @return Mouse's current X position relative to top-left screen pos.
  */
 static inline UWORD mouseGetX(
-	IN UBYTE ubMousePort
+	UBYTE ubMousePort
 ) {
 	return g_sMouseManager.pMice[ubMousePort].uwX;
 }
@@ -110,7 +104,7 @@ static inline UWORD mouseGetX(
  * @return Mouse's current X position relative to top-left screen pos.
  */
 static inline UWORD mouseGetY(
-	IN UBYTE ubMousePort
+	UBYTE ubMousePort
 ) {
 	return g_sMouseManager.pMice[ubMousePort].uwY;
 }
@@ -124,9 +118,7 @@ static inline UWORD mouseGetY(
  *        (MOUSE_NACTIVE, MOUSE_USED, MOUSE_ACTIVE).
  */
 static inline void mouseSetButton(
-	IN UBYTE ubMousePort,
-	IN UBYTE ubMouseCode,
-	IN UBYTE ubMouseState
+	UBYTE ubMousePort, UBYTE ubMouseCode, UBYTE ubMouseState
 ) {
 	g_sMouseManager.pMice[ubMousePort].pButtonStates[ubMouseCode] = ubMouseState;
 }
@@ -137,10 +129,7 @@ static inline void mouseSetButton(
  * @param ubMouseCode: Button to be polled (MOUSE_LMB, MOUSE_RMB or MOUSE_MMB).
  * @return 1 if button is pressed, otherwise 0.
  */
-static inline UBYTE mouseCheck(
-	IN UBYTE ubMousePort,
-	IN UBYTE ubMouseCode
-) {
+static inline UBYTE mouseCheck(UBYTE ubMousePort, UBYTE ubMouseCode) {
 	UBYTE ubBtn = g_sMouseManager.pMice[ubMousePort].pButtonStates[ubMouseCode];
 	return ubBtn != MOUSE_NACTIVE;
 }
@@ -152,10 +141,7 @@ static inline UBYTE mouseCheck(
  * @param ubMouseCode: Button to be polled (MOUSE_LMB, MOUSE_RMB or MOUSE_MMB).
  * @return 1 if button was recently pressed, otherwise 0.
  */
-static inline UBYTE mouseUse(
-	IN UBYTE ubMousePort,
-	IN UBYTE ubMouseCode
-) {
+static inline UBYTE mouseUse(UBYTE ubMousePort, UBYTE ubMouseCode) {
 	tMouse *pMouse = &g_sMouseManager.pMice[ubMousePort];
 	if(pMouse->pButtonStates[ubMouseCode] == MOUSE_ACTIVE) {
 		pMouse->pButtonStates[ubMouseCode] = MOUSE_USED;
@@ -170,10 +156,7 @@ static inline UBYTE mouseUse(
  * @param sRect: Rectangle to be checked.
  * @return 1 if mouse position is within given rectangle, otherwise 0.
  */
-static inline UBYTE mouseInRect(
-	IN UBYTE ubMousePort,
-	IN tUwRect sRect
-) {
+static inline UBYTE mouseInRect(UBYTE ubMousePort, tUwRect sRect) {
 	UWORD uwMouseX = g_sMouseManager.pMice[ubMousePort].uwX;
 	UWORD uwMouseY = g_sMouseManager.pMice[ubMousePort].uwY;
 	return (
@@ -192,9 +175,7 @@ static inline UBYTE mouseInRect(
  * @see mouseMoveBy()
  */
 static inline void mouseSetPosition(
-	IN UBYTE ubMousePort,
-	IN UWORD uwNewX,
-	IN UWORD uwNewY
+	UBYTE ubMousePort, UWORD uwNewX, UWORD uwNewY
 ) {
 	tMouse *pMouse = &g_sMouseManager.pMice[ubMousePort];
 	pMouse->uwX = CLAMP(uwNewX, pMouse->sBounds.uwX1, pMouse->sBounds.uwX2);
@@ -210,11 +191,7 @@ static inline void mouseSetPosition(
  * @see mouseSetBounds()
  * @see mouseSetPosition()
  */
-static inline void mouseMoveBy(
-	IN UBYTE ubMousePort,
-	IN WORD wDx,
-	IN WORD wDy
-) {
+static inline void mouseMoveBy(UBYTE ubMousePort, WORD wDx, WORD wDy) {
 	tMouse *pMouse = &g_sMouseManager.pMice[ubMousePort];
 	pMouse->uwX = CLAMP(
 		pMouse->uwX + wDx, pMouse->sBounds.uwX1, pMouse->sBounds.uwX2
@@ -228,9 +205,7 @@ static inline void mouseMoveBy(
  * Resets mouse position to center of legal coordinate range.
  * @param ubMousePort: Mouse of which position should be reset.
  */
-static inline void mouseResetPos(
-	IN UBYTE ubMousePort
-) {
+static inline void mouseResetPos(UBYTE ubMousePort) {
 	const tUwAbsRect *pBounds = &g_sMouseManager.pMice[ubMousePort].sBounds;
 	g_sMouseManager.pMice[ubMousePort].uwX = (pBounds->uwX2 - pBounds->uwX1) >> 1;
 	g_sMouseManager.pMice[ubMousePort].uwY = (pBounds->uwY2 - pBounds->uwY1) >> 1;

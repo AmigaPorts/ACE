@@ -42,8 +42,7 @@ typedef struct _tMenuList {
 } tMenuList;
 
 typedef void (*tMenuSelectCb)(
-	IN struct _tMenuList *pList,
-	IN UBYTE ubPosIdx
+	struct _tMenuList *pList, UBYTE ubPosIdx
 );
 
 /* ****************************************************************** GLOBALS */
@@ -51,42 +50,23 @@ typedef void (*tMenuSelectCb)(
 /* **************************************************************** FUNCTIONS */
 
 tMenuList *menuListCreate(
-	IN UWORD uwX,
-	IN UWORD uwY,
-	IN UBYTE ubCount,
-	IN UBYTE ubSpacing,
-	IN tFont *pFont,
-	IN UBYTE ubFontFlags,
-	IN UBYTE ubColor,
-	IN UBYTE ubColorDisabled,
-	IN UBYTE ubColorSelected,
-	IN tBitMap *pDestBitMap
+	UWORD uwX, UWORD uwY, UBYTE ubCount, UBYTE ubSpacing,
+	tFont *pFont, UBYTE ubFontFlags,
+	UBYTE ubColor, UBYTE ubColorDisabled, UBYTE ubColorSelected,
+	tBitMap *pDestBitMap
 );
 
-void menuListDestroy(
-	IN tMenuList *pList
-);
+void menuListDestroy(tMenuList *pList);
 
 void menuListSetEntry(
-	IN tMenuList *pList,
-	IN UBYTE ubIdx,
-	IN UBYTE ubDisplay,
-	IN char *szText
+	tMenuList *pList, UBYTE ubIdx, UBYTE ubDisplay, char *szText
 );
 
-void menuListDrawPos(
-	IN tMenuList *pList,
-	IN UBYTE ubIdx
-);
+void menuListDrawPos(tMenuList *pList, UBYTE ubIdx);
 
-void menuListDraw(
-	IN tMenuList *pList
-);
+void menuListDraw(tMenuList *pList);
 
-void menuListMove(
-	IN tMenuList *pList,
-	IN BYTE bMoveDir
-);
+void menuListMove(tMenuList *pList, BYTE bMoveDir);
 
 void menuListResetCount(tMenuList *pList, UBYTE ubCount);
 

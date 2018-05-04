@@ -17,71 +17,37 @@
 
 typedef struct {
 	tVpManager sCommon;
-
 	tUwCoordYX uPos;      /// Current camera pos
 	tUwCoordYX uLastPos;  /// Previous camera pos
 	tUwCoordYX uMaxPos;   /// Max camera pos: world W&H - camera W&H
 } tCameraManager;
 
 tCameraManager *cameraCreate(
-	IN tVPort *pVPort,
-	IN UWORD uwPosX,
-	IN UWORD uwPosY,
-	IN UWORD uwMaxX,
-	IN UWORD uwMaxY
+	tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY
 );
 
-void cameraDestroy(
-	IN tCameraManager *pManager
-);
-void cameraProcess(
-	IN tCameraManager *pManager
-);
+void cameraDestroy(tCameraManager *pManager);
+void cameraProcess(tCameraManager *pManager);
 
 void cameraReset(
-	IN tCameraManager *pManager,
-	IN UWORD uwPosX,
-	IN UWORD uwPosY,
-	IN UWORD uwMaxX,
-	IN UWORD uwMaxY
+	tCameraManager *pManager,
+	UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY
 );
 
-void cameraSetCoord(
-	IN tCameraManager *pManager,
-	IN UWORD uwX,
-	IN UWORD uwY
-);
+void cameraSetCoord(tCameraManager *pManager, UWORD uwX, UWORD uwY);
 
-void cameraMoveBy(
-	IN tCameraManager *pManager,
-	IN WORD wDx,
-	IN WORD wDy
-);
+void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy);
 
-void cameraCenterAt(
-	IN tCameraManager *pManager,
-	IN UWORD uwAvgX,
-	IN UWORD uwAvgY
-);
+void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY);
 
-UBYTE cameraIsMoved(
-	IN tCameraManager *pManager
-);
+UBYTE cameraIsMoved(tCameraManager *pManager);
 
-UWORD cameraGetXDiff(
-	IN tCameraManager *pManager
-);
+UWORD cameraGetXDiff(tCameraManager *pManager);
 
-UWORD cameraGetYDiff(
-	IN tCameraManager *pManager
-);
+UWORD cameraGetYDiff(tCameraManager *pManager);
 
-WORD cameraGetDeltaX(
-	IN tCameraManager *pManager
-);
+WORD cameraGetDeltaX(tCameraManager *pManager);
 
-WORD cameraGetDeltaY(
-	IN tCameraManager *pManager
-);
+WORD cameraGetDeltaY(tCameraManager *pManager);
 
 #endif

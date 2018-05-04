@@ -34,38 +34,64 @@ typedef struct {
 extern tTimerManager g_sTimerManager;
 
 /* Functions */
+
+/**
+ * Creates Vertical Blank server for counting frames.
+ */
 void timerCreate(void);
+
+/**
+ * Removes Vertical Blank server.
+ */
 void timerDestroy(void);
 
+/**
+ * Gets current time based on frame number
+ * One tick equals: PAL - 20ms, NTSC - 16.67ms
+ * Max time capacity: 33 months
+ */
 ULONG timerGet(void);
+
+/**
+ * Gets as precise current time as possible
+ * Implementation based on ray position and frame number
+ * One tick equals: PAL - 0.40us, NTSC - 0.45us
+ * Max time capacity: 1715s (28,5 min)
+ */
 ULONG timerGetPrec(void);
-ULONG timerGetDelta(
-	IN ULONG ulStart,
-	IN ULONG ulStop
-);
 
-BYTE timerPeek(
-	IN ULONG *pTimer,
-	IN ULONG ulTimerDelay
-);
+/**
+ * Gets time difference between two times
+ * For use on both precise and frame time
+ */
+ULONG timerGetDelta(ULONG ulStart, ULONG ulStop);
 
-BYTE timerCheck(
-	IN ULONG *pTimer,
-	IN ULONG ulTimerDelay
-);
+/**
+ * Returns if timer has passed without updating its state
+ */
+UBYTE timerPeek(ULONG *pTimer, ULONG ulTimerDelay);
 
+/**
+ * Returns if timer has passed
+ * If passed, its state gets resetted and countdown starts again
+ */
+UBYTE timerCheck(ULONG *pTimer,ULONG ulTimerDelay);
+
+/**
+ * Updates game ticks if game not paused
+ */
 void timerProcess(void);
 
-void timerFormatPrec(
-	OUT char *szBfr,
-	IN ULONG ulPrecTime
-);
+/**
+ * Formats precise time to human readable form on supplied buffer
+ * Current version works correctly only on ulPrecTime < 0xFFFFFFFF/4 (7 min)
+ * and there seems to be no easy fix for this
+ */
+void timerFormatPrec(char *szBfr, ULONG ulPrecTime);
 
 /**
  *  Min number of us to wait: 5. It is recommended to wait for multiples of 5us.
  */
-void timerWaitUs(
-	IN UWORD uwUsCnt
-);
+void timerWaitUs(UWORD uwUsCnt);
 
 #endif

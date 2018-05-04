@@ -23,14 +23,10 @@ void systemCreate(void);
 
 void systemDestroy(void);
 
-void systemKill(
-	IN const char *szMsg
-);
+void systemKill(const char *szMsg);
 
 void systemSetInt(
-	IN UBYTE ubIntNumber,
-	IN tAceIntHandler pHandler,
-	INOUT volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
 void systemUse(void);
@@ -40,15 +36,10 @@ void systemUnuse(void);
 void systemDump(void);
 
 void systemSetInt(
-	IN UBYTE ubIntNumber,
-	IN tAceIntHandler pHandler,
-	IN volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
-void systemSetDma(
-	IN UBYTE ubDmaBit,
-	IN UBYTE isEnabled
-);
+void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled);
 
 //---------------------------------------------------------------------- GLOBALS
 

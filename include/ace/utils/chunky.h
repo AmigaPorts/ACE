@@ -1,6 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * file, You can obone at http://mozilla.org/MPL/2.0/. */
 
 #ifndef GUARD_ACE_UTIL_CHUNKY_H
 #define GUARD_ACE_UTIL_CHUNKY_H
@@ -10,7 +10,7 @@
 #include <fixmath/fix16.h>
 
 /**
- * @brief Returns color indices for 16 colors in a row starting from supplied
+ * @brief Returns color indices for 16 colora row starting from supplied
  *         coords.
  *
  * @param pBitMap Bitmap, from which pixel colors will be read
@@ -21,12 +21,7 @@
  *
  * @see chunkyFromPlanar()
  */
-void chunkyFromPlanar16(
-	IN tBitMap *pBitMap,
-	IN UWORD uwX,
-	IN UWORD uwY,
-	OUT UBYTE *pOut
-);
+void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut);
 
 /**
  * @brief Returns color index of selected pixel.
@@ -39,11 +34,7 @@ void chunkyFromPlanar16(
  *
  * @see chunkyFromPlanar16()
  */
-UBYTE chunkyFromPlanar(
-	IN tBitMap *pBitMap,
-	IN UWORD uwX,
-	IN UWORD uwY
-);
+UBYTE chunkyFromPlanar(tBitMap *pBitMap, UWORD uwX, UWORD uwY);
 
 /**
  * @brief Rotates chunky pixels by given angle, on spefied background.
@@ -55,20 +46,16 @@ UBYTE chunkyFromPlanar(
  *
  * @param pSource   Source chunky pixels.
  * @param pDest     Destination chunky pixels.
- * @param fSin      Sine value of rotation angle.
+ * @param      Sine value of rotation angle.
  * @param fCos      Cosine value of rotation angle.
  * @param ubBgColor Background color to use if rotation goes out of source.
  * @param wWidth    Source/destination chunky map width.
  * @param wHeight   Ditto, height.
  */
 void chunkyRotate(
-	IN UBYTE *pSource,
-	OUT UBYTE *pDest,
-	IN fix16_t fSin,
-	IN fix16_t fCos,
-	IN UBYTE ubBgColor,
-	IN WORD wWidth,
-	IN WORD wHeight
+	UBYTE *pSource, UBYTE *pDest,
+	fix16_t fSin, fix16_t fCos,
+	UBYTE ubBgColor, WORD wWidth, WORD wHeight
 );
 
 /**
@@ -77,7 +64,7 @@ void chunkyRotate(
  * This function assumes that chunky pixels are of same depth as bitmap.
  * Higher chunky bits will thus be ignored.
  *
- * @param pIn  Source chunky pixels.
+ * @param Source chunky pixels.
  * @param uwX  Destination start X coordinate.
  * @param uwY  Destination Y coordinate.
  * @param pOut Destination bitmap.
@@ -85,12 +72,7 @@ void chunkyRotate(
  * @see chunkyFromPlanar16
  * @see chunkyToPlanar
  */
-void chunkyToPlanar16(
-	IN UBYTE *pIn,
-	IN UWORD uwX,
-	IN UWORD uwY,
-	OUT tBitMap *pOut
-);
+void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
 
 /**
  * Puts single chunky pixel on bitmap at given coordinates.
@@ -106,11 +88,6 @@ void chunkyToPlanar16(
  * @see chunkyFromPlanar16
  * @see chunkyFromPlanar
  */
-void chunkyToPlanar(
-	IN UBYTE ubIn,
-	IN UWORD uwX,
-	IN UWORD uwY,
-	OUT tBitMap *pOut
-);
+void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
 
 #endif

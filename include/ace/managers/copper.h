@@ -122,9 +122,7 @@ void copCreate(void);
 void copDestroy(void);
 void copSwapBuffers(void);
 void copDumpBlocks(void);
-void copDumpBfr(
-	IN tCopBfr *pBfr
-);
+void copDumpBfr(tCopBfr *pBfr);
 
 /********************* Copper list functions **********************************/
 
@@ -133,9 +131,7 @@ tCopList *copListCreate(void *pTagList, ...);
 /**
  * Destroys copperlist along with all attached blocks.
  */
-void copListDestroy(
-	IN tCopList *pCopList
-);
+void copListDestroy(tCopList *pCopList);
 
 /********************* Copper block functions *********************************/
 
@@ -146,32 +142,19 @@ void copListDestroy(
  * to be added in order.
  */
 tCopBlock *copBlockCreate(
-	IN tCopList *pCopList,
-	IN UWORD uwMaxCmds,
-	IN UWORD uwWaitX,
-	IN UWORD uwWaitY
-);
+	tCopList *pCopList, UWORD uwMaxCmds, UWORD uwWaitX, UWORD uwWaitY);
 
-void copBlockDestroy(
-	IN tCopList *pCopList,
-	IN tCopBlock *pBlock
-);
+void copBlockDestroy(tCopList *pCopList,tCopBlock *pBlock);
 
 /**
  * Disables instruction block, so it will be omitted during copperlist merge.
  */
-void copBlockDisable(
-	IN tCopList *pCopList,
-	IN tCopBlock *pBlock
-);
+void copBlockDisable(tCopList *pCopList,tCopBlock *pBlock);
 
 /**
  * Enables previously disabled instruction block.
  */
-void copBlockEnable(
-	IN tCopList *pCopList,
-	IN tCopBlock *pBlock
-);
+void copBlockEnable(tCopList *pCopList,tCopBlock *pBlock);
 
 /**
  * Reallocs current backBfr so that it will fit all copper blocks
@@ -197,10 +180,7 @@ void copProcessBlocks(void);
  *
  *  @return Pointer to resulting copBlock.
  */
-tCopBlock *copBlockDisableSprites(
-	IN tCopList *pList,
-	IN FUBYTE fubSpriteMask
-);
+tCopBlock *copBlockDisableSprites(tCopList *pList,FUBYTE fubSpriteMask);
 
 /********************* Copperblock cmd functions ******************************/
 
@@ -215,12 +195,7 @@ tCopBlock *copBlockDisableSprites(
  *  @param uwX      WAIT cmd's X position.
  *  @param uwY      Ditto, Y.
  */
-void copBlockWait(
-	IN tCopList *pCopList,
-	INOUT tCopBlock *pBlock,
-	IN UWORD uwX,
-	IN UWORD uwY
-);
+void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY);
 
 /**
  *  Appends MOVE command to end of copper block.
@@ -230,12 +205,7 @@ void copBlockWait(
  *  @param pReg     Custom chip register address to be set
  *  @param uwValue  New register's value.
  */
-void copMove(
-	IN tCopList *pCopList,
-	INOUT tCopBlock *pBlock,
-	IN volatile void *pReg,
-	IN UWORD uwValue
-);
+void copMove(tCopList *pCopList, tCopBlock *pBlock, volatile void *pReg, UWORD uwValue);
 
 /********************* Lowlevel-ish cmd functions *****************************/
 
@@ -250,11 +220,7 @@ void copMove(
  *  @param ubX WAIT cmd's X position.
  *  @param ubY Ditto, Y.
  */
-void copSetWait(
-	INOUT tCopWaitCmd *pWaitCmd,
-	IN UBYTE ubX,
-	IN UBYTE ubY
-);
+void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY);
 
 /**
  *  Prepares MOVE command on given memory address.
@@ -266,11 +232,7 @@ void copSetWait(
  *  @param pReg     Custom chip register address to be set
  *  @param uwValue  New register's value.
  */
-void copSetMove(
-	INOUT tCopMoveCmd *pMoveCmd,
-	volatile void *pReg,
-	UWORD uwValue
-);
+void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pReg, UWORD uwValue);
 
 /**
  * Disables given sprites on supplied copperlist at given cmd offset.
@@ -283,9 +245,7 @@ void copSetMove(
  * @return Number of MOVE instructions added.
  */
 FUBYTE copRawDisableSprites(
-	IN tCopList *pList,
-	IN FUBYTE fubSpriteMask,
-	IN FUWORD fuwCmdOffs
+	tCopList *pList, FUBYTE fubSpriteMask, FUWORD fuwCmdOffs
 );
 
 #endif // AMIGA

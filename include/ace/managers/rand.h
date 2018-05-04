@@ -22,41 +22,24 @@ typedef struct {
 extern tRandManager g_sRandManager;
 
 /* Functions */
-void randInit(
-	IN ULONG ulSeed
-);
+void randInit(ULONG ulSeed);
 
 UBYTE ubRand(void);
 
-UBYTE ubRandMax(
-	IN UBYTE ubMax
-);
+UBYTE ubRandMax(UBYTE ubMax);
 
-UBYTE ubRandMinMax(
-	IN UBYTE ubMin,
-	IN UBYTE ubMax
-);
+UBYTE ubRandMinMax(UBYTE ubMin, UBYTE ubMax);
 
 UWORD uwRand(void); // UWORD is faster on Amiga
 
-UWORD uwRandMax(
-	IN UWORD uwMax
-);
+UWORD uwRandMax(UWORD uwMax);
 
-UWORD uwRandMinMax(
-	IN UWORD uwMin,
-	IN UWORD uwMax
-);
+UWORD uwRandMinMax(UWORD uwMin, UWORD uwMax);
 
 ULONG ulRand(void); // ULONG is slower on Amiga, use UWORD instead
 
-ULONG ulRandMax(
-	IN ULONG ulMax
-);
+ULONG ulRandMax(ULONG ulMax);
 
-ULONG ulRandMinMax(
-	IN ULONG ulMin,
-	IN ULONG ulMax
-);
+ULONG ulRandMinMax(ULONG ulMin, ULONG ulMax);
 
 #endif

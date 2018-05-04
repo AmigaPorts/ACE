@@ -67,9 +67,7 @@ typedef struct _tTextBitMap {
  *
  *  @see fontDestroy()
  */
-tFont *fontCreate(
-	IN const char *szFontName
-);
+tFont *fontCreate(const char *szFontName);
 
 /**
  *  @brief Destroys given font instance.
@@ -78,14 +76,9 @@ tFont *fontCreate(
  *
  *  @see fontCreate()
  */
-void fontDestroy(
-	IN tFont *pFont
-);
+void fontDestroy(tFont *pFont);
 
-tTextBitMap *fontCreateTextBitMap(
-	IN UWORD uwWidth,
-	IN UWORD uwHeight
-);
+tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight);
 
 /**
  *  @brief Creates text bitmap with specified font, containing given text.
@@ -101,14 +94,11 @@ tTextBitMap *fontCreateTextBitMap(
  *  @see fontDrawTextBitMap()
  */
 tTextBitMap *fontCreateTextBitMapFromStr(
-	IN const tFont *pFont,
-	IN const char *szText
+	const tFont *pFont, const char *szText
 );
 
 void fontFillTextBitMap(
-	IN const tFont *pFont,
-	INOUT tTextBitMap *pTextBitMap,
-	IN const char *szText
+	const tFont *pFont, tTextBitMap *pTextBitMap,	const char *szText
 );
 
 /**
@@ -118,9 +108,7 @@ void fontFillTextBitMap(
  *
  *  @see fontCreateTextBitMap()
  */
-void fontDestroyTextBitMap(
-	IN tTextBitMap *pTextBitMap
-);
+void fontDestroyTextBitMap(tTextBitMap *pTextBitMap);
 
 /**
  *  @brief Draws specified text bitmap at given position, color and flags.
@@ -136,12 +124,8 @@ void fontDestroyTextBitMap(
  *  @see fontDrawStr()
  */
 void fontDrawTextBitMap(
-	IN tBitMap *pDest,
-	IN tTextBitMap *pTextBitMap,
-	IN UWORD uwX,
-	IN UWORD uwY,
-	IN UBYTE ubColor,
-	IN UBYTE ubFlags
+	tBitMap *pDest, tTextBitMap *pTextBitMap,
+	UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags
 );
 
 /**
@@ -161,13 +145,8 @@ void fontDrawTextBitMap(
  *  @see fontDrawTextBitMap()
  */
 void fontDrawStr(
-	IN tBitMap *pDest,
-	IN const tFont *pFont,
-	IN UWORD uwX,
-	IN UWORD uwY,
-	IN const char *szText,
-	IN UBYTE ubColor,
-	IN UBYTE ubFlags
+	tBitMap *pDest, const tFont *pFont,
+	UWORD uwX, UWORD uwY, const char *szText, UBYTE ubColor, UBYTE ubFlags
 );
 
 #endif
