@@ -8,7 +8,7 @@ If you ever get stuck, just type `bitmap_conv` and it will display detailed info
 
 `.bm` files are ACE-specific and currently implemented as raw bitplane data preceeded by minimal header. It supports planar and interleaved encoding for loading times optimization, which also currently determines bitmap use mode in game - bitmap functions won't be able to load interleaved bitmap into portion of non-interleaved one, and vice versa.
 
-This format was born since I was not happy with IFF - it seemed to bloated and required additional time to understand its all features, which are rarily needed. If you need something more fancy than plain bitplane storage, I encourage you to use IFF files by using `iffparse.library`.
+This format was born since @tehKaiN not happy with IFF - it seemed too bloated for him and required additional time to understand its all features, which are rarily needed. If you need something more fancy than plain bitplane storage, you are strongly encouraged to go with IFF files by using `iffparse.library`.
 
 ## How to...
 
