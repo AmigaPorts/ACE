@@ -26,19 +26,17 @@
 #define TAG_SIMPLEBUFFER_BOUND_HEIGHT   (TAG_USER|3)
 // Buffer bitmap creation flags
 #define TAG_SIMPLEBUFFER_BITMAP_FLAGS   (TAG_USER|4)
+#define TAG_SIMPLEBUFFER_IS_DBLBUF      (TAG_USER|5)
 // If in raw mode, offset on copperlist for placing required copper
 // instructions, specified in copper instruction count since beginning.
 #define TAG_SIMPLEBUFFER_COPLIST_OFFSET (TAG_USER|6)
-
-// Flags for internal usage.
-#define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1
-#define SIMPLEBUFFER_FLAG_COPLIST_RAW  2
 
 typedef struct {
 	tVpManager sCommon;
 	tCameraManager *pCameraManager;
 	// scroll-specific fields
-	tBitMap *pBuffer;      ///< Bitmap buffer
+	tBitMap *pFront;       ///< Currently displayed buffer.
+	tBitMap *pBack;        ///< Buffer for drawing.
 	tCopBlock *pCopBlock;  ///< CopBlock containing modulo/shift/bitplane cmds
 	tUwCoordYX uBfrBounds; ///< Buffer bounds in pixels
 	UBYTE ubFlags;         ///< Read only. See SIMPLEBUFFER_FLAG_*.
