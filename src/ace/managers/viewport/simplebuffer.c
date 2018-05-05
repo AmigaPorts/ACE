@@ -7,108 +7,36 @@
 
 #ifdef AMIGA
 
-tSimpleBufferManager *simpleBufferCreate(
-	void *pTags, ...
-) {
-	va_list vaTags;
-	tCopList *pCopList;
-	tSimpleBufferManager *pManager;
-	UWORD uwBoundWidth, uwBoundHeight;
-	UBYTE ubBitmapFlags;
+// Flags for internal usage.
+#define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1
+#define SIMPLEBUFFER_FLAG_COPLIST_RAW  2
 
-	logBlockBegin("simpleBufferCreate(pTags: %p, ...)", pTags);
-	va_start(vaTags, pTags);
-
-	// Init manager
-	pManager = memAllocFastClear(sizeof(tSimpleBufferManager));
-	pManager->sCommon.process = (tVpManagerFn)simpleBufferProcess;
-	pManager->sCommon.destroy = (tVpManagerFn)simpleBufferDestroy;
-	pManager->sCommon.ubId = VPM_SCROLL;
-	logWrite("Addr: %p\n", pManager);
-
-	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_VPORT, 0);
-	if(!pVPort) {
-		logWrite("ERR: No parent viewport (TAG_SIMPLEBUFFER_VPORT) specified!\n");
-		goto fail;
-	}
-	pManager->sCommon.pVPort = pVPort;
-	logWrite("Parent VPort: %p\n", pVPort);
-
-	// Buffer bitmap
-	uwBoundWidth = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_WIDTH, pVPort->uwWidth);
-	uwBoundHeight = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_HEIGHT, pVPort->uwHeight);
-	ubBitmapFlags = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR);
-	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
-	tBitMap *pBuffer = bitmapCreate(
-		uwBoundWidth, uwBoundHeight,
-		pVPort->ubBPP, ubBitmapFlags
-	);
-	if(!pBuffer) {
-		logWrite("ERR: Can't alloc buffer bitmap!\n");
-		goto fail;
-	}
-
-	// Find camera manager, create if not exists
-	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	if(!pManager->pCameraManager) {
-		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
-	}
-
-	pCopList = pVPort->pView->pCopList;
-	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
-		// CopBlock contains: bitplanes + shiftX
-		pManager->pCopBlock = copBlockCreate(
-			pCopList,
-			// Shift +2 ddf +2 modulos +2*bpp bpladdr
-			2*pVPort->ubBPP + 5,
-			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
-			// First to set are ddf, modulos & shift so they are changed during fetch.
-			0xE2-7*4, pVPort->uwOffsY + 0x2C-1
-		);
-	}
-	else {
-		const UWORD uwInvalidCopOffs = -1;
-		pManager->ubFlags |= SIMPLEBUFFER_FLAG_COPLIST_RAW;
-		pManager->uwCopperOffset = tagGet(
-			pTags, vaTags, TAG_SIMPLEBUFFER_COPLIST_OFFSET, uwInvalidCopOffs
-		);
-		if(pManager->uwCopperOffset == uwInvalidCopOffs) {
-			logWrite(
-				"ERR: Copperlist offset (TAG_SIMPLEBUFFER_COPLIST_OFFSET) not specified!\n"
-			);
-			goto fail;
-		}
-		logWrite("Copperlist offset: %u\n", pManager->uwCopperOffset);
-	}
-
-	simpleBufferSetBitmap(pManager, pBuffer);
-
-	// Add manager to VPort
-	vPortAddManager(pVPort, (tVpManager*)pManager);
-	logBlockEnd("simpleBufferCreate()");
-	va_end(vaTags);
-	return pManager;
-
-fail:
-	logBlockEnd("simpleBufferCreate()");
-	va_end(vaTags);
-	return 0;
-}
-
-void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
-	logBlockBegin(
-		"simpleBufferSetBitmap(pManager: %p, pBitMap: %p)",
-		pManager, pBitMap
-	);
-	if(pManager->pBuffer && pManager->pBuffer->Depth != pBitMap->Depth) {
+static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) {
+#if defined(ACE_DEBUG)
+	if(pManager->pBack && pManager->pBack->Depth != pBack->Depth) {
 		logWrite("ERR: buffer bitmaps differ in BPP!\n");
 		return;
 	}
+#endif
+	pManager->pBack = pBack;
+}
 
-	pManager->uBfrBounds.sUwCoord.uwX = bitmapGetByteWidth(pBitMap) << 3;
-	pManager->uBfrBounds.sUwCoord.uwY = pBitMap->Rows;
-	pManager->pBuffer = pBitMap;
-	UWORD uwModulo = pBitMap->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
+void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
+	logBlockBegin(
+		"simpleBufferSetFront(pManager: %p, pFront: %p)",
+		pManager, pFront
+	);
+#if defined(ACE_DEBUG)
+	if(pManager->pFront && pManager->pFront->Depth != pFront->Depth) {
+		logWrite("ERR: buffer bitmaps differ in BPP!\n");
+		return;
+	}
+#endif
+
+	pManager->uBfrBounds.sUwCoord.uwX = bitmapGetByteWidth(pFront) << 3;
+	pManager->uBfrBounds.sUwCoord.uwY = pFront->Rows;
+	pManager->pFront = pFront;
+	UWORD uwModulo = pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 	UWORD uwDDfStrt;
 	if(pManager->uBfrBounds.sUwCoord.uwX <= pManager->sCommon.pVPort->uwWidth) {
 		uwDDfStrt = 0x0038;
@@ -139,7 +67,7 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		UBYTE i;
 		ULONG ulPlaneAddr;
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
-			ulPlaneAddr = (ULONG)pManager->pBuffer->Planes[i];
+			ulPlaneAddr = (ULONG)pManager->pFront->Planes[i];
 			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
@@ -161,18 +89,137 @@ void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 		UBYTE i;
 		ULONG ulPlaneAddr;
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
-			ulPlaneAddr = (ULONG)pManager->pBuffer->Planes[i];
+			ulPlaneAddr = (ULONG)pManager->pFront->Planes[i];
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
-	logBlockEnd("simplebufferSetBitmap()");
+	logBlockEnd("simplebufferSetFront()");
+}
+
+tSimpleBufferManager *simpleBufferCreate(
+	void *pTags, ...
+) {
+	va_list vaTags;
+	tCopList *pCopList;
+	tSimpleBufferManager *pManager;
+	UWORD uwBoundWidth, uwBoundHeight;
+	UBYTE ubBitmapFlags;
+	tBitMap *pFront = 0, *pBack = 0;
+	UBYTE isCameraCreated = 0;
+
+	logBlockBegin("simpleBufferCreate(pTags: %p, ...)", pTags);
+	va_start(vaTags, pTags);
+
+	// Init manager
+	pManager = memAllocFastClear(sizeof(tSimpleBufferManager));
+	pManager->sCommon.process = (tVpManagerFn)simpleBufferProcess;
+	pManager->sCommon.destroy = (tVpManagerFn)simpleBufferDestroy;
+	pManager->sCommon.ubId = VPM_SCROLL;
+	logWrite("Addr: %p\n", pManager);
+
+	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_VPORT, 0);
+	if(!pVPort) {
+		logWrite("ERR: No parent viewport (TAG_SIMPLEBUFFER_VPORT) specified!\n");
+		goto fail;
+	}
+	pManager->sCommon.pVPort = pVPort;
+	logWrite("Parent VPort: %p\n", pVPort);
+
+	// Buffer bitmap
+	uwBoundWidth = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_WIDTH, pVPort->uwWidth);
+	uwBoundHeight = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_HEIGHT, pVPort->uwHeight);
+	ubBitmapFlags = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR);
+	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
+	pFront = bitmapCreate(
+		uwBoundWidth, uwBoundHeight,
+		pVPort->ubBPP, ubBitmapFlags
+	);
+	if(!pFront) {
+		logWrite("ERR: Can't alloc buffer bitmap!\n");
+		goto fail;
+	}
+
+	UBYTE isDblBfr = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_IS_DBLBUF, 0);
+	if(isDblBfr) {
+		pBack = bitmapCreate(
+			uwBoundWidth, uwBoundHeight,
+			pVPort->ubBPP, ubBitmapFlags
+		);
+		if(!pFront) {
+			logWrite("ERR: Can't alloc buffer bitmap!\n");
+			goto fail;
+		}
+	}
+
+	// Find camera manager, create if not exists
+	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
+	if(!pManager->pCameraManager) {
+		isCameraCreated = 1;
+		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
+	}
+
+	pCopList = pVPort->pView->pCopList;
+	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
+		// CopBlock contains: bitplanes + shiftX
+		pManager->pCopBlock = copBlockCreate(
+			pCopList,
+			// Shift +2 ddf +2 modulos +2*bpp bpladdr
+			2*pVPort->ubBPP + 5,
+			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
+			// First to set are ddf, modulos & shift so they are changed during fetch.
+			0xE2-7*4, pVPort->uwOffsY + 0x2C-1
+		);
+	}
+	else {
+		const UWORD uwInvalidCopOffs = -1;
+		pManager->ubFlags |= SIMPLEBUFFER_FLAG_COPLIST_RAW;
+		pManager->uwCopperOffset = tagGet(
+			pTags, vaTags, TAG_SIMPLEBUFFER_COPLIST_OFFSET, uwInvalidCopOffs
+		);
+		if(pManager->uwCopperOffset == uwInvalidCopOffs) {
+			logWrite(
+				"ERR: Copperlist offset (TAG_SIMPLEBUFFER_COPLIST_OFFSET) not specified!\n"
+			);
+			goto fail;
+		}
+		logWrite("Copperlist offset: %u\n", pManager->uwCopperOffset);
+	}
+
+	simpleBufferSetFront(pManager, pFront);
+	simpleBufferSetBack(pManager, pBack);
+
+	// Add manager to VPort
+	vPortAddManager(pVPort, (tVpManager*)pManager);
+	logBlockEnd("simpleBufferCreate()");
+	va_end(vaTags);
+	return pManager;
+
+fail:
+	if(pFront) {
+		bitmapDestroy(pFront);
+	}
+	if(pBack) {
+		bitmapDestroy(pBack);
+	}
+	if(pManager) {
+		memFree(pManager, sizeof(tSimpleBufferManager));
+	}
+	if(pManager->pCameraManager && isCameraCreated) {
+		cameraDestroy(pManager->pCameraManager);
+	}
+	logBlockEnd("simpleBufferCreate()");
+	va_end(vaTags);
+	return 0;
 }
 
 void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 	logBlockBegin("simpleBufferDestroy()");
 	logWrite("Destroying bitmap...\n");
-	bitmapDestroy(pManager->pBuffer);
+	bitmapDestroy(pManager->pFront);
+	if(pManager->pBack) {
+		bitmapDestroy(pManager->pBack);
+	}
 	logWrite("Freeing mem...\n");
 	memFree(pManager, sizeof(tSimpleBufferManager));
 	logBlockEnd("simpleBufferDestroy()");
@@ -202,7 +249,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	ulBplOffs = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
 
 	// Calculate Y movement
-	ulBplOffs += pManager->pBuffer->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
+	ulBplOffs += pManager->pFront->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
 
 	// Copperlist - regen bitplane ptrs, update shift
 	// TODO could be unified by using copSetMove in copBlock
@@ -210,7 +257,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
 		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
-			ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplOffs;
+			ulPlaneAddr = ((ULONG)pManager->pFront->Planes[i]) + ulBplOffs;
 			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
@@ -218,8 +265,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	else {
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
-		for(i = 0; i != pManager->pBuffer->Depth; ++i) {
-			ulPlaneAddr = ((ULONG)pManager->pBuffer->Planes[i]) + ulBplOffs;
+		for(i = 0; i != pManager->pFront->Depth; ++i) {
+			ulPlaneAddr = ((ULONG)pManager->pFront->Planes[i]) + ulBplOffs;
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
