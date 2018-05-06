@@ -187,7 +187,7 @@ tSimpleBufferManager *simpleBufferCreate(
 	}
 
 	simpleBufferSetFront(pManager, pFront);
-	simpleBufferSetBack(pManager, pBack);
+	simpleBufferSetBack(pManager, pBack == 0 ? pFront : pBack);
 
 	// Add manager to VPort
 	vPortAddManager(pVPort, (tVpManager*)pManager);
@@ -196,11 +196,11 @@ tSimpleBufferManager *simpleBufferCreate(
 	return pManager;
 
 fail:
+	if(pBack && pBack != pFront) {
+		bitmapDestroy(pBack);
+	}
 	if(pFront) {
 		bitmapDestroy(pFront);
-	}
-	if(pBack) {
-		bitmapDestroy(pBack);
 	}
 	if(pManager) {
 		memFree(pManager, sizeof(tSimpleBufferManager));
@@ -216,10 +216,10 @@ fail:
 void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 	logBlockBegin("simpleBufferDestroy()");
 	logWrite("Destroying bitmap...\n");
-	bitmapDestroy(pManager->pFront);
-	if(pManager->pBack) {
+	if(pManager->pBack != pManager->pFront) {
 		bitmapDestroy(pManager->pBack);
 	}
+	bitmapDestroy(pManager->pFront);
 	logWrite("Freeing mem...\n");
 	memFree(pManager, sizeof(tSimpleBufferManager));
 	logBlockEnd("simpleBufferDestroy()");
@@ -249,7 +249,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	ulBplOffs = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
 
 	// Calculate Y movement
-	ulBplOffs += pManager->pFront->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
+	ulBplOffs += pManager->pBack->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
 
 	// Copperlist - regen bitplane ptrs, update shift
 	// TODO could be unified by using copSetMove in copBlock
@@ -257,7 +257,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
 		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
 		for (i = 0; i != pManager->sCommon.pVPort->ubBPP; ++i) {
-			ulPlaneAddr = ((ULONG)pManager->pFront->Planes[i]) + ulBplOffs;
+			ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
 			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
@@ -265,11 +265,18 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	else {
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
-		for(i = 0; i != pManager->pFront->Depth; ++i) {
-			ulPlaneAddr = ((ULONG)pManager->pFront->Planes[i]) + ulBplOffs;
+		for(i = 0; i != pManager->pBack->Depth; ++i) {
+			ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
+	}
+
+	// Swap buffers if needed
+	if(pManager->pBack != pManager->pFront) {
+		tBitMap *pTmp = pManager->pBack;
+		pManager->pBack = pManager->pFront;
+		pManager->pFront = pTmp;
 	}
 }
 
