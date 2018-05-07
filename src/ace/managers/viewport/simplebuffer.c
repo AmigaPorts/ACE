@@ -202,10 +202,10 @@ fail:
 	if(pFront) {
 		bitmapDestroy(pFront);
 	}
-	if(pManager && pManager->pCameraManager && isCameraCreated) {
-		cameraDestroy(pManager->pCameraManager);
-	}
 	if(pManager) {
+		if(pManager->pCameraManager && isCameraCreated) {
+			cameraDestroy(pManager->pCameraManager);
+		}
 		memFree(pManager, sizeof(tSimpleBufferManager));
 	}
 	logBlockEnd("simpleBufferCreate()");
