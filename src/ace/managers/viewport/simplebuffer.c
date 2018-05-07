@@ -187,7 +187,7 @@ tSimpleBufferManager *simpleBufferCreate(
 	}
 
 	simpleBufferSetFront(pManager, pFront);
-	simpleBufferSetBack(pManager, pBack ? pFront : pBack);
+	simpleBufferSetBack(pManager, pBack ? pBack : pFront);
 
 	// Add manager to VPort
 	vPortAddManager(pVPort, (tVpManager*)pManager);
