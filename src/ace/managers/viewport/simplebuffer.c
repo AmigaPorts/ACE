@@ -146,7 +146,7 @@ tSimpleBufferManager *simpleBufferCreate(
 			uwBoundWidth, uwBoundHeight,
 			pVPort->ubBPP, ubBitmapFlags
 		);
-		if(!pFront) {
+		if(!pBack) {
 			logWrite("ERR: Can't alloc buffer bitmap!\n");
 			goto fail;
 		}
@@ -187,7 +187,7 @@ tSimpleBufferManager *simpleBufferCreate(
 	}
 
 	simpleBufferSetFront(pManager, pFront);
-	simpleBufferSetBack(pManager, pBack == 0 ? pFront : pBack);
+	simpleBufferSetBack(pManager, pBack ? pFront : pBack);
 
 	// Add manager to VPort
 	vPortAddManager(pVPort, (tVpManager*)pManager);
@@ -202,11 +202,11 @@ fail:
 	if(pFront) {
 		bitmapDestroy(pFront);
 	}
+	if(pManager && pManager->pCameraManager && isCameraCreated) {
+		cameraDestroy(pManager->pCameraManager);
+	}
 	if(pManager) {
 		memFree(pManager, sizeof(tSimpleBufferManager));
-	}
-	if(pManager->pCameraManager && isCameraCreated) {
-		cameraDestroy(pManager->pCameraManager);
 	}
 	logBlockEnd("simpleBufferCreate()");
 	va_end(vaTags);
