@@ -35,7 +35,7 @@ endif
 
 CC_FLAGS_COMMON = -I$(ACE_INC_DIR) -DAMIGA $(TARGET_DEFINES)
 ifeq ($(ACE_CC), vc)
-	CC_FLAGS = $(CC_FLAGS_COMMON) +kick13 -c99
+  CC_FLAGS = +kick13 -c99 $(CC_FLAGS_COMMON)
 	ACE_AS = vc
 	AS_FLAGS = +kick13 -c
 	OBJDUMP =
