@@ -29,10 +29,11 @@ typedef int32_t LONG;
 #define INTERRUPT __amigainterrupt __saveds
 #define INTERRUPT_END do {} while(0)
 #elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
-#error "Unimplemented OS takeover for VBCC!"
+#define INTERRUPT
+#define INTERRUPT_END do {} while(0)
 #endif
 
-#define HWINTERRUPT __interrupt
+#define HWINTERRUPT __interrupt __saveds
 #define UNUSED_ARG
 #define REGARG(arg, reg) __reg(reg) arg
 #define CHIP __chip
