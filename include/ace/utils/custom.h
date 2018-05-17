@@ -9,13 +9,9 @@
 
 #ifdef AMIGA
 
-/**
- * Quick custom chipset struct include
- * Moved to separate file cuz multiple pasting of extern custom is messy
- */
+#include <hardware/custom.h> // Custom chip register addresses
 
 #define REGPTR volatile * const
-#include <hardware/custom.h> // Custom chip register addresses
 
 typedef struct Custom tCustom;
 

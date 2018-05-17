@@ -24,7 +24,19 @@ typedef int16_t WORD;
 typedef int32_t LONG;
 #endif // AMIGA
 
-#if  defined(__VBCC__)
+#if defined(__CODE_CHECKER__)
+// My realtime source checker has problems with GCC asm() expanded from REGARG()
+// being in fn arg list, so I just use blank defines for it
+#define INTERRUPT
+#define INTERRUPT_END do {} while(0)
+#define HWINTERRUPT
+#define UNUSED_ARG __attribute__((unused))
+#define REGARG(arg, x) arg
+#define CHIP
+#define FAR
+#define FN_HOTSPOT
+#define FN_COLDSPOT
+#elif defined(__VBCC__)
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 #define INTERRUPT __amigainterrupt __saveds
 #define INTERRUPT_END do {} while(0)
@@ -59,18 +71,6 @@ typedef int32_t LONG;
 #define FAR __far
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
-#elif defined(__CODE_CHECKER__)
-// My realtime source checker has problems with GCC asm() expanded from REGARG()
-// being in fn arg list, so I just use blank defines for it
-#define INTERRUPT
-#define INTERRUPT_END do {} while(0)
-#define HWINTERRUPT
-#define UNUSED_ARG __attribute__((unused))
-#define REGARG(arg, x) arg
-#define CHIP
-#define FAR
-#define FN_HOTSPOT
-#define FN_COLDSPOT
 #else
 #error "Compiler not supported!"
 #endif
