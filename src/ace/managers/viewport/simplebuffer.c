@@ -97,9 +97,7 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 	logBlockEnd("simplebufferSetFront()");
 }
 
-tSimpleBufferManager *simpleBufferCreate(
-	void *pTags, ...
-) {
+tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	va_list vaTags;
 	tCopList *pCopList;
 	tSimpleBufferManager *pManager;
@@ -132,8 +130,7 @@ tSimpleBufferManager *simpleBufferCreate(
 	ubBitmapFlags = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR);
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
 	pFront = bitmapCreate(
-		uwBoundWidth, uwBoundHeight,
-		pVPort->ubBPP, ubBitmapFlags
+		uwBoundWidth, uwBoundHeight, pVPort->ubBPP, ubBitmapFlags
 	);
 	if(!pFront) {
 		logWrite("ERR: Can't alloc buffer bitmap!\n");
@@ -143,8 +140,7 @@ tSimpleBufferManager *simpleBufferCreate(
 	UBYTE isDblBfr = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_IS_DBLBUF, 0);
 	if(isDblBfr) {
 		pBack = bitmapCreate(
-			uwBoundWidth, uwBoundHeight,
-			pVPort->ubBPP, ubBitmapFlags
+			uwBoundWidth, uwBoundHeight, pVPort->ubBPP, ubBitmapFlags
 		);
 		if(!pBack) {
 			logWrite("ERR: Can't alloc buffer bitmap!\n");
