@@ -35,7 +35,7 @@ void gsTestInterleavedCreate(void) {
 		"data/amidb32.plt", s_pTestInterleavedVPort->pPalette, 1 << SHOWCASE_BPP
 	);
 	bitmapLoadFromFile(
-		s_pTestInterleavedBfr->pBuffer, "data/32c_pal_interleaved.bm", 0, 0
+		s_pTestInterleavedBfr->pBack, "data/32c_pal_interleaved.bm", 0, 0
 	);
 
 	systemUnuse();

@@ -43,13 +43,13 @@ void gsTestLinesCreate(void) {
 
 	UWORD uwPattern = 0xFFFF;
 
-	blitLine(s_pBfrManager->pBuffer, uwMinX, uwMinY, uwMinX, uwMaxY, 1, uwPattern, 0);
-	blitLine(s_pBfrManager->pBuffer, uwMaxX, uwMinY, uwMaxX, uwMaxY, 1, uwPattern, 0);
-	blitLine(s_pBfrManager->pBuffer, uwMinX, uwMinY, uwMaxX, uwMinY, 1, uwPattern, 0);
-	blitLine(s_pBfrManager->pBuffer, uwMinX, uwMaxY, uwMaxX, uwMaxY, 1, uwPattern, 0);
+	blitLine(s_pBfrManager->pBack, uwMinX, uwMinY, uwMinX, uwMaxY, 1, uwPattern, 0);
+	blitLine(s_pBfrManager->pBack, uwMaxX, uwMinY, uwMaxX, uwMaxY, 1, uwPattern, 0);
+	blitLine(s_pBfrManager->pBack, uwMinX, uwMinY, uwMaxX, uwMinY, 1, uwPattern, 0);
+	blitLine(s_pBfrManager->pBack, uwMinX, uwMaxY, uwMaxX, uwMaxY, 1, uwPattern, 0);
 
-	blitRect(s_pBfrManager->pBuffer, 32, 32, 32, 32, 2);
-	blitLine(s_pBfrManager->pBuffer, 16, 16, 80, 80, 1, uwPattern, 0);
+	blitRect(s_pBfrManager->pBack, 32, 32, 32, 32, 2);
+	blitLine(s_pBfrManager->pBack, 16, 16, 80, 80, 1, uwPattern, 0);
 
 	// Prepare circle vertex positions
 	const uint8_t uwVertCount = 12;
@@ -68,7 +68,7 @@ void gsTestLinesCreate(void) {
 	UBYTE v;
 	for(v = 0; v < uwVertCount-1; ++v) {
 		blitLine(
-			s_pBfrManager->pBuffer,
+			s_pBfrManager->pBack,
 			pVerts[v].sUwCoord.uwX, pVerts[v].sUwCoord.uwY,
 			pVerts[v+1].sUwCoord.uwX, pVerts[v+1].sUwCoord.uwY,
 			2, uwPattern, 0
@@ -76,7 +76,7 @@ void gsTestLinesCreate(void) {
 	}
 	// Close the circle
 	blitLine(
-		s_pBfrManager->pBuffer,
+		s_pBfrManager->pBack,
 		pVerts[v].sUwCoord.uwX, pVerts[v].sUwCoord.uwY,
 		pVerts[0].sUwCoord.uwX, pVerts[0].sUwCoord.uwY,
 		2, uwPattern, 0

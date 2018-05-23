@@ -87,13 +87,13 @@ void gsTestBlitSmallDestLoop(void) {
 	if(bUpdate && ubFrameIdx + bUpdate > -1 && ubFrameIdx + bUpdate < 16) {
 		ubFrameIdx += bUpdate;
 		blitRect(
-			s_pTestBlitBfr->pBuffer, 0, 0,
+			s_pTestBlitBfr->pBack, 0, 0,
 			s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX,
 			s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY,
 			0
 		);
 		blitCopy(s_pRefBitmap, ubFrameIdx, ubFrameIdx*32, s_pDstBitmap, 0, 0, 32, 32, 0xCA, 0xFF);
-		blitCopyAligned(s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBuffer, 16, 16, 32, 32);
+		blitCopyAligned(s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBack, 16, 16, 32, 32);
 	}
 
 	vPortWaitForEnd(s_pTestBlitVPort);

@@ -87,25 +87,25 @@ void gsTestCopperCreate(void) {
 	UWORD uwMaxX = s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX-1;
 	UWORD uwMaxY = s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY-1;
 	blitRect(
-		s_pTestCopperBfr->pBuffer, 0,0,
+		s_pTestCopperBfr->pBack, 0,0,
 		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX,
 		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY,
 		TEST_COPPER_COLOR_INSIDE
 	);
 	blitLine(
-		s_pTestCopperBfr->pBuffer, 0, 0, uwMaxX, 0,
+		s_pTestCopperBfr->pBack, 0, 0, uwMaxX, 0,
 		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
 	blitLine(
-		s_pTestCopperBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY,
+		s_pTestCopperBfr->pBack, 0, uwMaxY, uwMaxX, uwMaxY,
 		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
 	blitLine(
-		s_pTestCopperBfr->pBuffer, 0, 0, 0, uwMaxY,
+		s_pTestCopperBfr->pBack, 0, 0, 0, uwMaxY,
 		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
 	blitLine(
-		s_pTestCopperBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY,
+		s_pTestCopperBfr->pBack, uwMaxX, 0, uwMaxX, uwMaxY,
 		TEST_COPPER_COLOR_BORDER, 0xFFFF, 0
 	);
 
