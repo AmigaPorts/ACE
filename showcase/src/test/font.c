@@ -156,7 +156,7 @@ void testFontDrawTable(void) {
 
 	// Background
 	blitRect(
-		s_pTestFontBfr->pBuffer, 0,0,
+		s_pTestFontBfr->pBack, 0,0,
 		s_pTestFontBfr->uBfrBounds.sUwCoord.uwX,
 		s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 2
 	);
@@ -164,14 +164,14 @@ void testFontDrawTable(void) {
 	UWORD uwMaxY = s_pTestFontBfr->uBfrBounds.sUwCoord.uwY-1;
 	for(i = 0; i < 8; ++i) {
 		// Vertical lines
-		blitLine(s_pTestFontBfr->pBuffer, 40*i, 0, 40*i, uwMaxY, 0, 0xFFFF, 0);
+		blitLine(s_pTestFontBfr->pBack, 40*i, 0, 40*i, uwMaxY, 0, 0xFFFF, 0);
 		// Horizontal lines
-		blitLine(s_pTestFontBfr->pBuffer, 0, 32*i, uwMaxX, 32*i, 0, 0xFFFF, 0);
+		blitLine(s_pTestFontBfr->pBack, 0, 32*i, uwMaxX, 32*i, 0, 0xFFFF, 0);
 	}
 	// Last V line
-	blitLine(s_pTestFontBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY, 0, 0xFFFF, 0);
+	blitLine(s_pTestFontBfr->pBack, uwMaxX, 0, uwMaxX, uwMaxY, 0, 0xFFFF, 0);
 	// Last H line
-	blitLine(s_pTestFontBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY, 0, 0xFFFF, 0);
+	blitLine(s_pTestFontBfr->pBack, 0, uwMaxY, uwMaxX, uwMaxY, 0, 0xFFFF, 0);
 
 	for(i = 0; i < 64; ++i) {
 		UBYTE ubCharIdx = s_ubPage*64+i;
@@ -184,7 +184,7 @@ void testFontDrawTable(void) {
 			sprintf(szCodeBfr, "%c", ubCharIdx);
 			fontFillTextBitMap(pFont, s_pGlyph, szCodeBfr);
 			fontDrawTextBitMap(
-				s_pTestFontBfr->pBuffer, s_pGlyph,
+				s_pTestFontBfr->pBack, s_pGlyph,
 				(i/8)*40+40/2, (i%8)*32+(32/2),
 				3, FONT_CENTER|FONT_COOKIE
 			);
@@ -194,7 +194,7 @@ void testFontDrawTable(void) {
 		sprintf(szCodeBfr, "%02X", ubCharIdx);
 		fontFillTextBitMap(s_pFontUI, s_pGlyphCode, szCodeBfr);
 		fontDrawTextBitMap(
-			s_pTestFontBfr->pBuffer, s_pGlyphCode,
+			s_pTestFontBfr->pBack, s_pGlyphCode,
 			(i/8)*40+40/2, (i%8)*32+32-2,
 			0, FONT_HCENTER|FONT_BOTTOM|FONT_COOKIE
 		);
