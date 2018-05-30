@@ -40,9 +40,9 @@ ifeq ($(ACE_CC), vc)
 	AS_FLAGS = +kick13 -c
 	OBJDUMP =
 else ifeq ($(ACE_CC), m68k-amigaos-gcc)
-	CC_FLAGS_NO_O = $(CC_FLAGS_COMMON) -std=gnu11 -DAMIGA \
-		-noixemul -Wall -Wextra -fomit-frame-pointer
 	CC_FLAGS = $(CC_FLAGS_NO_O) $(TARGET_DEFINES) -O3
+	CC_FLAGS_NO_O = $(CC_FLAGS_COMMON) -std=gnu11 -noixemul -Wall -Wextra \
+		-fomit-frame-pointer -fstack-protector-all
 	#-fverbose-asm
 	ACE_AS = vasmm68k_mot
 	AS_FLAGS = -quiet -x -m68010 -Faout -ID:\prg\kompilatory\bebbo\m68k-amigaos\sys-include
