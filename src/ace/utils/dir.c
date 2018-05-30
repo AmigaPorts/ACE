@@ -19,7 +19,6 @@ tDir *dirOpen(const char *szPath) {
 		systemUnuse();
 		return 0;
 	}
-	logWrite("dirOpenOk\n");
 	systemUnuse();
 	return pDir;
 }
@@ -34,7 +33,6 @@ UBYTE dirRead(tDir *pDir, char *szFileName, UWORD uwFileNameMax) {
 
 	strncpy(szFileName, pDir->sFileBlock.fib_FileName, uwFileNameMax-1);
 	szFileName[uwFileNameMax-1] = '\0';
-	logWrite("dirReadOk %s\n", szFileName);
 	systemUnuse();
 	return 1;
 }
@@ -43,7 +41,6 @@ void dirClose(tDir *pDir) {
 	systemUse();
 	UnLock(pDir->pLock);
 	memFree(pDir, sizeof(tDir));
-	logWrite("dirCloseOk\n");
 	systemUnuse();
 }
 
