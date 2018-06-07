@@ -4,7 +4,7 @@ Welcome to the ACE docs! If you're interested in something and it's not covered 
 
 ## Installing
 
-- Compiler: VBCC, GCC
+- [Compiler setup](installing/compiler.md)
 - [Building ACE](installing/ace.md)
 - Integration with Visual Studio Code
 
