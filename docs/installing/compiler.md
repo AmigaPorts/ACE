@@ -11,7 +11,7 @@ with cygwin & compiler paths in PATH:
 `C:\WINDOWS\system32\cmd.exe /c "SET PATH=path/to/bebbo/bin;path/to/cygwin/bin;%PATH%&& set PREFIX=/cygdrive/path/to/bebbo&& START cmd.exe"`
 
 It also sets prefix so that you may (re)build compiler with it easily. Be sure
-there are no spaces before `&&` or Cygwin's `rm -rf` may get an empty arg`.
+there are no spaces before `&&` or Cygwin's `rm -rf` may get an empty arg.
 
 ## Prebuilt VBCC for Windows
 
