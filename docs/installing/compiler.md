@@ -1,17 +1,25 @@
 # Compiler setup
 
+## Bebbo's toolchain
+
 Currently, only VBCC and Bebbo's GCC are supported. The best source for both
 is Bebbo's [amiga-gcc](https://github.com/bebbo/amiga-gcc) repository. Its build
 system tends to be occasionally broken, so if you can't build it by following
 his instructions, don't be shy and drop him an issue. ;)
 
-If you're on windows, you may want to create a shortcut which launches `cmd`
-with cygwin & compiler paths in PATH:
+If you're on Windows, you'll need Cygwin. You may want to create a shortcut
+which launches `cmd` with cygwin & compiler paths in PATH:
 
 `C:\WINDOWS\system32\cmd.exe /c "SET PATH=path/to/bebbo/bin;path/to/cygwin/bin;%PATH%&& set PREFIX=/cygdrive/path/to/bebbo&& START cmd.exe"`
 
-It also sets prefix so that you may (re)build compiler with it easily. Be sure
-there are no spaces before `&&` or Cygwin's `rm -rf` may get an empty arg.
+Where `path/to/bebbo` is a path to destination where Bebbo's compiler
+is installed. On Cygwin, path `X:/dir1/dir2/file` gets changed
+to `/cygdrive/x/dir1/dir2/file` so be sure to setup `PREFIX` in proper way.
+Before building ACE or Bebbo's compiler, enter `sh` or `bash` or you will
+experience strange errors.
+
+Be sure there are no spaces before `&&` or one of `rm -rf` may get an empty arg
+and destroy your HDD. :)
 
 ## Prebuilt VBCC for Windows
 
