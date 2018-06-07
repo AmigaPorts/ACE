@@ -19,7 +19,7 @@ Before building ACE or Bebbo's compiler, enter `sh` or `bash` or you will
 experience strange errors.
 
 Be sure there are no spaces before `&&` or one of `rm -rf` may get an empty arg
-and destroy your HDD. :)
+and destroy your HDD contents. :)
 
 ## Prebuilt VBCC for Windows
 
