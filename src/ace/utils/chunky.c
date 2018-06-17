@@ -90,3 +90,30 @@ void chunkyRotate(
 		}
 	}
 }
+
+void chunkyFromBitmap(
+	const tBitMap *pBitmap, UBYTE *pChunky,
+	UWORD uwSrcOffsX, UWORD uwSrcOffsY, UWORD uwWidth, UWORD uwHeight
+) {
+	for(UWORD y = 0; y < uwHeight; ++y) {
+		for(UWORD x = 0; x < uwWidth; x += 16) {
+			chunkyFromPlanar16(
+				pBitmap, uwSrcOffsX + x, uwSrcOffsY + y, &pChunky[y*uwWidth + x]
+			);
+		}
+	}
+}
+
+void chunkyToBitmap(
+	const UBYTE *pChunky, tBitMap *pBitmap,
+	UWORD uwDstOffsX, UWORD uwDstOffsY, UWORD uwWidth, UWORD uwHeight
+) {
+	for(UWORD y = 0; y < uwHeight; ++y) {
+		for(UWORD x = 0; x < uwWidth; x += 16)
+			chunkyToPlanar16(
+				&pChunky[(y*uwWidth) + x],
+				uwDstOffsX + x, uwDstOffsY + y,
+				pBitmap
+			);
+	}
+}
