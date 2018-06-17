@@ -8,7 +8,9 @@
 #include <ace/utils/bitmap.h>
 #include <fixmath/fix16.h>
 
-void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut) {
+void chunkyFromPlanar16(
+	const tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut
+) {
 	UWORD uwChunk, uwMask;
 	UBYTE i, ubPx;
 	memset(pOut, 0, 16*sizeof(*pOut));
@@ -24,13 +26,13 @@ void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut) {
 	}
 }
 
-UBYTE chunkyFromPlanar(tBitMap *pBitMap, UWORD uwX, UWORD uwY) {
+UBYTE chunkyFromPlanar(const tBitMap *pBitMap, UWORD uwX, UWORD uwY) {
 	UBYTE pIndicesChunk[16];
 	chunkyFromPlanar16(pBitMap, uwX, uwY, pIndicesChunk);
 	return pIndicesChunk[uwX&0xF];
 }
 
-void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
+void chunkyToPlanar16(const UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 	UBYTE ubPlane, ubPixel;
 	UWORD uwPlanarBuffer = 0;
 	UWORD *pPlane;
@@ -57,7 +59,7 @@ void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
 }
 
 void chunkyRotate(
-	UBYTE *pSource, UBYTE *pDest, fix16_t fSin, fix16_t fCos,
+	const UBYTE *pSource, UBYTE *pDest, fix16_t fSin, fix16_t fCos,
 	UBYTE ubBgColor, WORD wWidth, WORD wHeight
 ) {
 	fix16_t fCx, fCy;
@@ -86,5 +88,32 @@ void chunkyRotate(
 				pDest[y*wWidth + x] = pSource[v*wWidth + u];
 			}
 		}
+	}
+}
+
+void chunkyFromBitmap(
+	const tBitMap *pBitmap, UBYTE *pChunky,
+	UWORD uwSrcOffsX, UWORD uwSrcOffsY, UWORD uwWidth, UWORD uwHeight
+) {
+	for(UWORD y = 0; y < uwHeight; ++y) {
+		for(UWORD x = 0; x < uwWidth; x += 16) {
+			chunkyFromPlanar16(
+				pBitmap, uwSrcOffsX + x, uwSrcOffsY + y, &pChunky[y*uwWidth + x]
+			);
+		}
+	}
+}
+
+void chunkyToBitmap(
+	const UBYTE *pChunky, tBitMap *pBitmap,
+	UWORD uwDstOffsX, UWORD uwDstOffsY, UWORD uwWidth, UWORD uwHeight
+) {
+	for(UWORD y = 0; y < uwHeight; ++y) {
+		for(UWORD x = 0; x < uwWidth; x += 16)
+			chunkyToPlanar16(
+				&pChunky[(y*uwWidth) + x],
+				uwDstOffsX + x, uwDstOffsY + y,
+				pBitmap
+			);
 	}
 }

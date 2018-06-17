@@ -21,7 +21,9 @@
  *
  * @see chunkyFromPlanar()
  */
-void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut);
+void chunkyFromPlanar16(
+	const tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut
+);
 
 /**
  * @brief Returns color index of selected pixel.
@@ -34,7 +36,7 @@ void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut);
  *
  * @see chunkyFromPlanar16()
  */
-UBYTE chunkyFromPlanar(tBitMap *pBitMap, UWORD uwX, UWORD uwY);
+UBYTE chunkyFromPlanar(const tBitMap *pBitMap, UWORD uwX, UWORD uwY);
 
 /**
  * @brief Rotates chunky pixels by given angle, on spefied background.
@@ -53,7 +55,7 @@ UBYTE chunkyFromPlanar(tBitMap *pBitMap, UWORD uwX, UWORD uwY);
  * @param wHeight   Ditto, height.
  */
 void chunkyRotate(
-	UBYTE *pSource, UBYTE *pDest,
+	const UBYTE *pSource, UBYTE *pDest,
 	fix16_t fSin, fix16_t fCos,
 	UBYTE ubBgColor, WORD wWidth, WORD wHeight
 );
@@ -72,7 +74,7 @@ void chunkyRotate(
  * @see chunkyFromPlanar16
  * @see chunkyToPlanar
  */
-void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
+void chunkyToPlanar16(const UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
 
 /**
  * Puts single chunky pixel on bitmap at given coordinates.
@@ -89,5 +91,37 @@ void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
  * @see chunkyFromPlanar
  */
 void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
+
+/**
+ * @brief Reads given portion of bitmap to chunky buffer.
+ *
+ * @param pBitmap Source bitmap image.
+ * @param pChunky Desitination chunky buffer.
+ * @param uwSrcOffsX X offset of conversion area, in pixels.
+ * @param uwSrcOffsY Y offset of conversion area, in pixels.
+ * @param uwWidth Width of conversion area, in pixels.
+ * @param uwHeight Height of conversion area, in pixels.
+ *
+ * @see chunkyToBitmap
+ */
+void chunkyFromBitmap(
+	const tBitMap *pBitmap, UBYTE *pChunky,
+	UWORD uwSrcOffsX, UWORD uwSrcOffsY, UWORD uwWidth, UWORD uwHeight
+);
+
+/**
+ * @brief Writes given chunky buffer into specified portion of bitmap
+ *
+ * @param pChunky Source chunky data buffer.
+ * @param pBitmap Destination bitmap.
+ * @param uwDstOffsX X offset of conversion area, in pixels.
+ * @param uwDstOffsY Y offset of conversion area, in pixels.
+ * @param uwWidth Width of conversion area, in pixels.
+ * @param uwHeight Height of conversion area, in pixels.
+ */
+void chunkyToBitmap(
+	const UBYTE *pChunky, tBitMap *pBitmap,
+	UWORD uwDstOffsX, UWORD uwDstOffsY, UWORD uwWidth, UWORD uwHeight
+);
 
 #endif // _ACE_UTILS_CHUNKY_H_
