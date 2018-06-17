@@ -155,12 +155,10 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 			s_ulChipPeakUsage, s_ulFastPeakUsage
 		);
 #ifdef AMIGA
-		systemUse();
 		filePrintf(
 			s_pMemLog, "Largest available chunk of given type: %lu\n",
 			AvailMem(ulFlags | MEMF_LARGEST)
 		);
-		systemUnuse();
 #endif // AMIGA
 		return 0;
 	}
