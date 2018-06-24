@@ -173,7 +173,7 @@ void bitmapLoadFromFile(tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWOR
 	logBlockEnd("bitmapLoadFromFile()");
 }
 
-tBitMap *bitmapCreateFromFile(char *szFilePath) {
+tBitMap *bitmapCreateFromFile(const char *szFilePath) {
 	tBitMap *pBitMap;
 	FILE *pFile;
 	UWORD uwWidth, uwHeight;  // Image dimensions

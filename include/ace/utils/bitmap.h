@@ -104,7 +104,7 @@ void bitmapLoadFromFile(
  *  @see bitmapCreate
  *  @see bitmapDestroy
  */
-tBitMap* bitmapCreateFromFile(char *szFileName);
+tBitMap* bitmapCreateFromFile(const char *szFileName);
 
 /**
  *  @brief Destroys given bitmap, freeing its resources to OS.
