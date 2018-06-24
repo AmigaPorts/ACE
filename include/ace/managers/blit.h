@@ -76,6 +76,13 @@ UBYTE blitSafeCopy(
 );
 
 #ifdef ACE_DEBUG
+
+UBYTE _blitCheck(
+	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UWORD uwLine, char *szFile
+);
+
 # define blitCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask) blitSafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask, __LINE__, __FILE__)
 #define blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile) _blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)
 #else
