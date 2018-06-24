@@ -46,7 +46,7 @@ void INTERRUPT keyIntServer(
 
 	// Start handshake
 	g_pCiaA->cra |= CIACRA_SPMODE;
-	UWORD uwStart = (g_pCiaA->tbhi << 8) | g_pCiaA->tblo;
+	UWORD uwStart = ciaGetTimerB(g_pCiaA);
 
 	// Get keypress flag and shift keyCode
 	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
@@ -60,7 +60,7 @@ void INTERRUPT keyIntServer(
 	}
 
 	// End handshake
-	while(uwStart - ((g_pCiaA->tbhi << 8) | g_pCiaA->tblo) < 65) {}
+	while(uwStart - ciaGetTimerB(g_pCiaA) < 65) {}
 	g_pCiaA->cra &= ~CIACRA_SPMODE;
 	INTERRUPT_END;
 }
