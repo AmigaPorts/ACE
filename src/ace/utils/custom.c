@@ -20,4 +20,22 @@ tCopperUlong FAR REGPTR g_pCopLc = (tCopperUlong REGPTR)(CUSTOM_BASE + offsetof(
 tCia FAR REGPTR g_pCiaA = (tCia*)0xBFE001;
 tCia FAR REGPTR g_pCiaB = (tCia*)0xBFD000;
 
+UWORD ciaGetTimerA(tCia REGPTR pCia) {
+	UBYTE ubHi, ubLo;
+	do {
+		ubHi = pCia->tahi;
+		ubLo = pCia->talo;
+	} while(ubHi != pCia->tahi);
+	return (ubHi << 8) | ubLo;
+}
+
+UWORD ciaGetTimerB(tCia REGPTR pCia) {
+	UBYTE ubHi, ubLo;
+	do {
+		ubHi = pCia->tbhi;
+		ubLo = pCia->tblo;
+	} while(ubHi != pCia->tbhi);
+	return (ubHi << 8) | ubLo;
+}
+
 #endif // AMIGA

@@ -18,7 +18,6 @@
 #include <hardware/custom.h> // Custom chip register addresses
 
 typedef struct Custom tCustom;
-extern tCustom FAR REGPTR g_pCustom;
 
 /**
  * Ray position struct.
@@ -33,20 +32,11 @@ typedef struct {
 	volatile unsigned bfPosX:8;    ///< 0..159?
 } tRayPos;
 
-extern tRayPos FAR REGPTR g_pRayPos;
 
 typedef struct {
 	UWORD uwHi; ///< upper WORD
 	UWORD uwLo; ///< lower WORD
 } tCopperUlong;
-
-/**
- * Bitplane display regs with 16-bit access.
- * For use with Copper. Other stuff should use g_pCustom->bplpt
- */
-extern tCopperUlong FAR REGPTR g_pSprFetch;
-extern tCopperUlong FAR REGPTR g_pBplFetch;
-extern tCopperUlong FAR REGPTR g_pCopLc;
 
 /**
  * CIA registers.
@@ -130,6 +120,32 @@ typedef struct _tCia {
 #define CIACRB_LOAD    BV(4)
 #define CIACRB_INMODE  (BV(5) | BV(6))
 #define CIACRB_ALARM   BV(7)
+
+/**
+ * @brief Gets consistent Timer A value from given CIA chip.
+ * Based on https://github.com/keirf/HxC_FF_File_Selector/blob/master/amiga/amiga.c
+ * @param pCia Base CIA chip address.
+ */
+UWORD ciaGetTimerA(tCia REGPTR pCia);
+
+/**
+ * @brief Gets consistent Timer A value from given CIA chip.
+ * Based on https://github.com/keirf/HxC_FF_File_Selector/blob/master/amiga/amiga.c
+ * @param pCia Base CIA chip address.
+ */
+UWORD ciaGetTimerB(tCia REGPTR pCia);
+
+extern tCustom FAR REGPTR g_pCustom;
+
+extern tRayPos FAR REGPTR g_pRayPos;
+
+/**
+ * Bitplane display regs with 16-bit access.
+ * For use with Copper. Other stuff should use g_pCustom->bplpt
+ */
+extern tCopperUlong FAR REGPTR g_pSprFetch;
+extern tCopperUlong FAR REGPTR g_pBplFetch;
+extern tCopperUlong FAR REGPTR g_pCopLc;
 
 extern tCia FAR REGPTR g_pCiaA;
 extern tCia FAR REGPTR g_pCiaB;
