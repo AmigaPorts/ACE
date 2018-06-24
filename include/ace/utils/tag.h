@@ -17,11 +17,12 @@
 typedef Tag tTag;
 #else
 typedef ULONG tTag;
-#define TAG_DONE   0L
-#define TAG_END    0L
-#define TAG_IGNORE 1L
-#define TAG_MORE   2L
-#define TAG_SKIP   3L
+#define TAG_DONE   0UL
+#define TAG_END    0UL
+#define TAG_IGNORE 1UL
+#define TAG_MORE   2UL
+#define TAG_SKIP   3UL
+#define TAG_USER = BV(31)
 #endif // AMIGA
 
 /**
