@@ -144,7 +144,7 @@ void _memDestroy(void) {
 
 void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 	void *pAddr;
-	pAddr = _memAllocRls(ulSize + 2*sizeof(ULONG), ulFlags);
+	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
 	if(!pAddr) {
 		filePrintf(
 			s_pMemLog, "ERR: couldn't allocate %lu bytes! (%s:%u)\n",
@@ -176,7 +176,7 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, char *szFile) {
 	_memCheckTrash(pMem, uwLine, szFile);
 	_memEntryDelete(pMem, ulSize, uwLine, szFile);
-	_memFreeRls(pMem - sizeof(ULONG), ulSize + 2*sizeof(ULONG));
+	_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
 }
 
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
