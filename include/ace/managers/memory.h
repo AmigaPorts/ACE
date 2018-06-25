@@ -41,6 +41,8 @@ void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, char *szFile);
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags);
 void _memFreeRls(void *pMem, ULONG ulSize);
 
+void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile);
+
 /**
  * Macros for enabling or disabling logging
  */
@@ -52,6 +54,7 @@ void _memFreeRls(void *pMem, ULONG ulSize);
 # define memDestroy() _memDestroy()
 # define memEntryAdd(pAddr, ulSize) _memEntryAdd(pAddr, ulSize, __LINE__, __FILE__)
 # define memEntryDelete(pAddr, ulSize) _memEntryDelete(pAddr, ulSize, __LINE__, __FILE__)
+# define memCheckTrash(pAddr) _memCheckTrash(pAddr, __LINE__, __FILE__)
 #else
 # define memAlloc(ulSize, ulFlags) _memAllocRls(ulSize, ulFlags)
 # define memFree(pMem, ulSize) _memFreeRls(pMem, ulSize)
@@ -59,6 +62,7 @@ void _memFreeRls(void *pMem, ULONG ulSize);
 # define memDestroy()
 # define memEntryAdd(pAddr, ulSize)
 # define memEntryDelete(pAddr, ulSize)
+# define memCheckTrash(pAddr, ulSize)
 #endif // ACE_DEBUG
 
 // Shorthands

@@ -144,7 +144,7 @@ void _memDestroy(void) {
 
 void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 	void *pAddr;
-	pAddr = _memAllocRls(ulSize, ulFlags);
+	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
 	if(!pAddr) {
 		filePrintf(
 			s_pMemLog, "ERR: couldn't allocate %lu bytes! (%s:%u)\n",
@@ -164,13 +164,19 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 #endif // AMIGA
 		return 0;
 	}
+	pAddr += sizeof(ULONG);
+	ULONG *pCafe = (ULONG*)(pAddr - sizeof(ULONG));
+	ULONG *pDead = (ULONG*)(pAddr + ulSize);
+	*pCafe = 0xCAFEBABE;
+	*pDead = 0xDEADBEEF;
 	_memEntryAdd(pAddr, ulSize, uwLine, szFile);
 	return pAddr;
 }
 
 void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, char *szFile) {
+	_memCheckTrash(pMem, uwLine, szFile);
 	_memEntryDelete(pMem, ulSize, uwLine, szFile);
-	_memFreeRls(pMem, ulSize);
+	_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
 }
 
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
@@ -193,4 +199,37 @@ void _memFreeRls(void *pMem, ULONG ulSize) {
 	free(pMem);
 	#endif // AMIGA
 	systemUnuse();
+}
+
+void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
+	// find memory entry
+	tMemEntry *pEntry = s_pMemTail;
+	while(pEntry && pEntry->pAddr != pMem) {
+		pEntry = pEntry->pNext;
+	}
+	if(pEntry->pAddr != pMem) {
+		filePrintf(
+			s_pMemLog, "ERR: can't find memory allocated at %p (%s:%u)\n",
+			pMem, szFile, uwLine
+		);
+		fileFlush(s_pMemLog);
+		return;
+	}
+
+	ULONG *pCafe = (ULONG*)(pMem - sizeof(ULONG));
+	ULONG *pDead = (ULONG*)(pMem + pEntry->ulSize);
+	if(*pCafe != 0xCAFEBABE) {
+		filePrintf(
+			s_pMemLog, "ERR: Left mem trashed: %hu@%p (%s:%u)\n",
+			pEntry->uwId, pMem, uwLine, szFile
+		);
+		fileFlush(s_pMemLog);
+	}
+	if(*pDead != 0xDEADBEEF) {
+		filePrintf(
+			s_pMemLog, "ERR: Right mem trashed: %hu%p (%s:%u)\n",
+			pEntry->uwId, pMem, uwLine, szFile
+		);
+		fileFlush(s_pMemLog);
+	}
 }
