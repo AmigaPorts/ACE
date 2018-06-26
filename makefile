@@ -109,6 +109,7 @@ all: hello clear ace summary
 
 clear:
 	$(NEWLINE)
+	@mkdir -p $(BUILD_DIR)
 	$(ECHO) Removing old objs...
 	$(ECHO) "a" > $(BUILD_DIR)$(SL)foo.o
 	$(ECHO) "a" > $(BUILD_DIR)$(SL)foo.s
