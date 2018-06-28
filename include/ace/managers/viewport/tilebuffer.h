@@ -26,7 +26,7 @@
 
 #include <ace/managers/blit.h>
 #include <ace/managers/viewport/camera.h>
-#include <ace/managers/viewport/scrollBuffer.h>
+#include <ace/managers/viewport/scrollbuffer.h>
 
 /* types */
 
