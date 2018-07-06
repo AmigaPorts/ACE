@@ -15,7 +15,7 @@ else
 	RM = @rm
 	CP = cp
 	SLASH = /
-	ACE_ROOT = $(shell pwd)
+	ACE_ROOT = .
 	ECHO = @echo
 	NEWLINE = @echo " "
 endif
