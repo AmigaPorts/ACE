@@ -60,7 +60,16 @@ void INTERRUPT keyIntServer(
 	}
 
 	// End handshake
-	while(uwStart - ciaGetTimerB(g_pCiaA) < 65) {}
+	UWORD uwDelta;
+	do {
+		UWORD uwEnd = ciaGetTimerB(g_pCiaA);
+		if(uwEnd > uwStart) {
+			uwDelta = uwEnd - uwStart;
+		}
+		else {
+			uwDelta = 0xFFFF - uwStart + uwEnd;
+		}
+	} while(uwDelta < 65);
 	g_pCiaA->cra &= ~CIACRA_SPMODE;
 	INTERRUPT_END;
 }
