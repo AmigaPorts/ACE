@@ -111,6 +111,27 @@ void fontFillTextBitMap(
 void fontDestroyTextBitMap(tTextBitMap *pTextBitMap);
 
 /**
+ * @brief Gets dimensions occupied by specified text drawn by given font.
+ *
+ * @param pFont Font to be used for measurement.
+ * @param szText Text to be measured.
+ * @return tUwCoordYX Coord containing dimensions: x is width, y - height.
+ */
+tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText);
+
+/**
+ * @brief Checks if given text fits inside specified text buffer.
+ *
+ * @param pFont Font to be used for measurement.
+ * @param pTextBitmap Destination text bitmap.
+ * @param szText Text to be fitted.
+ * @return 1 if text fully fits inside buffer, otherwise 0.
+ */
+UBYTE fontTextFitsInTextBitmap(
+	const tFont *pFont, const tTextBitMap *pTextBitmap, const char *szText
+);
+
+/**
  *  @brief Draws specified text bitmap at given position, color and flags.
  *
  *  @param pDest       Destination bitmap.

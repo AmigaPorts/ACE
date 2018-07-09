@@ -83,6 +83,36 @@ tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight) {
 	return pTextBitMap;
 }
 
+UBYTE fontTextFitsInTextBitmap(
+	const tFont *pFont, const tTextBitMap *pTextBitmap, const char *szText
+) {
+	tUwCoordYX sBounds = fontMeasureText(pFont, szText);
+	if(
+		sBounds.sUwCoord.uwX <= bitmapGetByteWidth(pTextBitmap->pBitMap) * 8 &&
+		sBounds.sUwCoord.uwY <= pTextBitmap->pBitMap->Rows
+	) {
+		return 1;
+	}
+	return 0;
+}
+
+tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText) {
+	UWORD uwWidth = 0, uwHeight = 0, uwMaxWidth = 0;
+	for (const char *p = szText; *p; ++p) {
+		if(*p == '\n') {
+			uwHeight += pFont->uwHeight;
+			uwWidth = 0;
+		}
+		else {
+			uwWidth += fontGlyphWidth(pFont, *p) + 1;
+			uwMaxWidth = MAX(uwMaxWidth, uwWidth);
+		}
+	}
+	uwHeight += pFont->uwHeight; // Add height of last line
+	tUwCoordYX sBounds = {.sUwCoord = {.uwX = uwMaxWidth, .uwY = uwHeight}};
+	return sBounds;
+}
+
 tTextBitMap *fontCreateTextBitMapFromStr(const tFont *pFont, const char *szText) {
 	logBlockBegin(
 		"fontCreateTextBitMapFromStr(pFont: %p, szText: '%s')", pFont, szText
@@ -114,6 +144,13 @@ void fontFillTextBitMap(
 		pTextBitMap->pBitMap, 0, 0,
 		pTextBitMap->pBitMap->BytesPerRow*8, pTextBitMap->pBitMap->Rows, 0
 	);
+
+#if defined(ACE_DEBUG)
+	if(!fontTextFitsInTextBitmap(pFont, pTextBitMap, szText)) {
+		logWrite("ERR: Text '%s' doesn't fit in text bitmap\n", szText);
+		return;
+	}
+#endif
 	// Draw text on bitmap buffer
 	UWORD uwX = 0;
 	UWORD uwY = 0;
