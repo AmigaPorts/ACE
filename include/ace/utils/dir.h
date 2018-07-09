@@ -48,3 +48,42 @@ UBYTE dirRead(tDir *pDir, char *szFileName, UWORD uwFileNameMax);
  * @see dirOpen()
  */
 void dirClose(tDir *pDir);
+
+
+/**
+ * @brief Checks if given directory exists.
+ *
+ * @param szPath Directory to be checked.
+ * @return Success: 1, otherwise 0.
+ *
+ * @see dirCreate()
+ * @see dirCreatePath()
+ */
+UBYTE dirExists(const char *szPath);
+
+/**
+ * @brief Creates given directory.
+ * This function accepts paths, but will expect that only top-most directory
+ * needs to be created.
+ *
+ * @param szName Path to directory to be created.
+ * @return Success: 1, otherwise 0.
+ *
+ * @see dirExists()
+ * @see dirCreatePath()
+ */
+UBYTE dirCreate(const char *szName);
+
+/**
+ * @brief Recursively creates given path.
+ * This function will continue its work even if part of directory hierarchy
+ * already exists.
+ * If whole path already exists, it will still treat it as success.
+ *
+ * @param szPath Path to be created.
+ * @return Success: 1, otherwise 0.
+ *
+ * @see dirExists()
+ * @see dirCreate()
+ */
+UBYTE dirCreatePath(const char *szPath);
