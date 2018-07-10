@@ -63,7 +63,7 @@ UBYTE dirExists(const char *szPath);
 
 /**
  * @brief Creates given directory.
- * This function accepts paths, but will expect that only top-most directory
+ * This function accepts paths, but will expect that only last directory
  * needs to be created.
  *
  * @param szName Path to directory to be created.
