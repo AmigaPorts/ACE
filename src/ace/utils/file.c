@@ -27,6 +27,7 @@ LONG fileGetSize(const char *szPath) {
 	if(lResult == DOSFALSE) {
 		return -1;
 	}
+	return sFileBlock.fib_Size;
 }
 
 tFile *fileOpen(const char *szPath, const char *szMode) {
