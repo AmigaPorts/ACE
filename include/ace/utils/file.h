@@ -38,4 +38,12 @@ LONG fileScanf(tFile *pFile,const char *szFmt, ...);
 
 void fileFlush(tFile *pFile);
 
+/**
+ * @brief Returns file size of file, in bytes.
+ *
+ * @param szPath Path to file.
+ * @return LONG On fail -1, otherwise file size in bytes.
+ */
+LONG fileGetSize(const char *szPath);
+
 #endif // _ACE_UTILS_FILE_H_
