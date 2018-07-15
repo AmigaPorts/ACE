@@ -75,7 +75,7 @@ UBYTE dirCreatePath(const char *szPath) {
 	char szSubPath[108];
 	char *pSlash;
 	UBYTE isCreated = 1;
-	while(pSlash = strchr(&szPath[bPrevSlash+1], '/')) {
+	while((pSlash = strchr(&szPath[bPrevSlash+1], '/'))) {
 		memcpy(&szSubPath[bPrevSlash], &szPath[bPrevSlash], pSlash-szPath - bPrevSlash);
 		szSubPath[pSlash-szPath] = '\0';
 		if(dirExists(szSubPath)) {
