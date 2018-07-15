@@ -165,10 +165,10 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 		return 0;
 	}
 	pAddr += sizeof(ULONG);
-	ULONG *pCafe = (ULONG*)(pAddr - sizeof(ULONG));
-	ULONG *pDead = (ULONG*)(pAddr + ulSize);
-	*pCafe = 0xCAFEBABE;
-	*pDead = 0xDEADBEEF;
+	UBYTE *pCafe = (UBYTE*)(pAddr - 4*sizeof(UBYTE));
+	UBYTE *pDead = (UBYTE*)(pAddr + ulSize);
+	pCafe[0] = 0xCA; pCafe[1] = 0xFE; pCafe[2] = 0xBA; pCafe[3] = 0xBE;
+	pDead[0] = 0xDE; pDead[1] = 0xAD; pDead[2] = 0xBE; pDead[3] = 0xEF;
 	_memEntryAdd(pAddr, ulSize, uwLine, szFile);
 	return pAddr;
 }
@@ -216,16 +216,16 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
 		return;
 	}
 
-	ULONG *pCafe = (ULONG*)(pMem - sizeof(ULONG));
-	ULONG *pDead = (ULONG*)(pMem + pEntry->ulSize);
-	if(*pCafe != 0xCAFEBABE) {
+	UBYTE *pCafe = (UBYTE*)(pMem - 4*sizeof(UBYTE));
+	UBYTE *pDead = (UBYTE*)(pMem + pEntry->ulSize);
+	if(pCafe[0] != 0xCA || pCafe[1] != 0xFE || pCafe[2] != 0xBA || pCafe[3] != 0xBE) {
 		filePrintf(
 			s_pMemLog, "ERR: Left mem trashed: %hu@%p (%s:%u)\n",
 			pEntry->uwId, pMem, uwLine, szFile
 		);
 		fileFlush(s_pMemLog);
 	}
-	if(*pDead != 0xDEADBEEF) {
+	if(pDead[0] != 0xDE || pDead[1] != 0xAD || pDead[2] != 0xBE || pDead[3] != 0xEF) {
 		filePrintf(
 			s_pMemLog, "ERR: Right mem trashed: %hu%p (%s:%u)\n",
 			pEntry->uwId, pMem, uwLine, szFile
