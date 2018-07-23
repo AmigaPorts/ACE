@@ -4,7 +4,31 @@
 
 #include <ace/utils/file.h>
 #include <stdarg.h>
+#include <dos/dos.h>
+#include <clib/dos_protos.h>
 #include <ace/managers/system.h>
+#include <ace/managers/log.h>
+
+LONG fileGetSize(const char *szPath) {
+	// One could use std library to seek to end of file and use ftell,
+	// but SEEK_END is not guaranteed to work.
+	// http://www.cplusplus.com/reference/cstdio/fseek/
+	// Also this variant is 14 bytes smaller on Amiga ;)
+	systemUse();
+	BPTR pLock = Lock((CONST_STRPTR)szPath, ACCESS_READ);
+	if(!pLock) {
+		systemUnuse();
+		return -1;
+	}
+	struct FileInfoBlock sFileBlock;
+	LONG lResult = Examine(pLock, &sFileBlock);
+	UnLock(pLock);
+	systemUnuse();
+	if(lResult == DOSFALSE) {
+		return -1;
+	}
+	return sFileBlock.fib_Size;
+}
 
 tFile *fileOpen(const char *szPath, const char *szMode) {
 	systemUse();
@@ -20,6 +44,11 @@ void fileClose(tFile *pFile) {
 }
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
+#ifdef ACE_DEBUG
+	if(!ulSize) {
+		logWrite("ERR: File read size = 0!\n");
+	}
+#endif
 	systemUse();
 	ULONG ulResult = fread(pDest, ulSize, 1, pFile);
 	systemUnuse();
