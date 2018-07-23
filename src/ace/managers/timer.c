@@ -10,37 +10,21 @@
 tTimerManager g_sTimerManager = {0};
 
 /* Functions */
-#ifdef AMIGA
-
-/**
- * Timer VBlank server
- * Increments frame counter
- */
-FN_HOTSPOT
-void INTERRUPT timerVBlankServer(
-	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
-	REGARG(volatile void *pData, "a1")
-) {
-	UWORD *pCounter = (UWORD*)pData;
-	++(*pCounter);
-	INTERRUPT_END;
-}
-
-#endif // AMIGA
 
 void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
-	systemSetInt(
-		INTB_VERTB, timerVBlankServer, &g_sTimerManager.uwFrameCounter
-	);
 }
 
 void timerDestroy(void) {
-	systemSetInt(INTB_VERTB, 0, 0);
+	// systemSetInt(INTB_VERTB, 0, 0);
 }
 
 ULONG timerGet(void) {
 	return g_sTimerManager.uwFrameCounter;
+}
+
+void timerOnInterrupt(void) {
+	++g_sTimerManager.uwFrameCounter;
 }
 
 ULONG timerGetPrec(void) {

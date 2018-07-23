@@ -94,4 +94,6 @@ void timerFormatPrec(char *szBfr, ULONG ulPrecTime);
  */
 void timerWaitUs(UWORD uwUsCnt);
 
+void timerOnInterrupt(void);
+
 #endif // _ACE_MANAGERS_TIMER_H_

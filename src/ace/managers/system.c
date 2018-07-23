@@ -9,6 +9,7 @@
 #include <hardware/dmabits.h>
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
+#include <ace/managers/timer.h>
 
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
@@ -108,6 +109,11 @@ void HWINTERRUPT int3Handler(void) {
 
 	// Vertical blanking
 	if(uwIntReq & INTF_VERTB) {
+		// Do ACE-specific stuff
+		// TODO when ACE gets ported to C++ this could be constexpr if'ed
+		timerOnInterrupt();
+
+		// Process handlers
 		if(s_pAceInterrupts[INTB_VERTB].pHandler) {
 			s_pAceInterrupts[INTB_VERTB].pHandler(
 				g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
