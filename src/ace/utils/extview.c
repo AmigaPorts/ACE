@@ -299,10 +299,10 @@ void vPortWaitForEnd(tVPort *pVPort) {
 	}
 	else {
 		// Otherwise wait for pos @ next frame
-		uwCurrFrame = g_sTimerManager.uwFrameCounter;
+		uwCurrFrame = timerGet();
 		while(
 			g_pRayPos->bfPosY < uwEndPos ||
-			g_sTimerManager.uwFrameCounter == uwCurrFrame
+			timerGet() == uwCurrFrame
 		) {}
 	}
 
