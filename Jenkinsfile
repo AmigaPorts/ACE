@@ -45,18 +45,6 @@ node {
 			buildStep('68k')
 		}
 
-		stage('Build AmigaOS 4.x version') {
-			buildStep('os4')
-		}
-
-		stage('Build MorphOS 3.x version') {
-			buildStep('mos')
-		}
-
-		stage('Build AROS x86 ABI-v1 version') {
-			buildStep('aros-abiv1')
-		}
-
 		stage('Deploying to stage') {
 			if (env.TAG_NAME) {
 				sh "echo $TAG_NAME > publishing/deploy/STABLE"
