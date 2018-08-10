@@ -14,11 +14,12 @@ set(VER_Z 1)
 set(VER_FULL "${VER_X}.${VER_Y}.${VER_Z}")
 
 if(NOT AMIGA)
-	message(SEND_ERROR
-		"This project only compiles for Amiga"
-	)
+	message(SEND_ERROR "This project only compiles for Amiga")
 endif()
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAMIGA -Wall -Wextra -fomit-frame-pointer")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DACE_DEBUG")
 file(GLOB_RECURSE SOURCES src/*.c inc/*.h)
 
 include_directories(

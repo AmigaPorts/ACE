@@ -21,11 +21,8 @@ else
 endif
 SL= $(strip $(SLASH))
 
-ACE_PARENT = $(ACE_ROOT)$(SL)..
-
 ACE_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)ace
 FIXMATH_SRC_DIR = $(ACE_ROOT)$(SL)src$(SL)fixmath
-
 ACE_INC_DIR = $(ACE_ROOT)$(SL)include
 
 ACE_CC ?= vc
