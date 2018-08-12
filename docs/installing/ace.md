@@ -22,7 +22,7 @@ CMake Toolchain File. Start with cloning the
 
 You can also set `M68K_CPU` and `M68K_FPU` variables to your liking.
 
-```
+``` sh
 mkdir build && cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/AmigaCMakeCrossToolchains/m68k.cmake -DM68K_TOOLCHAIN_PATH=/path/to/toolchain -DM68K_CPU=68020 -DM68K_FPU=soft make
 ```
