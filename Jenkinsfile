@@ -19,7 +19,7 @@ def buildStep(ext) {
 	sh "cd build-$ext && make -j8"
 
 	if (!env.CHANGE_ID) {
-
+		sh "mv build-$ext/libace.a publishing/deploy/ACE/"
 	}
 }
 
