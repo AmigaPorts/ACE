@@ -136,7 +136,7 @@ Now let's add this gamestate along with keyboard refreshing to `main.c`:
 ``` c
 #include <ace/generic/main.h>
 
-// Without it compiler will yell about undeclard gameGsCreate etc
+// Without it compiler will yell about undeclared gameGsCreate etc
 #include "game.h"
 
 void genericCreate(void) {
