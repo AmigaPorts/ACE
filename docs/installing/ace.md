@@ -6,8 +6,15 @@ The following will build `.o` files:
 
 ``` sh
 cd path/to/ace
-make all
+make all [OPTIONS]
 ```
+
+You can build ace by passing several additional options using `OPTION=VALUE`
+syntax:
+
+- `ACE_CC` - specify compiler. Currently, supported is `vc` (VBCC) and
+  `m68k-amigaos-gcc` (Bebbo's GCC).
+- `TARGET` - enable or disable ACE's debug features. Set to `debug` or `release`.
 
 ## Building using ACE CLI
 
