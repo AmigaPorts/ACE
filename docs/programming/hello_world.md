@@ -1,6 +1,7 @@
 # "Hello world" example
 
-At first, create folder of your project. Then, create src folder for keeping your .c files. Let's start with `main.c`:
+First, create folder for your project. Then, create src folder for keeping your
+.c files. Let's start with `main.c`:
 
 ``` c
 #include <ace/generic/main.h>
@@ -22,16 +23,58 @@ void genericDestroy(void) {
 
 ```
 
-As you may suspect, this code will print two lines into log file. To build it, you'll need a basic makefile:
+As you may suspect, this code will print two lines into log file. To build it
+you'll need a basic makefile or CMakeLists. You can base it on one found
+in `showcase` directory or something like this:
+
+Makefile:
 
 ``` makefile
- TODO
+ # TODO
 ```
 
-compile it by launching `make`. Put your executable in UAE or real hardware
+CMake:
+
+``` cmake
+cmake_minimum_required(VERSION 2.8.5)
+project(hello)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Lowercase project name for binaries and packaging
+string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
+
+if(NOT AMIGA)
+	message(SEND_ERROR "This project only compiles for Amiga")
+endif()
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAMIGA -Wall -Wextra -fomit-frame-pointer")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DACE_DEBUG")
+file(GLOB_RECURSE SOURCES src/*.c)
+file(GLOB_RECURSE HEADERS src/*.h)
+
+include_directories(
+	${PROJECT_SOURCE_DIR}/src
+)
+
+# ACE
+# If you cloned ACE into subdirectory, e.g. to `deps/ace` folder, use following:
+add_subdirectory(deps/ace ace)
+include_directories(deps/ace/include)
+# If you installed ACE, use following:
+find_package(ace REQUIRED)
+include_directories(${ace_INCLUDE_DIRS})
+
+# Linux/other UNIX get a lower-case binary name
+set(TARGET_NAME ${PROJECT_NAME_LOWER})
+add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
+target_link_libraries(${TARGET_NAME} ace)
+```
+
+Compile it by launching `make`. Put your executable in UAE or real hardware
 and launch it. Observe that `game.log` has been created in the same directory
 as executable - it has lots of lines showing things done by the engine,
-and among them your two lines.
+among them two lines specified by you with `logWrite`.
 
 ## First gamestate
 
@@ -46,7 +89,8 @@ void gameGsCreate(void) {
 }
 
 void gameGsLoop(void) {
-  // This will loop forever until you "pop" all states or close the game
+  // This will loop forever until you "pop" or change this state
+  // or close the game
   if(keyCheck(KEY_ESCAPE)) {
     gameClose();
   }
@@ -63,7 +107,8 @@ void gameGsDestroy(void) {
 
 ```
 
-To make those functions visible outside `game.c` we need to create header file - for convenience we'll name it the same way, with different extension `game.h`:
+To make those functions visible outside `game.c` we need to create header file -
+for convenience we'll name it the same way, with different extension `game.h`:
 
 ``` c
 #ifndef _GAME_H_
