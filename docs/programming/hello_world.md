@@ -1,7 +1,7 @@
 # "Hello world" example
 
 First, create folder for your project. Then, create src folder for keeping your
-.c files. Let's start with `main.c`:
+.c files. Let's start with `src/main.c`:
 
 ``` c
 #include <ace/generic/main.h>
@@ -20,7 +20,6 @@ void genericDestroy(void) {
   // Here goes your cleanup code
   logWrite("Goodbye, Amiga!\n")
 }
-
 ```
 
 As you may suspect, this code will print two lines into log file. To build it
@@ -71,7 +70,7 @@ add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${TARGET_NAME} ace)
 ```
 
-Compile it by launching `make`. Put your executable in UAE or real hardware
+Once you have that done, compile it. Put your executable in UAE or real hardware
 and launch it. Observe that `game.log` has been created in the same directory
 as executable - it has lots of lines showing things done by the engine,
 among them two lines specified by you with `logWrite`.
@@ -79,9 +78,13 @@ among them two lines specified by you with `logWrite`.
 ## First gamestate
 
 Now let's add a blank loop which will wait until you press escape key on your
-keyboard. Let's add first gamestate in `game.c`:
+keyboard. Let's add first gamestate in `src/game.c`:
 
 ``` c
+#include "game.h"
+#include <ace/managers/key.h> // We'll use key* fns here
+
+// "Gamestate" is a long word, so let's use shortcut "Gs" when naming fns
 
 void gameGsCreate(void) {
   // Initializations for this gamestate - load bitmaps, draw background, etc.
@@ -89,7 +92,7 @@ void gameGsCreate(void) {
 }
 
 void gameGsLoop(void) {
-  // This will loop forever until you "pop" or change this state
+  // This will loop forever until you "pop" or change gamestate
   // or close the game
   if(keyCheck(KEY_ESCAPE)) {
     gameClose();
@@ -104,18 +107,18 @@ void gameGsDestroy(void) {
   // Cleanup when leaving this gamestate
   // Empty at the moment
 }
-
 ```
 
 To make those functions visible outside `game.c` we need to create header file -
-for convenience we'll name it the same way, with different extension `game.h`:
+for convenience we'll name it the same way, with different extension -
+`src/game.h`:
 
 ``` c
 #ifndef _GAME_H_
 #define _GAME_H_
 
-// Copy and paste headers from game.c here
-// It's best to put only those function which are needed in other files.
+// Function headers from game.c go here
+// It's best to put here only those functions which are needed in other files.
 
 void gameGsCreate(void);
 
@@ -131,10 +134,11 @@ Those `#ifndef`/`#define`/`#endif` lines are called
 compilation and prevent conflicts as they ensure that given file will be parsed
 only once - regardless of number of inclusions in other files.
 
-Now let's add this gamestate along with keyboard refreshing to `main.c`:
+Now let's add this gamestate along with updating keyboard state to `main.c`:
 
 ``` c
 #include <ace/generic/main.h>
+#include <ace/managers/key.h>
 
 // Without it compiler will yell about undeclared gameGsCreate etc
 #include "game.h"
