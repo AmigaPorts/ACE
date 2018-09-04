@@ -60,6 +60,8 @@ The order of passed tags is irrelevant.
 ``` c
 #include "game.h"
 #include <ace/managers/key.h> // Keyboard processing
+#include <ace/managers/game.h> // For using gameClose
+#include <ace/managers/system.h> // For systemUnuse and systemUse
 #include <ace/managers/viewport/simplebuffer.h> // Simple buffer
 
 // All variables outside fns are global - can be accessed in any fn
@@ -112,6 +114,9 @@ void gameGsCreate(void) {
   s_pVpScore->pPalette[2] = 0x0800; // Red - not max, a bit dark
   s_pVpScore->pPalette[3] = 0x0008; // Blue - same brightness as red
 
+  // We don't need anything from OS anymore
+  systemUnuse();
+
   // Load the view
   viewLoad(s_pView);
 }
@@ -130,6 +135,7 @@ void gameGsLoop(void) {
 
 void gameGsDestroy(void) {
   // Cleanup when leaving this gamestate
+  systemUse();
 
   // This will also destroy all associated viewports and viewport managers
   viewDestroy(s_pView);

@@ -11,14 +11,14 @@ void genericCreate(void) {
   logWrite("Hello, Amiga!\n");
 }
 
-void genericLoop(void) {
+void genericProcess(void) {
   // Here goes code done each game frame
   // Nothing here right now
 }
 
 void genericDestroy(void) {
   // Here goes your cleanup code
-  logWrite("Goodbye, Amiga!\n")
+  logWrite("Goodbye, Amiga!\n");
 }
 ```
 
@@ -83,12 +83,15 @@ keyboard. Let's add first gamestate in `src/game.c`:
 ``` c
 #include "game.h"
 #include <ace/managers/key.h> // We'll use key* fns here
+#include <ace/managers/game.h> // For using gameClose
+#include <ace/managers/system.h> // For systemUnuse and systemUse
 
 // "Gamestate" is a long word, so let's use shortcut "Gs" when naming fns
 
 void gameGsCreate(void) {
   // Initializations for this gamestate - load bitmaps, draw background, etc.
-  // We don't need anything here right now
+  // We don't need anything here right now except for unusing OS
+  systemUnuse();
 }
 
 void gameGsLoop(void) {
@@ -104,8 +107,9 @@ void gameGsLoop(void) {
 }
 
 void gameGsDestroy(void) {
+  systemUse();
   // Cleanup when leaving this gamestate
-  // Empty at the moment
+  // Empty at the moment except systemUse
 }
 ```
 
@@ -151,7 +155,7 @@ void genericCreate(void) {
   gamePushState(gameGsCreate, gameGsLoop, gameGsDestroy);
 }
 
-void genericLoop(void) {
+void genericProcess(void) {
   // Here goes code done each game frame
   keyProcess();
   gameProcess(); // Process current gamestate's loop
@@ -160,10 +164,10 @@ void genericLoop(void) {
 void genericDestroy(void) {
   // Here goes your cleanup code
   keyDestroy(); // We don't need it anymore
-  logWrite("Goodbye, Amiga!\n")
+  logWrite("Goodbye, Amiga!\n");
 }
 ```
 
-After launching your executable, you should see a black screen until you press
+After launching your executable, you should see a blank screen until you press
 escape. If everything works properly, let's move on and try to put something on
 the screen.
