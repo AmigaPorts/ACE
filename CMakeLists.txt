@@ -19,7 +19,6 @@ endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAMIGA -Wall -Wextra -fomit-frame-pointer")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DACE_DEBUG")
 file(GLOB_RECURSE SOURCES src/*.c)
 file(GLOB HEADERS_ACE include/ace/*.h)
 file(GLOB HEADERS_ACE_GENERIC include/ace/generic/*.h)
@@ -32,6 +31,11 @@ set(
 	${HEADERS_ACE} ${HEADERS_ACE_GENERIC} ${HEADERS_ACE_UTILS}
 	${HEADERS_ACE_MANAGERS} ${HEADERS_ACE_MANAGERS_VP} ${HEADERS_FIXMATH}
 )
+
+if(ACE_DEBUG)
+	# Add ACE debugging features to release build
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACE_DEBUG")
+endif()
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include

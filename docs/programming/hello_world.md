@@ -56,6 +56,13 @@ include_directories(
 	${PROJECT_SOURCE_DIR}/src
 )
 
+if(GAME_DEBUG)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAME_DEBUG")
+endif()
+if(ACE_DEBUG)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACE_DEBUG") # For ACE headers with ifdefs
+endif()
+
 # ACE
 # If you cloned ACE into subdirectory, e.g. to `deps/ace` folder, use following:
 add_subdirectory(deps/ace ace)
