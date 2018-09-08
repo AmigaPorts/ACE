@@ -9,22 +9,15 @@
 
 /**
  * Tilemap buffer manager
- * Provides memory-efficient tilemap buffer
+ * Provides speed- and memory-efficient tilemap buffer
  * Redraws only 1-tile margin beyond viewport in all dirs
- * Author: KaiN
  * Requires viewport managers:
  * 	- camera
  * 	- scroll
  */
 
 #include <ace/types.h>
-#include <ace/macros.h>
-#include <ace/types.h>
-
 #include <ace/utils/extview.h>
-#include <ace/utils/bitmap.h>
-
-#include <ace/managers/blit.h>
 #include <ace/managers/viewport/camera.h>
 #include <ace/managers/viewport/scrollbuffer.h>
 
@@ -73,32 +66,56 @@ typedef struct {
 
 /* functions */
 
+/**
+ * Tilemap buffer manager create fn
+ * Be sure to set camera pos, load tile data & then call tileBufferRedraw()!
+ */
 tTileBufferManager *tileBufferCreate(
-	tVPort *pVPort,
-	UWORD uwTileX, UWORD uwTileY, UBYTE ubTileShift,
-	char *szTileSetFileName, tCbTileDraw cbTileDraw
+	tVPort *pVPort, UWORD uwTileX, UWORD uwTileY, UBYTE ubTileShift,
+	tBitMap *pTileset, tCbTileDraw cbTileDraw
 );
 
 void tileBufferDestroy(tTileBufferManager *pManager);
 
+/**
+ * Redraws one tile for each margin - X and Y
+ * Redraws all remaining margin's tiles when margin is about to be displayed
+ */
 void tileBufferProcess(tTileBufferManager *pManager);
 
 void tileBufferReset(
-	tTileBufferManager *pManager,
-	UWORD uwTileX, UWORD uwTileY, char *szTileSetFileName
+	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY, tBitMap *pTileset
 );
 
+/**
+ * Redraws tiles on whole screen
+ * Use for init or something like that, as it's slooooooooow
+ */
 void tileBufferRedraw(tTileBufferManager *pManager);
 
+/**
+ * Redraws selected tile, calls custom redraw callback
+ * Calculates destination on buffer
+ * Use for single redraws
+ */
 void tileBufferDrawTile(
 	tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uwTileIdxY
 );
 
+/**
+ * Redraws selected tile, calls custom redraw callback
+ * Destination coord on buffer must be calculated externally - avoids recalc
+ * Use for batch redraws with smart uwBfrXY update
+ */
 void tileBufferDrawTileQuick(
 	tTileBufferManager *pManager,
 	UWORD uwTileIdxX, UWORD uwTileIdxY, UWORD uwBfrX, UWORD uwBfrY
 );
 
+/**
+ * Redraws all tiles intersecting with given rectangle
+ * Only tiles currently on buffer are redrawn
+ */
 void tileBufferInvalidateRect(
 	tTileBufferManager *pManager, UWORD uwX, UWORD uwY,
 	UWORD uwWidth, UWORD uwHeight

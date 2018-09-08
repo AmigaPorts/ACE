@@ -3,33 +3,66 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/viewport/scrollbuffer.h>
+#include <ace/utils/tag.h>
+#include <limits.h>
+
 
 #ifdef AMIGA
 
-/**
- * Creates scroll manager
- */
-tScrollBufferManager *scrollBufferCreate(tVPort *pVPort, UBYTE ubMarginWidth, UWORD uwBoundWidth, UWORD uwBoundHeight) {
-	logBlockBegin("scrollBufferCreate(pVPort: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)", pVPort, ubMarginWidth, uwBoundWidth, uwBoundHeight);
+tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
+	va_list vaTags;
+	tCopList *pCopList;
 	tScrollBufferManager *pManager;
+	UBYTE ubMarginWidth;
+	UWORD uwBoundWidth, uwBoundHeight;
+	UBYTE ubBitmapFlags;
+	UBYTE isCameraCreated = 0;
+	UBYTE isDblBfr;
 
-	// Wype�nienie struktury mened�era
-	pManager = memAllocFast(sizeof(tScrollBufferManager));
-	logWrite("Addr: %p\n", pManager);
-	pManager->sCommon.pNext = 0;
+	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
+	va_start(vaTags, pTags);
+
+	// Init manager
+	pManager = memAllocFastClear(
+		sizeof(tScrollBufferManager)
+	);
 	pManager->sCommon.process = (tVpManagerFn)scrollBufferProcess;
 	pManager->sCommon.destroy = (tVpManagerFn)scrollBufferDestroy;
 	pManager->sCommon.ubId = VPM_SCROLL;
+	logWrite("Addr: %p\n", pManager);
+
+	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_VPORT, 0);
+	if(!pVPort) {
+		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified!\n");
+		goto fail;
+	}
 	pManager->sCommon.pVPort = pVPort;
-	pManager->pBuffer = 0;
-	pManager->uwModulo = 0;
-	pManager->pAvg = logAvgCreate("scrollBufferProcess()", 100);
+	logWrite("Parent VPort: %p\n", pVPort);
 
-	scrollBufferReset(pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight);
+	ubMarginWidth = tagGet(
+		pTags, vaTags, TAG_SCROLLBUFFER_MARGIN_WIDTH, UCHAR_MAX
+	);
+	if(ubMarginWidth == UCHAR_MAX) {
+		logWrite(
+			"ERR: No margin width (TAG_SCROLLBUFFER_MARGIN_WIDTH) specified!\n"
+		);
+		goto fail;
+	}
 
-	// Create copperlist
-	pManager->pStartBlock = copBlockCreate(pVPort->pView->pCopList, 2*pVPort->ubBPP + 8, 0, 0);
-	pManager->pBreakBlock = copBlockCreate(pVPort->pView->pCopList, 2*pVPort->ubBPP + 2, 0x7F, 0xFF);
+	// Buffer bitmap
+	uwBoundWidth = tagGet(
+		pTags, vaTags, TAG_SCROLLBUFFER_BOUND_WIDTH, pVPort->uwWidth
+	);
+	uwBoundHeight = tagGet(
+		pTags, vaTags, TAG_SCROLLBUFFER_BOUND_HEIGHT, pVPort->uwHeight
+	);
+	ubBitmapFlags = tagGet(
+		pTags, vaTags, TAG_SCROLLBUFFER_BITMAP_FLAGS, BMF_CLEAR
+	);
+	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
+
+	isDblBfr = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
+	scrollBufferReset(pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight, ubBitmapFlags, isDblBfr);
 
 	// Must be before camera? Shouldn't be as there are priorities on manager list
 	vPortAddManager(pVPort, (tVpManager*)pManager);
@@ -45,60 +78,84 @@ tScrollBufferManager *scrollBufferCreate(tVPort *pVPort, UBYTE ubMarginWidth, UW
 		cameraReset(pManager->pCameraManager, 0,0, uwBoundWidth, uwBoundHeight);
 	}
 
-	// TODO: Set copperlist to current camera pos?
+	// Create copperlist entries
+	pCopList = pVPort->pView->pCopList;
+	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
+		pManager->pStartBlock = copBlockCreate(
+			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 8,
+			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
+			// First to set are ddf, modulos & shift so they are changed during fetch.
+			0xE2-7*4, pVPort->uwOffsY + 0x2C-1
+		);
+		pManager->pBreakBlock = copBlockCreate(
+			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 2,
+			// Dummy position - will be updated
+			0x7F, 0xFF
+		);
+	}
+	else {
+		// TODO Raw mode
+		goto fail;
+	}
 
+	// TODO: Update copperlist with current camera pos?
+
+	va_end(vaTags);
 	logBlockEnd("scrollBufferCreate");
 	return pManager;
+fail:
+	va_end(vaTags);
+	logBlockEnd("scrollBufferCreate");
+	return 0;
 }
 
 void scrollBufferDestroy(tScrollBufferManager *pManager) {
 	logBlockBegin("scrollBufferDestroy(pManager: %p)", pManager);
 
-	logAvgDestroy(pManager->pAvg);
 	copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pStartBlock);
 	copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pBreakBlock);
 
-	bitmapDestroy(pManager->pBuffer);
+	bitmapDestroy(pManager->pBack);
 	memFree(pManager, sizeof(tScrollBufferManager));
 
 	logBlockEnd("scrollBufferDestroy()");
 }
 
-/**
- * Scroll buffer process function
- */
 void scrollBufferProcess(tScrollBufferManager *pManager) {
 	UWORD uwVpHeight;
 
 	uwVpHeight = pManager->sCommon.pVPort->uwHeight;
-	logAvgBegin(pManager->pAvg);
-	if (cameraIsMoved(pManager->pCameraManager) || pManager->uwVpHeightPrev != uwVpHeight) {
-		UBYTE i;
-		UWORD uwScrollX, uwScrollY;
-		ULONG ulPlaneOffs;
-		ULONG ulPlaneAddr;
-		UWORD uwOffsX;
+	UBYTE i;
+	UWORD uwScrollX, uwScrollY;
+	ULONG ulPlaneOffs;
+	ULONG ulPlaneAddr;
+	UWORD uwOffsX;
 
-		// convert camera pos to scroll pos
-		uwScrollX = pManager->pCameraManager->uPos.sUwCoord.uwX;
-		uwScrollY = pManager->pCameraManager->uPos.sUwCoord.uwY % pManager->uwBmAvailHeight;
+	// convert camera pos to scroll pos
+	uwScrollX = pManager->pCameraManager->uPos.sUwCoord.uwX;
+	uwScrollY = pManager->pCameraManager->uPos.sUwCoord.uwY % pManager->uwBmAvailHeight;
 
-		// preparations for new copperlist
-		uwOffsX = 15 - (uwScrollX & 0xF);         // Bitplane shift - single
-		uwOffsX = (uwOffsX << 4) | uwOffsX;       // Bitplane shift - PF1 | PF2
+	// preparations for new copperlist
+	uwOffsX = 15 - (uwScrollX & 0xF);         // Bitplane shift - single
+	uwOffsX = (uwOffsX << 4) | uwOffsX;       // Bitplane shift - PF1 | PF2
 
-		uwScrollX >>= 3;
+	uwScrollX >>= 3;
 
-		// Initial copper block
-		tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
+	// Initial copper block
+	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
+
+	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
+		// TODO: Raw mode
+	}
+	else {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
 		copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0F0);
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX);            // Bitplane shift
-		ulPlaneOffs = uwScrollX + (pManager->pBuffer->BytesPerRow*uwScrollY);
+		ulPlaneOffs = uwScrollX + (pManager->pBack->BytesPerRow*uwScrollY);
 		for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
-			ulPlaneAddr = (ULONG)(pManager->pBuffer->Planes[i]) + ulPlaneOffs;
+			ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulPlaneOffs;
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 		}
@@ -118,7 +175,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			// copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX); // potrzebne?
 			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0F00);
 			for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
-				ulPlaneAddr = (ULONG)(pManager->pBuffer->Planes[i]) + uwScrollX;
+				ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + uwScrollX;
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			}
@@ -127,19 +184,28 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		else {
 			copBlockWait(pCopList, pBlock, 0x7F, 0xFF);
 		}
-
-		pManager->uwVpHeightPrev = uwVpHeight;
-		copProcessBlocks();
 	}
 
-	logAvgEnd(pManager->pAvg);
-	WaitTOF();
+	pManager->uwVpHeightPrev = uwVpHeight;
+
+	// Swap buffers if needed
+	if(pManager->pBack != pManager->pFront) {
+		tBitMap *pTmp = pManager->pBack;
+		pManager->pBack = pManager->pFront;
+		pManager->pFront = pTmp;
+	}
 }
 
-void scrollBufferReset(tScrollBufferManager *pManager, UBYTE ubMarginWidth, UWORD uwBoundWidth, UWORD uwBoundHeight) {
+void scrollBufferReset(
+	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
+	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBfr
+) {
 	UWORD uwVpWidth, uwVpHeight;
 	UWORD uwCalcWidth, uwCalcHeight;
-	logBlockBegin("scrollBufferReset(pManager: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)", pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight);
+	logBlockBegin(
+		"scrollBufferReset(pManager: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)",
+		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight
+	);
 	// Helper vars
 	uwVpWidth = pManager->sCommon.pVPort->uwWidth;
 	uwVpHeight = pManager->sCommon.pVPort->uwHeight;
@@ -148,25 +214,36 @@ void scrollBufferReset(tScrollBufferManager *pManager, UBYTE ubMarginWidth, UWOR
 	pManager->uwVpHeightPrev = 0;
 	pManager->uBfrBounds.sUwCoord.uwX = uwBoundWidth;
 	pManager->uBfrBounds.sUwCoord.uwY = uwBoundHeight;
-	pManager->uwBmAvailHeight = ubMarginWidth * blockCountCeil(uwVpHeight, ubMarginWidth) + ubMarginWidth*4;
+	// TODO optimize avail height to power of two so that modulo can be an AND
+	pManager->uwBmAvailHeight = ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4);
 
 	// Destroy old buffer bitmap
-	if(pManager->pBuffer) {
-		bitmapDestroy(pManager->pBuffer);
+	if(pManager->pFront != pManager->pBack) {
+		bitmapDestroy(pManager->pFront);
+	}
+	if(pManager->pBack) {
+		bitmapDestroy(pManager->pBack);
 	}
 
 	// Create new buffer bitmap
 	uwCalcWidth = uwVpWidth + ubMarginWidth*4;
 	uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
-	pManager->pBuffer = bitmapCreate(uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, BMF_CLEAR);
-	pManager->uwModulo = pManager->pBuffer->BytesPerRow - (uwVpWidth >> 3) - 2;
+	pManager->pBack = bitmapCreate(
+		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, ubBitmapFlags
+	);
+	if(isDblBfr) {
+		pManager->pFront = bitmapCreate(
+			uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, ubBitmapFlags
+		);
+	}
+	else {
+		pManager->pFront = pManager->pBack;
+	}
+	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3) - 2;
 
 	logBlockEnd("scrollBufferReset()");
 }
 
-/**
- * Uses unsafe blit copy for using out-of-bound X ccord
- */
 void scrollBufferBlitMask(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tScrollBufferManager *pDstManager, WORD wDstX, WORD wDstY,
@@ -174,14 +251,13 @@ void scrollBufferBlitMask(
 ) {
 	// TODO: if area is visible
 	wDstY %= pDstManager->uwBmAvailHeight;
-	// UBYTE ubAddY = wDstX/(pDstManager->pBuffer->BytesPerRow<<3);
-	wDstY %= (pDstManager->pBuffer->BytesPerRow<<3);
+	wDstY %= (pDstManager->pBack->BytesPerRow<<3);
 
 	if(wDstY + wHeight <= pDstManager->uwBmAvailHeight) {
 		// single blit
 		blitUnsafeCopyMask(
 			pSrc, wSrcX, wSrcY,
-			pDstManager->pBuffer, wDstX, wDstY,
+			pDstManager->pBack, wDstX, wDstY,
 			wWidth, wHeight, pMsk
 		);
 	}
@@ -191,12 +267,12 @@ void scrollBufferBlitMask(
 		wPartHeight = pDstManager->uwBmAvailHeight - wDstY;
 		blitUnsafeCopyMask(
 			pSrc, wSrcX, wSrcY,
-			pDstManager->pBuffer, wDstX, wDstY,
+			pDstManager->pBack, wDstX, wDstY,
 			wWidth, wPartHeight, pMsk
 		);
 		blitUnsafeCopyMask(
 			pSrc, wSrcX, wSrcY + wPartHeight,
-			pDstManager->pBuffer, wDstX, 0,
+			pDstManager->pBack, wDstX, 0,
 			wWidth, wHeight - wPartHeight, pMsk
 		);
 	}

@@ -3,32 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/viewport/tilebuffer.h>
+#include <ace/macros.h>
+#include <ace/managers/blit.h>
 
 #ifdef AMIGA
 
-/**
- * Tilemap buffer manager
- * Provides speed- and memory-efficient tilemap buffer
- * Redraws only 1-tile margin beyond viewport in all dirs
- * Author: KaiN
- * Requires viewport managers:
- * 	- camera
- * 	- scroll
- */
-
-/**
- * Tilemap buffer manager create fn
- * Be sure to set camera pos, load tile data & then call tileBufferRedraw()!
- */
 tTileBufferManager *tileBufferCreate(
-	tVPort *pVPort,
-	UWORD uwTileX, UWORD uwTileY, UBYTE ubTileShift,
-	char *szTileSetFileName, tCbTileDraw cbTileDraw
+	tVPort *pVPort, UWORD uwTileX, UWORD uwTileY, UBYTE ubTileShift,
+	tBitMap *pTileset, tCbTileDraw cbTileDraw
 ) {
 	logBlockBegin(
 		"tileBufferCreate(pVPort: %p, uwTileX: %u, uwTileY: %u, ubTileShift: %hu, "
-		"szTilesetFileName: %s, cbTileDraw: %p)",
-		pVPort, uwTileX, uwTileY, ubTileShift, szTileSetFileName, cbTileDraw
+		"pTileset: %p, cbTileDraw: %p)",
+		pVPort, uwTileX, uwTileY, ubTileShift, pTileset, cbTileDraw
 	);
 	tTileBufferManager *pManager;
 
@@ -46,7 +33,7 @@ tTileBufferManager *tileBufferCreate(
 
 	pManager->pTileData = 0;
 	pManager->pTileSet = 0;
-	tileBufferReset(pManager, uwTileX, uwTileY, szTileSetFileName);
+	tileBufferReset(pManager, uwTileX, uwTileY, pTileset);
 
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 
@@ -85,19 +72,19 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 	logBlockEnd("tileBufferDestroy");
 }
 
-void tileBufferReset(tTileBufferManager *pManager,
-	UWORD uwTileX, UWORD uwTileY,
-	// UWORD uwCameraX, UWORD uwCameraY,
-	char *szTileSetFileName
-	) {
+void tileBufferReset(
+	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
+	tBitMap *pTileset
+) {
 	UWORD uwCol;
 	UBYTE ubTileShift;
 	logBlockBegin("tileBufferReset()");
 
 	// Free old tile data
 	if(pManager->pTileData) {
-		for (uwCol = pManager->uTileBounds.sUwCoord.uwX; uwCol--;)
+		for (uwCol = pManager->uTileBounds.sUwCoord.uwX; uwCol--;) {
 			memFree(pManager->pTileData[uwCol], pManager->uTileBounds.sUwCoord.uwY * sizeof(UBYTE));
+		}
 		memFree(pManager->pTileData, pManager->uTileBounds.sUwCoord.uwX * sizeof(UBYTE *));
 		pManager->pTileData = 0;
 	}
@@ -113,12 +100,7 @@ void tileBufferReset(tTileBufferManager *pManager,
 	}
 
 	// Load new tileset
-	if(szTileSetFileName) {
-		if(pManager->pTileSet) {
-			bitmapDestroy(pManager->pTileSet);
-		}
-		pManager->pTileSet = bitmapCreateFromFile(szTileSetFileName);
-	}
+	pManager->pTileSet = pTileset;
 
 	// Reset margin redraw structs
 	ubTileShift = pManager->ubTileShift;
@@ -134,13 +116,19 @@ void tileBufferReset(tTileBufferManager *pManager,
 	pManager->pMarginOppositeY = &pManager->sMarginU;
 
 	// Reset scrollManager, create if not exists
-	if(!(pManager->pScrollManager = (tScrollBufferManager*)vPortGetManager(pManager->sCommon.pVPort, VPM_SCROLL))) {
-		pManager->pScrollManager = scrollBufferCreate(pManager->sCommon.pVPort, pManager->ubTileSize, uwTileX << ubTileShift, uwTileY << ubTileShift);
+	pManager->pScrollManager = (tScrollBufferManager*)vPortGetManager(
+		pManager->sCommon.pVPort, VPM_SCROLL
+	);
+	if(!(pManager->pScrollManager)) {
+		pManager->pScrollManager = scrollBufferCreate(
+			pManager->sCommon.pVPort, pManager->ubTileSize,
+			uwTileX << ubTileShift, uwTileY << ubTileShift
+		);
 	}
 	else {
 		scrollBufferReset(
 			pManager->pScrollManager, pManager->ubTileSize,
-			uwTileX << ubTileShift, uwTileY << ubTileShift
+			uwTileX << ubTileShift, uwTileY << ubTileShift, BMF_CLEAR, 0
 		);
 	}
 
@@ -150,10 +138,6 @@ void tileBufferReset(tTileBufferManager *pManager,
 	logBlockEnd("tileBufferReset()");
 }
 
-/**
- * Redraws one tile for each margin - X and Y
- * Redraws all remaining margin's tiles when margin is about to be displayed
- */
 void tileBufferProcess(tTileBufferManager *pManager) {
 	WORD wDeltaX, wDeltaY;
 	WORD wTileIdxX, wTileIdxY;
@@ -318,10 +302,6 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	}
 }
 
-/**
- * Redraws tiles on whole screen
- * Use for init or something like that, as it's slooooooooow
- */
 void tileBufferRedraw(tTileBufferManager *pManager) {
 	UWORD i,j;
 	UWORD uwTileOffsX, uwTileOffsY;
@@ -364,11 +344,6 @@ void tileBufferRedraw(tTileBufferManager *pManager) {
 	logBlockEnd("tileBufferRedraw()");
 }
 
-/**
- * Redraws selected tile, calls custom redraw callback
- * Calculates destination on buffer
- * Use for single redraws
- */
 void tileBufferDrawTile(tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uwTileIdxY) {
 	UWORD uwBfrX, uwBfrY;
 	UBYTE ubAddY;
@@ -380,27 +355,18 @@ void tileBufferDrawTile(tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uw
 	tileBufferDrawTileQuick(pManager, uwTileIdxX, uwTileIdxY, uwBfrX, uwBfrY+ubAddY);
 }
 
-/**
- * Redraws selected tile, calls custom redraw callback
- * Destination coord on buffer must be calculated externally - avoids recalc
- * Use for batch redraws with smart uwBfrXY update
- */
 void tileBufferDrawTileQuick(tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uwTileIdxY, UWORD uwBfrX, UWORD uwBfrY) {
 	blitCopyAligned(
 		pManager->pTileSet,
 		0, pManager->pTileData[uwTileIdxX][uwTileIdxY] << pManager->ubTileShift,
-		pManager->pScrollManager->pBuffer, uwBfrX, uwBfrY,
+		pManager->pScrollManager->pBack, uwBfrX, uwBfrY,
 		pManager->ubTileSize, pManager->ubTileSize
 	);
 	if(pManager->cbTileDraw) {
-		pManager->cbTileDraw(uwTileIdxX, uwTileIdxY, pManager->pScrollManager->pBuffer, uwBfrX, uwBfrY);
+		pManager->cbTileDraw(uwTileIdxX, uwTileIdxY, pManager->pScrollManager->pBack, uwBfrX, uwBfrY);
 	}
 }
 
-/**
- * Redraws all tiles intersecting with given rectangle
- * Only tiles currently on buffer are redrawn
- */
 void tileBufferInvalidateRect(tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight) {
 	UWORD uwStartX, uwEndX, uwStartY, uwEndY;             /// Invalidate tile rect
 	UWORD uwVisStartX, uwVisEndX, uwVisStartY, uwVisEndY; /// Visible tile rect (excluding invisible margins)
