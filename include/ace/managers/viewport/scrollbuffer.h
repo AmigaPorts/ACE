@@ -11,7 +11,6 @@
  * Scrollable buffer manager
  * Uses scrolling-trick from aminet to achieve memory-efficient scroll
  * Must be processed as last, because it calls WaitTOF
- * Author: KaiN
  * Requires viewport managers:
  * 	- camera
  * TODO: make it work without tileBuffer manager
@@ -28,40 +27,63 @@
 #include <ace/managers/copper.h>
 #include <ace/managers/viewport/camera.h>
 
+// vPort ptr
+#define TAG_SCROLLBUFFER_VPORT          (TAG_USER|1)
+// Scrollable area bounds, in pixels
+#define TAG_SCROLLBUFFER_BOUND_WIDTH    (TAG_USER|2)
+#define TAG_SCROLLBUFFER_BOUND_HEIGHT   (TAG_USER|3)
+// Buffer bitmap creation flags
+#define TAG_SCROLLBUFFER_BITMAP_FLAGS   (TAG_USER|4)
+#define TAG_SCROLLBUFFER_IS_DBLBUF      (TAG_USER|5)
+// If in raw mode, offset on copperlist for placing required copper
+// instructions, specified in copper instruction count since beginning.
+#define TAG_SCROLLBUFFER_COPLIST_OFFSET_START (TAG_USER|6)
+#define TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK (TAG_USER|7)
+#define TAG_SCROLLBUFFER_MARGIN_WIDTH   (TAG_USER|8)
+
+#define SCROLLBUFFER_FLAG_COPLIST_RAW 1
+
 /* Types */
 
 typedef struct {
 	tVpManager sCommon;
 	tCameraManager *pCameraManager;  /// Quick ref to camera
 
-	tBitMap *pBuffer;          /// Ptr to buffer bitmap
+	tBitMap *pFront;
+	tBitMap *pBack;
 	tCopBlock *pStartBlock;          /// Initial data fetch
 	tCopBlock *pBreakBlock;          /// Bitplane ptr reset
 	tUwCoordYX uBfrBounds;           /// Real bounds of buffer (includes height reserved for x-scroll)
 	UWORD uwBmAvailHeight;           /// Avail height of buffer to blit (excludes height reserved for x-scroll)
 	UWORD uwVpHeightPrev;            /// Prev height of related VPort, used to force refresh on change
 	UWORD uwModulo;                  /// Bitplane modulo
-	tAvg *pAvg;
+	UBYTE ubFlags;
 } tScrollBufferManager;
 
 /* Globals */
 
 /* Functions */
 
-tScrollBufferManager *scrollBufferCreate(
-	tVPort *pVPort, UBYTE ubMarginWidth,
-	UWORD uwBoundWidth, UWORD uwBoundHeight
-);
+/**
+ * Creates scroll manager
+ */
+tScrollBufferManager *scrollBufferCreate(void *pTags, ...);
 
 void scrollBufferDestroy(tScrollBufferManager *pManager);
 
+/**
+ * Scroll buffer process function
+ */
 void scrollBufferProcess(tScrollBufferManager *pManager);
 
 void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
-	UWORD uwBoundWidth, UWORD uwBoundHeight
+	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBfr
 );
 
+/**
+ * Uses unsafe blit copy for using out-of-bound X ccord
+ */
 void scrollBufferBlitMask(
 	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tScrollBufferManager *pDstManager,
