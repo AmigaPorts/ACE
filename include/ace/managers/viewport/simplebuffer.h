@@ -13,10 +13,8 @@
  */
 
 #include <ace/types.h>
-#include <ace/macros.h>
-#include <ace/utils/bitmap.h>
-#include <ace/utils/extview.h>
 #include <ace/managers/viewport/camera.h>
+#include <ace/utils/bitmap.h>
 #include <ace/utils/tag.h>
 
 // vPort ptr
