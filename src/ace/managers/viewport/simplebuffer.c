@@ -4,6 +4,7 @@
 
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/utils/tag.h>
+#include <ace/utils/extview.h>
 
 #ifdef AMIGA
 
@@ -126,9 +127,15 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	logWrite("Parent VPort: %p\n", pVPort);
 
 	// Buffer bitmap
-	uwBoundWidth = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_WIDTH, pVPort->uwWidth);
-	uwBoundHeight = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_HEIGHT, pVPort->uwHeight);
-	ubBitmapFlags = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR);
+	uwBoundWidth = tagGet(
+		pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_WIDTH, pVPort->uwWidth
+	);
+	uwBoundHeight = tagGet(
+		pTags, vaTags, TAG_SIMPLEBUFFER_BOUND_HEIGHT, pVPort->uwHeight
+	);
+	ubBitmapFlags = tagGet(
+		pTags, vaTags, TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR
+	);
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
 	pFront = bitmapCreate(
 		uwBoundWidth, uwBoundHeight, pVPort->ubBPP, ubBitmapFlags
