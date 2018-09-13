@@ -14,6 +14,7 @@ void genericCreate(void) {
 void genericProcess(void) {
   // Here goes code done each game frame
   // Nothing here right now
+  gameClose();
 }
 
 void genericDestroy(void) {
