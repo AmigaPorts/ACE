@@ -185,8 +185,8 @@ void systemCreate(void) {
 	// Save the system copperlists and flush the view
 	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
 	if (!GfxBase) {
-		return;
 		systemKill("Can't open Gfx Library!\n");
+		return;
 	}
 	s_pOsView = GfxBase->ActiView;
 	WaitTOF();
