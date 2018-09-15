@@ -157,10 +157,10 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	}
 
 	// Find camera manager, create if not exists
-	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	if(!pManager->pCameraManager) {
+	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
+	if(!pManager->pCamera) {
 		isCameraCreated = 1;
-		pManager->pCameraManager = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
+		pManager->pCamera = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
 	}
 
 	pCopList = pVPort->pView->pCopList;
@@ -207,8 +207,8 @@ fail:
 		bitmapDestroy(pFront);
 	}
 	if(pManager) {
-		if(pManager->pCameraManager && isCameraCreated) {
-			cameraDestroy(pManager->pCameraManager);
+		if(pManager->pCamera && isCameraCreated) {
+			cameraDestroy(pManager->pCamera);
 		}
 		memFree(pManager, sizeof(tSimpleBufferManager));
 	}
@@ -234,15 +234,15 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	UWORD uwShift;
 	ULONG ulBplOffs;
 	ULONG ulPlaneAddr;
-	tCameraManager *pCameraManager;
+	tCameraManager *pCamera;
 	tCopList *pCopList;
 
-	pCameraManager = pManager->pCameraManager;
+	pCamera = pManager->pCamera;
 	pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
 	// Calculate X movement
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-		uwShift = 15-(pCameraManager->uPos.sUwCoord.uwX & 0xF);
+		uwShift = 15-(pCamera->uPos.sUwCoord.uwX & 0xF);
 		uwShift = (uwShift << 4) | uwShift;
 	}
 	else {
@@ -250,10 +250,10 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	}
 
 	// X offset on bitplane
-	ulBplOffs = (pCameraManager->uPos.sUwCoord.uwX >> 4) << 1;
+	ulBplOffs = (pCamera->uPos.sUwCoord.uwX >> 4) << 1;
 
 	// Calculate Y movement
-	ulBplOffs += pManager->pBack->BytesPerRow*pCameraManager->uPos.sUwCoord.uwY;
+	ulBplOffs += pManager->pBack->BytesPerRow*pCamera->uPos.sUwCoord.uwY;
 
 	// Copperlist - regen bitplane ptrs, update shift
 	// TODO could be unified by using copSetMove in copBlock
@@ -289,10 +289,10 @@ UBYTE simpleBufferIsRectVisible(
 	UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
 ) {
 	return (
-		uwX >= pManager->pCameraManager->uPos.sUwCoord.uwX - uwWidth &&
-		uwX <= pManager->pCameraManager->uPos.sUwCoord.uwX + pManager->sCommon.pVPort->uwWidth &&
-		uwY >= pManager->pCameraManager->uPos.sUwCoord.uwY - uwHeight &&
-		uwY <= pManager->pCameraManager->uPos.sUwCoord.uwY + pManager->sCommon.pVPort->uwHeight
+		uwX >= pManager->pCamera->uPos.sUwCoord.uwX - uwWidth &&
+		uwX <= pManager->pCamera->uPos.sUwCoord.uwX + pManager->sCommon.pVPort->uwWidth &&
+		uwY >= pManager->pCamera->uPos.sUwCoord.uwY - uwHeight &&
+		uwY <= pManager->pCamera->uPos.sUwCoord.uwY + pManager->sCommon.pVPort->uwHeight
 	);
 }
 

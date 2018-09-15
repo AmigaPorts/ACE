@@ -31,7 +31,7 @@
 
 typedef struct {
 	tVpManager sCommon;
-	tCameraManager *pCameraManager;
+	tCameraManager *pCamera;
 	// scroll-specific fields
 	tBitMap *pFront;       ///< Currently displayed buffer.
 	tBitMap *pBack;        ///< Buffer for drawing.

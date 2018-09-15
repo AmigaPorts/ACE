@@ -11,21 +11,19 @@
 
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	va_list vaTags;
-	tCopList *pCopList;
+	tCopList *pCopList = 0;
 	tScrollBufferManager *pManager;
 	UBYTE ubMarginWidth;
 	UWORD uwBoundWidth, uwBoundHeight;
 	UBYTE ubBitmapFlags;
 	UBYTE isCameraCreated = 0;
-	UBYTE isDblBfr;
+	UBYTE isDblBuf;
 
 	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
 	va_start(vaTags, pTags);
 
 	// Init manager
-	pManager = memAllocFastClear(
-		sizeof(tScrollBufferManager)
-	);
+	pManager = memAllocFastClear(sizeof(tScrollBufferManager));
 	pManager->sCommon.process = (tVpManagerFn)scrollBufferProcess;
 	pManager->sCommon.destroy = (tVpManagerFn)scrollBufferDestroy;
 	pManager->sCommon.ubId = VPM_SCROLL;
@@ -61,21 +59,25 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	);
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
 
-	isDblBfr = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
-	scrollBufferReset(pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight, ubBitmapFlags, isDblBfr);
+	isDblBuf = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
+	scrollBufferReset(
+		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight,
+		ubBitmapFlags, isDblBuf
+	);
 
 	// Must be before camera? Shouldn't be as there are priorities on manager list
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 
 	// Find camera manager, create if not exists
-	pManager->pCameraManager = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	if(!pManager->pCameraManager) {
-		pManager->pCameraManager = cameraCreate(
+	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
+	if(!pManager->pCamera) {
+		pManager->pCamera = cameraCreate(
 			pVPort, 0, 0, uwBoundWidth, uwBoundHeight
 		);
+		isCameraCreated = 1;
 	}
 	else {
-		cameraReset(pManager->pCameraManager, 0,0, uwBoundWidth, uwBoundHeight);
+		cameraReset(pManager->pCamera, 0,0, uwBoundWidth, uwBoundHeight);
 	}
 
 	// Create copperlist entries
@@ -104,6 +106,17 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	logBlockEnd("scrollBufferCreate");
 	return pManager;
 fail:
+	if(isCameraCreated) {
+		cameraDestroy(pManager->pCamera);
+	}
+	if(pCopList && pManager->pStartBlock) {
+		copBlockDestroy(pCopList, pManager->pStartBlock);
+		if(pManager->pBreakBlock) {
+			copBlockDestroy(pCopList, pManager->pBreakBlock);
+		}
+	}
+
+	memFree(pManager, sizeof(tScrollBufferManager));
 	va_end(vaTags);
 	logBlockEnd("scrollBufferCreate");
 	return 0;
@@ -115,7 +128,12 @@ void scrollBufferDestroy(tScrollBufferManager *pManager) {
 	copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pStartBlock);
 	copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pBreakBlock);
 
-	bitmapDestroy(pManager->pBack);
+	if(pManager->pFront && pManager->pFront != pManager->pBack) {
+		bitmapDestroy(pManager->pFront);
+	}
+	if(pManager->pBack) {
+		bitmapDestroy(pManager->pBack);
+	}
 	memFree(pManager, sizeof(tScrollBufferManager));
 
 	logBlockEnd("scrollBufferDestroy()");
@@ -132,8 +150,8 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 	UWORD uwOffsX;
 
 	// convert camera pos to scroll pos
-	uwScrollX = pManager->pCameraManager->uPos.sUwCoord.uwX;
-	uwScrollY = pManager->pCameraManager->uPos.sUwCoord.uwY % pManager->uwBmAvailHeight;
+	uwScrollX = pManager->pCamera->uPos.sUwCoord.uwX;
+	uwScrollY = pManager->pCamera->uPos.sUwCoord.uwY % pManager->uwBmAvailHeight;
 
 	// preparations for new copperlist
 	uwOffsX = 15 - (uwScrollX & 0xF);         // Bitplane shift - single
@@ -198,7 +216,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
-	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBfr
+	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBuf
 ) {
 	UWORD uwVpWidth, uwVpHeight;
 	UWORD uwCalcWidth, uwCalcHeight;
@@ -231,7 +249,7 @@ void scrollBufferReset(
 	pManager->pBack = bitmapCreate(
 		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, ubBitmapFlags
 	);
-	if(isDblBfr) {
+	if(isDblBuf) {
 		pManager->pFront = bitmapCreate(
 			uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, ubBitmapFlags
 		);
