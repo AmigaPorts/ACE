@@ -398,48 +398,43 @@ void tileBufferInitialDraw(const tTileBufferManager *pManager) {
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
 
-	WORD wTileIdxY = (pManager->pCamera->uPos.sUwCoord.uwY >> ubTileShift) -1;
-	if (wTileIdxY < 0) {
-		wTileIdxY = 0;
-	}
-	UWORD uwTileOffsY = (wTileIdxY << ubTileShift) % pManager->uwMarginedHeight;
+	WORD wStartY = MAX(
+		0, (pManager->pCamera->uPos.sUwCoord.uwY >> ubTileShift) -1
+	);
+	WORD wStartX = MAX(
+		0, (pManager->pCamera->uPos.sUwCoord.uwX >> ubTileShift) -1
+	);
 	// One of bounds may be smaller than viewport + margin size
-	UBYTE ubEndX = MIN(
+	UWORD uwEndX = MIN(
 		pManager->uTileBounds.sUwCoord.uwX,
 		pManager->uwMarginedWidth >> ubTileShift
 	);
-	UBYTE ubEndY = MIN(
+	UWORD uwEndY = MIN(
 		pManager->uTileBounds.sUwCoord.uwY,
 		pManager->uwMarginedHeight >> ubTileShift
 	);
 
-	for (UBYTE x = 0; x < ubEndX; ++x) {
-		WORD wTileIdxX = (pManager->pCamera->uPos.sUwCoord.uwX >> ubTileShift) -1;
-		if (wTileIdxX < 0) {
-			wTileIdxX = 0;
-		}
-		UBYTE ubAddY =      (wTileIdxX << ubTileShift) / pManager->uwMarginedWidth;
-		UWORD uwTileOffsX = (wTileIdxX << ubTileShift) % pManager->uwMarginedWidth;
+	UWORD uwTileOffsY = (wStartY << ubTileShift) % pManager->uwMarginedHeight;
+		for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
+		UBYTE ubAddY =      (wStartX << ubTileShift) / pManager->uwMarginedWidth;
+		UWORD uwTileOffsX = (wStartX << ubTileShift) % pManager->uwMarginedWidth;
 
-		for (UBYTE y = 0; y < ubEndY; ++y) {
+		for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
 			tileBufferDrawTileQuick(
-				pManager, wTileIdxX, wTileIdxY, uwTileOffsX, uwTileOffsY+ubAddY
+				pManager, uwTileX, uwTileY, uwTileOffsX, uwTileOffsY+ubAddY
 			);
-			++wTileIdxX;
 			uwTileOffsX += ubTileSize;
 			if(uwTileOffsX >= pManager->uwMarginedWidth) {
 				++ubAddY;
 				uwTileOffsX -= pManager->uwMarginedWidth;
 			}
 		}
-
-		++wTileIdxY;
 		uwTileOffsY = (uwTileOffsY + ubTileSize) % pManager->uwMarginedHeight;
 	}
 
 	// Copy from back buffer to front buffer
 	CopyMemQuick(
-		pManager->pScroll->pFront->Planes[0], pManager->pScroll->pBack->Planes[0],
+		pManager->pScroll->pBack->Planes[0], pManager->pScroll->pFront->Planes[0],
 		pManager->pScroll->pFront->BytesPerRow * pManager->pScroll->pFront->Rows
 	);
 
@@ -462,21 +457,21 @@ void tileBufferDrawTile(
 }
 
 void tileBufferDrawTileQuick(
-	const tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uwTileIdxY,
+	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
 	UWORD uwBfrX, UWORD uwBfrY
 ) {
-	if((pManager->pTileData[uwTileIdxX][uwTileIdxY] << pManager->ubTileShift) >= 320) {
-		logWrite("ERR %hu,%hu\n", uwTileIdxX, uwTileIdxY);
+	if((pManager->pTileData[uwTileX][uwTileY] << pManager->ubTileShift) >= 320) {
+		logWrite("ERR %hu,%hu\n", uwTileX, uwTileY);
 	}
 	blitCopyAligned(
 		pManager->pTileSet,
-		0, pManager->pTileData[uwTileIdxX][uwTileIdxY] << pManager->ubTileShift,
+		0, pManager->pTileData[uwTileX][uwTileY] << pManager->ubTileShift,
 		pManager->pScroll->pBack, uwBfrX, uwBfrY,
 		pManager->ubTileSize, pManager->ubTileSize
 	);
 	if(pManager->cbTileDraw) {
 		pManager->cbTileDraw(
-			uwTileIdxX, uwTileIdxY, pManager->pScroll->pBack, uwBfrX, uwBfrY
+			uwTileX, uwTileY, pManager->pScroll->pBack, uwBfrX, uwBfrY
 		);
 	}
 }
