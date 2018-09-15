@@ -186,8 +186,6 @@ void tileBufferReset(
 	UBYTE ubTileShift = pManager->ubTileShift;
 	memset(&pManager->pRedrawStates[0], 0, sizeof(tRedrawState));
 	memset(&pManager->pRedrawStates[1], 0, sizeof(tRedrawState));
-	pManager->ubMarginXLength = (pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 4;
-	pManager->ubMarginYLength = (pManager->sCommon.pVPort->uwWidth >> ubTileShift) + 4;
 	pManager->pRedrawStates[0].pMarginX         = &pManager->pRedrawStates[0].sMarginR;
 	pManager->pRedrawStates[0].pMarginOppositeX = &pManager->pRedrawStates[0].sMarginL;
 	pManager->pRedrawStates[0].pMarginY         = &pManager->pRedrawStates[0].sMarginD;
@@ -218,8 +216,21 @@ void tileBufferReset(
 		);
 	}
 
+	// Scrollin on one of dirs may be disabled - less redraw on other axis margin
 	pManager->uwMarginedWidth = pManager->sCommon.pVPort->uwWidth + (4 << ubTileShift);
 	pManager->uwMarginedHeight = pManager->pScroll->uwBmAvailHeight;
+	pManager->ubMarginXLength = MIN(
+		pManager->uTileBounds.sUwCoord.uwY,
+		(pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 4
+	);
+	pManager->ubMarginYLength = MIN(
+		pManager->uTileBounds.sUwCoord.uwX,
+		(pManager->sCommon.pVPort->uwWidth >> ubTileShift) + 4
+	);
+	logWrite(
+		"Margin sizes: %hhu,%hhu\n",
+		pManager->ubMarginXLength, pManager->ubMarginYLength
+	);
 
 	logBlockEnd("tileBufferReset()");
 }
@@ -261,7 +272,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					tileBufferDrawTileQuick(
 						pManager,
 						pState->pMarginX->wTilePos, pState->pMarginX->wTileCurr,
-						0, 0//uwTileOffsX, uwTileOffsY+ubAddY
+						uwTileOffsX, uwTileOffsY+ubAddY
 					);
 					++pState->pMarginX->wTileCurr;
 					uwTileOffsY = (uwTileOffsY + ubTileSize);
@@ -279,11 +290,13 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			}
 			else {
 				// Prepare new column for redraw
-				pState->pMarginX->wTileCurr = (pManager->pCamera->uPos.sUwCoord.uwY >> ubTileShift) - 2;
-				pState->pMarginX->wTileEnd = pState->pMarginX->wTileCurr + pManager->ubMarginXLength;
-				if(pState->pMarginX->wTileCurr < 0) {
-					pState->pMarginX->wTileCurr = 0;
-				}
+				pState->pMarginX->wTileCurr = MAX(
+					0, (pManager->pCamera->uPos.sUwCoord.uwY >> ubTileShift) - 2
+				);
+				pState->pMarginX->wTileEnd = MIN(
+					pState->pMarginX->wTileCurr + pManager->ubMarginXLength,
+					pManager->uTileBounds.sUwCoord.uwY
+				);
 			}
 			// Modify margin data on opposite side
 			if(wDeltaX < 0) {
@@ -299,13 +312,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 
 	// Redraw another X tile - regardless of movement in that direction
 	if (pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
-		uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift) % pManager->uwMarginedWidth;
-		uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) % pManager->uwMarginedHeight;
-		ubAddY = (pState->pMarginX->wTilePos << ubTileShift) / pManager->uwMarginedWidth;
-		tileBufferDrawTileQuick(
-			pManager,
-			pState->pMarginX->wTilePos, pState->pMarginX->wTileCurr,
-			uwTileOffsX, uwTileOffsY+ubAddY
+		tileBufferDrawTile(
+			pManager, pState->pMarginX->wTilePos, pState->pMarginX->wTileCurr
 		);
 		++pState->pMarginX->wTileCurr;
 	}
@@ -316,7 +324,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wDeltaY > 0) {
 			wTileIdxY = ((
 				pManager->pCamera->uPos.sUwCoord.uwY + pManager->sCommon.pVPort->uwHeight
-			) >> ubTileShift) +1; // Delete +1 to see redraw
+			) >> ubTileShift) + 1; // Delete +1 to see redraw
 			pState->pMarginY = &pState->sMarginD;
 			pState->pMarginOppositeY = &pState->sMarginU;
 		}
@@ -356,14 +364,13 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			}
 			else {
 				// Prepare new row for redraw
-				pState->pMarginY->wTileCurr = (pManager->pCamera->uPos.sUwCoord.uwX >> ubTileShift) - 2;
-				pState->pMarginY->wTileEnd = pState->pMarginY->wTileCurr + pManager->ubMarginYLength;
-				if(pState->pMarginY->wTileCurr < 0) {
-					pState->pMarginY->wTileCurr = 0;
-				}
-				if(pState->pMarginY->wTileEnd >= pManager->uTileBounds.sUwCoord.uwX) {
-					pState->pMarginY->wTileEnd = pManager->uTileBounds.sUwCoord.uwX-1;
-				}
+				pState->pMarginY->wTileCurr = MAX(
+					0, (pManager->pCamera->uPos.sUwCoord.uwX >> ubTileShift) - 2
+				);
+				pState->pMarginY->wTileEnd = MIN(
+					pState->pMarginY->wTileCurr + pManager->ubMarginYLength,
+					pManager->uTileBounds.sUwCoord.uwX
+				);
 			}
 			// Modify opposite margin data
 			if(wDeltaY > 0) {
@@ -379,13 +386,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 
 	// Redraw another Y tile - regardless of movement in that direction
 	if (pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
-		ubAddY =      (pState->pMarginY->wTileCurr << ubTileShift) / pManager->uwMarginedWidth;
-		uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift) % pManager->uwMarginedWidth;
-		uwTileOffsY = (pState->pMarginY->wTilePos << ubTileShift) % pManager->uwMarginedHeight;
-		tileBufferDrawTileQuick(
-			pManager,
-			pState->pMarginY->wTileCurr, pState->pMarginY->wTilePos,
-			uwTileOffsX, uwTileOffsY+ubAddY
+		tileBufferDrawTile(
+			pManager, pState->pMarginY->wTileCurr, pState->pMarginY->wTilePos
 		);
 		++pState->pMarginY->wTileCurr;
 	}
