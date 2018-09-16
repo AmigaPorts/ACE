@@ -230,7 +230,6 @@ void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 }
 
 void simpleBufferProcess(tSimpleBufferManager *pManager) {
-	UBYTE i;
 	UWORD uwShift;
 	ULONG ulBplOffs;
 	ULONG ulPlaneAddr;
@@ -260,7 +259,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW) {
 		tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
 		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
-		for (i = 0; i < pManager->sCommon.pVPort->ubBPP; ++i) {
+		for(UBYTE i = 0; i < pManager->sCommon.pVPort->ubBPP; ++i) {
 			ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
 			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
@@ -269,7 +268,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	else {
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
-		for(i = 0; i < pManager->pBack->Depth; ++i) {
+		for(UBYTE i = 0; i < pManager->pBack->Depth; ++i) {
 			ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
