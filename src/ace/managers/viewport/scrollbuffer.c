@@ -6,8 +6,19 @@
 #include <ace/utils/tag.h>
 #include <limits.h>
 
-
 #ifdef AMIGA
+
+static UWORD nearestPowerOf2(UWORD uwVal) {
+	// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+	// Decrease by one and fill result with ones, then increase by one
+	--uwVal;
+	uwVal |= uwVal >> 1;
+	uwVal |= uwVal >> 2;
+	uwVal |= uwVal >> 4;
+	uwVal |= uwVal >> 8;
+	++uwVal;
+	return uwVal;
+}
 
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	va_list vaTags;
@@ -153,7 +164,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	// convert camera pos to scroll pos
 	uwScrollX = pManager->pCamera->uPos.sUwCoord.uwX;
-	uwScrollY = pManager->pCamera->uPos.sUwCoord.uwY % pManager->uwBmAvailHeight;
+	uwScrollY = pManager->pCamera->uPos.sUwCoord.uwY & (pManager->uwBmAvailHeight-1);
 
 	// preparations for new copperlist
 	uwOffsX = 15 - (uwScrollX & 0xF);         // Bitplane shift - single
@@ -227,7 +238,7 @@ void scrollBufferReset(
 	pManager->uBfrBounds.sUwCoord.uwX = uwBoundWidth;
 	pManager->uBfrBounds.sUwCoord.uwY = uwBoundHeight;
 	// TODO optimize avail height to power of two so that modulo can be an AND
-	pManager->uwBmAvailHeight = ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4);
+	pManager->uwBmAvailHeight = nearestPowerOf2(ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4));
 
 	// Destroy old buffer bitmap
 	if(pManager->pFront != pManager->pBack) {
@@ -238,7 +249,7 @@ void scrollBufferReset(
 	}
 
 	// Create new buffer bitmap
-	uwCalcWidth = uwVpWidth + ubMarginWidth*4;
+	uwCalcWidth = nearestPowerOf2(uwVpWidth + ubMarginWidth*4);
 	uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 	pManager->pBack = bitmapCreate(
 		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, ubBitmapFlags

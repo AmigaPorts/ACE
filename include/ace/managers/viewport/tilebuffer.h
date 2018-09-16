@@ -88,7 +88,7 @@ typedef struct {
 	// Redraw state and double buffering
 	tRedrawState pRedrawStates[2];
 	UBYTE ubStateIdx;
-
+	UBYTE ubWidthShift;
 } tTileBufferManager;
 
 /* globals */
