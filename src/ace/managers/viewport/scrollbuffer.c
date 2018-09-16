@@ -159,13 +159,13 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	uwScrollX >>= 3;
 
-	// Initial copper block
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
 	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
 		// TODO: Raw mode
 	}
 	else {
+		// Initial copper block
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
@@ -188,16 +188,12 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		if (pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
-			// logWrite("Break calc: %u - %u == %u, vpHeight: %u\n", pManager->uwBmAvailHeight, uwScrollY, pManager->uwBmAvailHeight - uwScrollY, uwVpHeight);
 			copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
-			// copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX); // potrzebne?
-			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0F00);
 			for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
 				ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + uwScrollX;
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			}
-			copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0000);
 		}
 		else {
 			copBlockWait(pCopList, pBlock, 0x7F, 0xFF);
