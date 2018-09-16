@@ -60,25 +60,6 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
 
 	isDblBuf = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
-	scrollBufferReset(
-		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight,
-		ubBitmapFlags, isDblBuf
-	);
-
-	// Must be before camera? Shouldn't be as there are priorities on manager list
-	vPortAddManager(pVPort, (tVpManager*)pManager);
-
-	// Find camera manager, create if not exists
-	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
-	if(!pManager->pCamera) {
-		pManager->pCamera = cameraCreate(
-			pVPort, 0, 0, uwBoundWidth, uwBoundHeight
-		);
-		isCameraCreated = 1;
-	}
-	else {
-		cameraReset(pManager->pCamera, 0,0, uwBoundWidth, uwBoundHeight);
-	}
 
 	// Create copperlist entries
 	pCopList = pVPort->pView->pCopList;
@@ -98,6 +79,26 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	else {
 		// TODO Raw mode
 		goto fail;
+	}
+
+	scrollBufferReset(
+		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight,
+		ubBitmapFlags, isDblBuf
+	);
+
+	// Must be before camera? Shouldn't be as there are priorities on manager list
+	vPortAddManager(pVPort, (tVpManager*)pManager);
+
+	// Find camera manager, create if not exists
+	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
+	if(!pManager->pCamera) {
+		pManager->pCamera = cameraCreate(
+			pVPort, 0, 0, uwBoundWidth, uwBoundHeight
+		);
+		isCameraCreated = 1;
+	}
+	else {
+		cameraReset(pManager->pCamera, 0,0, uwBoundWidth, uwBoundHeight);
 	}
 
 	// TODO: Update copperlist with current camera pos?
@@ -139,6 +140,7 @@ void scrollBufferDestroy(tScrollBufferManager *pManager) {
 	logBlockEnd("scrollBufferDestroy()");
 }
 
+FN_HOTSPOT
 void scrollBufferProcess(tScrollBufferManager *pManager) {
 	UWORD uwVpHeight;
 
@@ -168,7 +170,6 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		// Initial copper block
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
-		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX);            // Bitplane shift
 		ulPlaneOffs = uwScrollX + (pManager->pBack->BytesPerRow*uwScrollY);
 		for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
@@ -176,12 +177,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 		}
-		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x30);               // Fetch start
-		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
-		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
-		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);             // Fetch stop
 		// TODO setting colors before and after copper instructions moved viewport
 		// one line lower on 4bpp - there will be problem on 5 & 6bpp
+		pBlock->uwCurrCount += 4; // Add constant part
 
 		// Copper block after Y-break
 		pBlock = pManager->pBreakBlock;
@@ -254,6 +252,22 @@ void scrollBufferReset(
 		pManager->pFront = pManager->pBack;
 	}
 	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3) - 2;
+
+	// Constant stuff in copperlist
+	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
+	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
+	}
+	else {
+		tCopBlock *pBlock = pManager->pStartBlock;
+		// Set initial WAIT
+		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
+		// After bitplane ptrs & bplcon
+		pBlock->uwCurrCount = 2 * pManager->sCommon.pVPort->ubBPP + 1;
+		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x30);               // Fetch start
+		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
+		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
+		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);             // Fetch stop
+	}
 
 	logBlockEnd("scrollBufferReset()");
 }

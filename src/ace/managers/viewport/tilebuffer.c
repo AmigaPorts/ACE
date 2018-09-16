@@ -235,6 +235,7 @@ void tileBufferReset(
 	logBlockEnd("tileBufferReset()");
 }
 
+FN_HOTSPOT
 void tileBufferProcess(tTileBufferManager *pManager) {
 	WORD wTileIdxX, wTileIdxY;
 	UWORD uwTileOffsX, uwTileOffsY;
