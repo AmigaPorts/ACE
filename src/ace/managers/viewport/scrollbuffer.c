@@ -241,7 +241,7 @@ void scrollBufferReset(
 	pManager->uwBmAvailHeight = nearestPowerOf2(ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4));
 
 	// Destroy old buffer bitmap
-	if(pManager->pFront != pManager->pBack) {
+	if(pManager->pFront && pManager->pFront != pManager->pBack) {
 		bitmapDestroy(pManager->pFront);
 	}
 	if(pManager->pBack) {
