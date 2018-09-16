@@ -7,6 +7,15 @@
 #include <ace/managers/blit.h>
 #include <ace/utils/tag.h>
 
+static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
+	UBYTE ubPower = 0;
+	while(uwPot > 1) {
+		uwPot >>= 1;
+		++ubPower;
+	}
+	return ubPower;
+}
+
 #ifdef AMIGA
 
 static void tileBufferQueueAdd(
@@ -217,8 +226,9 @@ void tileBufferReset(
 	}
 
 	// Scrollin on one of dirs may be disabled - less redraw on other axis margin
-	pManager->uwMarginedWidth = pManager->sCommon.pVPort->uwWidth + (4 << ubTileShift);
+	pManager->uwMarginedWidth = bitmapGetByteWidth(pManager->pScroll->pFront)*8;
 	pManager->uwMarginedHeight = pManager->pScroll->uwBmAvailHeight;
+	pManager->ubWidthShift = shiftFromPowerOfTwo(pManager->uwMarginedWidth);
 	pManager->ubMarginXLength = MIN(
 		pManager->uTileBounds.sUwCoord.uwY,
 		(pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 4
@@ -265,9 +275,9 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wTileIdxX != pState->pMarginX->wTilePos) {
 			// Not finished redrawing all column tiles?
 			if(pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
-				uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) % pManager->uwMarginedHeight;
+				uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) & (pManager->uwMarginedHeight-1);
 				ubAddY =      (pState->pMarginX->wTilePos << ubTileShift) / pManager->uwMarginedWidth;
-				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift) % pManager->uwMarginedWidth;
+				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift) & (pManager->uwMarginedWidth-1);
 				// Redraw remaining tiles
 				while (pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
 					tileBufferDrawTileQuick(
@@ -338,9 +348,9 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wTileIdxY != pState->pMarginY->wTilePos) {
 			// Not finished redrawing all row tiles?
 			if(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
-				uwTileOffsY = (pState->pMarginY->wTilePos << ubTileShift) % pManager->uwMarginedHeight;
-				ubAddY =      (pState->pMarginY->wTileCurr << ubTileShift) / pManager->uwMarginedWidth;
-				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift) % pManager->uwMarginedWidth;
+				uwTileOffsY = (pState->pMarginY->wTilePos << ubTileShift) & (pManager->uwMarginedHeight-1);
+				ubAddY =      (pState->pMarginY->wTileCurr << ubTileShift) >> pManager->ubWidthShift;
+				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift) & (pManager->uwMarginedWidth-1);
 				// Redraw remaining tiles
 				while(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
 					tileBufferDrawTileQuick(
@@ -417,10 +427,10 @@ void tileBufferInitialDraw(const tTileBufferManager *pManager) {
 		pManager->uwMarginedHeight >> ubTileShift
 	);
 
-	UWORD uwTileOffsY = (wStartY << ubTileShift) % pManager->uwMarginedHeight;
+	UWORD uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
 		for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
-		UBYTE ubAddY =      (wStartX << ubTileShift) / pManager->uwMarginedWidth;
-		UWORD uwTileOffsX = (wStartX << ubTileShift) % pManager->uwMarginedWidth;
+		UBYTE ubAddY =      (wStartX << ubTileShift) >> pManager->ubWidthShift;
+		UWORD uwTileOffsX = (wStartX << ubTileShift) & (pManager->uwMarginedWidth-1);
 
 		for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
 			tileBufferDrawTileQuick(
@@ -432,7 +442,7 @@ void tileBufferInitialDraw(const tTileBufferManager *pManager) {
 				uwTileOffsX -= pManager->uwMarginedWidth;
 			}
 		}
-		uwTileOffsY = (uwTileOffsY + ubTileSize) % pManager->uwMarginedHeight;
+		uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
 	}
 
 	// Copy from back buffer to front buffer
@@ -450,9 +460,9 @@ void tileBufferDrawTile(
 	UWORD uwBfrX, uwBfrY;
 	UBYTE ubAddY;
 
-	uwBfrY = (uwTileIdxY << pManager->ubTileShift) % pManager->uwMarginedHeight;
-	ubAddY = (uwTileIdxX << pManager->ubTileShift) / pManager->uwMarginedWidth;
-	uwBfrX = (uwTileIdxX << pManager->ubTileShift) % pManager->uwMarginedWidth;
+	uwBfrY = (uwTileIdxY << pManager->ubTileShift) & (pManager->uwMarginedHeight - 1);
+	ubAddY = (uwTileIdxX << pManager->ubTileShift) >> pManager->ubWidthShift;
+	uwBfrX = (uwTileIdxX << pManager->ubTileShift) & (pManager->uwMarginedWidth-1);
 
 	tileBufferDrawTileQuick(
 		pManager, uwTileIdxX, uwTileIdxY, uwBfrX, uwBfrY+ubAddY
