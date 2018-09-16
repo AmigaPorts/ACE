@@ -169,7 +169,6 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
-		copMove(pCopList, pBlock, &g_pCustom->color[0], 0x0F0);
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX);            // Bitplane shift
 		ulPlaneOffs = uwScrollX + (pManager->pBack->BytesPerRow*uwScrollY);
 		for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
@@ -181,7 +180,8 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
 		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
 		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);             // Fetch stop
-		copMove(pCopList, pBlock, &g_pCustom->color[0], 0x000);
+		// TODO setting colors before and after copper instructions moved viewport
+		// one line lower on 4bpp - there will be problem on 5 & 6bpp
 
 		// Copper block after Y-break
 		pBlock = pManager->pBreakBlock;
