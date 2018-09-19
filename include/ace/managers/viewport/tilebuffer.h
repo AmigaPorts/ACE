@@ -95,6 +95,8 @@ typedef struct {
 
 /* functions */
 
+void tileBufferQueueProcess(tTileBufferManager *pManager);
+
 /**
  * Tilemap buffer manager create fn
  * Be sure to set camera pos, load tile data & then call tileBufferRedraw()!

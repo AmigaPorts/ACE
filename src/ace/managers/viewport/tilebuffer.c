@@ -31,13 +31,13 @@ static void tileBufferQueueAdd(
 	++pState->ubPendingCount;
 }
 
-static void tileBufferQueueProcess(tTileBufferManager *pManager) {
+void tileBufferQueueProcess(tTileBufferManager *pManager) {
 	tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
-	UBYTE ubPendingCount = pState->ubPendingCount;
-	if(ubPendingCount) {
+	if(pState->ubPendingCount) {
+		--pState->ubPendingCount;
+		UBYTE ubPendingCount = pState->ubPendingCount;
 		const tUwCoordYX *pTile = &pState->pPendingQueue[ubPendingCount];
 		tileBufferDrawTile(pManager, pTile->sUwCoord.uwX, pTile->sUwCoord.uwY);
-		--pState->ubPendingCount;
 	}
 }
 
@@ -402,7 +402,6 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		);
 		++pState->pMarginY->wTileCurr;
 	}
-	tileBufferQueueProcess(pManager);
 	pManager->ubStateIdx = !pManager->ubStateIdx;
 }
 
