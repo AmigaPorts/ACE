@@ -472,9 +472,6 @@ void tileBufferDrawTileQuick(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
 	UWORD uwBfrX, UWORD uwBfrY
 ) {
-	if((pManager->pTileData[uwTileX][uwTileY] << pManager->ubTileShift) >= 320) {
-		logWrite("ERR %hu,%hu\n", uwTileX, uwTileY);
-	}
 	blitCopyAligned(
 		pManager->pTileSet,
 		0, pManager->pTileData[uwTileX][uwTileY] << pManager->ubTileShift,
@@ -551,6 +548,13 @@ UBYTE tileBufferIsTileOnBuffer(
 		return 1;
 	}
 	return 0;
+}
+
+void tileBufferSetTile(
+	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwIdx
+) {
+ 	pManager->pTileData[uwX][uwY] = uwIdx;
+	tileBufferInvalidateTile(pManager, uwX, uwY);
 }
 
 #endif // AMIGA
