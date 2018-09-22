@@ -158,5 +158,9 @@ UBYTE tileBufferIsTileOnBuffer(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 );
 
+void tileBufferSetTile(
+	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwIdx
+);
+
 #endif // AMIGA
 #endif // _ACE_MANAGERS_VIEWPORT_TILEBUFFER_H_
