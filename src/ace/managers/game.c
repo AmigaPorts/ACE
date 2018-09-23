@@ -57,7 +57,6 @@ void gamePopState(void) {
 	g_sGameManager.pStateFirst = pGameState->pPrev;
 
 	memFree(pGameState, sizeof(tGameState));
-	viewLoad(0);
 }
 
 void gameChangeState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy) {
