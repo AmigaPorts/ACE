@@ -165,7 +165,7 @@ void bitmapLoadFromFile(
 			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
 				fileRead(
 					pFile,
-					&pBitMap->Planes[0][uwWidth*((y*pBitMap->Depth)+ubPlane)+(uwStartX>>3)],
+					&pBitMap->Planes[0][uwWidth*(((uwStartY + y)*pBitMap->Depth)+ubPlane)+(uwStartX>>3)],
 					((uwSrcWidth+7)>>3)
 				);
 			}
