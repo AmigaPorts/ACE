@@ -153,22 +153,15 @@ void scrollBufferDestroy(tScrollBufferManager *pManager) {
 
 FN_HOTSPOT
 void scrollBufferProcess(tScrollBufferManager *pManager) {
-	UWORD uwVpHeight;
-
-	uwVpHeight = pManager->sCommon.pVPort->uwHeight;
-	UBYTE i;
-	UWORD uwScrollX, uwScrollY;
-	ULONG ulPlaneOffs;
-	ULONG ulPlaneAddr;
-	UWORD uwOffsX;
+	UWORD uwVpHeight = pManager->sCommon.pVPort->uwHeight;
 
 	// convert camera pos to scroll pos
-	uwScrollX = pManager->pCamera->uPos.sUwCoord.uwX;
-	uwScrollY = pManager->pCamera->uPos.sUwCoord.uwY & (pManager->uwBmAvailHeight-1);
+	UWORD uwScrollX = pManager->pCamera->uPos.sUwCoord.uwX;
+	UWORD uwScrollY = pManager->pCamera->uPos.sUwCoord.uwY & (pManager->uwBmAvailHeight - 1);
 
 	// preparations for new copperlist
-	uwOffsX = 15 - (uwScrollX & 0xF);         // Bitplane shift - single
-	uwOffsX = (uwOffsX << 4) | uwOffsX;       // Bitplane shift - PF1 | PF2
+	UWORD uwOffsX = 15 - (uwScrollX & 0xF); // Bitplane shift - single
+	uwOffsX = (uwOffsX << 4) | uwOffsX;     // Bitplane shift - PF1 | PF2
 
 	uwScrollX >>= 3;
 
@@ -182,9 +175,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX);            // Bitplane shift
-		ulPlaneOffs = uwScrollX + (pManager->pBack->BytesPerRow*uwScrollY);
-		for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
-			ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulPlaneOffs;
+		ULONG ulPlaneOffs = uwScrollX + (pManager->pBack->BytesPerRow*uwScrollY);
+		for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
+			ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulPlaneOffs;
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 		}
@@ -196,10 +189,10 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		pBlock = pManager->pBreakBlock;
 
 		pBlock->uwCurrCount = 0; // Rewind copBlock
-		if (pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
+		if(pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
 			copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
-			for (i = pManager->sCommon.pVPort->ubBPP; i--;) {
-				ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + uwScrollX;
+			for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
+				ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + uwScrollX;
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			}
