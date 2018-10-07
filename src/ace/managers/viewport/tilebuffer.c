@@ -505,28 +505,29 @@ void tileBufferInvalidateRect(
 void tileBufferInvalidateTile(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 ) {
-	if(!tileBufferIsTileOnBuffer(pManager, uwTileX, uwTileY)) {
-		return;
-	}
+	// FIXME it ain't working right yet
+	// if(!tileBufferIsTileOnBuffer(pManager, uwTileX, uwTileY)) {
+	// 	return;
+	// }
 
 	// Previous state will have one more tile to draw, so only check smaller range
-	const tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
 	// omit if not yet drawn on redraw margin - let manager draw it when it
 	// will be that tile's turn
-	if(
-		pState->pMarginX->wTilePos == uwTileX &&
-		uwTileY >= pState->pMarginX->wTileCurr &&
-		uwTileY <= pState->pMarginX->wTileEnd
-	) {
-		return;
-	}
-	if(
-		pState->pMarginY->wTilePos == uwTileY &&
-		uwTileX >= pState->pMarginX->wTileCurr &&
-		uwTileX <= pState->pMarginX->wTileEnd
-	) {
-		return;
-	}
+	// const tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
+	// if(
+	// 	pState->pMarginX->wTilePos == uwTileX &&
+	// 	pState->pMarginX->wTileCurr <= uwTileY &&
+	// 	uwTileY <= pState->pMarginX->wTileEnd
+	// ) {
+	// 	return;
+	// }
+	// if(
+	// 	pState->pMarginY->wTilePos == uwTileY &&
+	// 	pState->pMarginY->wTileCurr <= uwTileX &&
+	// 	uwTileX <= pState->pMarginY->wTileEnd
+	// ) {
+	// 	return;
+	// }
 
 	// Add to queue
 	tileBufferQueueAdd(pManager, uwTileX, uwTileY);
@@ -536,9 +537,9 @@ UBYTE tileBufferIsTileOnBuffer(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 ) {
 	UBYTE ubTileShift = pManager->ubTileShift;
-	UWORD uwStartX = (pManager->pCamera->uPos.sUwCoord.uwX >> ubTileShift) -1;
+	UWORD uwStartX = MAX(0, (pManager->pCamera->uPos.sUwCoord.uwX >> ubTileShift) -1);
 	UWORD uwEndX = uwStartX + (pManager->uwMarginedWidth >> ubTileShift);
-	UWORD uwStartY = (pManager->pCamera->uPos.sUwCoord.uwY >> ubTileShift) -1;
+	UWORD uwStartY = MAX(0, (pManager->pCamera->uPos.sUwCoord.uwY >> ubTileShift) -1);
 	UWORD uwEndY = uwStartY + (pManager->uwMarginedHeight >> ubTileShift);
 
 	if(
