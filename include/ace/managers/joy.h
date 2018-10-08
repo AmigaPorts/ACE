@@ -59,11 +59,11 @@ typedef struct {
 extern tJoyManager g_sJoyManager;
 
 /* Functions */
-void joyOpen(void);
+void joyOpen(UBYTE is4joy);
 
 void joySetState(UBYTE ubJoyCode, UBYTE ubJoyState);
 
-UBYTE joyPeek(UBYTE ubJoyCode);
+UBYTE joyCheck(UBYTE ubJoyCode);
 
 UBYTE joyUse(UBYTE ubJoyCode);
 
