@@ -160,7 +160,9 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
 	if(!pManager->pCamera) {
 		isCameraCreated = 1;
-		pManager->pCamera = cameraCreate(pVPort, 0, 0, uwBoundWidth, uwBoundHeight);
+		pManager->pCamera = cameraCreate(
+			pVPort, 0, 0, uwBoundWidth, uwBoundHeight, isDblBfr
+		);
 	}
 
 	pCopList = pVPort->pView->pCopList;

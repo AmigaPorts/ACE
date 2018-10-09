@@ -5,8 +5,14 @@
 #include <ace/managers/viewport/camera.h>
 #include <ace/macros.h>
 
-tCameraManager *cameraCreate(tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY) {
-	logBlockBegin("cameraCreate(pVPort: %p, uwPosX: %u, uwPosY: %u, uwMaxX: %u, uwMaxY: %u)", pVPort, uwPosX, uwPosY, uwMaxX, uwMaxY);
+tCameraManager *cameraCreate(
+	tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY,
+	UBYTE isDblBfr
+) {
+	logBlockBegin(
+		"cameraCreate(pVPort: %p, uwPosX: %u, uwPosY: %u, uwMaxX: %u, uwMaxY: %u, isDblBfr: %hhu)",
+		pVPort, uwPosX, uwPosY, uwMaxX, uwMaxY, isDblBfr
+	);
 	tCameraManager *pManager;
 
 	pManager = memAllocFastClear(sizeof(tCameraManager));
@@ -17,7 +23,7 @@ tCameraManager *cameraCreate(tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD u
 	pManager->sCommon.ubId = VPM_CAMERA;
 
 	logWrite("Resetting camera bounds...\n");
-	cameraReset(pManager, uwPosX, uwPosY, uwMaxX, uwMaxY);
+	cameraReset(pManager, uwPosX, uwPosY, uwMaxX, uwMaxY, isDblBfr);
 
 	logWrite("Attaching camera to VPort...\n");
 	vPortAddManager(pVPort, (tVpManager*)pManager);
@@ -32,16 +38,29 @@ void cameraDestroy(tCameraManager *pManager) {
 }
 
 void cameraProcess(tCameraManager *pManager) {
-	pManager->uLastPos.ulYX = pManager->uPos.ulYX;
+	pManager->uLastPos[pManager->ubBfr].ulYX = pManager->uPos.ulYX;
+	if(pManager->isDblBfr) {
+		pManager->ubBfr = !pManager->ubBfr;
+	}
 }
 
-void cameraReset(tCameraManager *pManager, UWORD uwStartX, UWORD uwStartY, UWORD uwWidth, UWORD uwHeight) {
-	logBlockBegin("cameraReset(pManager: %p, uwStartX: %u, uwStartY: %u, uwWidth: %u, uwHeight: %u)", pManager, uwStartX, uwStartY, uwWidth, uwHeight);
+void cameraReset(
+	tCameraManager *pManager,
+	UWORD uwStartX, UWORD uwStartY, UWORD uwWidth, UWORD uwHeight, UBYTE isDblBfr
+) {
+	logBlockBegin(
+		"cameraReset(pManager: %p, uwStartX: %u, uwStartY: %u, uwWidth: %u, uwHeight: %u, isDblBfr: %hhu)",
+		pManager, uwStartX, uwStartY, uwWidth, uwHeight, isDblBfr
+	);
 
 	pManager->uPos.sUwCoord.uwX = uwStartX;
 	pManager->uPos.sUwCoord.uwY = uwStartY;
-	pManager->uLastPos.sUwCoord.uwX = uwStartX;
-	pManager->uLastPos.sUwCoord.uwY = uwStartY;
+	pManager->uLastPos[0].sUwCoord.uwX = uwStartX;
+	pManager->uLastPos[0].sUwCoord.uwY = uwStartY;
+	pManager->uLastPos[1].sUwCoord.uwX = uwStartX;
+	pManager->uLastPos[1].sUwCoord.uwY = uwStartY;
+	pManager->isDblBfr = isDblBfr;
+	pManager->ubBfr = 0;
 
 	// Max camera coords based on viewport size
 	pManager->uMaxPos.sUwCoord.uwX = uwWidth - pManager->sCommon.pVPort->uwWidth;
@@ -71,7 +90,7 @@ void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY) {
 }
 
 UBYTE cameraIsMoved(tCameraManager *pManager) {
-	return pManager->uPos.ulYX != pManager->uLastPos.ulYX;
+	return pManager->uPos.ulYX != pManager->uLastPos[pManager->ubBfr].ulYX;
 }
 
 UWORD cameraGetXDiff(tCameraManager *pManager) {
@@ -83,9 +102,9 @@ UWORD cameraGetYDiff(tCameraManager *pManager) {
 }
 
 WORD cameraGetDeltaX(tCameraManager *pManager) {
-	return (pManager->uPos.sUwCoord.uwX - pManager->uLastPos.sUwCoord.uwX);
+	return (pManager->uPos.sUwCoord.uwX - pManager->uLastPos[pManager->ubBfr].sUwCoord.uwX);
 }
 
 WORD cameraGetDeltaY(tCameraManager *pManager) {
-	return (pManager->uPos.sUwCoord.uwY - pManager->uLastPos.sUwCoord.uwY);
+	return (pManager->uPos.sUwCoord.uwY - pManager->uLastPos[pManager->ubBfr].sUwCoord.uwY);
 }
