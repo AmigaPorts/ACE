@@ -104,12 +104,12 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
 	if(!pManager->pCamera) {
 		pManager->pCamera = cameraCreate(
-			pVPort, 0, 0, uwBoundWidth, uwBoundHeight
+			pVPort, 0, 0, uwBoundWidth, uwBoundHeight, isDblBuf
 		);
 		isCameraCreated = 1;
 	}
 	else {
-		cameraReset(pManager->pCamera, 0,0, uwBoundWidth, uwBoundHeight);
+		cameraReset(pManager->pCamera, 0,0, uwBoundWidth, uwBoundHeight, isDblBuf);
 	}
 
 	// TODO: Update copperlist with current camera pos?
