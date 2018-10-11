@@ -2,11 +2,12 @@
 #define GUARD_ACE_MANAGERS_AUDIO_H
 
 #include <ace/types.h>
+#include <hardware/dmabits.h> // DMAF_* flags
 
-#define AUDIO_CHANNEL_0 0
-#define AUDIO_CHANNEL_1 1
-#define AUDIO_CHANNEL_2 2
-#define AUDIO_CHANNEL_3 3
+#define AUDIO_CHANNEL_0 DMAB_AUD0
+#define AUDIO_CHANNEL_1 DMAB_AUD1
+#define AUDIO_CHANNEL_2 DMAB_AUD2
+#define AUDIO_CHANNEL_3 DMAB_AUD3
 
 #define SAMPLE_FLAG_16BIT 1
 
@@ -17,29 +18,18 @@ typedef struct _tSample {
 	UBYTE *pData;
 } tSample;
 
-typedef struct _tAudioManager {
-	UBYTE a;
-} tAudioManager;
-
-extern tAudioManager g_sAudioManager;
-
 void audioCreate(void);
 
 void audioDestroy(void);
 
 void audioPlay(
-	IN UBYTE ubChannel,
-	IN tSample *pSample,
-	IN UBYTE ubVolume
+	UBYTE ubChannel, tSample *pSample, UBYTE ubVolume, BYTE bPlayCount
 );
 
-tSample *sampleCreate(
-	IN UWORD uwLength,
-	IN UWORD uwPeriod
-);
+void audioStop(UBYTE ubChannel);
 
-void sampleDestroy(
-	IN tSample *pSample
-);
+tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod);
+
+void sampleDestroy(tSample *pSample);
 
 #endif // GUARD_ACE_MANAGERS_AUDIO_H
