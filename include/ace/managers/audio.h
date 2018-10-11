@@ -9,6 +9,8 @@
 #define AUDIO_CHANNEL_2 DMAB_AUD2
 #define AUDIO_CHANNEL_3 DMAB_AUD3
 
+#define AUDIO_VOLUME_MAX 64
+
 #define SAMPLE_FLAG_16BIT 1
 
 typedef struct _tSample {
@@ -29,6 +31,8 @@ void audioPlay(
 void audioStop(UBYTE ubChannel);
 
 tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod);
+
+tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz);
 
 void sampleDestroy(tSample *pSample);
 

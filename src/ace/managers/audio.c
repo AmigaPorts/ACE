@@ -37,16 +37,18 @@ void audioCreate(void) {
 		s_pControls[i].ubChannel = i;
 		systemSetInt(INTB_AUD0+i, audioIntHandler, &s_pControls[i]);
 	}
+	// Disable audio filter
+	g_pCiaA->pra ^= BV(1);
 	logBlockEnd("audioCreate()");
 }
 
 void audioDestroy(void) {
-	// logBlockBegin("audioDestroy()");
-	systemSetDma(DMAB_AUD0, 0);
-	systemSetDma(DMAB_AUD1, 0);
-	systemSetDma(DMAB_AUD2, 0);
-	systemSetDma(DMAB_AUD3, 0);
-	// logBlockEnd("audioDestroy()");
+	logBlockBegin("audioDestroy()");
+	for(UBYTE i = 0; i < 4; ++i) {
+		systemSetDma(DMAB_AUD0+i, 0);
+		systemSetInt(INTB_AUD0+i, 0, 0);
+	}
+	logBlockEnd("audioDestroy()");
 }
 
 void audioPlay(
@@ -75,6 +77,31 @@ tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod) {
 	pSample->uwLength = uwLength;
 	pSample->pData = memAllocChipClear(uwLength);
 	pSample->uwPeriod = uwPeriod;
+	return pSample;
+}
+
+tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz) {
+	systemUse();
+	logBlockBegin(
+		"sampleCreateFromFile(szPath: '%s', uwSampleRateKhz: %hu)",
+		szPath, uwSampleRateKhz
+	);
+	LONG lLength = fileGetSize(szPath);
+	logWrite("Length: %ld\n", lLength);
+	if(lLength <= 0) {
+		logWrite("ERR: File doesn't exist!\n");
+		logBlockEnd("sampleCreateFromFile()");
+		return 0;
+	}
+	// NOTE: 3546895 is for PAL, for NTSC use 3579545
+	UWORD uwPeriod = (3546895 + uwSampleRateKhz/2) / uwSampleRateKhz;
+	logWrite("Period: %hu\n", uwPeriod);
+	tSample *pSample = sampleCreate(lLength, uwPeriod);
+	FILE *pSampleFile = fileOpen(szPath, "rb");
+	fileRead(pSampleFile, pSample->pData, lLength);
+	fileClose(pSampleFile);
+	logBlockEnd("sampleCreateFromFile()");
+	systemUnuse();
 	return pSample;
 }
 
