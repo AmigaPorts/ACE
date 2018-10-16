@@ -8,6 +8,8 @@ For build instructions basic how to and contributing guidelines, refer to [docs]
 
 ## Games created using ACE
 
+- [ami-invaders](https://github.com/approxit/amiga-invaders)
+- [AMIner](https://github.com/tehKaiN/AMIner)
 - [Impsbru](https://github.com/approxit/impsbru)
 - [OpenFire](https://github.com/tehKaiN/openFire)
 - Goblin Villages
