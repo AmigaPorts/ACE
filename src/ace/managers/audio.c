@@ -75,10 +75,12 @@ void audioStop(UBYTE ubChannel) {
 }
 
 tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod) {
+	logBlockBegin("sampleCreate(uwLength: %hu, uwPeriod: %hu)", uwLength, uwPeriod);
 	tSample *pSample = memAllocFast(sizeof(tSample));
 	pSample->uwLength = uwLength;
 	pSample->pData = memAllocChipClear(uwLength);
 	pSample->uwPeriod = uwPeriod;
+	logBlockEnd("sampleCreate()");
 	return pSample;
 }
 
@@ -89,7 +91,6 @@ tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz) {
 		szPath, uwSampleRateKhz
 	);
 	LONG lLength = fileGetSize(szPath);
-	logWrite("Length: %ld\n", lLength);
 	if(lLength <= 0) {
 		logWrite("ERR: File doesn't exist!\n");
 		logBlockEnd("sampleCreateFromFile()");
@@ -97,7 +98,6 @@ tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz) {
 	}
 	// NOTE: 3546895 is for PAL, for NTSC use 3579545
 	UWORD uwPeriod = (3546895 + uwSampleRateKhz/2) / uwSampleRateKhz;
-	logWrite("Period: %hu\n", uwPeriod);
 	tSample *pSample = sampleCreate(lLength, uwPeriod);
 	FILE *pSampleFile = fileOpen(szPath, "rb");
 	fileRead(pSampleFile, pSample->pData, lLength);
