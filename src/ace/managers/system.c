@@ -197,6 +197,7 @@ void HWINTERRUPT int4Handler(void) {
 		uwReqClr |= INTF_AUD3;
 	}
 	g_pCustom->intreq = uwReqClr;
+	g_pCustom->intreq = uwReqClr;
 }
 
 FN_HOTSPOT
