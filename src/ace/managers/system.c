@@ -66,6 +66,9 @@ const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
 
+// All interrupt handlers should clear their flags twice
+// http://eab.abime.net/showthread.php?p=834185#post834185
+
 FN_HOTSPOT
 void HWINTERRUPT int1Handler(void) {
 	// Soft / diskBlk / TBE (RS232 TX end)
@@ -74,31 +77,35 @@ void HWINTERRUPT int1Handler(void) {
 FN_HOTSPOT
 void HWINTERRUPT int2Handler(void) {
 	// Parallel, keyboard, mouse, "some of disk functions"
-	// ACE only uses it for keyboard so no decision taking here atm
-	// TODO: this could be re-enabled with vblank since we don't need it
-	// to retrigger during same frame.
-	UBYTE ubIcrA = g_pCiaA->icr; // Read clears interrupt flags
-	if(ubIcrA & CIAICR_SERIAL) {
-		// Keyboard
-		if(s_pAceInterrupts[INTB_PORTS].pHandler) {
-			s_pAceInterrupts[INTB_PORTS].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_PORTS].pData
-			);
+	UWORD uwIntReq = g_pCustom->intreqr;
+	if(uwIntReq & INTF_PORTS) {
+		UBYTE ubIcrA = g_pCiaA->icr; // Read clears interrupt flags
+		if(ubIcrA & CIAICR_SERIAL) {
+			// Keyboard
+			if(s_pAceInterrupts[INTB_PORTS].pHandler) {
+				s_pAceInterrupts[INTB_PORTS].pHandler(
+					g_pCustom, s_pAceInterrupts[INTB_PORTS].pData
+				);
+			}
 		}
-	}
-	if(ubIcrA & CIAICR_FLAG) {
+		if(ubIcrA & CIAICR_FLAG) {
 
-	}
-	if(ubIcrA & CIAICR_TIMER_A) {
+		}
+		if(ubIcrA & CIAICR_TIMER_A) {
 
-	}
-	if(ubIcrA & CIAICR_TIMER_B) {
+		}
+		if(ubIcrA & CIAICR_TIMER_B) {
 
-	}
-	if(ubIcrA & CIAICR_TOD) {
+		}
+		if(ubIcrA & CIAICR_TOD) {
 
+		}
+		// TODO: this could be re-enabled in vblank since we don't need it
+		// to retrigger during same frame. Or perhaps it's needed so that kbd
+		// controller won't overflow its queue
+		g_pCustom->intreq = INTF_PORTS;
+		g_pCustom->intreq = INTF_PORTS;
 	}
-	g_pCustom->intreq = INTF_PORTS;
 }
 
 FN_HOTSPOT
@@ -141,6 +148,7 @@ void HWINTERRUPT int3Handler(void) {
 		}
 		uwReqClr |= INTF_BLIT;
 	}
+	g_pCustom->intreq = uwReqClr;
 	g_pCustom->intreq = uwReqClr;
 }
 
@@ -192,6 +200,7 @@ void systemCreate(void) {
 	WaitTOF();
 	LoadView(0);
 	WaitTOF();
+	WaitTOF(); // Wait for interlaced screen to finish
 
 	// get VBR location on 68010+ machine
 	// TODO VBR

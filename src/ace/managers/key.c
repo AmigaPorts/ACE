@@ -52,12 +52,9 @@ void INTERRUPT keyIntServer(
 	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
 	ubKeyCode >>= 1;
 
-	if(ubKeyReleased) {
-		keyIntSetState(pKeyManager, ubKeyCode, KEY_NACTIVE);
-	}
-	else {
-		keyIntSetState(pKeyManager, ubKeyCode, KEY_ACTIVE);
-	}
+	keyIntSetState(
+		pKeyManager, ubKeyCode, ubKeyReleased ? KEY_NACTIVE : KEY_ACTIVE
+	);
 
 	// End handshake
 	UWORD uwDelta;
