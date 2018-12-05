@@ -4,32 +4,58 @@
 
 #include <ace/utils/bmframe.h>
 
-void bmFrameDraw(tBitMap *pFrameSet, tBitMap *pDest, UWORD uwX, UWORD uwY, UBYTE ubTileWidth, UBYTE ubTileHeight) {
-	UBYTE i;
-	// Rogi
-	blitCopyAligned(pFrameSet, 0,0, pDest, uwX, uwY, 16, 16);
-	blitCopyAligned(pFrameSet, 32,0, pDest, uwX+((ubTileWidth-1)<<4), uwY, 16, 16);
-	blitCopyAligned(pFrameSet, 0,32, pDest, uwX, uwY+((ubTileHeight-1)<<4), 16, 16);
-	blitCopyAligned(pFrameSet, 32,32, pDest, uwX+((ubTileWidth-1)<<4), uwY+((ubTileHeight-1)<<4), 16, 16);
-	// brzegi poziome
-	for(i = 1; i < ubTileWidth-1; ++i) {
-		blitCopyAligned(pFrameSet, 16,0, pDest, uwX+(i<<4), uwY, 16, 16);
-		blitCopyAligned(pFrameSet, 16,32, pDest, uwX+(i<<4), uwY+((ubTileHeight-1)<<4), 16, 16);
+void bmFrameDraw(
+	tBitMap *pFrameSet, tBitMap *pDest,
+	UWORD uwX, UWORD uwY, UBYTE ubCols, UBYTE ubRows, UBYTE ubTileSize
+) {
+	// Vertices
+	blitCopyAligned(pFrameSet, 0, 0, pDest, uwX, uwY, ubTileSize, ubTileSize);
+	blitCopyAligned(
+		pFrameSet, ubTileSize * 2, 0, pDest,
+		uwX + ((ubCols - 1) * ubTileSize), uwY, ubTileSize, ubTileSize
+	);
+	blitCopyAligned(
+		pFrameSet, 0, ubTileSize * 2, pDest,
+		uwX, uwY + ((ubRows - 1) * ubTileSize), ubTileSize, ubTileSize
+	);
+	blitCopyAligned(
+		pFrameSet, ubTileSize * 2, ubTileSize * 2, pDest,
+		uwX + ((ubCols - 1) * ubTileSize), uwY + ((ubRows - 1) * ubTileSize),
+		ubTileSize, ubTileSize
+	);
+	// Horizontal edges
+	for(UBYTE i = 1; i < ubCols-1; ++i) {
+		blitCopyAligned(
+			pFrameSet, ubTileSize, 0, pDest, uwX+(i * ubTileSize), uwY,
+			ubTileSize, ubTileSize
+		);
+		blitCopyAligned(
+			pFrameSet, ubTileSize, ubTileSize * 2, pDest, uwX + (i * ubTileSize),
+			uwY+((ubRows-1) * ubTileSize), ubTileSize, ubTileSize
+		);
 	}
-	// �rodek
-	if(ubTileHeight > 2) {
-		// pojedyncze brzegi pionowe
-		blitCopyAligned(pFrameSet, 0,16, pDest, uwX, uwY+16, 16, 16);
-		blitCopyAligned(pFrameSet, 32,16, pDest, uwX+((ubTileWidth-1)<<4), uwY+16, 16, 16);
-		// pierwszy rz�d - centrum
-		for(i = 1; i < ubTileWidth-1; ++i) {
-			blitCopyAligned(pFrameSet, 16,16, pDest, uwX+(i<<4), uwY+16, 16, 16);
-		}
-		// kolejne rz�dy - zbiorczy blit
-		for(i = 2; i < ubTileHeight-1; ++i) {
+	// Center
+	if(ubRows > 2) {
+		// Draw only first row
+		blitCopyAligned(
+			pFrameSet, 0, ubTileSize, pDest,
+			uwX, uwY + ubTileSize, ubTileSize, ubTileSize
+		);
+		blitCopyAligned(
+			pFrameSet, ubTileSize * 2, ubTileSize, pDest,
+			uwX + ((ubCols-1) * ubTileSize), uwY + ubTileSize, ubTileSize, ubTileSize
+		);
+		for(UBYTE i = 1; i < ubCols-1; ++i) {
 			blitCopyAligned(
-				pDest, uwX, uwY+16, pDest, uwX, uwY+(i<<4),
-				ubTileWidth<<4, 16
+				pFrameSet, ubTileSize, ubTileSize, pDest,
+				uwX + (i * ubTileSize), uwY + ubTileSize, ubTileSize, ubTileSize
+			);
+		}
+		// Fill rest of rows with the first one
+		for(UBYTE i = 2; i < ubRows - 1; ++i) {
+			blitCopyAligned(
+				pDest, uwX, uwY+ubTileSize, pDest, uwX, uwY+(i * ubTileSize),
+				ubCols * ubTileSize, ubTileSize
 			);
 		}
 	}
