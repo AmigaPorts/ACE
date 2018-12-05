@@ -12,8 +12,8 @@ typedef struct _tChannelControls {
 tChannelControls s_pControls[4];
 
 void INTERRUPT audioIntHandler(
-	REGARG(volatile tCustom *pCustom, "a0"),
-	REGARG(volatile void *pData, "a1")
+	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
+	UNUSED_ARG REGARG(volatile void *pData, "a1")
 ) {
 	volatile tChannelControls *pCtrl = (volatile tChannelControls *)pData;
 	if(pCtrl->bPlayCount != -1) {
@@ -21,10 +21,7 @@ void INTERRUPT audioIntHandler(
 			--pCtrl->bPlayCount;
 		}
 		else {
-			UBYTE ubChannel = pCtrl->ubChannel;
-			pCustom->aud[ubChannel].ac_len = 0;
-			pCustom->aud[ubChannel].ac_per = 0;
-			pCustom->aud[ubChannel].ac_vol = 0;
+			audioStop(pCtrl->ubChannel);
 		}
 	}
 }

@@ -369,29 +369,30 @@ void systemSetInt(
 }
 
 void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled) {
+	UWORD uwDmaMask = BV(ubDmaBit);
 	if(isEnabled) {
-		s_uwAceDmaCon |= BV(ubDmaBit);
-		s_uwOsDmaCon |= BV(ubDmaBit);
+		s_uwAceDmaCon |= uwDmaMask;
+		s_uwOsDmaCon |= uwDmaMask;
 		if(!s_wSystemUses) {
-			g_pCustom->dmacon = DMAF_SETCLR | BV(ubDmaBit);
+			g_pCustom->dmacon = DMAF_SETCLR | uwDmaMask;
 		}
 		else {
-			if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
-				g_pCustom->dmacon = DMAF_SETCLR | BV(ubDmaBit);
+			if(!(uwDmaMask & s_uwOsMinDma)) {
+				g_pCustom->dmacon = DMAF_SETCLR | uwDmaMask;
 			}
 		}
 	}
 	else {
-		s_uwAceDmaCon &= ~BV(ubDmaBit);
-		if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
-			s_uwOsDmaCon &= ~BV(ubDmaBit);
+		s_uwAceDmaCon &= ~uwDmaMask;
+		if(!(uwDmaMask & s_uwOsMinDma)) {
+			s_uwOsDmaCon &= ~uwDmaMask;
 		}
 		if(!s_wSystemUses) {
-			g_pCustom->dmacon = BV(ubDmaBit);
+			g_pCustom->dmacon = uwDmaMask;
 		}
 		else {
-			if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
-				g_pCustom->dmacon = BV(ubDmaBit);
+			if(!(uwDmaMask & s_uwOsMinDma)) {
+				g_pCustom->dmacon = uwDmaMask;
 			}
 		}
 	}
