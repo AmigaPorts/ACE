@@ -58,7 +58,6 @@ tFontConv::tGlyphSet tFontConv::glyphsFromTtf(
 				&Face->glyph->bitmap.buffer[ubWidth * ubHeight + 1]
 			)
 		};
-		fmt::print("'{}' Dimensions: {} {} bearing: {}\n", c, ubWidth, ubHeight, mGlyphs[c].ubBearing);
 		ubMaxBearing = std::max(ubMaxBearing, mGlyphs[c].ubBearing);
 		ubMaxAddHeight = std::max(
 			ubMaxAddHeight, static_cast<uint8_t>(mGlyphs[c].ubHeight - mGlyphs[c].ubBearing)
@@ -66,10 +65,6 @@ tFontConv::tGlyphSet tFontConv::glyphsFromTtf(
 	}
 
 	uint8_t ubBmHeight = ubMaxBearing + ubMaxAddHeight;
-	fmt::print(
-		"Max bearing {}, max add height {}, total max height: {}\n",
-		ubMaxBearing, ubMaxAddHeight, ubBmHeight
-	);
 
 	// Normalize Glyph size
 	for(auto &GlyphPair: mGlyphs) {
