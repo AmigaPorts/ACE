@@ -24,14 +24,14 @@ public:
 	~tFontConv(void);
 
 	std::map<char, tBitmapGlyph> glyphsFromTtf(
-		const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet
+		const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet,
+		uint8_t ubThreshold
 	);
 
 	std::map<char, tBitmapGlyph> glyphsFromDir(const std::string &szDirPath);
 
 	bool glyphsToDir(
-		const tGlyphSet &mGlyphs,
-		const std::string &szDirPath, uint8_t ubThreshold
+		const tGlyphSet &mGlyphs, const std::string &szDirPath
 	);
 
 	void glyphsToAceFont(

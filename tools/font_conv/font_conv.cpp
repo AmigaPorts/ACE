@@ -22,7 +22,8 @@ tFontConv::~tFontConv(void)
 }
 
 tFontConv::tGlyphSet tFontConv::glyphsFromTtf(
-	const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet
+	const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet,
+	uint8_t ubThreshold
 )
 {
 	tFontConv::tGlyphSet mGlyphs;
@@ -52,12 +53,15 @@ tFontConv::tGlyphSet tFontConv::glyphsFromTtf(
 
 		mGlyphs[c] = {
 			static_cast<uint8_t>(Face->glyph->metrics.horiBearingY / 64),
-			ubWidth, ubHeight,
-			std::vector<uint8_t>(
-				Face->glyph->bitmap.buffer,
-				&Face->glyph->bitmap.buffer[ubWidth * ubHeight + 1]
-			)
+			ubWidth, ubHeight, std::vector<uint8_t>(ubWidth * ubHeight, 0xFF)
 		};
+
+		// Copy bitmap graphics with threshold
+		for(uint32_t ulPos = 0; ulPos < mGlyphs[c].vData.size(); ++ulPos) {
+			auto Val = (Face->glyph->bitmap.buffer[ulPos] >= ubThreshold) ? 0xFF : 0x00;
+			mGlyphs[c].vData[ulPos] = Val;
+		}
+
 		ubMaxBearing = std::max(ubMaxBearing, mGlyphs[c].ubBearing);
 		ubMaxAddHeight = std::max(
 			ubMaxAddHeight, static_cast<uint8_t>(mGlyphs[c].ubHeight - mGlyphs[c].ubBearing)
@@ -66,7 +70,7 @@ tFontConv::tGlyphSet tFontConv::glyphsFromTtf(
 
 	uint8_t ubBmHeight = ubMaxBearing + ubMaxAddHeight;
 
-	// Normalize Glyph size
+	// Normalize Glyph height
 	for(auto &GlyphPair: mGlyphs) {
 		auto &Glyph = GlyphPair.second;
 		std::vector<uint8_t> vNewData(Glyph.ubWidth * ubBmHeight, 0x00);
@@ -84,8 +88,7 @@ tFontConv::tGlyphSet tFontConv::glyphsFromTtf(
 }
 
 bool tFontConv::glyphsToDir(
-	const tFontConv::tGlyphSet &mGlyphs,
-	const std::string &szDirPath, uint8_t ubThreshold
+	const tFontConv::tGlyphSet &mGlyphs, const std::string &szDirPath
 )
 {
 	for(const auto &GlyphPair: mGlyphs) {
@@ -94,8 +97,7 @@ bool tFontConv::glyphsToDir(
 
 		for(auto y = 0; y < Glyph.ubHeight; ++y) {
 			for(auto x = 0; x < Glyph.ubWidth; ++x) {
-				auto Val = Glyph.vData[y * Glyph.ubWidth + x] >= ubThreshold
-					? 0 : 255;
+				auto Val = Glyph.vData[y * Glyph.ubWidth + x];
 				vImage[y * Glyph.ubWidth + x].r = Val;
 				vImage[y * Glyph.ubWidth + x].g = Val;
 				vImage[y * Glyph.ubWidth + x].b = Val;
@@ -127,14 +129,12 @@ void tFontConv::glyphsToLongPng(
 	}
 	std::vector<tPixel> vBitmap(uwWidth * ubHeight, {0xFF, 0xFF, 0xFF});
 
-	const uint8_t ubThreshold = 128;
 	uint16_t uwOffsX = 0;
 	for(const auto &GlyphPair: mGlyphs) {
 		const auto &Glyph = GlyphPair.second;
 		for(auto y = 0; y < Glyph.ubHeight; ++y) {
 			for(auto x = 0; x < Glyph.ubWidth; ++x) {
-				auto Val = Glyph.vData[y * Glyph.ubWidth + x] >= ubThreshold
-					? 0 : 255;
+				auto Val = Glyph.vData[y * Glyph.ubWidth + x];
 				uint16_t uwOffs = uwOffsX + y * uwWidth + x;
 				vBitmap[uwOffs].r = Val;
 				vBitmap[uwOffs].g = Val;

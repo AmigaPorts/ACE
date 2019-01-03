@@ -12,8 +12,8 @@ int main(void)
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 	tFontConv FontConv;
-	auto mGlyphs = FontConv.glyphsFromTtf("./arial.ttf", 20, szCharset);
-	FontConv.glyphsToDir(mGlyphs, "./letters", 128);
+	auto mGlyphs = FontConv.glyphsFromTtf("./arial.ttf", 20, szCharset, 128);
+	FontConv.glyphsToDir(mGlyphs, "./letters");
 	FontConv.glyphsToLongPng(mGlyphs, "./letters_dbg.png");
 
 	fmt::print("All done!\n");
