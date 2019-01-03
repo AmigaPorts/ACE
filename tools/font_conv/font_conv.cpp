@@ -62,6 +62,10 @@ tFontConv::tGlyphSet tFontConv::glyphsFromTtf(
 			mGlyphs[c].vData[ulPos] = Val;
 		}
 
+		// Trim left
+		mGlyphs[c].trimHorz(false);
+		mGlyphs[c].trimHorz(true);
+
 		ubMaxBearing = std::max(ubMaxBearing, mGlyphs[c].ubBearing);
 		ubMaxAddHeight = std::max(
 			ubMaxAddHeight, static_cast<uint8_t>(mGlyphs[c].ubHeight - mGlyphs[c].ubBearing)
@@ -148,4 +152,35 @@ void tFontConv::glyphsToLongPng(
 		szPngPath.c_str(), reinterpret_cast<uint8_t*>(vBitmap.data()),
 		uwWidth, ubHeight, LCT_RGB, 8
 	);
+}
+
+void tFontConv::tBitmapGlyph::trimHorz(bool isRight) {
+	uint8_t ubHeight = this->ubHeight;
+	bool isTrimmable = true;
+	while(isTrimmable) {
+		uint8_t ubWidth = this->ubWidth;
+		uint8_t ubDx = 0;
+		uint8_t ubStartX = 1;
+		if(isRight) {
+			ubDx = ubWidth - 1;
+			ubStartX = 0;
+		}
+
+		for(uint8_t y = 0; y < ubHeight; ++y) {
+			if(this->vData[y * ubWidth + ubDx]) {
+				isTrimmable = false;
+				break;
+			}
+		}
+		if(isTrimmable) {
+			std::vector<uint8_t> vNew((ubWidth - 1) * ubHeight);
+			for(uint8_t x = 0; x < ubWidth-1; ++x) {
+				for(uint8_t y = 0; y < ubHeight; ++y) {
+					vNew[y * (ubWidth - 1) + x] = this->vData[y * ubWidth + ubStartX + x];
+				}
+			}
+			this->vData = vNew;
+			--this->ubWidth;
+		}
+	}
 }

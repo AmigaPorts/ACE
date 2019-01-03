@@ -16,6 +16,8 @@ public:
 		uint8_t ubBearing;
 		uint8_t ubWidth, ubHeight;
 		std::vector<uint8_t> vData;
+
+		void trimHorz(bool isRight);
 	};
 
 	using tGlyphSet = std::map<char, tBitmapGlyph>;
