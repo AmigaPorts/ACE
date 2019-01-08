@@ -2,6 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef _ACE_TOOLS_COMMON_ENDIAN_H_
+#define _ACE_TOOLS_COMMON_ENDIAN_H_
+
 #include <cstdint>
 
 namespace nEndian {
@@ -39,3 +42,5 @@ namespace nEndian {
 		);
 	}
 }
+
+#endif // _ACE_TOOLS_COMMON_ENDIAN_H_

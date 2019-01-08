@@ -5,8 +5,14 @@ project(ACE_tools)
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
 
-file(GLOB_RECURSE FONT_CONV_src font_conv/*.cpp font_conv/*.c)
-file(GLOB_RECURSE FONT_CONV_hdr font_conv/*.hpp font_conv/*.h)
+file(GLOB FONT_CONV_src
+	src/font_conv.cpp src/tools/font_converter.cpp
+	src/tools/bitmap_converter.cpp src/tools/palette_converter.cpp
+	src/common/*.cpp src/common/*.c
+)
+file(GLOB_RECURSE FONT_CONV_hdr
+	src/tools/font_converter.h src/common/*.h src/common/*.hpp
+)
 
 add_executable(font_conv ${FONT_CONV_src} ${FONT_CONV_hdr})
 
