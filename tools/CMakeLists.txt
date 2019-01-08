@@ -6,9 +6,7 @@ project(ACE_tools)
 include(GNUInstallDirs)
 
 file(GLOB FONT_CONV_src
-	src/font_conv.cpp src/tools/font_converter.cpp
-	src/tools/bitmap_converter.cpp src/tools/palette_converter.cpp
-	src/common/*.cpp src/common/*.c
+	src/font_conv.cpp src/tools/*.cpp src/common/*.cpp src/common/*.c
 )
 file(GLOB_RECURSE FONT_CONV_hdr
 	src/tools/font_converter.h src/common/*.h src/common/*.hpp
