@@ -20,7 +20,7 @@ public:
 	std::vector<tRgb> m_vData;
 
 	tChunkyBitmap(
-		const tPlanarBitmap &Planar, const tPaletteConverter::tPalette &vPalette
+		const tPlanarBitmap &Planar, const tPalette &vPalette
 	);
 
 	tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, const uint8_t *pData);
@@ -44,8 +44,8 @@ public:
 	std::vector<uint16_t> m_pPlanes[8];
 
 	tPlanarBitmap(
-		const tChunkyBitmap &Chunky, const tPaletteConverter::tPalette &Palette,
-		const tPaletteConverter::tPalette &PaletteIgnore
+		const tChunkyBitmap &Chunky, const tPalette &Palette,
+		const tPalette &PaletteIgnore
 	);
 
 	void toBm(const std::string &szPath, bool isInterleaved);

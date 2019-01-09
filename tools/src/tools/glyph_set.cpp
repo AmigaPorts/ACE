@@ -148,7 +148,8 @@ tChunkyBitmap tGlyphSet::toPackedBitmap(void)
 	return Chunky;
 }
 
-void tGlyphSet::tBitmapGlyph::trimHorz(bool isRight) {
+void tGlyphSet::tBitmapGlyph::trimHorz(bool isRight)
+{
 	uint8_t ubHeight = this->ubHeight;
 	if(ubHeight == 0) {
 		return;
@@ -207,9 +208,7 @@ void tGlyphSet::toAceFont(const std::string &szFontPath)
 	++ubCharCount;
 
 	tPlanarBitmap Planar(
-		this->toPackedBitmap(),
-		tPaletteConverter::tPalette({tRgb(0xFF), tRgb(0x00)}),
-		tPaletteConverter::tPalette()
+		this->toPackedBitmap(), tPalette({tRgb(0xFF), tRgb(0x00)}), tPalette()
 	);
 
 	std::ofstream Out(szFontPath, std::ios::out | std::ios::binary);

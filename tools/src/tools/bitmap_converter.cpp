@@ -43,8 +43,8 @@ bool tChunkyBitmap::toPng(const std::string &szPngPath) {
 }
 
 tPlanarBitmap::tPlanarBitmap(
-	const tChunkyBitmap &Chunky, const tPaletteConverter::tPalette &Palette,
-	const tPaletteConverter::tPalette &PaletteIgnore
+	const tChunkyBitmap &Chunky, const tPalette &Palette,
+	const tPalette &PaletteIgnore
 ):
 	m_uwWidth(Chunky.m_uwWidth), m_uwHeight(Chunky.m_uwHeight)
 {

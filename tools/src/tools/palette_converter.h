@@ -9,10 +9,8 @@
 #include <string>
 #include "../common/rgb.h"
 
-class tPaletteConverter {
+class tPalette {
 public:
-
-	class tPalette;
 
 	static tPalette fromPlt(const std::string &szPath);
 
@@ -21,10 +19,7 @@ public:
 	static tPalette fromPromotionPal(const std::string &szPath);
 
 	static void toPlt(tPalette vPalette, const std::string &szPath);
-};
 
-class tPaletteConverter::tPalette {
-public:
 	std::vector<tRgb> m_vColors;
 
 	tPalette(void) {}

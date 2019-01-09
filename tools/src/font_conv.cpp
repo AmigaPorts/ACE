@@ -16,12 +16,11 @@ int main(void)
 	mGlyphs.toDir("./letters");
 	tChunkyBitmap FontChunky = mGlyphs.toPackedBitmap();
 	FontChunky.toPng("./letters_dbg.png");
-	tPlanarBitmap FontPlanar(FontChunky, tPaletteConverter::tPalette({
+	tPlanarBitmap FontPlanar(FontChunky, tPalette({
 		tRgb(0xFF), tRgb(0x00)
-	}), tPaletteConverter::tPalette());
+	}), tPalette());
 	mGlyphs.toAceFont("./silkscreen.fnt");
 
 	fmt::print("All done!\n");
-
 	return 0;
 }

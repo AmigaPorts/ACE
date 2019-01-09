@@ -6,10 +6,10 @@
 #include <fstream>
 #include <fmt/format.h>
 
-tPaletteConverter::tPalette tPaletteConverter::fromPlt(
+tPalette fromPlt(
 	const std::string &szPath
 ) {
-	tPaletteConverter::tPalette Palette;
+	tPalette Palette;
 
 	std::ifstream Source(szPath.c_str(), std::ios::in | std::ios::binary);
 
@@ -30,8 +30,8 @@ tPaletteConverter::tPalette tPaletteConverter::fromPlt(
 	return Palette;
 }
 
-static tPaletteConverter::tPalette fromPromotionPal(const std::string &szPath) {
-	tPaletteConverter::tPalette Palette;
+static tPalette fromPromotionPal(const std::string &szPath) {
+	tPalette Palette;
 
 	std::ifstream Source(szPath.c_str(), std::ios::in | std::ios::binary);
 	uint8_t ubLastNonZero = 0;
@@ -54,7 +54,7 @@ static tPaletteConverter::tPalette fromPromotionPal(const std::string &szPath) {
 	fmt::print("Palette color count: {}\n", Palette.m_vColors.size());
 }
 
-int16_t tPaletteConverter::tPalette::getColorIdx(const tRgb &Ref) const {
+int16_t tPalette::getColorIdx(const tRgb &Ref) const {
 	uint8_t i = 0;
 	for(const auto &Color: m_vColors) {
 		if(Color == Ref) {
