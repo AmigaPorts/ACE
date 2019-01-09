@@ -4,6 +4,7 @@ project(ACE_tools)
 
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
+set (CMAKE_CXX_STANDARD 17)
 
 file(GLOB FONT_CONV_src
 	src/font_conv.cpp src/tools/*.cpp src/common/*.cpp src/common/*.c
