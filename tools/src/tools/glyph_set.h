@@ -25,6 +25,8 @@ public:
 
 	tChunkyBitmap toPackedBitmap(void);
 
+	bool isOk(void);
+
 private:
 	struct tBitmapGlyph {
 		uint8_t ubBearing;

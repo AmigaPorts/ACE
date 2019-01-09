@@ -88,6 +88,10 @@ tGlyphSet tGlyphSet::fromTtf(
 	return GlyphSet;
 }
 
+tGlyphSet tGlyphSet::fromDir(const std::string &szDirPath)
+{
+}
+
 bool tGlyphSet::toDir(const std::string &szDirPath)
 {
 	for(const auto &GlyphPair: m_mGlyphs) {
@@ -234,4 +238,9 @@ void tGlyphSet::toAceFont(const std::string &szFontPath)
 	}
 
 	Out.close();
+}
+
+bool tGlyphSet::isOk(void)
+{
+	return m_mGlyphs.size() != 0;
 }
