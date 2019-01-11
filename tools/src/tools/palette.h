@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _ACE_TOOLS_TOOLS_PALETTE_CONVERTER_H_
-#define _ACE_TOOLS_TOOLS_PALETTE_CONVERTER_H_
+#ifndef _ACE_TOOLS_TOOLS_PALETTE_H_
+#define _ACE_TOOLS_TOOLS_PALETTE_H_
 
 #include <vector>
 #include <string>
@@ -31,4 +31,4 @@ public:
 	int16_t getColorIdx(const tRgb &Ref) const;
 };
 
-#endif // _ACE_TOOLS_TOOLS_PALETTE_CONVERTER_H_
+#endif // _ACE_TOOLS_TOOLS_PALETTE_H_

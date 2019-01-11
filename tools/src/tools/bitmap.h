@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _ACE_TOOLS_TOOLS_BITMAP_CONVERTER_H_
-#define _ACE_TOOLS_TOOLS_BITMAP_CONVERTER_H_
+#ifndef _ACE_TOOLS_TOOLS_BITMAP_H_
+#define _ACE_TOOLS_TOOLS_BITMAP_H_
 
 #include <cstdint>
 #include <vector>
 #include <string>
 #include "../common/rgb.h"
-#include "palette_converter.h"
+#include "palette.h"
 
 class tPlanarBitmap;
 
@@ -51,4 +51,4 @@ public:
 	void toBm(const std::string &szPath, bool isInterleaved);
 };
 
-#endif // _ACE_TOOLS_TOOLS_BITMAP_CONVERTER_H_
+#endif // _ACE_TOOLS_TOOLS_BITMAP_H_

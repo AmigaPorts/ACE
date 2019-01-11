@@ -8,7 +8,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
-#include "bitmap_converter.h"
+#include "bitmap.h"
 
 class tGlyphSet {
 public:
