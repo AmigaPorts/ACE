@@ -7,10 +7,10 @@ include(GNUInstallDirs)
 set (CMAKE_CXX_STANDARD 17)
 
 file(GLOB FONT_CONV_src
-	src/font_conv.cpp src/tools/*.cpp src/common/*.cpp src/common/*.c
+	src/font_conv.cpp src/common/*.cpp src/common/*.c
 )
 file(GLOB_RECURSE FONT_CONV_hdr
-	src/tools/font_converter.h src/common/*.h src/common/*.hpp
+	src/common/*.h src/common/*.hpp
 )
 
 add_executable(font_conv ${FONT_CONV_src} ${FONT_CONV_hdr})

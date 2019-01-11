@@ -4,7 +4,7 @@
 
 #include <map>
 #include <fmt/format.h>
-#include "tools/glyph_set.h"
+#include "common/glyph_set.h"
 #include "common/fs.h"
 
 static const std::string s_szDefaultCharset = (
