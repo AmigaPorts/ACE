@@ -9,6 +9,7 @@
 #include "../common/lodepng.h"
 #include "../common/endian.h"
 #include "../common/rgb.h"
+#include "../common/fs.h"
 
 tGlyphSet tGlyphSet::fromTtf(
 	const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet,
@@ -90,10 +91,35 @@ tGlyphSet tGlyphSet::fromTtf(
 
 tGlyphSet tGlyphSet::fromDir(const std::string &szDirPath)
 {
+	tGlyphSet GlyphSet;
+	for(uint16_t c = 0; c <= 255; ++c) {
+		std::string szGlyphPath = fmt::format("{}/{:d}.png", szDirPath, c);
+		size_t ulSize;
+		uint8_t *pBuffer;
+		unsigned int Width, Height;
+		auto LodeError = lodepng_decode24_file(
+			&pBuffer, &Width, &Height, szGlyphPath.c_str()
+		);
+		if(!LodeError) {
+			tGlyphSet::tBitmapGlyph Glyph;
+			Glyph.ubWidth = Width;
+			Glyph.ubHeight = Height;
+			Glyph.ubBearing = 0;
+			Glyph.vData.reserve(Width * Height);
+			// It's sufficient to base on R channel
+			for(uint32_t ulPixelIdx = 0; ulPixelIdx < Width * Height; ++ulPixelIdx) {
+				Glyph.vData.push_back((pBuffer[ulPixelIdx * 3] ? 0xFF : 0x00));
+			}
+			GlyphSet.m_mGlyphs[c] = Glyph;
+			free(pBuffer);
+		}
+	}
+	return GlyphSet;
 }
 
 bool tGlyphSet::toDir(const std::string &szDirPath)
 {
+	nFs::dirCreate(szDirPath);
 	for(const auto &GlyphPair: m_mGlyphs) {
 		auto Glyph = GlyphPair.second;
 		std::vector<tRgb> vImage(Glyph.ubWidth * Glyph.ubHeight, tRgb(0xFF));
