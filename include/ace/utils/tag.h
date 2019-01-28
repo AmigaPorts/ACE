@@ -12,18 +12,16 @@
 #include <stdarg.h>
 #include <ace/types.h>
 
-#ifdef AMIGA
-#include <utility/tagitem.h>
-typedef Tag tTag;
-#else
+// This is implemented on AOS 2.0+ (utility/tagitem.h) and I could include it
+// But I can't detect if we're building for 1.3. Even if I could do that
+// I'm overriding type name for ACE convention, so I just define needed stuff.
 typedef ULONG tTag;
 #define TAG_DONE   0UL
 #define TAG_END    0UL
 #define TAG_IGNORE 1UL
 #define TAG_MORE   2UL
 #define TAG_SKIP   3UL
-#define TAG_USER = BV(31)
-#endif // AMIGA
+#define TAG_USER   BV(31)
 
 /**
  *  Finds and returns value of specified tag name from tag list.
