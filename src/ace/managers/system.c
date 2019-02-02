@@ -68,7 +68,7 @@ const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 
 FN_HOTSPOT
 void HWINTERRUPT int1Handler(void) {
-	// Soft / diskBlk / TBE
+	// Soft / diskBlk / TBE (RS232 TX end)
 }
 
 FN_HOTSPOT
