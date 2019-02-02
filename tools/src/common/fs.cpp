@@ -42,7 +42,7 @@ std::string getExt(const std::string &szPath)
 	if(DotPos == std::string::npos) {
 		return "";
 	}
-	return szPath.substr(DotPos);
+	return szPath.substr(DotPos + 1);
 }
 
 std::string trimExt(const std::string &szPath)
@@ -61,7 +61,7 @@ std::string getBaseName(const std::string &szPath)
 		LastSlash = 0;
 	}
 	auto LastBackslash = szPath.find_last_of('\\');
-	if(LastSlash == std::string::npos) {
+	if(LastBackslash == std::string::npos) {
 		LastBackslash = 0;
 	}
 	return szPath.substr(std::max(LastSlash, LastBackslash));

@@ -37,19 +37,22 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 	// Read colors
 	bool isEnd = false;
 	do {
+		std::stringstream ss(szLine);
+		int r, g, b;
+		ss >> r;
+		ss >> g;
+		ss >> b;
+		tRgb Color(r, g, b);
+		Palette.m_vColors.push_back(Color);
+
 		std::getline(Source, szLine);
-		if(szLine == "" || Source.eof()) {
+		if(szLine == "") {
 			isEnd = true;
 		}
-		else {
-			std::stringstream ss(szLine);
-			tRgb Color(0);
-			ss >> Color.ubR;
-			ss >> Color.ubG;
-			ss >> Color.ubB;
-			Palette.m_vColors.push_back(Color);
-		}
 	} while(!isEnd);
+
+	fmt::print("Palette color count: {}\n", Palette.m_vColors.size());
+	return Palette;
 }
 
 tPalette tPalette::fromPlt(const std::string &szPath)
@@ -98,6 +101,7 @@ tPalette tPalette::fromPromotionPal(const std::string &szPath)
 	);
 
 	fmt::print("Palette color count: {}\n", Palette.m_vColors.size());
+	return Palette;
 }
 
 tPalette tPalette::fromAct(const std::string &szPath)
@@ -125,12 +129,13 @@ tPalette tPalette::fromAct(const std::string &szPath)
 		Palette.m_vColors.begin(), Palette.m_vColors.begin() + uwSize
 	);
 	fmt::print("Palette color count: {}\n", Palette.m_vColors.size());
+	return Palette;
 }
 
 bool tPalette::toPlt(const std::string &szPath)
 {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
-	if(Dest.is_open()) {
+	if(!Dest.is_open()) {
 		return false;
 	}
 	uint8_t ubSize = m_vColors.size();
@@ -148,7 +153,7 @@ bool tPalette::toGpl(const std::string &szPath)
 {
 	using namespace nFs;
 	std::ofstream Dest(szPath, std::ios::out);
-	if(Dest.is_open()) {
+	if(!Dest.is_open()) {
 		return false;
 	}
 
@@ -162,7 +167,7 @@ bool tPalette::toGpl(const std::string &szPath)
 	for(auto i = 0; i < m_vColors.size(); ++i) {
 		const auto &Color = m_vColors.at(i);
 		Dest << fmt::format(
-			"{:3d} {:3d} {:3d} Index {}", Color.ubR, Color.ubG, Color.ubB, i
+			"{:3d} {:3d} {:3d} Index {}\n", Color.ubR, Color.ubG, Color.ubB, i
 		);
 	}
 
@@ -172,7 +177,7 @@ bool tPalette::toGpl(const std::string &szPath)
 bool tPalette::toPromotionPal(const std::string &szPath)
 {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
-	if(Dest.is_open()) {
+	if(!Dest.is_open()) {
 		return false;
 	}
 
@@ -195,7 +200,7 @@ bool tPalette::toPromotionPal(const std::string &szPath)
 bool tPalette::toAct(const std::string &szPath)
 {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
-	if(Dest.is_open()) {
+	if(!Dest.is_open()) {
 		return false;
 	}
 

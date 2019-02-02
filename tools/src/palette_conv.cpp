@@ -34,7 +34,7 @@ int main(int lArgCount, const char *pArgs[])
 
 	// Search for optional args
 	if(lArgCount - 1 > 1) {
-		szPathOut = szPathIn;
+		szPathOut = pArgs[2];
 	}
 
 	// Load input palette
@@ -82,14 +82,19 @@ int main(int lArgCount, const char *pArgs[])
 		isOk = Palette.toPromotionPal(szPathOut);
 	}
 	else if(szExtOut == "plt") {
-		Palette.toPlt(szPathOut);
+		isOk = Palette.toPlt(szPathOut);
 	}
 	else {
 		fmt::print("ERR: unsupported output extension: '{}'\n", szExtOut);
 		printUsage(pArgs[0]);
 		return 1;
 	}
-	fmt::print("Generated palette: '{}'\n", szPathIn);
+
+	if(!isOk) {
+		fmt::print("ERR: Couldn't write to '{}'\n", szPathOut);
+		return 1;
+	}
+	fmt::print("Generated palette: '{}'\n", szPathOut);
 
 	return 0;
 }
