@@ -18,7 +18,15 @@ public:
 
 	static tPalette fromPromotionPal(const std::string &szPath);
 
-	static void toPlt(tPalette vPalette, const std::string &szPath);
+	static tPalette fromAct(const std::string &szPath);
+
+	bool toPlt(const std::string &szPath);
+
+	bool toGpl(const std::string &szPath);
+
+	bool toPromotionPal(const std::string &szPath);
+
+	bool toAct(const std::string &szPath);
 
 	std::vector<tRgb> m_vColors;
 

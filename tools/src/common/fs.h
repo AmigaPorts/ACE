@@ -15,6 +15,12 @@ bool dirCreate(const std::string &szPath);
 
 bool isDir(const std::string &szPath);
 
+std::string getExt(const std::string &szPath);
+
+std::string trimExt(const std::string &szPath);
+
+std::string getBaseName(const std::string &szPath);
+
 } // namespace nFs
 
 #endif // _ACE_TOOLS_COMMON_FS_H_
