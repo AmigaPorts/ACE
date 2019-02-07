@@ -285,7 +285,7 @@ void copBlockEnable(tCopList *pCopList, tCopBlock *pBlock) {
 }
 
 void copBlockDisable(tCopList *pCopList, tCopBlock *pBlock) {
-	pBlock->ubDisabled = 0;
+	pBlock->ubDisabled = 1;
 	pBlock->pNext->ubUpdated = 2;
 	pCopList->ubStatus |= STATUS_UPDATE;
 }
@@ -328,15 +328,12 @@ UBYTE copBfrRealloc(void) {
 }
 
 void copReorderBlocks(void) {
+	tCopList *pCopList = g_sCopManager.pCopList;
 	UBYTE ubDone;
-	tCopList *pCopList;
-	tCopBlock *pBlock, *pPrev;
-
-	pCopList = g_sCopManager.pCopList;
 	do {
 		ubDone = 1;
-		pBlock = pCopList->pFirstBlock;
-		pPrev = 0;
+		tCopBlock *pBlock = pCopList->pFirstBlock;
+		tCopBlock *pPrev = 0;
 		while(pBlock->pNext) {
 			if(pBlock->uWaitPos.ulYX > pBlock->pNext->uWaitPos.ulYX) {
 				if(!pPrev) {
@@ -498,7 +495,7 @@ void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
 	pBlock->uWaitPos.sUwCoord.uwX  = uwX;
 
 	pBlock->ubUpdated = 2;
-	pCopList->ubStatus |= STATUS_UPDATE;
+	pCopList->ubStatus |= STATUS_UPDATE | STATUS_REORDER;
 }
 
 void copMove(tCopList *pCopList, tCopBlock *pBlock, volatile void *pAddr, UWORD uwValue) {
