@@ -190,6 +190,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		if(pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
+			if(pBlock->ubDisabled) {
+				copBlockEnable(pCopList, pBlock);
+			}
 			copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
 			for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
 				ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + uwScrollX;
@@ -198,7 +201,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			}
 		}
 		else {
-			copBlockWait(pCopList, pBlock, 0x7F, 0xFF);
+			copBlockDisable(pCopList, pBlock);
 		}
 	}
 
