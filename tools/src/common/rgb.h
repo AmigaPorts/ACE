@@ -16,6 +16,9 @@ struct tRgb {
 	tRgb(uint8_t ubRgb):
 		ubR(ubRgb), ubG(ubRgb), ubB(ubRgb) { }
 
+	tRgb():
+		ubR(0), ubG(0), ubB(0) { }
+
 	bool operator == (const tRgb &Rhs) const {
 		return ubB == Rhs.ubB && ubG == Rhs.ubG && ubR == Rhs.ubR;
 	}

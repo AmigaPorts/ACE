@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _ACE_TOOLS_TOOLS_BITMAP_H_
-#define _ACE_TOOLS_TOOLS_BITMAP_H_
+#ifndef _ACE_TOOLS_COMMON_BITMAP_H_
+#define _ACE_TOOLS_COMMON_BITMAP_H_
 
 #include <cstdint>
 #include <vector>
@@ -23,6 +23,8 @@ public:
 		const tPlanarBitmap &Planar, const tPalette &vPalette
 	);
 
+	tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight);
+
 	tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, const uint8_t *pData);
 
 	tChunkyBitmap(void) { };
@@ -33,6 +35,14 @@ public:
 
 	static tChunkyBitmap get1bppMask(
 		const tChunkyBitmap &Src, const tRgb &ColorTransparent, bool isInterleaved
+	);
+
+	tRgb &pixelAt(uint16_t uwX, uint16_t uwY);
+	const tRgb &pixelAt(uint16_t uwX, uint16_t uwY) const;
+
+	bool copyRect(
+		uint16_t uwSrcX, uint16_t uwSrcY, tChunkyBitmap &Dst,
+		uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
 	);
 };
 
@@ -51,4 +61,4 @@ public:
 	void toBm(const std::string &szPath, bool isInterleaved);
 };
 
-#endif // _ACE_TOOLS_TOOLS_BITMAP_H_
+#endif // _ACE_TOOLS_COMMON_BITMAP_H_
