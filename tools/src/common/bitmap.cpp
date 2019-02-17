@@ -8,6 +8,12 @@
 #include "../common/lodepng.h"
 #include "../common/endian.h"
 
+tChunkyBitmap::tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight):
+	m_uwWidth(uwWidth), m_uwHeight(uwHeight), m_vData(m_uwWidth * m_uwHeight)
+{
+
+}
+
 tChunkyBitmap::tChunkyBitmap(
 	uint16_t uwWidth, uint16_t uwHeight, const uint8_t *pData
 ):
@@ -71,8 +77,7 @@ tPlanarBitmap::tPlanarBitmap(
 			uwPixelBuffer = 0;
 			for(uint16_t x = 0; x != m_uwWidth; ++x) {
 				uwPixelBuffer <<= 1;
-				ulPos = (y * m_uwWidth + x);
-				auto Color = Chunky.m_vData[ulPos];
+				auto Color = Chunky.pixelAt(x, y);
 
 				// Determine bit value for given color at specified bitplane's pos
 				int16_t wIdx = Palette.getColorIdx(Color);
@@ -153,4 +158,38 @@ void tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 		}
 	}
 	OutFile.close();
+}
+
+tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY) {
+	uint32_t ulPos = m_uwWidth * (uwY) + uwX;
+	return m_vData[ulPos];
+}
+
+const tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY) const
+{
+	uint32_t ulPos = m_uwWidth * (uwY) + uwX;
+	return m_vData[ulPos];
+}
+
+bool tChunkyBitmap::copyRect(
+	uint16_t uwSrcX, uint16_t uwSrcY, tChunkyBitmap &Dst,
+	uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
+)
+{
+	if(uwSrcX + uwWidth > this->m_uwWidth || uwSrcY + uwHeight > this->m_uwHeight) {
+		// Source out of range
+		return false;
+	}
+	if(uwDstX + uwWidth > Dst.m_uwWidth || uwDstY + uwHeight > Dst.m_uwHeight) {
+		// Dest out of range
+		return false;
+	}
+
+	for(uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
+		for(uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
+			Dst.pixelAt(uwDstX + uwX, uwDstY + uwY) = this->pixelAt(uwSrcX + uwX, uwSrcY + uwY);
+		}
+	}
+
+	return true;
 }
