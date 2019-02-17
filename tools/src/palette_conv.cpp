@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#include <fmt/format.h>
+#include "common/logging.h"
 #include "common/fs.h"
 #include "common/palette.h"
 
@@ -22,7 +22,7 @@ int main(int lArgCount, const char *pArgs[])
 	const uint8_t ubMandatoryArgCnt = 1;
 	// Mandatory args
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
-		fmt::print("ERR: Too few arguments, expected {}\n", ubMandatoryArgCnt);
+		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
 		return 1;
 	}
@@ -54,13 +54,13 @@ int main(int lArgCount, const char *pArgs[])
 		Palette = tPalette::fromPlt(szPathIn);
 	}
 	else {
-		fmt::print("ERR: unsupported input extension: '{}'\n", szExtIn);
+		nLog::error("unsupported input extension: '{}'", szExtIn);
 		printUsage(pArgs[0]);
 		return 1;
 	}
 
 	if(Palette.m_vColors.empty()) {
-		fmt::print("ERR: Invalid input path or palette is empty: '{}'\n", szPathIn);
+		nLog::error("Invalid input path or palette is empty: '{}'", szPathIn);
 		return 1;
 	}
 	fmt::print("Loaded palette: '{}'\n", szPathIn);
@@ -69,7 +69,7 @@ int main(int lArgCount, const char *pArgs[])
 	std::string szExtOut = nFs::getExt(szPathOut);
 	bool isOk = false;
 	if(szExtIn == szExtOut) {
-		fmt::print("ERR: Input and output extensions are the same\n");
+		nLog::error("Input and output extensions are the same");
 		return 1;
 	}
 	else if(szExtOut == "gpl") {
@@ -85,16 +85,16 @@ int main(int lArgCount, const char *pArgs[])
 		isOk = Palette.toPlt(szPathOut);
 	}
 	else {
-		fmt::print("ERR: unsupported output extension: '{}'\n", szExtOut);
+		nLog::error("unsupported output extension: '{}'", szExtOut);
 		printUsage(pArgs[0]);
 		return 1;
 	}
 
 	if(!isOk) {
-		fmt::print("ERR: Couldn't write to '{}'\n", szPathOut);
+		nLog::error("Couldn't write to '{}'", szPathOut);
 		return 1;
 	}
-	fmt::print("Generated palette: '{}'\n", szPathOut);
+	fmt::print("Generated palette: '{}'", szPathOut);
 
 	return 0;
 }

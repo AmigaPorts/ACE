@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <map>
-#include <fmt/format.h>
+#include "common/logging.h"
 #include "common/glyph_set.h"
 #include "common/fs.h"
 
@@ -49,7 +49,7 @@ int main(int lArgCount, const char *pArgs[])
 	const uint8_t ubMandatoryArgCnt = 2;
 	// Mandatory args
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
-		fmt::print("ERR: Too few arguments, expected {}\n", ubMandatoryArgCnt);
+		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
 		return 1;
 	}
@@ -72,7 +72,7 @@ int main(int lArgCount, const char *pArgs[])
 			szOutPath = pArgs[i];
 		}
 		else {
-			fmt::print("ERR: Unknown arg or missing value: '{}'\n", pArgs[i]);
+			nLog::error("Unknown arg or missing value: '{}'", pArgs[i]);
 			printUsage(pArgs[0]);
 			return 1;
 		}
@@ -88,17 +88,17 @@ int main(int lArgCount, const char *pArgs[])
 	else if(nFs::isDir(szFontPath)) {
 		mGlyphs = tGlyphSet::fromDir(szFontPath);
 		if(!mGlyphs.isOk()) {
-			fmt::print("ERR: Loading glyphs from dir '{}' failed\n", szFontPath);
+			nLog::error("Loading glyphs from dir '{}' failed", szFontPath);
 			return 1;
 		}
 		eInType = tOutType::DIR;
 	}
 	else {
-		fmt::print("ERR: Unsupported font source: '{}'\n", pArgs[1]);
+		nLog::error("Unsupported font source: '{}'", pArgs[1]);
 		return 1;
 	}
 	if(eInType == tOutType::INVALID || !mGlyphs.isOk()) {
-		fmt::print("ERR: Couldn't read any font glyphs\n");
+		nLog::error("Couldn't read any font glyphs");
 		return 1;
 	}
 
@@ -111,7 +111,7 @@ int main(int lArgCount, const char *pArgs[])
 		}
 	}
 	if(eInType == eOutType) {
-		fmt::print("ERR: Output file type can't be same as input\n");
+		nLog::error("Output file type can't be same as input");
 		return 1;
 	}
 
@@ -139,7 +139,7 @@ int main(int lArgCount, const char *pArgs[])
 			mGlyphs.toAceFont(szOutPath);
 		}
 		else {
-			fmt::print("ERR: Unsupported output type\n");
+			nLog::error("Unsupported output type");
 		}
 	}
 	fmt::print("All done!\n");

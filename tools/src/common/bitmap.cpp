@@ -4,7 +4,7 @@
 
 #include "bitmap.h"
 #include <fstream>
-#include <fmt/format.h>
+#include "../common/logging.h"
 #include "../common/lodepng.h"
 #include "../common/endian.h"
 
@@ -29,7 +29,7 @@ tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath) {
 	uint8_t *pData;
 	auto LodeError = lodepng_decode24_file(&pData, &uWidth, &uHeight, szPath.c_str());
 	if(LodeError) {
-		fmt::print("ERR: loading '{}'\n", szPath);
+		nLog::error("loading '{}'", szPath);
 		free(pData);
 		return tChunkyBitmap();
 	}
@@ -55,7 +55,7 @@ tPlanarBitmap::tPlanarBitmap(
 	m_uwWidth(Chunky.m_uwWidth), m_uwHeight(Chunky.m_uwHeight)
 {
 	if(m_uwWidth & 0xF) {
-		fmt::print("ERR: Width is not divisible by 16\n");
+		nLog::error("Width is not divisible by 16");
 		return;
 	}
 
@@ -65,7 +65,7 @@ tPlanarBitmap::tPlanarBitmap(
 		++m_ubDepth;
 	}
 	if(m_ubDepth > 8) {
-		fmt::print("ERR: More than 8bpp not supported, got {}\n", m_ubDepth);
+		nLog::error("More than 8bpp not supported, got {}", m_ubDepth);
 		return;
 	}
 
@@ -84,8 +84,8 @@ tPlanarBitmap::tPlanarBitmap(
 				uint8_t ubBit = 0;
 				if(wIdx == -1) {
 					if(PaletteIgnore.getColorIdx(Color) == -1) {
-						fmt::print(
-							"ERR: Unexpected color: {}, {}, {} @{},{}\n",
+						nLog::error(
+							"Unexpected color: {}, {}, {} @{},{}",
 							Color.ubR, Color.ubG,	Color.ubB, x, y
 						);
 						return;
