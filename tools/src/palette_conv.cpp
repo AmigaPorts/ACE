@@ -94,7 +94,7 @@ int main(int lArgCount, const char *pArgs[])
 		nLog::error("Couldn't write to '{}'", szPathOut);
 		return 1;
 	}
-	fmt::print("Generated palette: '{}'", szPathOut);
+	fmt::print("Generated palette: '{}'\n", szPathOut);
 
 	return 0;
 }
