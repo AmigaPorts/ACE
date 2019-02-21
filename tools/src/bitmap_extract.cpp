@@ -4,24 +4,13 @@
 
 #include "common/bitmap.h"
 #include "common/logging.h"
+#include "common/parse.h"
 
 void printUsage(const std::string &szAppName)
 {
 	using fmt::print;
 	print("Usage:\n\t{} in.png x y width height out.png\n", szAppName);
 	print("\nCurrently ony PNG is supported, sorry!\n");
-}
-
-bool tryParse(std::string szArgVal, const std::string &szArgName, int32_t &lOut)
-{
-	try {
-		lOut = std::stol(szArgVal);
-	}
-	catch(std::exception ex) {
-		nLog::error("Couldn't parse {}: '{}'\n", szArgName, szArgVal);
-		return false;
-	}
-	return true;
 }
 
 int main(int lArgCount, char *pArgs[])
@@ -43,10 +32,10 @@ int main(int lArgCount, char *pArgs[])
 
 	int32_t lSrcX, lSrcY, lWidth, lHeight;
 	if(
-		!tryParse(pArgs[2], "source X", lSrcX) || lSrcX <= 0 ||
-		!tryParse(pArgs[3], "source Y", lSrcY) || lSrcY <= 0 ||
-		!tryParse(pArgs[4], "width", lWidth) || lWidth <= 0 ||
-		!tryParse(pArgs[5], "height", lHeight) || lHeight <= 0
+		!nParse::toInt32(pArgs[2], "source X", lSrcX) || lSrcX <= 0 ||
+		!nParse::toInt32(pArgs[3], "source Y", lSrcY) || lSrcY <= 0 ||
+		!nParse::toInt32(pArgs[4], "width", lWidth) || lWidth <= 0 ||
+		!nParse::toInt32(pArgs[5], "height", lHeight) || lHeight <= 0
 	) {
 		return EXIT_FAILURE;
 	}
