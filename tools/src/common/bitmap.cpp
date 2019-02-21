@@ -29,7 +29,6 @@ tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath) {
 	uint8_t *pData;
 	auto LodeError = lodepng_decode24_file(&pData, &uWidth, &uHeight, szPath.c_str());
 	if(LodeError) {
-		nLog::error("loading '{}'", szPath);
 		free(pData);
 		return tChunkyBitmap();
 	}
@@ -88,6 +87,8 @@ tPlanarBitmap::tPlanarBitmap(
 							"Unexpected color: {}, {}, {} @{},{}",
 							Color.ubR, Color.ubG,	Color.ubB, x, y
 						);
+						this->m_uwHeight = 0;
+						this->m_uwWidth = 0;
 						return;
 					}
 				}
@@ -105,7 +106,7 @@ tPlanarBitmap::tPlanarBitmap(
 }
 
 
-void tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
+bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 {
 	enum class tBmFlags: uint8_t {
 		NONE = 0,
@@ -119,6 +120,9 @@ void tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 	}
 
 	std::ofstream OutFile(szPath.c_str(), std::ios::out | std::ios::binary);
+	if(!OutFile.is_open()) {
+		return false;
+	}
 
 	// Write .bm header
 	uint16_t uwOut = nEndian::toBig16(m_uwWidth);
@@ -158,6 +162,7 @@ void tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 		}
 	}
 	OutFile.close();
+	return true;
 }
 
 tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY) {

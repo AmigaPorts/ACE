@@ -55,10 +55,10 @@ public:
 
 	tPlanarBitmap(
 		const tChunkyBitmap &Chunky, const tPalette &Palette,
-		const tPalette &PaletteIgnore
+		const tPalette &PaletteIgnore = tPalette()
 	);
 
-	void toBm(const std::string &szPath, bool isInterleaved);
+	bool toBm(const std::string &szPath, bool isInterleaved);
 };
 
 #endif // _ACE_TOOLS_COMMON_BITMAP_H_
