@@ -12,6 +12,8 @@
 class tPalette {
 public:
 
+	static tPalette fromFile(const std::string &szPath);
+
 	static tPalette fromPlt(const std::string &szPath);
 
 	static tPalette fromGpl(const std::string &szPath);

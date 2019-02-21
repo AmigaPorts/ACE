@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "common/logging.h"
 #include "common/fs.h"
 #include "common/palette.h"
@@ -38,27 +39,7 @@ int main(int lArgCount, const char *pArgs[])
 	}
 
 	// Load input palette
-	std::string szExtIn = nFs::getExt(szPathIn);
-	tPalette Palette;
-	if(szExtIn == "gpl") {
-		Palette = tPalette::fromGpl(szPathIn);
-	}
-	else if(szExtIn == "act") {
-		// Looks like it's same as promotion
-		Palette = tPalette::fromAct(szPathIn);
-	}
-	else if(szExtIn == "pal") {
-		Palette = tPalette::fromPromotionPal(szPathIn);
-	}
-	else if(szExtIn == "plt") {
-		Palette = tPalette::fromPlt(szPathIn);
-	}
-	else {
-		nLog::error("unsupported input extension: '{}'", szExtIn);
-		printUsage(pArgs[0]);
-		return 1;
-	}
-
+	auto Palette = tPalette::fromFile(szPathIn);
 	if(Palette.m_vColors.empty()) {
 		nLog::error("Invalid input path or palette is empty: '{}'", szPathIn);
 		return 1;
@@ -68,7 +49,7 @@ int main(int lArgCount, const char *pArgs[])
 	// Generate output palette
 	std::string szExtOut = nFs::getExt(szPathOut);
 	bool isOk = false;
-	if(szExtIn == szExtOut) {
+	if(nFs::getExt(szPathIn) == szExtOut) {
 		nLog::error("Input and output extensions are the same");
 		return 1;
 	}
