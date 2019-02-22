@@ -126,7 +126,6 @@ int main(int lArgCount, const char *pArgs[])
 	else if(szOutExt == "") {
 		// Tile directory
 		nFs::dirCreate(szOutPath);
-		return 0;
 		for(uint16_t i = 0; i < uwTileCount; ++i) {
 			auto &Tile = vTiles.at(i);
 			if(Tile.m_uwHeight != 0) {
