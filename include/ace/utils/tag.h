@@ -15,13 +15,17 @@
 // This is implemented on AOS 2.0+ (utility/tagitem.h) and I could include it
 // But I can't detect if we're building for 1.3. Even if I could do that
 // I'm overriding type name for ACE convention, so I just define needed stuff.
+// Ifdef is needed because of e.g. utils/bitmap.h includes graphics_protos.h
+// which may (or may not on KS 1.3) in turn include tag defines.
 typedef ULONG tTag;
+#ifndef TAG_DONE
 #define TAG_DONE   0UL
 #define TAG_END    0UL
 #define TAG_IGNORE 1UL
 #define TAG_MORE   2UL
 #define TAG_SKIP   3UL
 #define TAG_USER   BV(31)
+#endif // TAG_DONE
 
 /**
  *  Finds and returns value of specified tag name from tag list.
