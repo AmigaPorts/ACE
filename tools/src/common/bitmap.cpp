@@ -138,24 +138,26 @@ bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 	OutFile.write(reinterpret_cast<char*>(&ubOut), 1); // Reserved 2
 
 	// Write bitplanes
-	uint16_t uwRowWordCount = m_uwWidth;
+	uint16_t uwRowWordCount = m_uwWidth / 16;
 	if(isInterleaved) {
-		for(uint8_t ubPlane = 0; ubPlane != m_ubDepth; ++ubPlane) {
-			for(uint8_t y = 0; y != m_uwHeight; ++y) {
-				for(uint8_t x = 0; x != uwRowWordCount; ++x) {
-					OutFile.write(
-						reinterpret_cast<char*>(m_pPlanes[ubPlane][y * uwRowWordCount + x]),
-						sizeof(uint16_t)
+		for(uint16_t y = 0; y < m_uwHeight; ++y) {
+			for(uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
+				for(uint16_t x = 0; x < uwRowWordCount; ++x) {
+					uint16_t uwData = nEndian::toBig16(
+						m_pPlanes[ubPlane].at(y * uwRowWordCount + x)
 					);
+					OutFile.write(reinterpret_cast<char*>(&uwData), sizeof(uint16_t));
 				}
 			}
 		}
 	}
 	else {
-		for(uint8_t y = 0; y != m_uwHeight; ++y) {
-			for(uint8_t ubPlane = 0; ubPlane != m_ubDepth; ++ubPlane) {
-				for(uint8_t x = 0; x != uwRowWordCount; ++x) {
-					uint16_t uwData = nEndian::toBig16(m_pPlanes[ubPlane][y * uwRowWordCount + x]);
+		for(uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
+			for(uint16_t y = 0; y < m_uwHeight; ++y) {
+				for(uint16_t x = 0; x < uwRowWordCount; ++x) {
+					uint16_t uwData = nEndian::toBig16(
+						m_pPlanes[ubPlane].at(y * uwRowWordCount + x)
+					);
 					OutFile.write(reinterpret_cast<char*>(&uwData), sizeof(uint16_t));
 				}
 			}

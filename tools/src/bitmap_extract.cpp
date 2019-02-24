@@ -32,13 +32,17 @@ int main(int lArgCount, char *pArgs[])
 
 	int32_t lSrcX, lSrcY, lWidth, lHeight;
 	if(
-		!nParse::toInt32(pArgs[2], "source X", lSrcX) || lSrcX <= 0 ||
-		!nParse::toInt32(pArgs[3], "source Y", lSrcY) || lSrcY <= 0 ||
+		!nParse::toInt32(pArgs[2], "source X", lSrcX) || lSrcX < 0 ||
+		!nParse::toInt32(pArgs[3], "source Y", lSrcY) || lSrcY < 0 ||
 		!nParse::toInt32(pArgs[4], "width", lWidth) || lWidth <= 0 ||
 		!nParse::toInt32(pArgs[5], "height", lHeight) || lHeight <= 0
 	) {
 		return EXIT_FAILURE;
 	}
+	fmt::print(
+		"Extracting from {}: {},{} {}x{}\n",
+		szSrcPath, lSrcX, lSrcY, lWidth, lHeight
+	);
 	std::string szDstPath = pArgs[6];
 
 	tChunkyBitmap Dst(lWidth, lHeight);
