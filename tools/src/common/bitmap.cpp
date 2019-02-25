@@ -29,7 +29,6 @@ tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath) {
 	uint8_t *pData;
 	auto LodeError = lodepng_decode24_file(&pData, &uWidth, &uHeight, szPath.c_str());
 	if(LodeError) {
-		nLog::error("loading '{}'", szPath);
 		free(pData);
 		return tChunkyBitmap();
 	}
@@ -88,6 +87,8 @@ tPlanarBitmap::tPlanarBitmap(
 							"Unexpected color: {}, {}, {} @{},{}",
 							Color.ubR, Color.ubG,	Color.ubB, x, y
 						);
+						this->m_uwHeight = 0;
+						this->m_uwWidth = 0;
 						return;
 					}
 				}
@@ -105,7 +106,7 @@ tPlanarBitmap::tPlanarBitmap(
 }
 
 
-void tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
+bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 {
 	enum class tBmFlags: uint8_t {
 		NONE = 0,
@@ -119,6 +120,9 @@ void tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 	}
 
 	std::ofstream OutFile(szPath.c_str(), std::ios::out | std::ios::binary);
+	if(!OutFile.is_open()) {
+		return false;
+	}
 
 	// Write .bm header
 	uint16_t uwOut = nEndian::toBig16(m_uwWidth);
@@ -134,30 +138,33 @@ void tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 	OutFile.write(reinterpret_cast<char*>(&ubOut), 1); // Reserved 2
 
 	// Write bitplanes
-	uint16_t uwRowWordCount = m_uwWidth;
+	uint16_t uwRowWordCount = m_uwWidth / 16;
 	if(isInterleaved) {
-		for(uint8_t ubPlane = 0; ubPlane != m_ubDepth; ++ubPlane) {
-			for(uint8_t y = 0; y != m_uwHeight; ++y) {
-				for(uint8_t x = 0; x != uwRowWordCount; ++x) {
-					OutFile.write(
-						reinterpret_cast<char*>(m_pPlanes[ubPlane][y * uwRowWordCount + x]),
-						sizeof(uint16_t)
+		for(uint16_t y = 0; y < m_uwHeight; ++y) {
+			for(uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
+				for(uint16_t x = 0; x < uwRowWordCount; ++x) {
+					uint16_t uwData = nEndian::toBig16(
+						m_pPlanes[ubPlane].at(y * uwRowWordCount + x)
 					);
+					OutFile.write(reinterpret_cast<char*>(&uwData), sizeof(uint16_t));
 				}
 			}
 		}
 	}
 	else {
-		for(uint8_t y = 0; y != m_uwHeight; ++y) {
-			for(uint8_t ubPlane = 0; ubPlane != m_ubDepth; ++ubPlane) {
-				for(uint8_t x = 0; x != uwRowWordCount; ++x) {
-					uint16_t uwData = nEndian::toBig16(m_pPlanes[ubPlane][y * uwRowWordCount + x]);
+		for(uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
+			for(uint16_t y = 0; y < m_uwHeight; ++y) {
+				for(uint16_t x = 0; x < uwRowWordCount; ++x) {
+					uint16_t uwData = nEndian::toBig16(
+						m_pPlanes[ubPlane].at(y * uwRowWordCount + x)
+					);
 					OutFile.write(reinterpret_cast<char*>(&uwData), sizeof(uint16_t));
 				}
 			}
 		}
 	}
 	OutFile.close();
+	return true;
 }
 
 tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY) {

@@ -14,10 +14,12 @@ file(GLOB_RECURSE COMMON_hdr src/common/*.h src/common/*.hpp)
 file(GLOB FONT_CONV_src src/font_conv.cpp)
 file(GLOB PALETTE_CONV_src src/palette_conv.cpp)
 file(GLOB BITMAP_EXTRACT_src src/bitmap_extract.cpp)
+file(GLOB TILESET_CONV_src src/tileset_conv.cpp)
 
 add_executable(font_conv ${FONT_CONV_src} ${COMMON_src} ${COMMON_hdr})
 add_executable(palette_conv ${PALETTE_CONV_src} ${COMMON_src} ${COMMON_hdr})
 add_executable(bitmap_extract ${BITMAP_EXTRACT_src} ${COMMON_src} ${COMMON_hdr})
+add_executable(tileset_conv ${TILESET_CONV_src} ${COMMON_src} ${COMMON_hdr})
 
 #fmt
 find_package(fmt REQUIRED)
@@ -25,3 +27,4 @@ include_directories(${fmt_INCLUDE_DIRS})
 target_link_libraries(font_conv fmt::fmt)
 target_link_libraries(palette_conv fmt::fmt)
 target_link_libraries(bitmap_extract fmt::fmt)
+target_link_libraries(tileset_conv fmt::fmt)

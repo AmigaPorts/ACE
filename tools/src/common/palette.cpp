@@ -132,6 +132,26 @@ tPalette tPalette::fromAct(const std::string &szPath)
 	return Palette;
 }
 
+tPalette tPalette::fromFile(const std::string &szPath)
+{
+	std::string szExtIn = nFs::getExt(szPath);
+	tPalette Palette;
+	if(szExtIn == "gpl") {
+		Palette = tPalette::fromGpl(szPath);
+	}
+	else if(szExtIn == "act") {
+		// Looks like it's same as promotion
+		Palette = tPalette::fromAct(szPath);
+	}
+	else if(szExtIn == "pal") {
+		Palette = tPalette::fromPromotionPal(szPath);
+	}
+	else if(szExtIn == "plt") {
+		Palette = tPalette::fromPlt(szPath);
+	}
+	return Palette;
+}
+
 bool tPalette::toPlt(const std::string &szPath)
 {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
