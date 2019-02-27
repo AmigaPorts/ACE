@@ -67,8 +67,8 @@ void audioPlay(
 
 void audioStop(UBYTE ubChannel) {
 	systemSetDma(ubChannel, 0);
-	// Clear already fetched data so that Paula won't produce non-zero signal
-	g_pCustom->aud[ubChannel].ac_dat = 0;
+	// Volume to zero for given channel
+	g_pCustom->aud[ubChannel].ac_vol = 0;
 }
 
 tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod) {
