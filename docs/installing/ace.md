@@ -31,11 +31,15 @@ You can also set `M68K_CPU` and `M68K_FPU` variables to your liking.
 
 ``` sh
 mkdir build && cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/AmigaCMakeCrossToolchains/m68k.cmake -DM68K_TOOLCHAIN_PATH=/path/to/toolchain -DM68K_CPU=68020 -DM68K_FPU=soft
+cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/AmigaCMakeCrossToolchains/m68k.cmake -DM68K_TOOLCHAIN_PATH=/path/to/toolchain -DM68K_CPU=68000 -DM68K_FPU=soft
 make
 ```
 
-If you're on cygwin, you might need to add `-G"Unix Makefiles"`.
+Some notes:
+
+- You can pass other `-DM68K_CPU` values. Supported are `68000`, `68010`, `68020`, `68040` and `68060`. See AmigaCMakeCrossToolchains docs or sources for more info.
+- If you're on cygwin, you might need to add `-G"Unix Makefiles"`.
+- If you want to enable debug build (e.g. to have logs and better sanity checks), pass `-DCMAKE_BUILD_TYPE=Debug`.
 
 After building, you should have `libace.a` in your build folder.
 Be sure to link it to your game.
