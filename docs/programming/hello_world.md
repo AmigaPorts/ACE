@@ -81,7 +81,9 @@ target_link_libraries(${TARGET_NAME} ace)
 Once you have that done, compile it. Put your executable in UAE or real hardware
 and launch it. Observe that `game.log` has been created in the same directory
 as executable - it has lots of lines showing things done by the engine,
-among them two lines specified by you with `logWrite`.
+among them two lines specified by you with `logWrite`. If `game.log` has not been
+created, you've not enabled debug build. On CMake add `-DCMAKE_BUILD_TYPE=Debug`.
+You may need to remove `CMakeCache.txt` to enforce whole project rebuild.
 
 ## First gamestate
 
