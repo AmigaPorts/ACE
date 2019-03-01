@@ -154,3 +154,133 @@ Instead of writing `main()` function you just `#include` this file and define:
 - `genericCreate()` - for creation of additional managers
 - `genericLoop()` - called in a loop until game gets closed
 - `genericDestroy()` - for freeing previously created managers
+
+## Debug mode
+
+When building ACE in debug mode, you're enabling 3 main things:
+
+- General logging (`game.log`)
+- Memory usage logging (`memory.log`)
+- Sanity checks
+
+### General logging
+
+When writing apps, it's very convenient to produce logs with debug messages.
+Since Amiga is low-spec machine and writing to disk/floppy is resource-intensive,
+decision has been made to only enabling debugging in debug mode. To use it
+you can use `logWrite()` fn, which accepts printf-like arguments.
+Note that it will not append new line character for you, so be sure to add `\n`
+code where appropriate. Simple logging is shown below:
+
+``` c
+logWrite("Hello, my favourite number is %d\n", 8);
+// outputs in game.log: "Hello, my favourite number is 8"
+```
+
+Most of ACE functions are logging their actions, hence such kind of log
+gets quickly large and illegible. To make it more readable, an indent system
+was added, called log blocks. It consists of `logBlockBegin()` and `logBlockEnd()`
+functions. `logBlockBegin()` also accepts printf-like parameters, while
+`logBlockEnd()` accepts single string.
+
+``` c
+void baz(UBYTE x) {
+	logBlockBegin("bar(x: %hhu)", x);
+	// Note that there is no logging inside here except block begin/end
+	// It will fold into one line in log
+	logBlockEnd("bar()");
+}
+
+void bar(UBYTE x) {
+	logBlockBegin("bar(x: %hhu)", x);
+	// This will be written with indent
+	logWrite("this is bar\n");
+	logBlockEnd("bar()");
+}
+
+void foo(UBYTE x) {
+	logBlockBegin("foo(x: %hhu)", x);
+	// And this will not be folded since it will contain other blocks
+	bar(x+1);
+	baz(x-1);
+	logBlockEnd("foo()");
+}
+
+// somewhere in the code:
+foo(7);
+```
+
+Above code will produce following log:
+```
+Block begin: foo(x: 7)
+This is foo
+	Block begin: bar(x: 8)
+		This is bar
+	Block end: bar(), time:   0.1 us
+	Block begin: baz(6)...OK, time:   0.1 us
+Block end: foo(), time:   0.1 us
+```
+
+As you can see, this can also measure performance in limited manner.
+Bear in mind that execution time will be most valid for deepest
+blocks, since those containing any other ones will have added time
+which was spent on writing internal logBlock messages.
+
+To speed things up, in release builds `logWrite()` and logBlock
+calls are changed to no-ops.
+
+### Memory usage log
+
+Each memory allocation and release will be logged into `memory.log`
+file, as seen in example below:
+
+``` plain
+Allocated FAST memory 0@0x2193ec, size 16 (/path/to/game/ACE/src/ace/managers/copper.c:136)
+Allocated CHIP memory 1@0x1c614, size 336 (/path/to/game/ACE/src/ace/utils/bitmap.c:59)
+freed memory 1@0x1c614, size 336 (/path/to/game/ACE/src/ace/utils/bitmap.c:258)
+freed memory 0@0x2193ec, size 16 (/path/to/game/ACE/src/ace/managers/copper.c:207)
+```
+
+Those lines are telling you following things:
+
+- is it allocation (CHIP or FAST mem) or release
+- allocation's unique number, address (`idx@addr`) and size in bytes
+- where allocation/release has been made (`file:line`)
+
+Also, there are some error messages which appear when:
+
+- memory has been freed more than once
+- free fn has been called with different size than alloc
+- memory has been trashed as in writing to the left or right of allocated space
+  (too big array loop?)
+- memory leaks - some allocations has not been freed until the end of program
+- and some more things added during ACE's development
+
+It is a good practice to look at this log from time to time in search of lines
+starting with `ERR:`. Also, at the end of the log you will find summary of allocated
+memory such as following one:
+
+``` plain
+=============== MEMORY MANAGER DESTROY ==============
+If something is deallocated past here, you're a wuss!
+Peak usage: CHIP: 858404, FAST: 96053
+```
+
+If you forgot to free some allocations, you will see them listed beneath this summary.
+Since all those errors shouldn't take place in finished code, decision has been made
+to omit all those checks in Release builds. This makes code lighter and
+less cpu and memory hungry.
+
+### Sanity checks
+
+Some operations are very painful to debug, hence there are sanity checks scattered
+here and there in the code. An example of such check is one done in blit functions:
+they check whether source and destination coords, as well as blit size are fitting
+inside source and destination bitmaps and even if bitmap pointers are non-null.
+
+Since sanity checks are computational-expensive, decision has been made to make
+them only appear by default in Debug builds, since most of the time they shouldn't
+be needed. In debug build `blitCopy()` function calls `blitSafeCopy()` with
+sanity checks, while in Release build it uses `blitUnsafeCopy()` to squeeze
+as much performance as possible. This way, if your code depends on runtime checks,
+you can use safe variants where appropriate. 
