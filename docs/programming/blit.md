@@ -55,7 +55,16 @@ Last parameter is related to blitter fill mode - it expects filled region's
 borders to be only 1px wide. If you set `isOneDot` parameter to 1, blitter will
 ensure to plot only one pixel in a row.
 
-### Tutorial code
+### Faster demo-ish line drawing
+
+Some demos speed up line drawing by doing them only on a single bitplane. This
+function directly doesn't support it but you can trick it into such usage.
+All you need to do is to create `tBitMap` struct with same width and height
+as target bitmap, depth set to 1 and first bitplane pointer to the desired
+bitplane. This way you will create two "entangled" bitmaps, one of which can be
+used for general operations, second one for line drawing.
+
+## Tutorial code
 
 We're all set, so let's use those fns to finally draw something on screen.
 Below you can see added `#include` for blit manager, some defines to make later
