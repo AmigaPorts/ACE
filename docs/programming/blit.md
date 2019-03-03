@@ -70,6 +70,7 @@ process.
 #include <ace/managers/game.h>
 #include <ace/managers/system.h>
 #include <ace/managers/viewport/simplebuffer.h>
+//-------------------------------------------------------------- NEW STUFF START
 #include <ace/managers/blit.h> // Blitting fns
 
 // Let's make code more readable by giving names to numbers
@@ -83,6 +84,7 @@ process.
 #define SCORE_COLOR 1
 #define WALL_HEIGHT 1
 #define WALL_COLOR 1
+//---------------------------------------------------------------- NEW STUFF END
 
 static tView *s_pView; // View containing all the viewports
 static tVPort *s_pVpScore; // Viewport for score
@@ -121,6 +123,7 @@ void gameGsCreate(void) {
   s_pVpScore->pPalette[2] = 0x0800; // Red - not max, a bit dark
   s_pVpScore->pPalette[3] = 0x0008; // Blue - same brightness as red
 
+//-------------------------------------------------------------- NEW STUFF START
   // Draw line separating score VPort and main VPort
   blitLine(
     s_pScoreBuffer->pBuffer,
@@ -135,6 +138,7 @@ void gameGsCreate(void) {
     0, s_pVpMain->uwHeight - WALL_HEIGHT,
     s_pVpMain->uwWidth, WALL_HEIGHT, WALL_COLOR
   );
+//---------------------------------------------------------------- NEW STUFF END
 
   systemUnuse();
 
@@ -148,6 +152,7 @@ void gameGsLoop(void) {
     gameClose();
   }
   else {
+//-------------------------------------------------------------- NEW STUFF START
     // Draw first paddle
     blitRect(
       s_pMainBuffer->pBuffer, 0, 0,
@@ -169,6 +174,7 @@ void gameGsLoop(void) {
       (s_pVpMain->uwHeight - BALL_WIDTH) / 2,
       BALL_WIDTH, BALL_WIDTH, BALL_COLOR
     );
+//---------------------------------------------------------------- NEW STUFF END
   }
 }
 
