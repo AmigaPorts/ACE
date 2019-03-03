@@ -15,7 +15,9 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [ACE in a nutshell](programming/ace_in_a_nutshell.md)
 1. [Hello World example](programming/hello_world.md)
 1. [View & viewports explained](programming/view.md)
-1. [Blitter & basic animation](programming/blitter.md)
+1. [Blitter](programming/blit.md)
+1. Basic animation
+1. Loading images, using masks
 1. Fonts
 1. Debugging memory leaks
 1. Organizing your project
