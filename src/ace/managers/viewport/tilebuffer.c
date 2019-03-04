@@ -87,6 +87,7 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 		logWrite(
 			"ERR: No tile boundaries (TAG_TILEBUFFER_BOUND_TILE_X or _Y) specified!\n"
 		);
+		goto fail;
 	}
 
 	pManager->pTileData = 0;
@@ -538,9 +539,9 @@ UBYTE tileBufferIsTileOnBuffer(
 ) {
 	UBYTE ubTileShift = pManager->ubTileShift;
 	UWORD uwStartX = MAX(0, (pManager->pCamera->uPos.sUwCoord.uwX >> ubTileShift) -1);
-	UWORD uwEndX = uwStartX + (pManager->uwMarginedWidth >> ubTileShift);
+	UWORD uwEndX = uwStartX + ((pManager->uwMarginedWidth >> ubTileShift) - 2);
 	UWORD uwStartY = MAX(0, (pManager->pCamera->uPos.sUwCoord.uwY >> ubTileShift) -1);
-	UWORD uwEndY = uwStartY + (pManager->uwMarginedHeight >> ubTileShift);
+	UWORD uwEndY = uwStartY + ((pManager->uwMarginedHeight >> ubTileShift) - 2);
 
 	if(
 		uwStartX <= uwTileX && uwTileX <= uwEndX && uwTileX &&

@@ -233,7 +233,7 @@ void scrollBufferReset(
 	pManager->uwVpHeightPrev = 0;
 	pManager->uBfrBounds.sUwCoord.uwX = uwBoundWidth;
 	pManager->uBfrBounds.sUwCoord.uwY = uwBoundHeight;
-	// TODO optimize avail height to power of two so that modulo can be an AND
+	// Optimize avail height to power of two so that modulo can be an AND
 	pManager->uwBmAvailHeight = nearestPowerOf2(ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4));
 
 	// Destroy old buffer bitmap
