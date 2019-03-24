@@ -36,6 +36,7 @@ typedef struct _tBitMap {
 #define BMF_STANDARD    (1 << 3)
 #define BMF_MINPLANES   (1 << 4)
 #endif // AMIGA
+#define BMF_FASTMEM 1 << 5
 
 /**
  * @brief New bitmap format.
@@ -98,13 +99,14 @@ void bitmapLoadFromFile(
  *  on dimensions, BPP & flags stored in file.
  *
  *  @param szFilePath Source bitmap file path.
+ *  @param isFast True to allocate bitmap in FAST RAM
  *  @return Pointer to newly created bitmap based on file, 0 on error.
  *
  *  @see bitmapLoadFromFile
  *  @see bitmapCreate
  *  @see bitmapDestroy
  */
-tBitMap* bitmapCreateFromFile(const char *szFileName);
+tBitMap* bitmapCreateFromFile(const char *szFileName, UBYTE isFast);
 
 /**
  *  @brief Destroys given bitmap, freeing its resources to OS.
