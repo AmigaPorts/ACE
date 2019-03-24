@@ -5,7 +5,8 @@
 #ifndef _ACE_TOOLS_COMMON_RGB_H_
 #define _ACE_TOOLS_COMMON_RGB_H_
 
-#include <stdint.h>
+#include <cstdint>
+#include <string>
 
 struct tRgb {
 	uint8_t ubR, ubG, ubB;
@@ -18,6 +19,8 @@ struct tRgb {
 
 	tRgb():
 		ubR(0), ubG(0), ubB(0) { }
+
+	tRgb(const std::string &szCode);
 
 	bool operator == (const tRgb &Rhs) const {
 		return ubB == Rhs.ubB && ubG == Rhs.ubG && ubR == Rhs.ubR;
