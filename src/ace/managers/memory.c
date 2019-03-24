@@ -6,12 +6,20 @@
 #include <ace/managers/system.h>
 #include <ace/utils/file.h>
 
-/* Globals */
+#ifdef AMIGA
+#include <clib/exec_protos.h> // AvailMem, AllocMem, FreeMem, etc.
+#endif
 
-#ifndef AMIGA
-#include <stdlib.h>
-int TypeOfMem(void *pMem) {return MEMF_FAST;};
-#endif // AMIGA
+/* Types */
+
+typedef struct _tMemEntry {
+	void *pAddr;
+	ULONG ulSize;
+	UWORD uwId;
+	struct _tMemEntry *pNext;
+} tMemEntry;
+
+/* Globals */
 
 static UWORD s_uwLastId = 0;
 
@@ -49,12 +57,12 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 
 	filePrintf(
 		s_pMemLog, "Allocated %s memory %hu@%p, size %lu (%s:%u)\n",
-		(TypeOfMem(pAddr) & MEMF_CHIP) ? "CHIP" : "FAST",
+		(memType(pAddr) & MEMF_CHIP) ? "CHIP" : "FAST",
 		s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
 	);
 
 	// Update mem usage counter
-	if(TypeOfMem(pAddr) & MEMF_CHIP) {
+	if(memType(pAddr) & MEMF_CHIP) {
 		s_ulChipUsage += ulSize;
 		if(s_ulChipUsage > s_ulChipPeakUsage) {
 			s_ulChipPeakUsage = s_ulChipUsage;
@@ -111,7 +119,7 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	);
 
 	// Update mem usage counter
-	if(TypeOfMem(pAddr) & MEMF_CHIP) {
+	if(memType(pAddr) & MEMF_CHIP) {
 		s_ulChipUsage -= ulSize;
 	}
 	else {
@@ -232,4 +240,12 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
 		);
 		fileFlush(s_pMemLog);
 	}
+}
+
+UBYTE memType(const void *pMem) {
+#ifdef AMIGA
+	return TypeOfMem((void *)pMem);
+#else
+	return MEMF_FAST;
+#endif // AMIGA
 }

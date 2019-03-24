@@ -262,7 +262,7 @@ void bitmapDestroy(tBitMap *pBitMap) {
 	logBlockEnd("bitmapDestroy()");
 }
 
-BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
+UBYTE bitmapIsInterleaved(const tBitMap *pBitMap) {
 	return (
 		pBitMap->Depth > 1 &&
 		pBitMap->Depth * ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0])
@@ -270,7 +270,11 @@ BYTE bitmapIsInterleaved(tBitMap *pBitMap) {
 	);
 }
 
-void bitmapDump(tBitMap *pBitMap) {
+UBYTE bitmapIsChip(const tBitMap *pBitMap) {
+	return memType(pBitMap->Planes[0]) == MEMF_CHIP;
+}
+
+void bitmapDump(const tBitMap *pBitMap) {
 	UBYTE i;
 
 	logBlockBegin("bitmapDump(pBitMap: %p)", pBitMap);
@@ -288,7 +292,7 @@ void bitmapDump(tBitMap *pBitMap) {
 	logBlockEnd("bitmapDump()");
 }
 
-void bitmapSave(tBitMap *pBitMap, char *szPath) {
+void bitmapSave(const tBitMap *pBitMap, const char *szPath) {
 	systemUse();
 	logBlockBegin("bitmapSave(pBitMap: %p, szPath: %s)", pBitMap, szPath);
 
@@ -329,7 +333,9 @@ void bitmapSave(tBitMap *pBitMap, char *szPath) {
 	logBlockEnd("bitmapSave()");
 }
 
-void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
+void bitmapSaveBmp(
+	const tBitMap *pBitMap, const UWORD *pPalette, const char *szFilePath
+) {
 	UWORD uwOut;
 	UBYTE ubOut;
 	ULONG ulOut;
@@ -431,7 +437,7 @@ void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFilePath) {
 	systemUnuse();
 }
 
-UWORD bitmapGetByteWidth(tBitMap *pBitMap) {
+UWORD bitmapGetByteWidth(const tBitMap *pBitMap) {
 	if(bitmapIsInterleaved(pBitMap)) {
 		return ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0]);
 	}

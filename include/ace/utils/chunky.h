@@ -21,7 +21,9 @@
  *
  * @see chunkyFromPlanar()
  */
-void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut);
+void chunkyFromPlanar16(
+	const tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut
+);
 
 /**
  * @brief Returns color index of selected pixel.
@@ -34,7 +36,7 @@ void chunkyFromPlanar16(tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut);
  *
  * @see chunkyFromPlanar16()
  */
-UBYTE chunkyFromPlanar(tBitMap *pBitMap, UWORD uwX, UWORD uwY);
+UBYTE chunkyFromPlanar(const tBitMap *pBitMap, UWORD uwX, UWORD uwY);
 
 /**
  * @brief Rotates chunky pixels by given angle, on spefied background.
@@ -53,7 +55,7 @@ UBYTE chunkyFromPlanar(tBitMap *pBitMap, UWORD uwX, UWORD uwY);
  * @param wHeight   Ditto, height.
  */
 void chunkyRotate(
-	UBYTE *pSource, UBYTE *pDest,
+	const UBYTE *pSource, UBYTE *pDest,
 	fix16_t fSin, fix16_t fCos,
 	UBYTE ubBgColor, WORD wWidth, WORD wHeight
 );
@@ -72,7 +74,7 @@ void chunkyRotate(
  * @see chunkyFromPlanar16
  * @see chunkyToPlanar
  */
-void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
+void chunkyToPlanar16(const UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
 
 /**
  * Puts single chunky pixel on bitmap at given coordinates.
@@ -88,6 +90,6 @@ void chunkyToPlanar16(UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
  * @see chunkyFromPlanar16
  * @see chunkyFromPlanar
  */
-void chunkyToPlanar(UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
+void chunkyToPlanar(const UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut);
 
 #endif // _ACE_UTILS_CHUNKY_H_
