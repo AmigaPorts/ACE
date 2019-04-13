@@ -117,7 +117,7 @@ void tileBufferReset(tTileBufferManager *pManager,
 		if(pManager->pTileSet) {
 			bitmapDestroy(pManager->pTileSet);
 		}
-		pManager->pTileSet = bitmapCreateFromFile(szTileSetFileName);
+		pManager->pTileSet = bitmapCreateFromFile(szTileSetFileName, 0);
 	}
 
 	// Reset margin redraw structs

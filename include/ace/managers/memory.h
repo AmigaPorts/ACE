@@ -6,7 +6,6 @@
 #define _ACE_MANAGERS_MEMORY_H_
 
 #ifdef AMIGA
-#include <clib/exec_protos.h> // Amiga typedefs
 #include <exec/memory.h>      // MEMF_CLEAR etc
 #else
 #define MEMF_CHIP    0
@@ -20,16 +19,11 @@
 
 /* Types */
 
-typedef struct _tMemEntry {
-	void *pAddr;
-	ULONG ulSize;
-	UWORD uwId;
-	struct _tMemEntry *pNext;
-} tMemEntry;
-
 /* Globals */
 
 /* Functions */
+
+UBYTE memType(const void *pMem);
 
 void _memCreate(void);
 void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile);

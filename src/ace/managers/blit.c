@@ -83,7 +83,17 @@ UBYTE _blitCheck(
 		);
 		return 0;
 	}
-	return 1;
+
+	UBYTE isErr = 0;
+	if(!bitmapIsChip(pSrc)) {
+		isErr = 1;
+		logWrite("ERR: Source is in FAST mem: %p\n", pSrc);
+	}
+	if(!bitmapIsChip(pSrc)) {
+		isErr = 1;
+		logWrite("ERR: Dest is in FAST mem: %p\n", pDst);
+	}
+	return isErr;
 }
 
 void blitWait(void) {

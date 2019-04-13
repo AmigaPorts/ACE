@@ -36,6 +36,7 @@ typedef struct _tBitMap {
 #define BMF_STANDARD    (1 << 3)
 #define BMF_MINPLANES   (1 << 4)
 #endif // AMIGA
+#define BMF_FASTMEM 1 << 5
 
 /**
  * @brief New bitmap format.
@@ -98,13 +99,14 @@ void bitmapLoadFromFile(
  *  on dimensions, BPP & flags stored in file.
  *
  *  @param szFilePath Source bitmap file path.
+ *  @param isFast True to allocate bitmap in FAST RAM
  *  @return Pointer to newly created bitmap based on file, 0 on error.
  *
  *  @see bitmapLoadFromFile
  *  @see bitmapCreate
  *  @see bitmapDestroy
  */
-tBitMap* bitmapCreateFromFile(const char *szFileName);
+tBitMap* bitmapCreateFromFile(const char *szFileName, UBYTE isFast);
 
 /**
  *  @brief Destroys given bitmap, freeing its resources to OS.
@@ -125,7 +127,15 @@ void bitmapDestroy(tBitMap *pBitMap);
  *  @param pBitMap Bitmap to be checked.
  *  @return non-zero if bitmap is interleaved, otherwise zero.
  */
-BYTE bitmapIsInterleaved(tBitMap *pBitMap);
+UBYTE bitmapIsInterleaved(const tBitMap *pBitMap);
+
+/**
+ * @brief Checks if given bitmap is in CHIP memory.
+ *
+ * @param pBitMap Bitmap to be checked.
+ * @return 1 if bitmap is in CHIP memory, otherwise zero.
+ */
+UBYTE bitmapIsChip(const tBitMap *pBitMap);
 
 /**
  *  @brief Saves basic Bitmap information to log file.
@@ -134,14 +144,14 @@ BYTE bitmapIsInterleaved(tBitMap *pBitMap);
  *
  *  @see bitmapSaveBMP
  */
-void bitmapDump(tBitMap *pBitMap);
+void bitmapDump(const tBitMap *pBitMap);
 
 /**
  * Saves bitmap in ACE .bm format.
  * @param pBitMap Bitmap to be saved.
  * @param szPath  Path of destination file.
  */
-void bitmapSave(tBitMap *pBitMap, char *szPath);
+void bitmapSave(const tBitMap *pBitMap, const char *szPath);
 
 /**
  *  @brief Saves given Bitmap as BMP file.
@@ -151,13 +161,15 @@ void bitmapSave(tBitMap *pBitMap, char *szPath);
  *  @param pPalette   Palette to be used during export.
  *  @param szFilePath Destination file path.
  */
-void bitmapSaveBmp(tBitMap *pBitMap, UWORD *pPalette, char *szFileName);
+void bitmapSaveBmp(
+	const tBitMap *pBitMap, const UWORD *pPalette, const char *szFileName
+);
 
 /**
  *  @brief Returns bitmap width in bytes.
  *  Direct check to BytesPerRow may lead to errors as in interleaved mode it
  *  stores value multiplied by bitplane count.
  */
-UWORD bitmapGetByteWidth(tBitMap *pBitMap);
+UWORD bitmapGetByteWidth(const tBitMap *pBitMap);
 
 #endif // _ACE_UTILS_BITMAP_H_
