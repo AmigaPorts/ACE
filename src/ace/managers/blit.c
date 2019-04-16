@@ -41,7 +41,12 @@ UBYTE _blitCheck(
 ) {
 	WORD wSrcWidth, wSrcHeight, wDstWidth, wDstHeight;
 
+	UBYTE isErr = 0;
 	if(pSrc) {
+		if(!bitmapIsChip(pSrc)) {
+			isErr = 1;
+			logWrite("ERR: Source is in FAST mem: %p (%p)\n", pSrc, pSrc->Planes[0]);
+		}
 		wSrcWidth = pSrc->BytesPerRow << 3;
 		if(bitmapIsInterleaved(pSrc)) {
 			wSrcWidth /= pSrc->Depth;
@@ -54,6 +59,10 @@ UBYTE _blitCheck(
 	}
 
 	if(pDst) {
+		if(!bitmapIsChip(pSrc)) {
+			isErr = 1;
+			logWrite("ERR: Dest is in FAST mem: %p (%p)\n", pDst, pDst->Planes[0]);
+		}
 		wDstWidth = pDst->BytesPerRow << 3;
 		if(bitmapIsInterleaved(pDst)) {
 			wDstWidth /= pDst->Depth;
@@ -63,6 +72,10 @@ UBYTE _blitCheck(
 	else {
 		wDstWidth = 0;
 		wDstHeight = 0;
+	}
+
+	if(isErr) {
+		return 1;
 	}
 
 	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
@@ -84,16 +97,7 @@ UBYTE _blitCheck(
 		return 0;
 	}
 
-	UBYTE isErr = 0;
-	if(!bitmapIsChip(pSrc)) {
-		isErr = 1;
-		logWrite("ERR: Source is in FAST mem: %p\n", pSrc);
-	}
-	if(!bitmapIsChip(pSrc)) {
-		isErr = 1;
-		logWrite("ERR: Dest is in FAST mem: %p\n", pDst);
-	}
-	return isErr;
+	return 1;
 }
 
 void blitWait(void) {

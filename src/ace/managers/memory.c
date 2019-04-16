@@ -244,7 +244,11 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
 
 UBYTE memType(const void *pMem) {
 #ifdef AMIGA
-	return TypeOfMem((void *)pMem);
+	ULONG ulOsType = TypeOfMem((void *)pMem);
+	if(ulOsType & MEMF_FAST) {
+		return MEMF_FAST;
+	}
+	return MEMF_CHIP;
 #else
 	return MEMF_FAST;
 #endif // AMIGA
