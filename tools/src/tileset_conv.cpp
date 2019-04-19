@@ -79,10 +79,10 @@ int main(int lArgCount, const char *pArgs[])
 		int16_t wLastFull = -1;
 		for(uint16_t i = 0; i < 256; ++i) {
 			auto Tile = tChunkyBitmap::fromPng(fmt::format("{}/{}.png", szInPath, i));
-			vTiles.push_back(std::move(Tile));
 			if(Tile.m_uwHeight != 0) {
 				wLastFull = i;
 			}
+			vTiles.push_back(std::move(Tile));
 		}
 		vTiles.resize(wLastFull + 1);
 	}
