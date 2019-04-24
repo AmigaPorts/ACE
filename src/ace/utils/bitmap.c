@@ -94,13 +94,13 @@ void bitmapLoadFromFile(
 
 	systemUse();
 	logBlockBegin(
-		"bitmapLoadFromFile(pBitMap: %p, szFilePath: %s, uwStartX: %u, uwStartY: %u)",
+		"bitmapLoadFromFile(pBitMap: %p, szFilePath: '%s', uwStartX: %u, uwStartY: %u)",
 		pBitMap, szFilePath, uwStartX, uwStartY
 	);
 	// Open source bitmap
 	tFile *pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
-		logWrite("ERR: File does not exist: %s\n", szFilePath);
+		logWrite("ERR: File does not exist\n", szFilePath);
 		logBlockEnd("bitmapLoadFromFile()");
 		systemUnuse();
 		return;
@@ -195,11 +195,11 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	UBYTE ubPlaneCount;       // Bitplane count
 	UBYTE i;
 
-	logBlockBegin("bitmapCreateFromFile(szFilePath: %s)", szFilePath);
+	logBlockBegin("bitmapCreateFromFile(szFilePath: '%s')", szFilePath);
 	pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
 		fileClose(pFile);
-		logWrite("ERR: File does not exist: %s\n", szFilePath);
+		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapCreateFromFile()");
 		return 0;
 	}
@@ -294,7 +294,7 @@ void bitmapDump(const tBitMap *pBitMap) {
 
 void bitmapSave(const tBitMap *pBitMap, const char *szPath) {
 	systemUse();
-	logBlockBegin("bitmapSave(pBitMap: %p, szPath: %s)", pBitMap, szPath);
+	logBlockBegin("bitmapSave(pBitMap: %p, szPath: '%s')", pBitMap, szPath);
 
 	tFile *pFile = fileOpen(szPath, "wb");
 	if(!pFile) {

@@ -29,7 +29,7 @@ void joyOpen(UBYTE is4joy) {
 		static const char *szOwner = "ACE joy manager";
 		MiscBase = (struct Library*)OpenResource(MISCNAME);
 		if(!MiscBase) {
-			logWrite("ERR: Couldn't open %s\n", MISCNAME);
+			logWrite("ERR: Couldn't open '%s'\n", MISCNAME);
 			return;
 		}
 
@@ -37,12 +37,12 @@ void joyOpen(UBYTE is4joy) {
 		char *szCurrentOwner;
 		szCurrentOwner = AllocMiscResource(MR_PARALLELPORT, szOwner);
 		if(szCurrentOwner) {
-			logWrite("ERR: Parallel data lines access blocked by: %s\n", szCurrentOwner);
+			logWrite("ERR: Parallel data lines access blocked by: '%s'\n", szCurrentOwner);
 			return;
 		}
 		szCurrentOwner = AllocMiscResource(MR_PARALLELBITS, szOwner);
 		if(szCurrentOwner) {
-			logWrite("ERR: Parallel status lines access blocked by: %s\n", szCurrentOwner);
+			logWrite("ERR: Parallel status lines access blocked by: '%s'\n", szCurrentOwner);
 			// Free what was already allocated
 			FreeMiscResource(MR_PARALLELPORT);
 		}

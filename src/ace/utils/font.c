@@ -17,7 +17,7 @@ static inline UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 tFont *fontCreate(const char *szFontName) {
 	tFile *pFontFile;
 	tFont *pFont;
-	logBlockBegin("fontCreate(szFontName: %s)", szFontName);
+	logBlockBegin("fontCreate(szFontName: '%s')", szFontName);
 
 	pFontFile = fileOpen(szFontName, "r");
 	if (!pFontFile) {

@@ -11,7 +11,7 @@ void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	tFile *pFile;
 	UBYTE ubPaletteLength;
 
-	logBlockBegin("paletteLoad(szFileName: %s, pPalette: %p, ubMaxLength: %hu)", szFileName, pPalette, ubMaxLength);
+	logBlockBegin("paletteLoad(szFileName: '%s', pPalette: %p, ubMaxLength: %hu)", szFileName, pPalette, ubMaxLength);
 
 	pFile = fileOpen(szFileName, "r");
 	fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));

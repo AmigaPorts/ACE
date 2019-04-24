@@ -233,7 +233,7 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
 	}
 	if(pDead[0] != 0xDE || pDead[1] != 0xAD || pDead[2] != 0xBE || pDead[3] != 0xEF) {
 		filePrintf(
-			s_pMemLog, "ERR: Right mem trashed: %hu%p (%s:%u)\n",
+			s_pMemLog, "ERR: Right mem trashed: %hu@%p (%s:%u)\n",
 			pEntry->uwId, pMem, uwLine, szFile
 		);
 		fileFlush(s_pMemLog);

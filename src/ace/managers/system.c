@@ -175,8 +175,8 @@ void HWINTERRUPT int7Handler(void) {
 //-------------------------------------------------------------------- FUNCTIONS
 
 void systemKill(const char *szMsg) {
-	printf("ERR: SYSKILL: %s", szMsg);
-	logWrite("ERR: SYSKILL: %s", szMsg);
+	printf("ERR: SYSKILL: '%s'", szMsg);
+	logWrite("ERR: SYSKILL: '%s'", szMsg);
 
 	if(GfxBase) {
 		CloseLibrary((struct Library *) GfxBase);
