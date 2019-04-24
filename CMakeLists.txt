@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.5)
 project(ACE)
+set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE) # needed for helper fns
 
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
@@ -67,7 +68,7 @@ endfunction()
 function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
 	add_custom_command(
 		OUTPUT ${PALETTE_OUT}
-		COMMAND tools/bin/palette_conv ${PALETTE_IN} ${PALETTE_OUT}
+		COMMAND ${ACE_DIR}/tools/bin/palette_conv ${PALETTE_IN} ${PALETTE_OUT}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${PALETTE_IN}
 	)
@@ -119,7 +120,7 @@ function(convertBitmaps)
 		endif()
 		add_custom_command(
 			OUTPUT ${outPath} ${maskPath}
-			COMMAND tools/bitmap_conv/bitmap_conv ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlags}
+			COMMAND ${ACE_DIR}/tools/bitmap_conv/bitmap_conv ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlags}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			DEPENDS ${convertBitmaps_PALETTE} ${bitmapPath}
 		)
