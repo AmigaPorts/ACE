@@ -46,6 +46,8 @@ set(TARGET_NAME ${PROJECT_NAME_LOWER})
 add_library(${TARGET_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${TARGET_NAME})
 
+#----------------------------------------------------------------------- INSTALL
+
 install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${HEADERS_ACE} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ace)
 install(FILES ${HEADERS_ACE_GENERIC} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ace/generic)
@@ -53,3 +55,74 @@ install(FILES ${HEADERS_ACE_UTILS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ace/u
 install(FILES ${HEADERS_ACE_MANAGERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ace/managers)
 install(FILES ${HEADERS_ACE_MANAGERS_VP} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ace/managers/viewport)
 install(FILES ${HEADERS_FIXMATH} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fixmath)
+
+#--------------------------------------------------------------------- FUNCTIONS
+
+function(toAbsolute PATH_IN)
+	if(NOT IS_ABSOLUTE ${PATH_IN})
+			set(${PATH_IN} "${CMAKE_CURRENT_SOURCE_DIR}/${${PATH_IN}}" PARENT_SCOPE)
+	endif()
+endfunction()
+
+function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
+	add_custom_command(
+		OUTPUT ${PALETTE_OUT}
+		COMMAND tools/bin/palette_conv ${PALETTE_IN} ${PALETTE_OUT}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${PALETTE_IN}
+	)
+	target_sources(${TARGET} PUBLIC ${PALETTE_OUT})
+endfunction()
+
+function(convertBitmaps)
+	set(options INTERLEAVED)
+	set(oneValArgs TARGET PALETTE MASK_COLOR)
+	set(multiValArgs SOURCES DESTINATIONS MASKS)
+	cmake_parse_arguments(
+		convertBitmaps "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
+	)
+
+	if(${convertBitmaps_INTERLEAVED})
+		set(extraFlags -i)
+	endif()
+
+	list(LENGTH convertBitmaps_SOURCES srcCount)
+	list(LENGTH convertBitmaps_DESTINATIONS dstCount)
+	list(LENGTH convertBitmaps_MASKS maskCount)
+	if(NOT ${srcCount} EQUAL ${dstCount})
+		message(FATAL_ERROR "SOURCES count doesn't match DESTINATIONS count")
+	endif()
+	if(${maskCount} AND NOT ${maskCount} EQUAL ${srcCount})
+		message(FATAL_ERROR "MASKS count doesn't match SOURCES count")
+	endif()
+	if("${convertBitmaps_MASK_COLOR} " STREQUAL " ")
+		if(${maskCount} GREATER 0)
+			message(FATAL_ERROR "MASK_COLOR unspecified")
+		endif()
+	else()
+		string(REPLACE "#" "\\#" convertBitmaps_MASK_COLOR "${convertBitmaps_MASK_COLOR}")
+	endif()
+
+	MATH(EXPR srcCount "${srcCount}-1")
+	foreach(bitmap_idx RANGE ${srcCount}) # /path/file.png
+		list(GET convertBitmaps_SOURCES ${bitmap_idx} bitmapPath)
+		toAbsolute(bitmapPath)
+		list(GET convertBitmaps_DESTINATIONS ${bitmap_idx} outPath)
+		toAbsolute(outPath)
+		if(${maskCount} GREATER 0)
+			list(GET convertBitmaps_MASKS ${bitmap_idx} maskPath)
+			toAbsolute(maskPath)
+		endif()
+
+		if(NOT "${convertBitmaps_MASK_COLOR} " STREQUAL " ")
+			set(extraFlags ${extraFlags} -mc ${convertBitmaps_MASK_COLOR} -mo ${maskPath})
+		endif()
+		add_custom_command(
+			OUTPUT ${outPath} ${maskPath}
+			COMMAND tools/bitmap_conv/bitmap_conv ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlags}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			DEPENDS ${convertBitmaps_PALETTE} ${bitmapPath}
+		)
+		target_sources(${convertBitmaps_TARGET} PUBLIC ${outPath} ${maskPath})
+	endforeach()
+endfunction()
