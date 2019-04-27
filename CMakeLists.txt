@@ -127,3 +127,17 @@ function(convertBitmaps)
 		target_sources(${convertBitmaps_TARGET} PUBLIC ${outPath} ${maskPath})
 	endforeach()
 endfunction()
+
+function(convertFont TARGET FONT_IN FONT_OUT)
+toAbsolute(FONT_IN)
+toAbsolute(FONT_OUT)
+get_filename_component(ext ${FONT_OUT} EXT)
+string(SUBSTRING ${ext} 1 -1 ext)
+add_custom_command(
+	OUTPUT ${FONT_OUT}
+	COMMAND ${ACE_DIR}/tools/bin/font_conv ${FONT_IN} ${ext} -out ${FONT_OUT}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	DEPENDS ${FONT_IN}
+)
+target_sources(${TARGET} PUBLIC ${FONT_OUT})
+endfunction()
