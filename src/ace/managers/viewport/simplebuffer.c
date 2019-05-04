@@ -221,12 +221,11 @@ fail:
 
 void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 	logBlockBegin("simpleBufferDestroy()");
-	logWrite("Destroying bitmap...\n");
+	copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pCopBlock);
 	if(pManager->pBack != pManager->pFront) {
 		bitmapDestroy(pManager->pBack);
 	}
 	bitmapDestroy(pManager->pFront);
-	logWrite("Freeing mem...\n");
 	memFree(pManager, sizeof(tSimpleBufferManager));
 	logBlockEnd("simpleBufferDestroy()");
 }
