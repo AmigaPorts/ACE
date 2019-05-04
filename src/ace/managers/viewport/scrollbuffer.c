@@ -161,10 +161,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 	UWORD uwScrollY = pManager->pCamera->uPos.sUwCoord.uwY & (pManager->uwBmAvailHeight - 1);
 
 	// preparations for new copperlist
-	UWORD uwOffsX = 15 - (uwScrollX & 0xF); // Bitplane shift - single
-	uwOffsX = (uwOffsX << 4) | uwOffsX;     // Bitplane shift - PF1 | PF2
-
-	uwScrollX >>= 3;
+	UWORD uwShift = (16 - (uwScrollX & 0xF)) & 0xF; // Bitplane shift - single
+	uwShift = (uwShift << 4) | uwShift;             // Bitplane shift - PF1 | PF2
+	ULONG ulBplAddX = ((uwScrollX - 1) >> 4) << 1;  // must be ULONG!
 
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
@@ -176,8 +175,8 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		// Initial copper block
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
-		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwOffsX);            // Bitplane shift
-		ULONG ulPlaneOffs = uwScrollX + (pManager->pBack->BytesPerRow*uwScrollY);
+		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwShift);
+		ULONG ulPlaneOffs = ulBplAddX + (pManager->pBack->BytesPerRow*uwScrollY);
 		for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
 			ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulPlaneOffs;
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
@@ -197,7 +196,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			}
 			copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
 			for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
-				ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + uwScrollX;
+				ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulBplAddX;
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 			}
@@ -272,7 +271,7 @@ void scrollBufferReset(
 		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
 		// After bitplane ptrs & bplcon
 		pBlock->uwCurrCount = 2 * pManager->sCommon.pVPort->ubBPP + 1;
-		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x30);               // Fetch start
+		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x0030);             // Fetch start
 		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
 		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
 		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);             // Fetch stop

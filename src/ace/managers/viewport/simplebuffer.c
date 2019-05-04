@@ -46,7 +46,7 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 	else {
 		pManager->ubFlags |= SIMPLEBUFFER_FLAG_X_SCROLLABLE;
 		uwDDfStrt = 0x0030;
-		uwModulo -= 1;
+		uwModulo -= 2;
 	}
 	logWrite("Modulo: %u\n", uwModulo);
 
@@ -235,17 +235,15 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	UWORD uwShift;
 	ULONG ulBplOffs;
 	ULONG ulPlaneAddr;
-	tCameraManager *pCamera;
-	tCopList *pCopList;
 
-	pCamera = pManager->pCamera;
-	pCopList = pManager->sCommon.pVPort->pView->pCopList;
+	const tCameraManager *pCamera = pManager->pCamera;
+	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
 	// Calculate X movement: bitplane shift, starting word to fetch
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-		uwShift = (16 - (pCamera->uPos.sUwCoord.uwX & 0xF)) & 0xF;
-		uwShift = (uwShift << 4) | uwShift;
-		ulBplOffs = ((pCamera->uPos.sUwCoord.uwX - 1) >> 4) << 1;
+		uwShift = (16 - (pCamera->uPos.sUwCoord.uwX & 0xF)) & 0xF;  // Bitplane shift - single
+		uwShift = (uwShift << 4) | uwShift;                         // Bitplane shift - PF1 | PF2
+		ulBplOffs = ((pCamera->uPos.sUwCoord.uwX - 1) >> 4) << 1; // Must be ULONG!
 	}
 	else {
 		uwShift = 0;
@@ -253,7 +251,7 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	}
 
 	// Calculate Y movement
-	ulBplOffs += pManager->pBack->BytesPerRow*pCamera->uPos.sUwCoord.uwY;
+	ulBplOffs += pManager->pBack->BytesPerRow * pCamera->uPos.sUwCoord.uwY;
 
 	// Copperlist - regen bitplane ptrs, update shift
 	// TODO could be unified by using copSetMove in copBlock
