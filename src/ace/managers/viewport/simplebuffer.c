@@ -243,9 +243,9 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 
 	// Calculate X movement: bitplane shift, starting word to fetch
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-		uwShift = (16-(pCamera->uPos.sUwCoord.uwX & 0xF)) & 0xF;
+		uwShift = (16 - (pCamera->uPos.sUwCoord.uwX & 0xF)) & 0xF;
 		uwShift = (uwShift << 4) | uwShift;
-		ulBplOffs = ((pCamera->uPos.sUwCoord.uwX-1) >> 4) << 1;
+		ulBplOffs = ((pCamera->uPos.sUwCoord.uwX - 1) >> 4) << 1;
 	}
 	else {
 		uwShift = 0;

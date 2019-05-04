@@ -89,6 +89,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	}
 	else {
 		// TODO Raw mode
+		logWrite("ERR: Unimplemented %s:%d\n", __FILE__, __LINE__);
 		goto fail;
 	}
 
@@ -169,6 +170,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
 		// TODO: Raw mode
+		logWrite("ERR: Unimplemented %s:%d\n", __FILE__, __LINE__);
 	}
 	else {
 		// Initial copper block
