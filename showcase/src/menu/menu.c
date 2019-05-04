@@ -22,6 +22,7 @@
 #include "test/blitsmalldest.h"
 #include "test/interleaved.h"
 #include "test/lines.h"
+#include "test/buffer_scroll.h"
 
 static tView *s_pMenuView;
 static tVPort *s_pMenuVPort;
@@ -217,7 +218,7 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetCount(s_pMenuList, 7);
+	menuListResetCount(s_pMenuList, 8);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
@@ -225,6 +226,7 @@ void menuShowTests(void) {
 	menuListSetEntry(s_pMenuList, 4, MENULIST_ENABLED, "Blitter lines");
 	menuListSetEntry(s_pMenuList, 5, MENULIST_ENABLED, "Blits with small dst");
 	menuListSetEntry(s_pMenuList, 6, MENULIST_ENABLED, "Interleaved bitmaps");
+	menuListSetEntry(s_pMenuList, 7, MENULIST_ENABLED, "Scroll buffer wrap");
 	s_ubMenuType = MENU_TESTS;
 
 	// Redraw list
@@ -258,6 +260,11 @@ void menuSelectTests(void) {
 		case 6:
 			gameChangeState(
 				gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy
+			);
+			break;
+		case 7:
+			gameChangeState(
+				gsTestBufferScrollCreate, gsTestBufferScrollLoop, gsTestBufferScrollDestroy
 			);
 			break;
 	}

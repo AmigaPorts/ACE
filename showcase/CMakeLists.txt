@@ -21,9 +21,14 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DACE_DEBUG")
 file(GLOB_RECURSE SOURCES src/*.c)
 file(GLOB_RECURSE HEADERS src/*.h)
 
+
 include_directories(
 	${PROJECT_SOURCE_DIR}/src
-)
+	)
+
+if(ACE_DEBUG)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACE_DEBUG") # For ACE headers with ifdefs
+endif()
 
 # ACE
 add_subdirectory(.. ace)
