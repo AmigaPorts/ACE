@@ -11,6 +11,7 @@
  */
 
 #include <ace/types.h>
+#include <ace/utils/tag.h>
 #include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/copper.h>
