@@ -120,6 +120,15 @@ void fontDestroyTextBitMap(tTextBitMap *pTextBitMap);
 tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText);
 
 /**
+ * @brief Gets width of specified glyph on given font.
+ *
+ * @param pFont Font to be used for measurement.
+ * @param c Glyph to be checked
+ * @return Width of glyph, in pixels.
+ */
+UBYTE fontGlyphWidth(const tFont *pFont, char c);
+
+/**
  * @brief Checks if given text fits inside specified text buffer.
  *
  * @param pFont Font to be used for measurement.

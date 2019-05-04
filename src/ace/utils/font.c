@@ -9,7 +9,7 @@
 
 /* Functions */
 
-static inline UBYTE fontGlyphWidth(const tFont *pFont, char c) {
+UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 	UBYTE ubIdx = (UBYTE)c;
 	return pFont->pCharOffsets[ubIdx + 1] - pFont->pCharOffsets[ubIdx];
 }

@@ -8,8 +8,8 @@
 #include "../common/lodepng.h"
 #include "../common/endian.h"
 
-tChunkyBitmap::tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight):
-	m_uwWidth(uwWidth), m_uwHeight(uwHeight), m_vData(m_uwWidth * m_uwHeight)
+tChunkyBitmap::tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, tRgb Bg):
+	m_uwWidth(uwWidth), m_uwHeight(uwHeight), m_vData(m_uwWidth * m_uwHeight, Bg)
 {
 
 }

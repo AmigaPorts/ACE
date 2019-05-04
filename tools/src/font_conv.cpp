@@ -36,7 +36,7 @@ void printUsage(const std::string &szAppName) {
 	print("\tfnt\tACE font file\n");
 	print("extraOpts:\n");
 	// -chars
-	print("\t-chars \"AB D\"\tInclude only 'A', 'B', ' ' and 'D' chars in font.\n");
+	print("\t-chars \"AB D\"\tInclude only 'A', 'B', ' ' and 'D' chars in font. Only for TTF input.\n");
 	print("\t\t\tUse backslash (\\) to escape quote (\") char inside charset specifier\n");
 	print("\t\t\tDefault charset is: \"{}\"\n", s_szDefaultCharset);
 	// -out
@@ -140,6 +140,7 @@ int main(int lArgCount, const char *pArgs[])
 		}
 		else {
 			nLog::error("Unsupported output type");
+			return 1;
 		}
 	}
 	fmt::print("All done!\n");
