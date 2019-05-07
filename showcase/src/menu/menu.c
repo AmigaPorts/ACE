@@ -22,6 +22,7 @@
 #include "test/blitsmalldest.h"
 #include "test/interleaved.h"
 #include "test/lines.h"
+#include "test/buffer_scroll.h"
 
 static tView *s_pMenuView;
 static tVPort *s_pMenuVPort;
@@ -64,7 +65,7 @@ void gsMenuCreate(void) {
 		160, 100, 10, 2,
 		s_pMenuFont, FONT_HCENTER|FONT_COOKIE|FONT_SHADOW,
 		1, 2, 3,
-		s_pMenuBfr->pBuffer
+		s_pMenuBfr->pBack
 	);
 	menuShowMain();
 
@@ -145,7 +146,7 @@ void menuDrawBg(void) {
 	for(uwY = 0; uwY <= s_pMenuBfr->uBfrBounds.sUwCoord.uwY - 16; uwY += 16) {
 		for(uwX = 0; uwX <= s_pMenuBfr->uBfrBounds.sUwCoord.uwX - 16; uwX += 16) {
 			UBYTE ubColor = isOdd ? 0 : 4;
-			blitRect(s_pMenuBfr->pBuffer, uwX, uwY, 16, 16, ubColor);
+			blitRect(s_pMenuBfr->pBack, uwX, uwY, 16, 16, ubColor);
 			isOdd = !isOdd;
 		}
 		isOdd = !isOdd;
@@ -154,10 +155,10 @@ void menuDrawBg(void) {
 	// Draw border
 	UWORD uwMaxX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX-1;
 	UWORD uwMaxY = s_pMenuBfr->uBfrBounds.sUwCoord.uwY-1;
-	blitLine(s_pMenuBfr->pBuffer, 0, 0, uwMaxX, 0, 1, 0xFFFF, 0);
-	blitLine(s_pMenuBfr->pBuffer, 0, uwMaxY, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
-	blitLine(s_pMenuBfr->pBuffer, 0, 0, 0, uwMaxY, 1, 0xFFFF, 0);
-	blitLine(s_pMenuBfr->pBuffer, uwMaxX, 0, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
+	blitLine(s_pMenuBfr->pBack, 0, 0, uwMaxX, 0, 1, 0xFFFF, 0);
+	blitLine(s_pMenuBfr->pBack, 0, uwMaxY, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
+	blitLine(s_pMenuBfr->pBack, 0, 0, 0, uwMaxY, 1, 0xFFFF, 0);
+	blitLine(s_pMenuBfr->pBack, uwMaxX, 0, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
 	logBlockEnd("menuDrawBg()");
 }
 
@@ -169,7 +170,7 @@ void menuShowMain(void) {
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
-		s_pMenuBfr->pBuffer, s_pMenuFont,
+		s_pMenuBfr->pBack, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
 		"ACE Showcase", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
 	);
@@ -209,7 +210,7 @@ void menuShowTests(void) {
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
-		s_pMenuBfr->pBuffer, s_pMenuFont,
+		s_pMenuBfr->pBack, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
 		"Tests", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
 	);
@@ -217,7 +218,7 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
 	s_pMenuList->sCoord.sUwCoord.uwY = 100;
-	menuListResetCount(s_pMenuList, 7);
+	menuListResetCount(s_pMenuList, 8);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
@@ -225,6 +226,7 @@ void menuShowTests(void) {
 	menuListSetEntry(s_pMenuList, 4, MENULIST_ENABLED, "Blitter lines");
 	menuListSetEntry(s_pMenuList, 5, MENULIST_ENABLED, "Blits with small dst");
 	menuListSetEntry(s_pMenuList, 6, MENULIST_ENABLED, "Interleaved bitmaps");
+	menuListSetEntry(s_pMenuList, 7, MENULIST_ENABLED, "Scroll buffer wrap");
 	s_ubMenuType = MENU_TESTS;
 
 	// Redraw list
@@ -260,6 +262,11 @@ void menuSelectTests(void) {
 				gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy
 			);
 			break;
+		case 7:
+			gameChangeState(
+				gsTestBufferScrollCreate, gsTestBufferScrollLoop, gsTestBufferScrollDestroy
+			);
+			break;
 	}
 }
 
@@ -270,7 +277,7 @@ void menuShowExamples(void) {
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
-		s_pMenuBfr->pBuffer, s_pMenuFont,
+		s_pMenuBfr->pBack, s_pMenuFont,
 		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
 		"Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
 	);

@@ -81,7 +81,7 @@ UBYTE _blitCheck(
 	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
 		logWrite(
 			"ERR: ILLEGAL BLIT Source out of range: "
-			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
+			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s @ %u\n",
 			pSrc,	wSrcWidth, wSrcHeight, pDst, wDstWidth, wDstHeight,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
@@ -90,7 +90,7 @@ UBYTE _blitCheck(
 	if(pDst && (wDstY < 0 || wDstWidth < wDstX+wWidth || pDst->Rows < wDstY+wHeight)) {
 		logWrite(
 			"ERR: ILLEGAL BLIT Dest out of range: "
-			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s@%u\n",
+			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s @ %u\n",
 			pSrc,	wSrcWidth, wSrcHeight, pDst, wDstWidth, wDstHeight,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);

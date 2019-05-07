@@ -9,7 +9,7 @@
 
 /* Functions */
 
-static inline UBYTE fontGlyphWidth(const tFont *pFont, char c) {
+UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 	UBYTE ubIdx = (UBYTE)c;
 	return pFont->pCharOffsets[ubIdx + 1] - pFont->pCharOffsets[ubIdx];
 }
@@ -17,7 +17,7 @@ static inline UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 tFont *fontCreate(const char *szFontName) {
 	tFile *pFontFile;
 	tFont *pFont;
-	logBlockBegin("fontCreate(szFontName: %s)", szFontName);
+	logBlockBegin("fontCreate(szFontName: '%s')", szFontName);
 
 	pFontFile = fileOpen(szFontName, "r");
 	if (!pFontFile) {

@@ -80,9 +80,9 @@ int main(int lArgCount, const char *pArgs[])
 		for(uint16_t i = 0; i < 256; ++i) {
 			auto Tile = tChunkyBitmap::fromPng(fmt::format("{}/{}.png", szInPath, i));
 			if(Tile.m_uwHeight != 0) {
-				vTiles.push_back(std::move(Tile));
 				wLastFull = i;
 			}
+			vTiles.push_back(std::move(Tile));
 		}
 		vTiles.resize(wLastFull + 1);
 	}
@@ -96,7 +96,12 @@ int main(int lArgCount, const char *pArgs[])
 	fmt::print("Read {} tiles from '{}'\n", uwTileCount, szInPath);
 	std::string szOutExt = nFs::getExt(szOutPath);
 	if(szOutExt == "png" || szOutExt == "bm") {
-		tChunkyBitmap Out(lTileSize, uwTileCount * lTileSize);
+		tRgb Bg;
+		if(Palette.m_vColors.size()) {
+			Bg = Palette.m_vColors.at(0);
+		}
+		fmt::print("Using color for bg: {} {} {}\n", Bg.ubR, Bg.ubG, Bg.ubB);
+		tChunkyBitmap Out(lTileSize, uwTileCount * lTileSize, Bg);
 		for(uint16_t i = 0; i < uwTileCount; ++i) {
 			auto &Tile = vTiles.at(i);
 			if(Tile.m_uwHeight != 0) {

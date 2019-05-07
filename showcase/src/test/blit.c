@@ -68,7 +68,7 @@ void gsTestBlitLoop(void) {
 		//TODO: Restore BG
 	}
 	else {
-		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 0);
+		blitRect(s_pTestBlitBfr->pBack, s_uwX, s_uwY, 16, 16, 0);
 	}
 
 	// Update type
@@ -161,7 +161,7 @@ void gsTestBlitLoop(void) {
 		//TODO: Save BG beneath new bob
 	}
 	// if(s_ubType & TYPE_RECT) {
-		blitRect(s_pTestBlitBfr->pBuffer, s_uwX, s_uwY, 16, 16, 3);
+		blitRect(s_pTestBlitBfr->pBack, s_uwX, s_uwY, 16, 16, 3);
 	// }
 	vPortWaitForEnd(s_pTestBlitVPort);
 }

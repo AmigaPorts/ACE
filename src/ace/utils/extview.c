@@ -109,6 +109,7 @@ void viewLoad(tView *pView) {
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
+		g_pCustom->bplcon3 = 0; // AGA fix
 		g_pCustom->fmode = 0;   // AGA fix
 		for(UBYTE i = 0; i < 6; ++i) {
 			g_pCustom->bplpt[i] = 0;
@@ -120,6 +121,7 @@ void viewLoad(tView *pView) {
 		g_sCopManager.pCopList = pView->pCopList;
 		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		g_pCustom->fmode = 0;        // AGA fix
+		g_pCustom->bplcon3 = 0;      // AGA fix
 		g_pCustom->diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
 		g_pCustom->diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
 		viewUpdateCLUT(pView);

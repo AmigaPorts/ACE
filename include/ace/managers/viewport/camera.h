@@ -17,13 +17,16 @@
 
 typedef struct {
 	tVpManager sCommon;
-	tUwCoordYX uPos;      /// Current camera pos
-	tUwCoordYX uLastPos;  /// Previous camera pos
-	tUwCoordYX uMaxPos;   /// Max camera pos: world W&H - camera W&H
+	tUwCoordYX uPos;        ///< Current camera pos
+	tUwCoordYX uLastPos[2]; ///< Previous camera pos
+	tUwCoordYX uMaxPos;     ///< Max camera pos: world W&H - camera W&H
+	UBYTE ubBfr;
+	UBYTE isDblBfr;
 } tCameraManager;
 
 tCameraManager *cameraCreate(
-	tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY
+	tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY,
+	UBYTE isDblBfr
 );
 
 void cameraDestroy(tCameraManager *pManager);
@@ -31,7 +34,7 @@ void cameraProcess(tCameraManager *pManager);
 
 void cameraReset(
 	tCameraManager *pManager,
-	UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY
+	UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY, UBYTE isDblBfr
 );
 
 void cameraSetCoord(tCameraManager *pManager, UWORD uwX, UWORD uwY);

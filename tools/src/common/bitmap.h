@@ -23,7 +23,7 @@ public:
 		const tPlanarBitmap &Planar, const tPalette &vPalette
 	);
 
-	tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight);
+	tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, tRgb Bg = tRgb(0));
 
 	tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, const uint8_t *pData);
 
