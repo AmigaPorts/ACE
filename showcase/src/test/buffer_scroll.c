@@ -21,21 +21,21 @@ static void fillBfr(tBitMap *pBfr, UWORD uwWidth, UWORD uwHeight) {
 	uwHeight -= 1;
 
 	// Short lines
-	for(UWORD x = 4; x <= uwWidth; x += 10) {
+	for(UWORD x = 10; x <= uwWidth; x += 10) {
 		blitRect(pBfr, x,          0, 1, 3, 7);
 		blitRect(pBfr, x, uwHeight-3, 1, 3, 7);
 	}
-	for(UWORD y = 4; y <= uwHeight; y += 10) {
+	for(UWORD y = 10; y <= uwHeight; y += 10) {
 		blitRect(pBfr,         0, y, 3, 1, 7);
 		blitRect(pBfr, uwWidth-3, y, 3, 1, 7);
 	}
 
 	// Long lines
-	for(UWORD x = 9; x <= uwWidth; x += 10) {
+	for(UWORD x = 100; x <= uwWidth; x += 100) {
 		blitRect(pBfr, x,          0, 1, 5, 7);
 		blitRect(pBfr, x, uwHeight-5, 1, 5, 7);
 	}
-	for(UWORD y = 9; y <= uwHeight; y += 10) {
+	for(UWORD y = 100; y <= uwHeight; y += 100) {
 		blitRect(pBfr,         0, y, 5, 1, 7);
 		blitRect(pBfr, uwWidth-5, y, 5, 1, 7);
 	}
