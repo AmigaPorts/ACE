@@ -12,11 +12,17 @@
 #include "main.h"
 #include "menu/menu.h"
 
+#define TEST_SCROLL_BPP 6
+
 static tView *s_pView;
 static tVPort *s_pVPort;
 static tCameraManager *s_pCamera;
 
 static void fillBfr(tBitMap *pBfr, UWORD uwWidth, UWORD uwHeight) {
+	logBlockBegin(
+		"fillBfr(pBfr: *%p, uwWidth: %hu, uwHeight: %hu)",
+		pBfr, uwWidth, uwHeight
+	);
 	uwWidth -= 1;
 	uwHeight -= 1;
 
@@ -41,10 +47,11 @@ static void fillBfr(tBitMap *pBfr, UWORD uwWidth, UWORD uwHeight) {
 	}
 
 	// Border
-	blitRect(pBfr,       0,        0, uwWidth,        1, 31);
-	blitRect(pBfr,       0, uwHeight, uwWidth,        1, 31);
-	blitRect(pBfr,       0,        0,       1, uwHeight, 31);
-	blitRect(pBfr, uwWidth,        0,       1, uwHeight, 31);
+	blitRect(pBfr,       0,        0, uwWidth,        1, 6);
+	blitRect(pBfr,       0, uwHeight, uwWidth,        1, 6);
+	blitRect(pBfr,       0,        0,       1, uwHeight, 6);
+	blitRect(pBfr, uwWidth,        0,       1, uwHeight, 6);
+	logBlockEnd("fillBfr()");
 }
 
 void initSimple(void) {
@@ -56,7 +63,7 @@ void initSimple(void) {
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
-		TAG_VPORT_BPP, SHOWCASE_BPP,
+		TAG_VPORT_BPP, TEST_SCROLL_BPP,
 	TAG_DONE);
 	paletteLoad("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
 
@@ -64,11 +71,11 @@ void initSimple(void) {
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_BOUND_WIDTH, 640,
-		TAG_SIMPLEBUFFER_BOUND_HEIGHT, 384,
+		TAG_SIMPLEBUFFER_BOUND_HEIGHT, 720,
 	TAG_DONE);
 	s_pCamera = s_pBfr->pCamera;
 
-	fillBfr(s_pBfr->pBack, 640, 384);
+	fillBfr(s_pBfr->pBack, 640, 720);
 
 	viewLoad(s_pView);
 	systemUnuse();
@@ -83,7 +90,7 @@ void initScroll(void) {
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
-		TAG_VPORT_BPP, SHOWCASE_BPP,
+		TAG_VPORT_BPP, TEST_SCROLL_BPP,
 	TAG_DONE);
 	paletteLoad("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
 
@@ -93,16 +100,27 @@ void initScroll(void) {
 		TAG_SCROLLBUFFER_VPORT, s_pVPort,
 		TAG_SCROLLBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
 		TAG_SCROLLBUFFER_BOUND_WIDTH, 640,
-		TAG_SCROLLBUFFER_BOUND_HEIGHT, 384,
+		TAG_SCROLLBUFFER_BOUND_HEIGHT, 720,
 		TAG_SCROLLBUFFER_MARGIN_WIDTH, 32,
 	TAG_DONE);
 	s_pCamera = s_pBfr->pCamera;
 
-	blitRect(s_pBfr->pBack, 0, 0, 4, 4, 3);
 	fillBfr(
 		s_pBfr->pBack,
 		bitmapGetByteWidth(s_pBfr->pBack) * 8, s_pBfr->uwBmAvailHeight
 	);
+
+	// Ensure that scroll buffer y-wraps nicely
+	UBYTE ubColor = (1 << TEST_SCROLL_BPP) - 1;
+	blitRect(s_pBfr->pBack, 0, 508, 1, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 509, 2, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 510, 3, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 511, 4, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 0, 5, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 1, 4, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 2, 3, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 3, 2, 1, ubColor);
+	blitRect(s_pBfr->pBack, 0, 4, 1, 1, ubColor);
 
 	blitRect(s_pBfr->pBack, 32, 32, 32, 32, 5);
 	viewLoad(s_pView);
