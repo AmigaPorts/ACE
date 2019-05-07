@@ -87,11 +87,13 @@ void initScroll(void) {
 	TAG_DONE);
 	paletteLoad("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
 
+	// This will create buffer which is shorter than 640 with capability of
+	// wrapped scrolling to simulate bigger buffer size
 	tScrollBufferManager *s_pBfr = scrollBufferCreate(0,
 		TAG_SCROLLBUFFER_VPORT, s_pVPort,
 		TAG_SCROLLBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
-		TAG_SCROLLBUFFER_BOUND_HEIGHT, 640,
-		TAG_SCROLLBUFFER_BOUND_WIDTH, 384,
+		TAG_SCROLLBUFFER_BOUND_WIDTH, 640,
+		TAG_SCROLLBUFFER_BOUND_HEIGHT, 384,
 		TAG_SCROLLBUFFER_MARGIN_WIDTH, 32,
 	TAG_DONE);
 	s_pCamera = s_pBfr->pCamera;
