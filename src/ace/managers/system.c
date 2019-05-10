@@ -10,6 +10,8 @@
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
+#include <exec/execbase.h>
+#include <proto/exec.h>
 
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
@@ -54,7 +56,7 @@ static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int5Handler, int6Handler, int7Handler
 };
 static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
-static volatile tHwIntVector * const s_pHwVectors = 0;
+static volatile tHwIntVector * s_pHwVectors = 0;
 static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static volatile UWORD s_uwAceInts = 0;
 
@@ -201,9 +203,14 @@ void systemCreate(void) {
 	LoadView(0);
 	WaitTOF();
 	WaitTOF(); // Wait for interlaced screen to finish
+	
+	// get VBR location on 68010+ machine	
+	if (SysBase->AttnFlags & AFF_68010)
+        {
+                static UWORD getvbr[] = {0x4e7a, 0x0801, 0x4e73};
+                s_pHwVectors = (tHwIntVector *)Supervisor((void *)getvbr);
+        }
 
-	// get VBR location on 68010+ machine
-	// TODO VBR
 
 	// save the state of the hardware registers (INTENA, DMA, ADKCON etc.)
 	s_uwOsIntEna = g_pCustom->intenar;
