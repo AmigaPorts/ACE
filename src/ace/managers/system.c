@@ -154,7 +154,50 @@ void HWINTERRUPT int3Handler(void) {
 
 FN_HOTSPOT
 void HWINTERRUPT int4Handler(void) {
-	// Audio
+	UWORD uwIntReq = g_pCustom->intreqr;
+	UWORD uwReqClr = 0;
+
+	// Audio channel 0
+	if(uwIntReq & INTF_AUD0) {
+		if(s_pAceInterrupts[INTB_AUD0].pHandler) {
+			s_pAceInterrupts[INTB_AUD0].pHandler(
+				g_pCustom, s_pAceInterrupts[INTB_AUD0].pData
+			);
+		}
+		uwReqClr |= INTF_AUD0;
+	}
+
+	// Audio channel 1
+	if(uwIntReq & INTF_AUD1) {
+		if(s_pAceInterrupts[INTB_AUD1].pHandler) {
+			s_pAceInterrupts[INTB_AUD1].pHandler(
+				g_pCustom, s_pAceInterrupts[INTB_AUD1].pData
+			);
+		}
+		uwReqClr |= INTF_AUD1;
+	}
+
+	// Audio channel 2
+	if(uwIntReq & INTF_AUD2) {
+		if(s_pAceInterrupts[INTB_AUD2].pHandler) {
+			s_pAceInterrupts[INTB_AUD2].pHandler(
+				g_pCustom, s_pAceInterrupts[INTB_AUD2].pData
+			);
+		}
+		uwReqClr |= INTF_AUD2;
+	}
+
+	// Audio channel 3
+	if(uwIntReq & INTF_AUD3) {
+		if(s_pAceInterrupts[INTB_AUD3].pHandler) {
+			s_pAceInterrupts[INTB_AUD3].pHandler(
+				g_pCustom, s_pAceInterrupts[INTB_AUD3].pData
+			);
+		}
+		uwReqClr |= INTF_AUD3;
+	}
+	g_pCustom->intreq = uwReqClr;
+	g_pCustom->intreq = uwReqClr;
 }
 
 FN_HOTSPOT
@@ -283,7 +326,7 @@ void systemUnuse(void) {
 		// Everything that's supported by ACE to simplify things for now
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
 			INTF_BLIT | INTF_COPER | INTF_VERTB |
-			INTF_PORTS
+			INTF_PORTS | INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
 		);
 	}
 #if defined(ACE_DEBUG)
@@ -326,29 +369,30 @@ void systemSetInt(
 }
 
 void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled) {
+	UWORD uwDmaMask = BV(ubDmaBit);
 	if(isEnabled) {
-		s_uwAceDmaCon |= BV(ubDmaBit);
-		s_uwOsDmaCon |= BV(ubDmaBit);
+		s_uwAceDmaCon |= uwDmaMask;
+		s_uwOsDmaCon |= uwDmaMask;
 		if(!s_wSystemUses) {
-			g_pCustom->dmacon = DMAF_SETCLR | BV(ubDmaBit);
+			g_pCustom->dmacon = DMAF_SETCLR | uwDmaMask;
 		}
 		else {
-			if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
-				g_pCustom->dmacon = DMAF_SETCLR | BV(ubDmaBit);
+			if(!(uwDmaMask & s_uwOsMinDma)) {
+				g_pCustom->dmacon = DMAF_SETCLR | uwDmaMask;
 			}
 		}
 	}
 	else {
-		s_uwAceDmaCon &= ~BV(ubDmaBit);
-		if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
-			s_uwOsDmaCon &= ~BV(ubDmaBit);
+		s_uwAceDmaCon &= ~uwDmaMask;
+		if(!(uwDmaMask & s_uwOsMinDma)) {
+			s_uwOsDmaCon &= ~uwDmaMask;
 		}
 		if(!s_wSystemUses) {
-			g_pCustom->dmacon = BV(ubDmaBit);
+			g_pCustom->dmacon = uwDmaMask;
 		}
 		else {
-			if(!(BV(ubDmaBit) & s_uwOsMinDma)) {
-				g_pCustom->dmacon = BV(ubDmaBit);
+			if(!(uwDmaMask & s_uwOsMinDma)) {
+				g_pCustom->dmacon = uwDmaMask;
 			}
 		}
 	}
