@@ -17,7 +17,7 @@ bool dirCreate(const std::string &szPath)
 	#if defined(_WIN32)
 		auto Error = CreateDirectoryA(szPath.c_str(), 0);
 	#else
-		auto Error = mkdir(sPath.c_str(),0733);
+		auto Error = mkdir(szPath.c_str(),0733);
 	#endif
 
 	return Error != 0;
