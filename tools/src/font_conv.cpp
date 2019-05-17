@@ -28,8 +28,8 @@ std::map<std::string, tOutType> s_mOutType = {
 
 void printUsage(const std::string &szAppName) {
 	using fmt::print;
-	print("Usage:\n\t{} inPath outType [extraOpts]\n", szAppName);
-	print("\ninPath\t- path to TTF file or directory with PNG glyphs\n");
+	print("Usage:\n\t{} inPath outType [extraOpts]\n\n", szAppName);
+	print("inPath\t- path to TTF file or directory with PNG glyphs\n");
 	print("outType\t- one of following:\n");
 	print("\tdir\tDirectory with each glyph as separate PNG\n");
 	print("\tpng\tSingle PNG file with whole font\n");
