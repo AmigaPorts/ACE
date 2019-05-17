@@ -5,6 +5,7 @@
 #include <ace/managers/system.h>
 #include <stdlib.h>
 #include <clib/graphics_protos.h>
+#include <clib/dos_protos.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 #include <ace/utils/custom.h>
@@ -217,6 +218,52 @@ void HWINTERRUPT int7Handler(void) {
 
 //-------------------------------------------------------------------- FUNCTIONS
 
+/**
+ * @brief Flushes FDD disk activity.
+ * Originally written by Asman in asm, known as osflush
+ * Rewritten by Asman for issue #76, reformatted for ACE codestyle
+ * More explanation about how it works:
+ * http://eab.abime.net/showthread.php?t=87202&page=2
+ */
+static void systemFlushIo() {
+	struct StandardPacket *pPacket = (struct StandardPacket*)AllocMem(
+		sizeof(struct StandardPacket), MEMF_CLEAR
+	);
+
+	if(!pPacket) {
+		return;
+	}
+
+	// Get filesystem message port
+	struct MsgPort *pMsgPort = DeviceProc((CONST_STRPTR)"sys");
+	if (pMsgPort) {
+		// Get our message port
+		struct Process *pProcess = (struct Process *)FindTask(0);
+		struct MsgPort *pProcessMsgPort = &pProcess->pr_MsgPort;
+
+		// Fill in packet
+		struct DosPacket *pDosPacket = &pPacket->sp_Pkt;
+		struct Message *pMsg = &pPacket->sp_Msg;
+
+		// It is how Tripos packet system was hacked to exec messaging system
+		pMsg->mn_Node.ln_Name = (char*)pDosPacket;
+		pMsg->mn_ReplyPort = pProcessMsgPort;
+
+		pDosPacket->dp_Link = pMsg;
+		pDosPacket->dp_Port = pProcessMsgPort;
+		pDosPacket->dp_Type = ACTION_FLUSH;
+
+		// Send packet
+		PutMsg(pMsgPort, pMsg);
+
+		// Wait for reply
+		WaitPort(pProcessMsgPort);
+		GetMsg(pProcessMsgPort);
+	}
+
+	FreeMem(pPacket, sizeof(struct StandardPacket));
+}
+
 void systemKill(const char *szMsg) {
 	printf("ERR: SYSKILL: '%s'", szMsg);
 	logWrite("ERR: SYSKILL: '%s'", szMsg);
@@ -247,6 +294,9 @@ void systemCreate(void) {
 
 	// get VBR location on 68010+ machine
 	// TODO VBR
+
+	// Finish disk activity
+	systemFlushIo();
 
 	// save the state of the hardware registers (INTENA, DMA, ADKCON etc.)
 	s_uwOsIntEna = g_pCustom->intenar;
@@ -305,6 +355,15 @@ void systemDestroy(void) {
 void systemUnuse(void) {
 	--s_wSystemUses;
 	if(!s_wSystemUses) {
+		if(g_pCustom->dmaconr & DMAF_DISK) {
+			// Flush disk activity if it was used
+			// FIXME: This will hang game on start on OSes with disabled floppy drive
+			// (e.g. patch for stopping floppy drive clicking when it's empty)
+			// but bigger refactor is needed so that it's not called after
+			// systemCreate()'s dma/int kill
+			systemFlushIo();
+		}
+
 		// Disable interrupts (this is the actual "kill system/OS" part)
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
