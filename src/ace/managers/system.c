@@ -286,6 +286,13 @@ void systemCreate(void) {
 		systemKill("Can't open Gfx Library!\n");
 		return;
 	}
+
+	// This prevents "copjmp nasty bug"
+	// http://eab.abime.net/showthread.php?t=71190
+	// Asman told me that Ross from EAB found out that LoadView may cause such behavior
+	OwnBlitter();
+	WaitBlit();
+
 	s_pOsView = GfxBase->ActiView;
 	WaitTOF();
 	LoadView(0);
@@ -347,6 +354,9 @@ void systemDestroy(void) {
 	LoadView(s_pOsView);
 	WaitTOF();
 
+	WaitBlit();
+	DisownBlitter();
+
 	logWrite("Closing graphics.library...");
 	CloseLibrary((struct Library *) GfxBase);
 	logWrite("OK\n");
@@ -357,10 +367,10 @@ void systemUnuse(void) {
 	if(!s_wSystemUses) {
 		if(g_pCustom->dmaconr & DMAF_DISK) {
 			// Flush disk activity if it was used
-			// FIXME: This will hang game on start on OSes with disabled floppy drive
-			// (e.g. patch for stopping floppy drive clicking when it's empty)
-			// but bigger refactor is needed so that it's not called after
-			// systemCreate()'s dma/int kill
+			// This 'if' is here because otherwise systemUnuse() called
+			// by systemCreate() would indefinitely wait for OS when it's killed.
+			// systemUse() restores disk DMA, so it's an easy check if OS was
+			// actually restored.
 			systemFlushIo();
 		}
 

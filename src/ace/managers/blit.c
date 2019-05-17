@@ -14,8 +14,6 @@ tBlitManager g_sBlitManager = {0};
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 #if defined(AMIGA)
-	OwnBlitter();
-	blitWait();
 	systemSetDma(DMAB_BLITTER, 1);
 #endif
 	logBlockEnd("blitManagerCreate");
@@ -24,8 +22,6 @@ void blitManagerCreate(void) {
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
 #if defined(AMIGA)
-	blitWait();
-	DisownBlitter();
 	systemSetDma(DMAB_BLITTER, 0);
 #endif
 	logBlockEnd("blitManagerDestroy");
