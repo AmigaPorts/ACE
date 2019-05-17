@@ -60,7 +60,7 @@ tPlanarBitmap::tPlanarBitmap(
 
 	// Determine depth
 	m_ubDepth = 1;
-	for(uint8_t i = 2; i < Palette.m_vColors.size(); i <<= 1) {
+	for(uint16_t i = 2; i < (uint16_t)Palette.m_vColors.size(); i <<= 1) {
 		++m_ubDepth;
 	}
 	if(m_ubDepth > 8) {
