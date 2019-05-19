@@ -277,6 +277,9 @@ void scrollBufferReset(
 		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);             // Fetch stop
 	}
 
+	// Refresh bitplane pointers in copperlist
+	scrollBufferProcess(pManager);
+
 	logBlockEnd("scrollBufferReset()");
 }
 

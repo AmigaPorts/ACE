@@ -451,6 +451,9 @@ void tileBufferInitialDraw(const tTileBufferManager *pManager) {
 		pManager->pScroll->pFront->BytesPerRow * pManager->pScroll->pFront->Rows
 	);
 
+	// Refresh bitplane pointers in scrollBuffer's copprtlist
+	scrollBufferProcess(pManager->pScroll);
+
 	logBlockEnd("tileBufferInitialDraw()");
 }
 
