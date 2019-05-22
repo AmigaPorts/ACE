@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_RAND_H_
 #define _ACE_MANAGERS_RAND_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 
 /* Types */
@@ -41,5 +45,9 @@ ULONG ulRand(void); // ULONG is slower on Amiga, use UWORD instead
 ULONG ulRandMax(ULONG ulMax);
 
 ULONG ulRandMinMax(ULONG ulMin, ULONG ulMax);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_RAND_H_

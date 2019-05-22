@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_SYSTEM_H_
 #define _ACE_MANAGERS_SYSTEM_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <graphics/gfxbase.h> // Required for GfxBase
 #include <ace/types.h>
 #include <ace/utils/custom.h>
@@ -44,5 +48,9 @@ void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled);
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_SYSTEM_H_

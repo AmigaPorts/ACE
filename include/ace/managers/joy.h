@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_JOY_H_
 #define _ACE_MANAGERS_JOY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 
 /* Types */
@@ -70,5 +74,9 @@ UBYTE joyUse(UBYTE ubJoyCode);
 void joyProcess(void);
 
 void joyClose(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

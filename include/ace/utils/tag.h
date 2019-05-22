@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_TAG_H_
 #define _ACE_UTILS_TAG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Util for handling AmigaOS tag list pattern.
  */
@@ -40,5 +44,9 @@ typedef ULONG tTag;
 ULONG tagGet(
 	void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNotFound
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_TAG_H_

@@ -1,5 +1,9 @@
-#ifndef GUARD_ACE_MANAGERS_AUDIO_H
-#define GUARD_ACE_MANAGERS_AUDIO_H
+#ifndef _ACE_MANAGERS_AUDIO_H_
+#define _ACE_MANAGERS_AUDIO_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <ace/types.h>
 #include <hardware/dmabits.h> // DMAF_* flags
@@ -77,4 +81,8 @@ tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz);
  */
 void sampleDestroy(tSample *pSample);
 
-#endif // GUARD_ACE_MANAGERS_AUDIO_H
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _ACE_MANAGERS_AUDIO_H_

@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_MOUSE_H_
 #define _ACE_MANAGERS_MOUSE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 #include <ace/macros.h>
 
@@ -206,5 +210,9 @@ static inline void mouseResetPos(UBYTE ubMousePort) {
 	g_sMouseManager.pMice[ubMousePort].uwX = (pBounds->uwX2 - pBounds->uwX1) >> 1;
 	g_sMouseManager.pMice[ubMousePort].uwY = (pBounds->uwY2 - pBounds->uwY1) >> 1;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_MOUSE_H_

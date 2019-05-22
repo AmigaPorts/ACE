@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_CUSTOM_H_
 #define _ACE_UTILS_CUSTOM_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/macros.h>
 
 #ifdef AMIGA
@@ -147,4 +151,9 @@ extern tCia FAR REGPTR g_pCiaA;
 extern tCia FAR REGPTR g_pCiaB;
 
 #endif // AMIGA
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // _ACE_UTILS_CUSTOM_H_

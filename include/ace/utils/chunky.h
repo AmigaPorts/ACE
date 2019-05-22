@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_CHUNKY_H_
 #define _ACE_UTILS_CHUNKY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 #include <ace/utils/bitmap.h>
 #include <fixmath/fix16.h>
@@ -123,5 +127,9 @@ void chunkyToBitmap(
 	const UBYTE *pChunky, tBitMap *pBitmap,
 	UWORD uwDstOffsX, UWORD uwDstOffsY, UWORD uwWidth, UWORD uwHeight
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_CHUNKY_H_

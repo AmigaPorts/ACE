@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_PALETTE_H
 #define _ACE_UTILS_PALETTE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *  Palette utilities.
  */
@@ -36,5 +40,9 @@ void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
 void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel);
 
 void paletteDump(UWORD *pPalette, FUBYTE fubColorCnt, char *szPath);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_PALETTE_H

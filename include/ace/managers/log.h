@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_LOG_H_
 #define _ACE_MANAGERS_LOG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <string.h> // strlen etc
 #include <stdarg.h> // va_list etc
 #include <ace/types.h>
@@ -95,5 +99,9 @@ void _logAvgWrite(tAvg *pAvg);
 #define logAvgEnd(pAvg)
 #define logAvgWrite(pAvg)
 #endif // ACE_DEBUG
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_LOG_H_

@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_TIMER_H_
 #define _ACE_MANAGERS_TIMER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef AMIGA
 #include <clib/exec_protos.h> // Amiga typedefs
 #include <exec/interrupts.h>  // struct Interrupt
@@ -95,5 +99,9 @@ void timerFormatPrec(char *szBfr, ULONG ulPrecTime);
 void timerWaitUs(UWORD uwUsCnt);
 
 void timerOnInterrupt(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_TIMER_H_

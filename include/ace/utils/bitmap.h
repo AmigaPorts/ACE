@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_BITMAP_H_
 #define _ACE_UTILS_BITMAP_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 
 // File has its own 'flags' field - could be used in new ACE bitmap struct
@@ -171,5 +175,9 @@ void bitmapSaveBmp(
  *  stores value multiplied by bitplane count.
  */
 UWORD bitmapGetByteWidth(const tBitMap *pBitMap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_BITMAP_H_

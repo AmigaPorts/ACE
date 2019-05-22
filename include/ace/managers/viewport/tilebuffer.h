@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_VIEWPORT_TILEBUFFER_H_
 #define _ACE_MANAGERS_VIEWPORT_TILEBUFFER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef AMIGA
 
 /**
@@ -163,4 +167,9 @@ void tileBufferSetTile(
 );
 
 #endif // AMIGA
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // _ACE_MANAGERS_VIEWPORT_TILEBUFFER_H_

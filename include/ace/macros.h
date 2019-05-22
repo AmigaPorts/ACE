@@ -5,6 +5,10 @@
 #ifndef _ACE_MACROS_H_
 #define _ACE_MACROS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 
 /**
@@ -81,5 +85,9 @@ static inline ULONG ror32(ULONG ulIn, UBYTE ubRot) {
 	(x) >= ar.uwX1 && (x) <= ar.uwX2  && \
 	(y) >= ar.uwY1 && (y) <= ar.uwY2     \
 )
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MACROS_H_
