@@ -35,7 +35,7 @@ typedef int32_t LONG;
 #define INTERRUPT_END do {} while(0)
 #define HWINTERRUPT
 #define UNUSED_ARG __attribute__((unused))
-#define REGARG(arg, x) arg
+#define REGARG(arg, reg) arg
 #define CHIP
 #define FAR
 #define FN_HOTSPOT
