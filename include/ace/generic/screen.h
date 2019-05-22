@@ -5,6 +5,10 @@
 #ifndef _ACE_GENERIC_SCREEN_H_
 #define _ACE_GENERIC_SCREEN_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SCREEN_PAL_WIDTH 320
 #define SCREEN_PAL_HEIGHT 256
 #define SCREEN_PAL_HIRES_WIDTH 640
@@ -14,5 +18,9 @@
 #define SCREEN_NTSC_HEIGHT 200
 #define SCREEN_NTSC_HIRES_WIDTH 640
 #define SCREEN_HTSC_LACED_HEIGHT 400
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_GENERIC_SCREEN_H_

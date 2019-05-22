@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_FILE_H_
 #define _ACE_UTILS_FILE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <ace/types.h>
 
@@ -45,5 +49,9 @@ void fileFlush(tFile *pFile);
  * @return LONG On fail -1, otherwise file size in bytes.
  */
 LONG fileGetSize(const char *szPath);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_FILE_H_

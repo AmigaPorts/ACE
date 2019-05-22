@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_MEMORY_H_
 #define _ACE_MANAGERS_MEMORY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef AMIGA
 #include <exec/memory.h>      // MEMF_CLEAR etc
 #else
@@ -72,5 +76,9 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile);
 #define memAllocChipClear(ulSize) memAlloc(ulSize, MEMF_CHIP | MEMF_CLEAR)
 #define memAllocChipFlags(ulSize, ulFlags) memAlloc(ulSize, MEMF_CHIP | ulFlags)
 #define memAllocFastFlags(ulSize, ulFlags) memAlloc(ulSize, ulFlags)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_MEMORY_H_

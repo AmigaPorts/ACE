@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_KEY_H_
 #define _ACE_MANAGERS_KEY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 #ifdef AMIGA
 #include <exec/interrupts.h>  // struct Interrupt
@@ -197,5 +201,9 @@ static inline UBYTE keyUse(UBYTE ubKeyCode) {
 	}
 	return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_KEY_H_

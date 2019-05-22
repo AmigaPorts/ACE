@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_BMFRAME_H_
 #define _ACE_UTILS_BMFRAME_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/utils/bitmap.h>
 #include <ace/managers/blit.h>
 
@@ -12,5 +16,9 @@ void bmFrameDraw(
 	tBitMap *pFrameSet, tBitMap *pDest,
 	UWORD uwX, UWORD uwY, UBYTE ubCols, UBYTE ubRows, UBYTE ubTileSize
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_BMFRAME_H_

@@ -5,6 +5,10 @@
 #ifndef _ACE_GENERIC_MAIN_H_
 #define _ACE_GENERIC_MAIN_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <ace/types.h>
 #include <ace/managers/system.h>
@@ -65,5 +69,9 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_GAME_H_
 #define _ACE_MANAGERS_GAME_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h> // Amiga typedefs
 
 #include <ace/types.h>
@@ -56,5 +60,9 @@ void gameProcess(void);
 void gameClose(void);
 
 void gameKill(char *szError);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_GAME_H_

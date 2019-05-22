@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_ENDIAN_H_
 #define _ACE_UTILS_ENDIAN_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *  Endian conversion functions.
  *  Allows convenient converting between Little and Big Endian.
@@ -47,5 +51,9 @@ static inline ULONG endianIntel32(ULONG ulIn) {
 	return ulIn;
 #endif // AMIGA
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_ENDIAN_H_

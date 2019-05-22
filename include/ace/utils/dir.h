@@ -2,6 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef _ACE_UTILS_DIR_H
+#define _ACE_UTILS_DIR_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <dos/dos.h>
 #include <clib/dos_protos.h>
 #include <ace/types.h>
@@ -87,3 +94,9 @@ UBYTE dirCreate(const char *szName);
  * @see dirCreate()
  */
 UBYTE dirCreatePath(const char *szPath);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _ACE_UTILS_DIR_H

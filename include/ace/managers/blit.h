@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_BLIT_H_
 #define _ACE_MANAGERS_BLIT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * The mighty blitter manager
  * There was a queue mechanism, it's gone now.
@@ -156,5 +160,9 @@ void blitLine(
 	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_BLIT_H_

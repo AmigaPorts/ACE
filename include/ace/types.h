@@ -5,6 +5,10 @@
 #ifndef _ACE_TYPES_H_
 #define _ACE_TYPES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Full OS takeover
 #define CONFIG_SYSTEM_OS_TAKEOVER
 // OS-friendly (old) mode
@@ -131,5 +135,9 @@ typedef struct _tUwAbsRect {
 	UWORD uwY2;
 	UWORD uwX2;
 } tUwAbsRect;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_TYPES_H_

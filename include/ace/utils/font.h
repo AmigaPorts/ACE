@@ -5,6 +5,10 @@
 #ifndef _ACE_UTILS_FONT_H_
 #define _ACE_UTILS_FONT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *  Font & text drawing utils.
  *  @todo Consider changing prefix to 'txt' or splitting to two modules:
@@ -178,5 +182,9 @@ void fontDrawStr(
 	tBitMap *pDest, const tFont *pFont,
 	UWORD uwX, UWORD uwY, const char *szText, UBYTE ubColor, UBYTE ubFlags
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_FONT_H_
