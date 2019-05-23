@@ -77,11 +77,86 @@ UBYTE mt_SongPos;
 UBYTE mt_PattDelTime;
 UBYTE mt_PattDelTime2;
 UBYTE mt_SilCntValid;
+UWORD mt_dmaon = DMAF_SETCLR;
 
 ULONG *mt_Lev6Int;
 
-void mt_TimerAInt(void) {
+// The replayer routine. Is called automatically after mt_install_cia().
+// Called from interrupt.
+// Play next position when Counter equals Speed.
+// Effects are always handled.
+void mt_music(void) {
 
+}
+
+// Called from interrupt.
+// Plays sound effects on free channels.
+void mt_sfxonly(void) {
+
+}
+
+// TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
+// which defaults to 50 times per second.
+void mt_TimerAInt(void) {
+	// clear EXTER interrupt flag
+	g_pCustom->intreq = INTF_EXTER;
+
+	// check and clear CIAB interrupt flags
+	if(g_pCiaB->icr & CIAICR_TIMER_A) {
+		// it was a TA interrupt, do music when enabled
+		if(mt_Enable) {
+			// music with sfx inserted
+			mt_music();
+		}
+		else {
+			// no music, only sfx
+			mt_sfxonly();
+		}
+	}
+}
+
+// One-shot TimerB interrupt to set repeat samples after another 496 ticks.
+void mt_TimerBsetrep(void) {
+	// check and clear CIAB interrupt flags
+	if(g_pCiaB->icr & CIAICR_TIMER_B) {
+
+		// clear EXTER and possible audio interrupt flags
+		// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
+		g_pCustom->intreq = INTF_EXTER | (mt_dmaon & 0xFF) << 7;
+
+		// it was a TB interrupt, set repeat sample pointers and lengths
+		g_pCustom->aud[0].ac_ptr = mt_chan1.n_loopstart;
+		g_pCustom->aud[0].ac_len = mt_chan1.n_replen;
+		g_pCustom->aud[1].ac_ptr = mt_chan2.n_loopstart;
+		g_pCustom->aud[1].ac_len = mt_chan2.n_replen;
+		g_pCustom->aud[2].ac_ptr = mt_chan3.n_loopstart;
+		g_pCustom->aud[2].ac_len = mt_chan3.n_replen;
+		g_pCustom->aud[3].ac_ptr = mt_chan4.n_loopstart;
+		g_pCustom->aud[3].ac_len = mt_chan4.n_replen;
+
+
+		// restore TimerA music interrupt vector
+		*mt_Lev6Int = (ULONG)mt_TimerAInt;
+	}
+
+	// just clear EXTER interrupt flag and return
+	g_pCustom->intreq = INTF_EXTER;
+}
+
+// One-shot TimerB interrupt to enable audio DMA after 496 ticks.
+void mt_TimerBdmaon(void) {
+	// clear EXTER interrupt flag
+	g_pCustom->intreq = INTF_EXTER;
+
+	// check and clear CIAB interrupt flags
+	if(g_pCiaB->icr & CIAICR_TIMER_B) {
+		// it was a TB interrupt, restart timer to set repeat, enable DMA
+		g_pCiaB->crb = 0x19;
+		g_pCustom->dmacon = mt_dmaon;
+
+		// set level 6 interrupt to mt_TimerBsetrep
+		*mt_Lev6Int = (ULONG)mt_TimerBsetrep;
+	}
 }
 
 void mt_reset(void) {
