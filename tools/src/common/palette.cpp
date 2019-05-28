@@ -36,6 +36,7 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 
 	// Read colors
 	bool isEnd = false;
+	bool isNextEnd = false;
 	do {
 		std::stringstream ss(szLine);
 		int r, g, b;
@@ -46,9 +47,11 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 		Palette.m_vColors.push_back(Color);
 
 		std::getline(Source, szLine);
-		if(szLine == "") {
+		if(isNextEnd || szLine == "") {
 			isEnd = true;
 		}
+		if(Source.eof())
+			isNextEnd=true;
 	} while(!isEnd);
 
 	fmt::print("Palette color count: {}\n", Palette.m_vColors.size());
