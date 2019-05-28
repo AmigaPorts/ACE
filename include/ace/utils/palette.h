@@ -31,6 +31,15 @@ extern "C" {
 void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
 
 /**
+ *  @brief Loads palette from supplied .plt stored in memory to given address.
+ *  @param pData       Palette source pointer.
+ *  @param pPalette    Palette destination pointer.
+ *  @param ubMaxLength Maximum number of colors in palette.
+ */
+void paletteLoadFromMem(const UBYTE *pData , UWORD *pPalette, UBYTE ubMaxLength);
+
+
+/**
  *  @brief Dims palette to given brightness level.
  *  @param pSource      Pointer to source palette.
  *  @param pDest        Pointer to destination palette. May be same as pSource.

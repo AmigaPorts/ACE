@@ -187,6 +187,98 @@ void bitmapLoadFromFile(
 	systemUnuse();
 }
 
+void bitmapLoadFromMem(
+	tBitMap *pBitMap, const UBYTE* pData, UWORD uwStartX, UWORD uwStartY
+) {
+	UWORD uwSrcWidth, uwDstWidth, uwSrcHeight;
+	UBYTE ubSrcFlags, ubSrcBpp, ubSrcVersion;
+	UWORD y;
+	UWORD uwWidth;
+	UBYTE ubPlane;
+	ULONG ulCurByte = 0;
+
+	logBlockBegin(
+		"bitmapLoadFromMem(pBitMap: %p, uwStartX: %u, uwStartY: %u)",
+		pBitMap, uwStartX, uwStartY
+	);
+
+
+	// Read header
+	memcpy(&uwSrcWidth,&pData[ulCurByte],sizeof(UWORD));
+	ulCurByte+=sizeof(UWORD);
+
+	memcpy(&uwSrcHeight,&pData[ulCurByte],sizeof(UWORD));
+	ulCurByte+=sizeof(UWORD);
+	
+	memcpy(&ubSrcBpp,&pData[ulCurByte],sizeof(UBYTE));
+	ulCurByte+=sizeof(UBYTE);
+	
+	memcpy(&ubSrcVersion,&pData[ulCurByte],sizeof(UBYTE));
+	ulCurByte+=sizeof(UBYTE);
+
+	memcpy(&ubSrcFlags,&pData[ulCurByte],sizeof(UBYTE));
+	ulCurByte+=sizeof(UBYTE);
+
+	ulCurByte+=2*sizeof(UBYTE);
+
+	if(ubSrcVersion != 0) {
+		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
+		logBlockEnd("bitmapLoadFromMem()");
+		return;
+	}
+	logWrite("Source dimensions: %ux%u\n", uwSrcWidth, uwSrcHeight);
+
+	// Interleaved check
+	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
+		logWrite("ERR: Interleaved flag conflict\n");
+		logBlockEnd("bitmapLoadFromMem()");
+		return;
+	}
+
+	// Depth check
+	if(ubSrcBpp > pBitMap->Depth) {
+		logWrite(
+			"ERR: Source has greater BPP than destination: %hu > %hu\n",
+			ubSrcBpp, pBitMap->Depth
+		);
+		logBlockEnd("bitmapLoadFromMem()");
+		return;
+	}
+
+	// Check bitmap dimensions
+	uwDstWidth = bitmapGetByteWidth(pBitMap) << 3;
+	if(uwStartX + uwSrcWidth > uwDstWidth || uwStartY + uwSrcHeight > (pBitMap->Rows)) {
+		logWrite(
+			"ERR: Source doesn't fit on dest: %ux%u @%u,%u > %ux%u\n",
+			uwSrcWidth, uwSrcHeight,
+			uwStartX, uwStartY,
+			uwDstWidth, pBitMap->Rows
+		);
+		logBlockEnd("bitmapLoadFromMem()");
+		return;
+	}
+
+	// Read data
+	uwWidth = bitmapGetByteWidth(pBitMap);
+	if(bitmapIsInterleaved(pBitMap)) {
+		for(y = 0; y != uwSrcHeight; ++y) {
+			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
+				memcpy(&pBitMap->Planes[0][uwWidth*(((uwStartY + y)*pBitMap->Depth)+ubPlane)+(uwStartX>>3)],&pData[ulCurByte],((uwSrcWidth+7)>>3));
+				ulCurByte+=((uwSrcWidth+7)>>3);
+			}
+		}
+	}
+	else {
+		for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
+			for(y = 0; y != uwSrcHeight; ++y) {
+				memcpy(&pBitMap->Planes[ubPlane][uwWidth*(uwStartY+y) + (uwStartX>>3)],&pData[ulCurByte],((uwSrcWidth+7)>>3));
+				ulCurByte+=((uwSrcWidth+7)>>3);
+			}
+		}
+	}
+	logBlockEnd("bitmapLoadFromMem()");
+}
+
 tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	tBitMap *pBitMap;
 	FILE *pFile;

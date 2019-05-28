@@ -98,6 +98,24 @@ void bitmapLoadFromFile(
 );
 
 /**
+ *  @brief Loads bitmap data from memory to already existing bitmap.
+ *  If source is smaller than destination, you can use uwStartX & uwStartY
+ *  params to load bitmap on given coords.
+ *
+ *  @param pBitMap    Pointer to destination bitmap
+ *  @param pData      Source bitmap pointer.
+ *  @param uwStartX   Start X-coordinate on destination bitmap, 8-pixel aligned.
+ *  @param uwStartY   Start Y-coordinate on destination bitmap
+ *
+ *  @see bitmapCreate
+ *  @see bitmapCreateFromFile
+ */
+void bitmapLoadFromMem(
+	tBitMap *pBitMap,const UBYTE *pData, UWORD uwStartX, UWORD uwStartY
+);
+
+
+/**
  *  @brief Creates bitmap and loads its data from file.
  *  As opposed to bitmapLoadFromFile, this function creates bitmap based
  *  on dimensions, BPP & flags stored in file.

@@ -25,6 +25,25 @@ void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	logBlockEnd("paletteLoad()");
 }
 
+void paletteLoadFromMem(const UBYTE* pData, UWORD *pPalette, UBYTE ubMaxLength) {
+	UBYTE ubPaletteLength;
+	UBYTE ubCurByte = 0;
+
+	logBlockBegin("paletteLoadFromMem(pPalette: %p, ubMaxLength: %hu)", pPalette, ubMaxLength);
+	
+	memcpy(&ubPaletteLength,&pData[ubCurByte],sizeof(UBYTE));
+	ubCurByte+=sizeof(UBYTE);
+
+	logWrite(" Color count: %u\n", ubPaletteLength);
+	if(ubPaletteLength > ubMaxLength) {
+		ubPaletteLength = ubMaxLength;
+	}
+
+	memcpy(pPalette,&pData[ubCurByte],sizeof(UWORD)*ubPaletteLength);
+
+	logBlockEnd("paletteLoadFromMem()");
+}
+
 void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
 	UBYTE r,g,b;
 
