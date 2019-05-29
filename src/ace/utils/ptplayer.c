@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// Info regarding MOD file format:
+// - https://www.fileformat.info/format/mod/corion.htm
+// - http://lclevy.free.fr/mo3/mod.txt
+
 #include <ace/utils/ptplayer.h>
 #include <ace/utils/custom.h>
 #include <hardware/intbits.h>
@@ -60,8 +64,8 @@ tChannelStatus mt_chan1;
 tChannelStatus mt_chan2;
 tChannelStatus mt_chan3;
 tChannelStatus mt_chan4;
-ULONG mt_SampleStarts[31];
-ULONG mt_mod;
+UWORD *mt_SampleStarts[31];
+UBYTE *mt_mod;
 ULONG mt_oldLev6;
 ULONG mt_timerval;
 UBYTE mt_oldtimers[4];
@@ -85,7 +89,7 @@ ULONG *mt_Lev6Int;
 // Called from interrupt.
 // Play next position when Counter equals Speed.
 // Effects are always handled.
-void mt_music(void) {
+void mt_music(UNUSED_ARG APTR custom) {
 
 }
 
@@ -106,7 +110,7 @@ void mt_TimerAInt(void) {
 		// it was a TA interrupt, do music when enabled
 		if(mt_Enable) {
 			// music with sfx inserted
-			mt_music();
+			mt_music(g_pCustom);
 		}
 		else {
 			// no music, only sfx
@@ -159,8 +163,56 @@ void mt_TimerBdmaon(void) {
 	}
 }
 
-void mt_reset(void) {
+// Stop playing current module.
+void mt_end(void) {
+	g_pCustom->aud[0].ac_vol = 0;
+	g_pCustom->aud[1].ac_vol = 0;
+	g_pCustom->aud[2].ac_vol = 0;
+	g_pCustom->aud[3].ac_vol = 0;
+	g_pCustom->dmacon = DMAF_AUDIO;
+}
 
+void mt_reset(void) {
+	// reset speed and counters
+	mt_Speed = 6;
+	mt_Counter = 0;
+	mt_PatternPos = 0;
+
+	// Disable the filter
+	g_pCiaA->pra |= 0x02;
+
+	// set master volume to 64
+	mt_MasterVolTab = MasterVolTab64;
+
+	// initialise channel DMA, interrupt bits and audio register base
+	mt_chan1.n_dmabit = DMAF_AUD0;
+	mt_chan2.n_dmabit = DMAF_AUD1;
+	mt_chan3.n_dmabit = DMAF_AUD2;
+	mt_chan4.n_dmabit = DMAF_AUD3;
+	mt_chan1.n_intbit = INTF_AUD0;
+	mt_chan2.n_intbit = INTF_AUD1;
+	mt_chan3.n_intbit = INTF_AUD2;
+	mt_chan4.n_intbit = INTF_AUD3;
+	mt_chan1.n_audreg = &g_pCustom->aud[0].ac_ptr;
+	mt_chan2.n_audreg = &g_pCustom->aud[1].ac_ptr;
+	mt_chan3.n_audreg = &g_pCustom->aud[2].ac_ptr;
+	mt_chan4.n_audreg = &g_pCustom->aud[3].ac_ptr;
+
+	// make sure n_period doesn't start as 0
+	mt_chan1.n_period = 320;
+	mt_chan2.n_period = 320;
+	mt_chan3.n_period = 320;
+	mt_chan4.n_period = 320;
+
+	// disable sound effects
+	mt_chan1.n_sfxlen = 0;
+	mt_chan2.n_sfxlen = 0;
+	mt_chan3.n_sfxlen = 0;
+	mt_chan4.n_sfxlen = 0;
+
+	mt_SilCntValid = 0;
+	mt_E8Trigger = 0;
+	mt_end();
 }
 
 void mt_install_cia(UNUSED_ARG APTR custom, APTR *AutoVecBase, UBYTE PALflag) {
@@ -234,4 +286,113 @@ void mt_remove_cia(UNUSED_ARG APTR custom) {
 
 	// reenable previous level 6 interrupt
 	g_pCustom->intena = mt_Lev6Ena;
+}
+
+#define MOD_OFFS_PATTERN_COUNT 950
+#define MOD_OFFS_SONG_END_POS 951
+// Pattern play sequences (128 bytes)
+#define MOD_OFFS_ARRANGEMENT 952
+// Patterns - each has 64 rows, each row has 4-8 notes, each note has 4 bytes
+#define MOD_OFFS_PATTERN_START 1084
+// Length of single pattern.
+#define MOD_PATTERN_LENGTH 1024
+
+typedef struct _tSampleHeader {
+	char szName[22];
+	UWORD uwLength; ///< Sample data length, in words.
+	UBYTE ubNibble; ///< Finetune.
+	UBYTE ubVolume;
+	UWORD uwRepeatOffs; ///< In words.
+	UWORD uwRepeatLength; ///< In words.
+} tSampleHeader;
+
+typedef struct _tModule {
+	char szSongName[20];
+	tSampleHeader pSamples[31];
+	UBYTE ubPatternCount;
+	UBYTE ubSongEndPos;
+	UBYTE ubArrangement[128];
+	char pFileFormatTag[4];
+} tModule;
+
+void mt_init(
+	UNUSED_ARG APTR custom, UBYTE *TrackerModule, UBYTE *Samples,
+	UWORD InitialSongPos
+) {
+	// Initialize new module.
+	// Reset speed to 6, tempo to 125 and start at given song position.
+	// Master volume is at 64 (maximum).
+
+	mt_mod = TrackerModule;
+
+	// set initial song position
+	if(InitialSongPos >= 950) {
+		InitialSongPos = 0;
+	}
+	mt_SongPos = InitialSongPos;
+
+	// sample data location is given?
+	if(!Samples) {
+		// song arrangmenet list (pattern Table).
+		// These list up to 128 pattern numbers and the order they
+		// should be played in.
+		UBYTE *pArrangement = &TrackerModule[MOD_OFFS_ARRANGEMENT];
+
+		// Get number of highest pattern
+		UBYTE ubLastPattern = 0;
+		for(UBYTE i = 0; i < 127; ++i) {
+			if(pArrangement[i] > ubLastPattern) {
+				ubLastPattern = pArrangement[i];
+			}
+		}
+		UBYTE ubPatternCount = ubLastPattern + 1;
+
+		// now we can calculate the base address of the sample data
+		ULONG ulSampleOffs = (
+			MOD_OFFS_PATTERN_START + ubPatternCount * MOD_PATTERN_LENGTH
+		);
+		Samples = &TrackerModule[ulSampleOffs];
+		// FIXME: use as pointer for empty samples
+	}
+
+	tSampleHeader *pHeaders = (tSampleHeader*)&TrackerModule[42];
+
+	// save start address of each sample
+	UBYTE *pSampleCurr = Samples;
+	for(UBYTE i = 0; i < 31; ++i) {
+		mt_SampleStarts[i] = (UWORD*)&pSampleCurr;
+
+		// make sure sample starts with two 0-bytes
+		*mt_SampleStarts[i] = 0;
+
+		// go to next sample
+		pSampleCurr += pHeaders[i].uwLength * 2;
+	};
+
+	// reset CIA timer A to default (125)
+	UWORD uwTimer = mt_timerval / 125;
+	g_pCiaB->talo = uwTimer;
+	g_pCiaB->tahi = uwTimer >> 8;
+
+	mt_reset();
+}
+
+}
+
+// Request playing of an external sound effect on the most unused channel.
+// This function is for compatibility with the old API only!
+// You should call mt_playfx instead.
+void mt_soundfx(
+	APTR custom, APTR SamplePointer, UWORD SampleLength,
+	UWORD SamplePeriod, UWORD SampleVolume
+) {
+	tSfxStructure sSfx;
+	sSfx.sfx_ptr = SamplePointer;
+	sSfx.sfx_len = SampleLength;
+	sSfx.sfx_per = SamplePeriod;
+	sSfx.sfx_vol = SampleVolume;
+	// any channel, priority = 1
+	sSfx.sfx_cha = -1;
+	sSfx.sfx_pri = 1;
+	mt_playfx(custom, &sSfx);
 }

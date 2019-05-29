@@ -40,14 +40,16 @@ void mt_remove_cia(APTR custom);
     When a1 is NULL the samples are assumed to be stored after the patterns.
 */
 
-void mt_init(APTR custom, APTR TrackerModule, APTR Samples, UBYTE InitialSongPos);
+void mt_init(
+	APTR custom, UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos
+);
 
 /*
   _mt_end(a6=CUSTOM)
     Stop playing current module.
 */
 
-void mt_end(APTR custom);
+void mt_end(void);
 
 /*
   _mt_soundfx(a6=CUSTOM, a0=SamplePointer,
