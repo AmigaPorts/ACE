@@ -11,6 +11,8 @@
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
+#include <exec/execbase.h>
+#include <proto/exec.h>
 
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
