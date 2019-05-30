@@ -304,7 +304,7 @@ void systemCreate(void) {
 	// get VBR location on 68010+ machine
 	if (SysBase->AttnFlags & AFF_68010)
 	{
-		static UWORD getvbr[] = {0x4e7a, 0x0801, 0x4e73};
+		UWORD getvbr[] = {0x4e7a, 0x0801, 0x4e73};
 		s_pHwVectors = (tHwIntVector *)Supervisor((void *)getvbr);
 	}
 
