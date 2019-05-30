@@ -55,7 +55,7 @@ static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int5Handler, int6Handler, int7Handler
 };
 static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
-static volatile tHwIntVector * const s_pHwVectors = 0;
+static volatile tHwIntVector * s_pHwVectors = 0;
 static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static volatile UWORD s_uwAceInts = 0;
 
@@ -300,7 +300,11 @@ void systemCreate(void) {
 	WaitTOF(); // Wait for interlaced screen to finish
 
 	// get VBR location on 68010+ machine
-	// TODO VBR
+	if (SysBase->AttnFlags & AFF_68010)
+	{
+		static UWORD getvbr[] = {0x4e7a, 0x0801, 0x4e73};
+		s_pHwVectors = (tHwIntVector *)Supervisor((void *)getvbr);
+	}
 
 	// Finish disk activity
 	systemFlushIo();
