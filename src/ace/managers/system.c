@@ -302,6 +302,7 @@ void systemCreate(void) {
 	WaitTOF(); // Wait for interlaced screen to finish
 
 	// get VBR location on 68010+ machine
+	// http://eab.abime.net/showthread.php?t=65430&page=3
 	if (SysBase->AttnFlags & AFF_68010) {
 		UWORD pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
 		s_pHwVectors = (tHwIntVector *)Supervisor((void *)pGetVbrCode);
