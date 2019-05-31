@@ -302,10 +302,9 @@ void systemCreate(void) {
 	WaitTOF(); // Wait for interlaced screen to finish
 
 	// get VBR location on 68010+ machine
-	if (SysBase->AttnFlags & AFF_68010)
-	{
-		UWORD getvbr[] = {0x4e7a, 0x0801, 0x4e73};
-		s_pHwVectors = (tHwIntVector *)Supervisor((void *)getvbr);
+	if (SysBase->AttnFlags & AFF_68010) {
+		UWORD pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
+		s_pHwVectors = (tHwIntVector *)Supervisor((void *)pGetVbrCode);
 	}
 
 	// Finish disk activity
