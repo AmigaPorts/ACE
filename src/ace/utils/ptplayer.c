@@ -107,18 +107,231 @@ UWORD mt_dmaon = DMAF_SETCLR;
 
 ULONG *mt_Lev6Int;
 
+static void ptSongStep(void) {
+	mt_PatternPos = mt_PBreakPos;
+	mt_PBreakPos = 0;
+	mt_PosJumpFlag = 0;
+
+	// Next position in song
+	UBYTE ubNextPos = (mt_SongPos + 1) & 0x7F;
+	// End of song reached?
+	if(ubNextPos >= mt_mod->ubArrangementLength) {
+		ubNextPos = 0;
+	}
+	mt_SongPos = ubNextPos;
+	// Should be a check of mt_PosJumpFlag here, but unlikely that something will
+	// set it in the meantime
+}
+
+typedef void (*tFx)(void);
+
+static void mt_nop(void) {
+
+}
+
+static void mt_playvoice(
+	tChannelStatus *pChannelData, struct AudChannel *pChannelReg
+) {
+
+}
+
+tFx fx_tab[] = {
+	mt_arpeggio,
+	mt_portaup,
+	mt_portadown,
+	mt_toneporta,
+	mt_vibrato,
+	mt_tonevolslide,
+	mt_vibrvolslide,
+	mt_tremolo,
+	mt_nop,
+	mt_nop,
+	mt_volumeslide,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_e_cmds,
+	mt_nop
+};
+
+static void mt_checkfx(
+	tChannelStatus *pChannelData, struct AudChannel *pChannelReg
+) {
+	if(pChannelData->n_sfxpri) {
+		UWORD uwLen = pChannelData->n_sfxlen;
+		if(uwLen) {
+			startSfx(uwLen, pChannelData, pChannelReg);
+		}
+		if(uwLen || (
+			(pChannelData->n_intbit & g_pCustom->intreqr) ||
+			(pChannelData->n_dmabit & g_pCustom->dmaconr)
+		)) {
+			// Channel is blocked, only check some E-commands
+			UWORD uwCmd = pChannelData->n_cmd & 0x0FFF;
+			if((uwCmd & 0xF00) == 0xE00) {
+				// NOP command
+				return;
+			}
+			goto lBlockedECmds;
+		}
+		else {
+			// sound effect sample has played, so unblock this channel again
+			pChannelData->n_sfxpri = 0;
+		}
+	}
+	// do channel effects between notes
+	if(pChannelData->n_funk) {
+		mt_updatefunk();
+	}
+	UWORD uwCmd = pChannelData->n_cmd & 0x0FFF;
+	if(!uwCmd) {
+		// Just set the current period
+		pChannelReg->ac_per = pChannelData->n_period;
+	}
+	else {
+		uwCmd &= 0xFF;
+		UWORD uwCmd2 = (pChannelData->n_cmd & 0xF);
+		fx_tab[uwCmd2]();
+	}
+}
+
 // The replayer routine. Is called automatically after mt_install_cia().
 // Called from interrupt.
 // Play next position when Counter equals Speed.
 // Effects are always handled.
 void mt_music(UNUSED_ARG APTR custom) {
+	mt_dmaon &= 0xFF00;
+	++mt_Counter;
+	if(mt_Counter < mt_Speed) {
+		// no new note, just check effects, don't step to next position
+		mt_checkfx(&g_pCustom->aud[0], &mt_chan1);
+		mt_checkfx(&g_pCustom->aud[1], &mt_chan2);
+		mt_checkfx(&g_pCustom->aud[2], &mt_chan3);
+		mt_checkfx(&g_pCustom->aud[3], &mt_chan4);
 
+		// set one-shot TimerB interrupt for enabling DMA, when needed
+		if(mt_dmaon & 0xFF) {
+			*mt_Lev6Int = mt_TimerBdmaon;
+			g_pCiaB->crb = 0x19; // load/start timer B, one-shot
+		}
+	}
+	else {
+		// handle a new note
+		mt_Counter = 0;
+		if(mt_PattDelTime2 <= 0) {
+			// determine pointer to current pattern line
+			tModSampleHeader *pSamples = mt_mod->pSamples;
+			UBYTE *pPatternData = ((UBYTE*)mt_mod)[1084];
+			UBYTE *pArrangement = mt_mod->pArrangement;
+			UBYTE ubPatternIdx = pArrangement[mt_SongPos];
+			UBYTE *pCurrentPattern = &pPatternData[mt_SongPos * 1024];
+			UBYTE *pPatternLine = &pCurrentPattern[mt_PatternPos];
+
+			// play new note for each channel, apply some effects
+			mt_playvoice(&g_pCustom->aud[0], &mt_chan1);
+			mt_playvoice(&g_pCustom->aud[1], &mt_chan2);
+			mt_playvoice(&g_pCustom->aud[2], &mt_chan3);
+			mt_playvoice(&g_pCustom->aud[3], &mt_chan4);
+		}
+		else {
+			// we have a pattern delay, check effects then step
+			mt_checkfx(&g_pCustom->aud[0], &mt_chan1);
+			mt_checkfx(&g_pCustom->aud[1], &mt_chan2);
+			mt_checkfx(&g_pCustom->aud[2], &mt_chan3);
+			mt_checkfx(&g_pCustom->aud[3], &mt_chan4);
+		}
+		// set one-shot TimerB interrupt for enabling DMA, when needed
+		if(mt_dmaon & 0xFF) {
+			*mt_Lev6Int = mt_TimerBdmaon;
+			g_pCiaB->crb = 0x19; // load/start timer B, one-shot
+		}
+
+		// next pattern line, handle delay and break
+		mt_SilCntValid = 0; // recalculate silence counters
+		UBYTE ubOffs = 16; // Offset to next pattern line
+		UBYTE d1 = mt_PattDelTime2;
+		if(mt_PattDelTime) {
+			d1 = mt_PattDelTime;
+			mt_PattDelTime = 0;
+		}
+		if(d1) {
+			--d1;
+			if(d1) {
+				ubOffs = 0; // Do not advance to next line
+			}
+			mt_PattDelTime2 = d1;
+		}
+		UWORD uwNextLinePos = mt_PatternPos + ubOffs;
+
+		// Check for break
+		if(mt_PBreakFlag) {
+			mt_PBreakFlag = 0;
+			uwNextLinePos = mt_PBreakPos;
+			mt_PBreakPos = 0;
+		}
+
+		// Check whether end of pattern is reached
+		mt_PatternPos = uwNextLinePos;
+		if(uwNextLinePos >= 1024) {
+			ptSongStep();
+		}
+	}
+	if(mt_PosJumpFlag) {
+		ptSongStep();
+	}
+}
+
+static void startSfx(
+	UWORD uwLen, tChannelStatus *pChannelData, struct AudChannel *pChannelReg
+) {
+	// play new sound effect on this channel
+	g_pCustom->dmacon = pChannelData->n_dmabit;
+	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
+	pChannelReg->ac_len = uwLen;
+	pChannelReg->ac_per = pChannelData->n_sfxper;
+	pChannelReg->ac_vol = pChannelData->n_sfxvol;
+
+	// save repeat and period for TimerB interrupt
+	pChannelData->n_loopstart = pChannelData->n_sfxptr;
+	pChannelData->n_replen = 1;
+	pChannelData->n_period = pChannelData->n_period;
+	pChannelData->n_looped = 0;
+	pChannelData->n_sfxlen = 0;
+
+	mt_dmaon |= pChannelData->n_dmabit;
+}
+
+static void chan_sfx_only(
+	struct AudChannel *pChannelReg, tChannelStatus *pChannelData
+) {
+	if(pChannelData->n_sfxpri <= 0) {
+		return;
+	}
+	startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
+
+	UWORD uwIntBits = pChannelData->n_intbit & g_pCustom->intreqr;
+	if(
+		(pChannelData->n_intbit & g_pCustom->intreqr) &&
+		(pChannelData->n_dmabit & mt_dmaon)
+	) {
+		// Last sound effect sample has played, so unblock this channel again
+		pChannelData->n_sfxpri = 0;
+	}
 }
 
 // Called from interrupt.
 // Plays sound effects on free channels.
 void mt_sfxonly(void) {
+	mt_dmaon &= 0xFF00;
+	chan_sfx_only(&g_pCustom->aud[0], &mt_chan1);
+	chan_sfx_only(&g_pCustom->aud[1], &mt_chan2);
+	chan_sfx_only(&g_pCustom->aud[2], &mt_chan3);
+	chan_sfx_only(&g_pCustom->aud[3], &mt_chan4);
 
+	if(mt_dmaon & 0xFF) {
+		*mt_Lev6Int = mt_TimerBdmaon;
+		g_pCiaB->crb = 0x19; // load/start timer B, one-shot
+	}
 }
 
 // TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
@@ -372,6 +585,242 @@ void mt_init(
 	mt_reset();
 }
 
+// activate the sound effect on this channel
+static void ptSetSfx(tSfxStructure *pSfx, tChannelStatus *pChannel) {
+	pChannel->n_sfxptr = pSfx->sfx_ptr;
+	pChannel->n_sfxlen = pSfx->sfx_len;
+	pChannel->n_sfxper = pSfx->sfx_per;
+	pChannel->n_sfxvol = pSfx->sfx_vol;
+	pChannel->n_sfxpri = pSfx->sfx_pri;
+}
+
+// Request playing of a prioritized external sound effect, either on a
+// fixed channel or on the most unused one.
+// A negative channel specification means to use the best one.
+// The priority is unsigned and should be greater than zero.
+// When multiple samples are assigned to the same channel the lower
+// priority sample will be replaced. When priorities are the same, then
+// the older sample is replaced.
+// The chosen channel is blocked for music until the effect has
+// completely been replayed.
+void mt_playfx(UNUSED_ARG APTR custom, tSfxStructure *SfxStructurePointer) {
+	if(SfxStructurePointer->sfx_cha > 0) {
+		// use fixed channel for effect
+		tChannelStatus *pChannels[] = {&mt_chan1, &mt_chan2, &mt_chan3, &mt_chan4};
+		tChannelStatus *pChannel = pChannels[SfxStructurePointer->sfx_cha];
+
+		// Priority high enough to replace a present effect on this channel?
+		g_pCustom->intena = INTF_INTEN;
+		if(SfxStructurePointer->sfx_pri >= pChannel->n_sfxpri) {
+			ptSetSfx(SfxStructurePointer, pChannel);
+		}
+		return;
+	}
+	// Did we already calculate the n_freecnt values for all channels?
+	if(!mt_SilCntValid) {
+		// Look at the next 8 pattern steps to find the longest sequence
+		// of silence (no new note or instrument).
+		UBYTE i = 8;
+
+		// remember which channels are not available for sound effects
+		UBYTE d4 = mt_chan1.n_musiconly;
+		UBYTE d5 = mt_chan2.n_musiconly;
+		UBYTE d6 = mt_chan3.n_musiconly;
+		UBYTE d7 = mt_chan4.n_musiconly;
+
+		// reset freecnts for all channels
+		mt_chan1.n_freecnt = 0;
+		mt_chan2.n_freecnt = 0;
+		mt_chan3.n_freecnt = 0;
+		mt_chan4.n_freecnt = 0;
+
+		// get pattern pointer
+		UBYTE *pPatterns = (UBYTE*)mt_mod + sizeof(tModFile);
+
+		UBYTE ubSongPos = mt_SongPos;
+		UWORD uwPatternPos = mt_PatternPos;
+
+	l1:
+		UBYTE *pPatternStart = &pPatterns[
+			mt_mod->pArrangement[ubSongPos] * MOD_PATTERN_LENGTH
+		];
+		ULONG *pPatternEnd = (ULONG*)(pPatternStart + MOD_PATTERN_LENGTH);
+		ULONG *pPatternPos = (ULONG*)(pPatternStart + uwPatternPos);
+
+	l2:
+		UBYTE d0 = 4;
+
+		ULONG d1 = *pPatternPos++;
+		if(!d4) {
+			++mt_chan1.n_freecnt;
+			if(d1 & 0xFFFFF000) { // mask to ignore effects
+				d4 = 1;
+			}
+		}
+
+		d0 += d4;
+
+		d1 = *pPatternPos++;
+		if(!d5) {
+			++mt_chan2.n_freecnt;
+			if(d1 & 0xFFFFF000) { // mask to ignore effects
+				d5 = 1;
+			}
+		}
+
+		d0 += d5;
+
+		d1 = *pPatternPos++;
+		if(!d6) {
+			++mt_chan2.n_freecnt;
+			if(d1 & 0xFFFFF000) { // mask to ignore effects
+				d6 = 1;
+			}
+		}
+
+		d0 += d6;
+
+		d1 = *pPatternPos++;
+		if(!d7) {
+			++mt_chan2.n_freecnt;
+			if(d1 & 0xFFFFF000) { // mask to ignore effects
+				d7 = 1;
+			}
+		}
+
+		d0 += d7;
+
+		// break the loop when no channel has any more free pattern steps
+		// otherwise break after 8 pattern steps
+		if(d0 != 0 && --i != 0) {
+			// End of pattern reached? Then load next pattern pointer
+			if(pPatternPos < pPatternEnd) {
+				goto l2;
+			}
+			uwPatternPos = 0;
+			ubSongPos = mt_SongPos + 1 & 127;
+			if(ubSongPos >= mt_mod->ubArrangementLength) {
+				ubSongPos = 0;
+			}
+			goto l1;
+		}
+		mt_SilCntValid = 1;
+	}
+
+	g_pCustom->intena = INTF_INTEN;
+	tChannelStatus *pBestChannel = 0;
+
+	// Determine which channels are already allocated for sound
+	// effects and check if the limit was reached. In this case only
+	// replace sound effect channels by higher priority.
+	BYTE bFreeChannels = 3 - mt_MusicChannels;
+	if(mt_chan1.n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(mt_chan2.n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(mt_chan3.n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(mt_chan4.n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(bFreeChannels >= 0) {
+
+		// Exclude channels which have set a repeat loop.
+		// Try not to break them!
+		UWORD uwChannels = 0;
+		if(!mt_chan1.n_looped) {
+			uwChannels |= INTF_AUD0;
+		}
+		else if(!mt_chan2.n_looped) {
+			uwChannels |= INTF_AUD1;
+		}
+		else if(!mt_chan3.n_looped) {
+			uwChannels |= INTF_AUD2;
+		}
+		else if(!mt_chan4.n_looped) {
+			uwChannels |= INTF_AUD3;
+		}
+
+		// We will prefer a music channel which had an audio interrupt bit set,
+		// because that means the last instrument sample has been played
+		// completely, and the channel is now in an idle loop.
+		uwChannels &= g_pCustom->intreqr;
+		if(!uwChannels) {
+			// All channels are busy, then it doesn't matter which one we break...
+			uwChannels = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
+		}
+
+		// First look for the best unused channel
+		UBYTE ubBestFreeCnt = 0;
+		if(!(uwChannels & INTF_AUD0) && !mt_chan1.n_sfxpri) {
+			if(mt_chan1.n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan1.n_freecnt;
+				pBestChannel = &mt_chan1;
+			}
+		}
+		if(!(uwChannels & INTF_AUD1) && !mt_chan2.n_sfxpri) {
+			if(mt_chan2.n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan2.n_freecnt;
+				pBestChannel = &mt_chan2;
+			}
+		}
+		if(!(uwChannels & INTF_AUD2) && !mt_chan3.n_sfxpri) {
+			if(mt_chan3.n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan3.n_freecnt;
+				pBestChannel = &mt_chan3;
+			}
+		}
+		if(!(uwChannels & INTF_AUD3) && !mt_chan4.n_sfxpri) {
+			if(mt_chan4.n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan4.n_freecnt;
+				pBestChannel = &mt_chan4;
+			}
+		}
+	}
+	else {
+		// Finally try to overwrite a sound effect with lower/equal priority
+		SfxStructurePointer->sfx_pri; // d2
+		UBYTE ubBestFreeCnt = 0;
+		if(
+			mt_chan1.n_sfxpri > 0 &&
+			mt_chan1.n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan1.n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan1.n_freecnt;
+			pBestChannel = &mt_chan1;
+		}
+		else if(
+			mt_chan2.n_sfxpri > 0 &&
+			mt_chan2.n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan2.n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan2.n_freecnt;
+			pBestChannel = &mt_chan2;
+		}
+		else if(
+			mt_chan3.n_sfxpri > 0 &&
+			mt_chan3.n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan3.n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan3.n_freecnt;
+			pBestChannel = &mt_chan3;
+		}
+		else if(
+			mt_chan4.n_sfxpri > 0 &&
+			mt_chan4.n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan4.n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan4.n_freecnt;
+			pBestChannel = &mt_chan4;
+		}
+	}
+	if(!pBestChannel) {
+		return;
+	}
+	ptSetSfx(SfxStructurePointer, pBestChannel);
 }
 
 // Request playing of an external sound effect on the most unused channel.
@@ -390,4 +839,28 @@ void mt_soundfx(
 	sSfx.sfx_cha = -1;
 	sSfx.sfx_pri = 1;
 	mt_playfx(custom, &sSfx);
+}
+
+// Set bits in the mask define which specific channels are reserved
+// for music only. Set bit 0 for channel 0, ..., bit 3 for channel 3.
+// When calling _mt_soundfx or _mt_playfx with automatic channel selection
+// (sfx_cha=-1) then these masked channels will never be picked.
+// The mask defaults to 0.
+void mt_musicmask(UNUSED_ARG APTR custom, UBYTE ChannelMask) {
+	g_pCustom->intena = INTF_INTEN;
+	mt_chan1.n_musiconly = BTST(ChannelMask, 0);
+	mt_chan2.n_musiconly = BTST(ChannelMask, 1);
+	mt_chan3.n_musiconly = BTST(ChannelMask, 2);
+	mt_chan4.n_musiconly = BTST(ChannelMask, 3);
+
+	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
+}
+
+// Set a master volume from 0 to 64 for all music channels.
+// Note that the master volume does not affect the volume of external
+// sound effects (which is desired).
+void mt_mastervol(UNUSED_ARG APTR custom, UWORD MasterVolume) {
+	g_pCustom->intena = INTF_INTEN;
+	mt_MasterVolTab = MasterVolTab[MasterVolume];
+	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
