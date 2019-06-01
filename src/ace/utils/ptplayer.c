@@ -11,6 +11,28 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 
+typedef struct _tModSampleHeader {
+	char szName[22];
+	UWORD uwLength; ///< Sample data length, in words.
+	UBYTE ubNibble; ///< Finetune.
+	UBYTE ubVolume;
+	UWORD uwRepeatOffs; ///< In words.
+	UWORD uwRepeatLength; ///< In words.
+} tModSampleHeader;
+
+typedef struct _tModFile {
+	char szSongName[20];
+	tModSampleHeader pSamples[31];
+	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
+	                           /// pattern count in file. Max 128.
+	UBYTE ubSongEndPos;
+	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
+		                       /// These list up to 128 pattern numbers
+													 /// and the order they should be played in.
+	char pFileFormatTag[4];
+	// MOD pattern/sample data follows
+} tModFile;
+
 typedef struct _tChannelStatus {
 	UWORD n_note;
 	UBYTE n_cmd;
@@ -65,19 +87,19 @@ tChannelStatus mt_chan2;
 tChannelStatus mt_chan3;
 tChannelStatus mt_chan4;
 UWORD *mt_SampleStarts[31];
-UBYTE *mt_mod;
+tModFile *mt_mod;
 ULONG mt_oldLev6;
 ULONG mt_timerval;
 UBYTE mt_oldtimers[4];
 ULONG mt_MasterVolTab;
 UWORD mt_Lev6Ena;
 UWORD mt_PatternPos;
-UWORD mt_PBreakPos;
+UWORD mt_PBreakPos; ///< Pattern break pos
 UBYTE mt_PosJumpFlag;
 UBYTE mt_PBreakFlag;
 UBYTE mt_Speed;
 UBYTE mt_Counter;
-UBYTE mt_SongPos;
+UBYTE mt_SongPos; ///< Position in arrangement.
 UBYTE mt_PattDelTime;
 UBYTE mt_PattDelTime2;
 UBYTE mt_SilCntValid;
@@ -288,32 +310,10 @@ void mt_remove_cia(UNUSED_ARG APTR custom) {
 	g_pCustom->intena = mt_Lev6Ena;
 }
 
-#define MOD_OFFS_PATTERN_COUNT 950
-#define MOD_OFFS_SONG_END_POS 951
-// Pattern play sequences (128 bytes)
-#define MOD_OFFS_ARRANGEMENT 952
 // Patterns - each has 64 rows, each row has 4-8 notes, each note has 4 bytes
 #define MOD_OFFS_PATTERN_START 1084
 // Length of single pattern.
 #define MOD_PATTERN_LENGTH 1024
-
-typedef struct _tSampleHeader {
-	char szName[22];
-	UWORD uwLength; ///< Sample data length, in words.
-	UBYTE ubNibble; ///< Finetune.
-	UBYTE ubVolume;
-	UWORD uwRepeatOffs; ///< In words.
-	UWORD uwRepeatLength; ///< In words.
-} tSampleHeader;
-
-typedef struct _tModule {
-	char szSongName[20];
-	tSampleHeader pSamples[31];
-	UBYTE ubPatternCount;
-	UBYTE ubSongEndPos;
-	UBYTE ubArrangement[128];
-	char pFileFormatTag[4];
-} tModule;
 
 void mt_init(
 	UNUSED_ARG APTR custom, UBYTE *TrackerModule, UBYTE *Samples,
@@ -323,7 +323,7 @@ void mt_init(
 	// Reset speed to 6, tempo to 125 and start at given song position.
 	// Master volume is at 64 (maximum).
 
-	mt_mod = TrackerModule;
+	mt_mod = (tModFile*)TrackerModule;
 
 	// set initial song position
 	if(InitialSongPos >= 950) {
@@ -333,16 +333,11 @@ void mt_init(
 
 	// sample data location is given?
 	if(!Samples) {
-		// song arrangmenet list (pattern Table).
-		// These list up to 128 pattern numbers and the order they
-		// should be played in.
-		UBYTE *pArrangement = &TrackerModule[MOD_OFFS_ARRANGEMENT];
-
 		// Get number of highest pattern
 		UBYTE ubLastPattern = 0;
 		for(UBYTE i = 0; i < 127; ++i) {
-			if(pArrangement[i] > ubLastPattern) {
-				ubLastPattern = pArrangement[i];
+			if(mt_mod->pArrangement[i] > ubLastPattern) {
+				ubLastPattern = mt_mod->pArrangement[i];
 			}
 		}
 		UBYTE ubPatternCount = ubLastPattern + 1;
@@ -355,7 +350,7 @@ void mt_init(
 		// FIXME: use as pointer for empty samples
 	}
 
-	tSampleHeader *pHeaders = (tSampleHeader*)&TrackerModule[42];
+	tModSampleHeader *pHeaders = (tModSampleHeader*)&TrackerModule[42];
 
 	// save start address of each sample
 	UBYTE *pSampleCurr = Samples;
