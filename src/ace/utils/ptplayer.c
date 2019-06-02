@@ -11,6 +11,403 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 
+static UBYTE MasterVolTab[][65] = {
+	{
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0
+	}, {
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		1
+	}, {
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+		1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+		2
+	}, {
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
+		1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,
+		2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+		3
+	}, {
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+		2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+		3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+		4
+	}, {
+		0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+		1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,
+		2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,
+		3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,
+		5
+	}, {
+		0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,
+		1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,
+		3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,
+		4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,
+		6
+	}, {
+		0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,
+		1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,
+		3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,
+		5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,
+		7
+	}, {
+		0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
+		2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,
+		4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,
+		6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,
+		8
+	}, {
+		0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,
+		2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,
+		4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,
+		6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,8,
+		9
+	}, {
+		0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,
+		2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,
+		5,5,5,5,5,5,5,6,6,6,6,6,6,7,7,7,
+		7,7,7,7,8,8,8,8,8,8,9,9,9,9,9,9,
+		10
+	}, {
+		0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,
+		2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,
+		5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,8,
+		8,8,8,8,8,9,9,9,9,9,9,10,10,10,10,10,
+		11
+	}, {
+		0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,
+		3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,
+		6,6,6,6,6,6,7,7,7,7,7,8,8,8,8,8,
+		9,9,9,9,9,9,10,10,10,10,10,11,11,11,11,11,
+		12
+	}, {
+		0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,
+		3,3,3,3,4,4,4,4,4,5,5,5,5,5,6,6,
+		6,6,6,7,7,7,7,7,8,8,8,8,8,9,9,9,
+		9,9,10,10,10,10,10,11,11,11,11,11,12,12,12,12,
+		13
+	}, {
+		0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,
+		3,3,3,4,4,4,4,5,5,5,5,5,6,6,6,6,
+		7,7,7,7,7,8,8,8,8,8,9,9,9,9,10,10,
+		10,10,10,11,11,11,11,12,12,12,12,12,13,13,13,13,
+		14
+	}, {
+		0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,
+		3,3,4,4,4,4,5,5,5,5,6,6,6,6,7,7,
+		7,7,7,8,8,8,8,9,9,9,9,10,10,10,10,11,
+		11,11,11,11,12,12,12,12,13,13,13,13,14,14,14,14,
+		15
+	}, {
+		0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,
+		4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,
+		8,8,8,8,9,9,9,9,10,10,10,10,11,11,11,11,
+		12,12,12,12,13,13,13,13,14,14,14,14,15,15,15,15,
+		16
+	}, {
+		0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,
+		4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,8,
+		8,8,9,9,9,9,10,10,10,10,11,11,11,11,12,12,
+		12,13,13,13,13,14,14,14,14,15,15,15,15,16,16,16,
+		17
+	}, {
+		0,0,0,0,1,1,1,1,2,2,2,3,3,3,3,4,
+		4,4,5,5,5,5,6,6,6,7,7,7,7,8,8,8,
+		9,9,9,9,10,10,10,10,11,11,11,12,12,12,12,13,
+		13,13,14,14,14,14,15,15,15,16,16,16,16,17,17,17,
+		18
+	}, {
+		0,0,0,0,1,1,1,2,2,2,2,3,3,3,4,4,
+		4,5,5,5,5,6,6,6,7,7,7,8,8,8,8,9,
+		9,9,10,10,10,10,11,11,11,12,12,12,13,13,13,13,
+		14,14,14,15,15,15,16,16,16,16,17,17,17,18,18,18,
+		19
+	}, {
+		0,0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,
+		5,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,
+		10,10,10,10,11,11,11,12,12,12,13,13,13,14,14,14,
+		15,15,15,15,16,16,16,17,17,17,18,18,18,19,19,19,
+		20
+	}, {
+		0,0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,
+		5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,
+		10,10,11,11,11,12,12,12,13,13,13,14,14,14,15,15,
+		15,16,16,16,17,17,17,18,18,18,19,19,19,20,20,20,
+		21
+	}, {
+		0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,5,
+		5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,
+		11,11,11,12,12,12,13,13,13,14,14,14,15,15,15,16,
+		16,16,17,17,17,18,18,18,19,19,19,20,20,20,21,21,
+		22
+	}, {
+		0,0,0,1,1,1,2,2,2,3,3,3,4,4,5,5,
+		5,6,6,6,7,7,7,8,8,8,9,9,10,10,10,11,
+		11,11,12,12,12,13,13,14,14,14,15,15,15,16,16,16,
+		17,17,17,18,18,19,19,19,20,20,20,21,21,21,22,22,
+		23
+	}, {
+		0,0,0,1,1,1,2,2,3,3,3,4,4,4,5,5,
+		6,6,6,7,7,7,8,8,9,9,9,10,10,10,11,11,
+		12,12,12,13,13,13,14,14,15,15,15,16,16,16,17,17,
+		18,18,18,19,19,19,20,20,21,21,21,22,22,22,23,23,
+		24
+	}, {
+		0,0,0,1,1,1,2,2,3,3,3,4,4,5,5,5,
+		6,6,7,7,7,8,8,8,9,9,10,10,10,11,11,12,
+		12,12,13,13,14,14,14,15,15,16,16,16,17,17,17,18,
+		18,19,19,19,20,20,21,21,21,22,22,23,23,23,24,24,
+		25
+	}, {
+		0,0,0,1,1,2,2,2,3,3,4,4,4,5,5,6,
+		6,6,7,7,8,8,8,9,9,10,10,10,11,11,12,12,
+		13,13,13,14,14,15,15,15,16,16,17,17,17,18,18,19,
+		19,19,20,20,21,21,21,22,22,23,23,23,24,24,25,25,
+		26
+	}, {
+		0,0,0,1,1,2,2,2,3,3,4,4,5,5,5,6,
+		6,7,7,8,8,8,9,9,10,10,10,11,11,12,12,13,
+		13,13,14,14,15,15,16,16,16,17,17,18,18,18,19,19,
+		20,20,21,21,21,22,22,23,23,24,24,24,25,25,26,26,
+		27
+	}, {
+		0,0,0,1,1,2,2,3,3,3,4,4,5,5,6,6,
+		7,7,7,8,8,9,9,10,10,10,11,11,12,12,13,13,
+		14,14,14,15,15,16,16,17,17,17,18,18,19,19,20,20,
+		21,21,21,22,22,23,23,24,24,24,25,25,26,26,27,27,
+		28
+	}, {
+		0,0,0,1,1,2,2,3,3,4,4,4,5,5,6,6,
+		7,7,8,8,9,9,9,10,10,11,11,12,12,13,13,14,
+		14,14,15,15,16,16,17,17,18,18,19,19,19,20,20,21,
+		21,22,22,23,23,24,24,24,25,25,26,26,27,27,28,28,
+		29
+	}, {
+		0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,
+		7,7,8,8,9,9,10,10,11,11,12,12,13,13,14,14,
+		15,15,15,16,16,17,17,18,18,19,19,20,20,21,21,22,
+		22,22,23,23,24,24,25,25,26,26,27,27,28,28,29,29,
+		30
+	}, {
+		0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,
+		7,8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,
+		15,15,16,16,17,17,18,18,19,19,20,20,21,21,22,22,
+		23,23,24,24,25,25,26,26,27,27,28,28,29,29,30,30,
+		31
+	}, {
+		0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,
+		8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15,
+		16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,
+		24,24,25,25,26,26,27,27,28,28,29,29,30,30,31,31,
+		32
+	}, {
+		0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,
+		8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15,
+		16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,24,
+		24,25,25,26,26,27,27,28,28,29,29,30,30,31,31,32,
+		33
+	}, {
+		0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,
+		8,9,9,10,10,11,11,12,12,13,13,14,14,15,15,16,
+		17,17,18,18,19,19,20,20,21,21,22,22,23,23,24,24,
+		25,26,26,27,27,28,28,29,29,30,30,31,31,32,32,33,
+		34
+	}, {
+		0,0,1,1,2,2,3,3,4,4,5,6,6,7,7,8,
+		8,9,9,10,10,11,12,12,13,13,14,14,15,15,16,16,
+		17,18,18,19,19,20,20,21,21,22,22,23,24,24,25,25,
+		26,26,27,27,28,28,29,30,30,31,31,32,32,33,33,34,
+		35
+	}, {
+		0,0,1,1,2,2,3,3,4,5,5,6,6,7,7,8,
+		9,9,10,10,11,11,12,12,13,14,14,15,15,16,16,17,
+		18,18,19,19,20,20,21,21,22,23,23,24,24,25,25,26,
+		27,27,28,28,29,29,30,30,31,32,32,33,33,34,34,35,
+		36
+	}, {
+		0,0,1,1,2,2,3,4,4,5,5,6,6,7,8,8,
+		9,9,10,10,11,12,12,13,13,14,15,15,16,16,17,17,
+		18,19,19,20,20,21,21,22,23,23,24,24,25,26,26,27,
+		27,28,28,29,30,30,31,31,32,32,33,34,34,35,35,36,
+		37
+	}, {
+		0,0,1,1,2,2,3,4,4,5,5,6,7,7,8,8,
+		9,10,10,11,11,12,13,13,14,14,15,16,16,17,17,18,
+		19,19,20,20,21,21,22,23,23,24,24,25,26,26,27,27,
+		28,29,29,30,30,31,32,32,33,33,34,35,35,36,36,37,
+		38
+	}, {
+		0,0,1,1,2,3,3,4,4,5,6,6,7,7,8,9,
+		9,10,10,11,12,12,13,14,14,15,15,16,17,17,18,18,
+		19,20,20,21,21,22,23,23,24,24,25,26,26,27,28,28,
+		29,29,30,31,31,32,32,33,34,34,35,35,36,37,37,38,
+		39
+	}, {
+		0,0,1,1,2,3,3,4,5,5,6,6,7,8,8,9,
+		10,10,11,11,12,13,13,14,15,15,16,16,17,18,18,19,
+		20,20,21,21,22,23,23,24,25,25,26,26,27,28,28,29,
+		30,30,31,31,32,33,33,34,35,35,36,36,37,38,38,39,
+		40
+	}, {
+		0,0,1,1,2,3,3,4,5,5,6,7,7,8,8,9,
+		10,10,11,12,12,13,14,14,15,16,16,17,17,18,19,19,
+		20,21,21,22,23,23,24,24,25,26,26,27,28,28,29,30,
+		30,31,32,32,33,33,34,35,35,36,37,37,38,39,39,40,
+		41
+	}, {
+		0,0,1,1,2,3,3,4,5,5,6,7,7,8,9,9,
+		10,11,11,12,13,13,14,15,15,16,17,17,18,19,19,20,
+		21,21,22,22,23,24,24,25,26,26,27,28,28,29,30,30,
+		31,32,32,33,34,34,35,36,36,37,38,38,39,40,40,41,
+		42
+	}, {
+		0,0,1,2,2,3,4,4,5,6,6,7,8,8,9,10,
+		10,11,12,12,13,14,14,15,16,16,17,18,18,19,20,20,
+		21,22,22,23,24,24,25,26,26,27,28,28,29,30,30,31,
+		32,32,33,34,34,35,36,36,37,38,38,39,40,40,41,42,
+		43
+	}, {
+		0,0,1,2,2,3,4,4,5,6,6,7,8,8,9,10,
+		11,11,12,13,13,14,15,15,16,17,17,18,19,19,20,21,
+		22,22,23,24,24,25,26,26,27,28,28,29,30,30,31,32,
+		33,33,34,35,35,36,37,37,38,39,39,40,41,41,42,43,
+		44
+	}, {
+		0,0,1,2,2,3,4,4,5,6,7,7,8,9,9,10,
+		11,11,12,13,14,14,15,16,16,17,18,18,19,20,21,21,
+		22,23,23,24,25,26,26,27,28,28,29,30,30,31,32,33,
+		33,34,35,35,36,37,37,38,39,40,40,41,42,42,43,44,
+		45
+	}, {
+		0,0,1,2,2,3,4,5,5,6,7,7,8,9,10,10,
+		11,12,12,13,14,15,15,16,17,17,18,19,20,20,21,22,
+		23,23,24,25,25,26,27,28,28,29,30,30,31,32,33,33,
+		34,35,35,36,37,38,38,39,40,40,41,42,43,43,44,45,
+		46
+	}, {
+		0,0,1,2,2,3,4,5,5,6,7,8,8,9,10,11,
+		11,12,13,13,14,15,16,16,17,18,19,19,20,21,22,22,
+		23,24,24,25,26,27,27,28,29,30,30,31,32,33,33,34,
+		35,35,36,37,38,38,39,40,41,41,42,43,44,44,45,46,
+		47
+	}, {
+		0,0,1,2,3,3,4,5,6,6,7,8,9,9,10,11,
+		12,12,13,14,15,15,16,17,18,18,19,20,21,21,22,23,
+		24,24,25,26,27,27,28,29,30,30,31,32,33,33,34,35,
+		36,36,37,38,39,39,40,41,42,42,43,44,45,45,46,47,
+		48
+	}, {
+		0,0,1,2,3,3,4,5,6,6,7,8,9,9,10,11,
+		12,13,13,14,15,16,16,17,18,19,19,20,21,22,22,23,
+		24,25,26,26,27,28,29,29,30,31,32,32,33,34,35,35,
+		36,37,38,39,39,40,41,42,42,43,44,45,45,46,47,48,
+		49
+	}, {
+		0,0,1,2,3,3,4,5,6,7,7,8,9,10,10,11,
+		12,13,14,14,15,16,17,17,18,19,20,21,21,22,23,24,
+		25,25,26,27,28,28,29,30,31,32,32,33,34,35,35,36,
+		37,38,39,39,40,41,42,42,43,44,45,46,46,47,48,49,
+		50
+	}, {
+		0,0,1,2,3,3,4,5,6,7,7,8,9,10,11,11,
+		12,13,14,15,15,16,17,18,19,19,20,21,22,23,23,24,
+		25,26,27,27,28,29,30,31,31,32,33,34,35,35,36,37,
+		38,39,39,40,41,42,43,43,44,45,46,47,47,48,49,50,
+		51
+	}, {
+		0,0,1,2,3,4,4,5,6,7,8,8,9,10,11,12,
+		13,13,14,15,16,17,17,18,19,20,21,21,22,23,24,25,
+		26,26,27,28,29,30,30,31,32,33,34,34,35,36,37,38,
+		39,39,40,41,42,43,43,44,45,46,47,47,48,49,50,51,
+		52
+	}, {
+		0,0,1,2,3,4,4,5,6,7,8,9,9,10,11,12,
+		13,14,14,15,16,17,18,19,19,20,21,22,23,24,24,25,
+		26,27,28,28,29,30,31,32,33,33,34,35,36,37,38,38,
+		39,40,41,42,43,43,44,45,46,47,48,48,49,50,51,52,
+		53
+	}, {
+		0,0,1,2,3,4,5,5,6,7,8,9,10,10,11,12,
+		13,14,15,16,16,17,18,19,20,21,21,22,23,24,25,26,
+		27,27,28,29,30,31,32,32,33,34,35,36,37,37,38,39,
+		40,41,42,43,43,44,45,46,47,48,48,49,50,51,52,53,
+		54
+	}, {
+		0,0,1,2,3,4,5,6,6,7,8,9,10,11,12,12,
+		13,14,15,16,17,18,18,19,20,21,22,23,24,24,25,26,
+		27,28,29,30,30,31,32,33,34,35,36,36,37,38,39,40,
+		41,42,42,43,44,45,46,47,48,48,49,50,51,52,53,54,
+		55
+	}, {
+		0,0,1,2,3,4,5,6,7,7,8,9,10,11,12,13,
+		14,14,15,16,17,18,19,20,21,21,22,23,24,25,26,27,
+		28,28,29,30,31,32,33,34,35,35,36,37,38,39,40,41,
+		42,42,43,44,45,46,47,48,49,49,50,51,52,53,54,55,
+		56
+	}, {
+		0,0,1,2,3,4,5,6,7,8,8,9,10,11,12,13,
+		14,15,16,16,17,18,19,20,21,22,23,24,24,25,26,27,
+		28,29,30,31,32,32,33,34,35,36,37,38,39,40,40,41,
+		42,43,44,45,46,47,48,48,49,50,51,52,53,54,55,56,
+		57
+	}, {
+		0,0,1,2,3,4,5,6,7,8,9,9,10,11,12,13,
+		14,15,16,17,18,19,19,20,21,22,23,24,25,26,27,28,
+		29,29,30,31,32,33,34,35,36,37,38,38,39,40,41,42,
+		43,44,45,46,47,48,48,49,50,51,52,53,54,55,56,57,
+		58
+	}, {
+		0,0,1,2,3,4,5,6,7,8,9,10,11,11,12,13,
+		14,15,16,17,18,19,20,21,22,23,23,24,25,26,27,28,
+		29,30,31,32,33,34,35,35,36,37,38,39,40,41,42,43,
+		44,45,46,47,47,48,49,50,51,52,53,54,55,56,57,58,
+		59
+	}, {
+		0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,
+		15,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,
+		30,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,
+		45,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,
+		60
+	}, {
+		0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,
+		15,16,17,18,19,20,20,21,22,23,24,25,26,27,28,29,
+		30,31,32,33,34,35,36,37,38,39,40,40,41,42,43,44,
+		45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,
+		61
+	}, {
+		0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,
+		15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,
+		31,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,
+		46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,
+		62
+	}, {
+		0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,
+		15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,
+		31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,
+		47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,
+		63
+	}, {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
+		16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
+		32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
+		48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
+		64
+	}
+};
+
+typedef void (*tVoidFn)(void);
+typedef tVoidFn tFx;
+
 typedef struct _tModSampleHeader {
 	char szName[22];
 	UWORD uwLength; ///< Sample data length, in words.
@@ -20,7 +417,7 @@ typedef struct _tModSampleHeader {
 	UWORD uwRepeatLength; ///< In words.
 } tModSampleHeader;
 
-typedef struct _tModFile {
+typedef struct _tModFileHeader {
 	char szSongName[20];
 	tModSampleHeader pSamples[31];
 	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
@@ -31,14 +428,22 @@ typedef struct _tModFile {
 													 /// and the order they should be played in.
 	char pFileFormatTag[4];
 	// MOD pattern/sample data follows
-} tModFile;
+} tModFileHeader;
+
+/**
+ * Each pattern line consists of following data for each channel.
+ */
+typedef struct _tModVoice {
+	UWORD uwNote;
+	UBYTE uwCmd;
+} tModVoice;
 
 typedef struct _tChannelStatus {
 	UWORD n_note;
 	UBYTE n_cmd;
 	UBYTE n_cmdlo;
 	ULONG n_start;
-	ULONG n_loopstart;
+	UWORD *n_loopstart;
 	UWORD n_length;
 	UWORD n_replen;
 	UWORD n_period;
@@ -53,9 +458,8 @@ typedef struct _tChannelStatus {
 	ULONG n_wavestart;
 	UWORD n_reallength;
 	UWORD n_intbit;
-	UWORD n_audreg;
 	UWORD n_sfxlen;
-	ULONG n_sfxptr;
+	UWORD *n_sfxptr;
 	UWORD n_sfxper;
 	UWORD n_sfxvol;
 	UBYTE n_looped;
@@ -82,16 +486,13 @@ UBYTE mt_MusicChannels = 0;
 UBYTE mt_E8Trigger = 0;
 UBYTE mt_Enable = 0;
 
-tChannelStatus mt_chan1;
-tChannelStatus mt_chan2;
-tChannelStatus mt_chan3;
-tChannelStatus mt_chan4;
+tChannelStatus mt_chan[4];
 UWORD *mt_SampleStarts[31];
-tModFile *mt_mod;
-ULONG mt_oldLev6;
+tModFileHeader *mt_mod;
+tVoidFn mt_oldLev6;
 ULONG mt_timerval;
 UBYTE mt_oldtimers[4];
-ULONG mt_MasterVolTab;
+UBYTE *mt_MasterVolTab;
 UWORD mt_Lev6Ena;
 UWORD mt_PatternPos;
 UWORD mt_PBreakPos; ///< Pattern break pos
@@ -105,7 +506,7 @@ UBYTE mt_PattDelTime2;
 UBYTE mt_SilCntValid;
 UWORD mt_dmaon = DMAF_SETCLR;
 
-ULONG *mt_Lev6Int;
+tVoidFn *mt_Lev6Int;
 
 static void ptSongStep(void) {
 	mt_PatternPos = mt_PBreakPos;
@@ -123,10 +524,29 @@ static void ptSongStep(void) {
 	// set it in the meantime
 }
 
-typedef void (*tFx)(void);
-
 static void mt_nop(void) {
 
+}
+
+static void startSfx(
+	UWORD uwLen, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// play new sound effect on this channel
+	g_pCustom->dmacon = pChannelData->n_dmabit;
+	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
+	pChannelReg->ac_len = uwLen;
+	pChannelReg->ac_per = pChannelData->n_sfxper;
+	pChannelReg->ac_vol = pChannelData->n_sfxvol;
+
+	// save repeat and period for TimerB interrupt
+	pChannelData->n_loopstart = pChannelData->n_sfxptr;
+	pChannelData->n_replen = 1;
+	pChannelData->n_period = pChannelData->n_period;
+	pChannelData->n_looped = 0;
+	pChannelData->n_sfxlen = 0;
+
+	mt_dmaon |= pChannelData->n_dmabit;
 }
 
 static void mt_playvoice(
@@ -155,7 +575,7 @@ tFx fx_tab[] = {
 };
 
 static void mt_checkfx(
-	tChannelStatus *pChannelData, struct AudChannel *pChannelReg
+	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg
 ) {
 	if(pChannelData->n_sfxpri) {
 		UWORD uwLen = pChannelData->n_sfxlen;
@@ -195,19 +615,117 @@ static void mt_checkfx(
 	}
 }
 
+static void mt_sfxonly(void);
+
+// TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
+// which defaults to 50 times per second.
+static void mt_TimerAInt(void) {
+	// clear EXTER interrupt flag
+	g_pCustom->intreq = INTF_EXTER;
+
+	// check and clear CIAB interrupt flags
+	if(g_pCiaB->icr & CIAICR_TIMER_A) {
+		// it was a TA interrupt, do music when enabled
+		if(mt_Enable) {
+			// music with sfx inserted
+			mt_music();
+		}
+		else {
+			// no music, only sfx
+			mt_sfxonly();
+		}
+	}
+}
+
+// One-shot TimerB interrupt to set repeat samples after another 496 ticks.
+static void mt_TimerBsetrep(void) {
+	// check and clear CIAB interrupt flags
+	if(g_pCiaB->icr & CIAICR_TIMER_B) {
+
+		// clear EXTER and possible audio interrupt flags
+		// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
+		g_pCustom->intreq = INTF_EXTER | (mt_dmaon & 0xFF) << 7;
+
+		// it was a TB interrupt, set repeat sample pointers and lengths
+		g_pCustom->aud[0].ac_ptr = mt_chan[0].n_loopstart;
+		g_pCustom->aud[0].ac_len = mt_chan[0].n_replen;
+		g_pCustom->aud[1].ac_ptr = mt_chan[1].n_loopstart;
+		g_pCustom->aud[1].ac_len = mt_chan[1].n_replen;
+		g_pCustom->aud[2].ac_ptr = mt_chan[2].n_loopstart;
+		g_pCustom->aud[2].ac_len = mt_chan[2].n_replen;
+		g_pCustom->aud[3].ac_ptr = mt_chan[3].n_loopstart;
+		g_pCustom->aud[3].ac_len = mt_chan[3].n_replen;
+
+
+		// restore TimerA music interrupt vector
+		*mt_Lev6Int = mt_TimerAInt;
+	}
+
+	// just clear EXTER interrupt flag and return
+	g_pCustom->intreq = INTF_EXTER;
+}
+
+// One-shot TimerB interrupt to enable audio DMA after 496 ticks.
+static void mt_TimerBdmaon(void) {
+	// clear EXTER interrupt flag
+	g_pCustom->intreq = INTF_EXTER;
+
+	// check and clear CIAB interrupt flags
+	if(g_pCiaB->icr & CIAICR_TIMER_B) {
+		// it was a TB interrupt, restart timer to set repeat, enable DMA
+		g_pCiaB->crb = 0x19;
+		g_pCustom->dmacon = mt_dmaon;
+
+		// set level 6 interrupt to mt_TimerBsetrep
+		*mt_Lev6Int = mt_TimerBsetrep;
+	}
+}
+
+static void chan_sfx_only(
+	volatile struct AudChannel *pChannelReg, tChannelStatus *pChannelData
+) {
+	if(pChannelData->n_sfxpri <= 0) {
+		return;
+	}
+	startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
+
+	if(
+		(pChannelData->n_intbit & g_pCustom->intreqr) &&
+		(pChannelData->n_dmabit & mt_dmaon)
+	) {
+		// Last sound effect sample has played, so unblock this channel again
+		pChannelData->n_sfxpri = 0;
+	}
+}
+
+// Called from interrupt.
+// Plays sound effects on free channels.
+void mt_sfxonly(void) {
+	mt_dmaon &= 0xFF00;
+	chan_sfx_only(&g_pCustom->aud[0], &mt_chan[0]);
+	chan_sfx_only(&g_pCustom->aud[1], &mt_chan[1]);
+	chan_sfx_only(&g_pCustom->aud[2], &mt_chan[2]);
+	chan_sfx_only(&g_pCustom->aud[3], &mt_chan[3]);
+
+	if(mt_dmaon & 0xFF) {
+		*mt_Lev6Int = mt_TimerBdmaon;
+		g_pCiaB->crb = 0x19; // load/start timer B, one-shot
+	}
+}
+
 // The replayer routine. Is called automatically after mt_install_cia().
 // Called from interrupt.
 // Play next position when Counter equals Speed.
 // Effects are always handled.
-void mt_music(UNUSED_ARG APTR custom) {
+void mt_music(void) {
 	mt_dmaon &= 0xFF00;
 	++mt_Counter;
 	if(mt_Counter < mt_Speed) {
 		// no new note, just check effects, don't step to next position
-		mt_checkfx(&g_pCustom->aud[0], &mt_chan1);
-		mt_checkfx(&g_pCustom->aud[1], &mt_chan2);
-		mt_checkfx(&g_pCustom->aud[2], &mt_chan3);
-		mt_checkfx(&g_pCustom->aud[3], &mt_chan4);
+		mt_checkfx(&mt_chan[0], &g_pCustom->aud[0]);
+		mt_checkfx(&mt_chan[1], &g_pCustom->aud[1]);
+		mt_checkfx(&mt_chan[2], &g_pCustom->aud[2]);
+		mt_checkfx(&mt_chan[3], &g_pCustom->aud[3]);
 
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon & 0xFF) {
@@ -221,24 +739,24 @@ void mt_music(UNUSED_ARG APTR custom) {
 		if(mt_PattDelTime2 <= 0) {
 			// determine pointer to current pattern line
 			tModSampleHeader *pSamples = mt_mod->pSamples;
-			UBYTE *pPatternData = ((UBYTE*)mt_mod)[1084];
+			UBYTE *pPatternData = &((UBYTE*)mt_mod)[sizeof(tModFileHeader)];
 			UBYTE *pArrangement = mt_mod->pArrangement;
 			UBYTE ubPatternIdx = pArrangement[mt_SongPos];
-			UBYTE *pCurrentPattern = &pPatternData[mt_SongPos * 1024];
-			UBYTE *pPatternLine = &pCurrentPattern[mt_PatternPos];
+			UBYTE *pCurrentPattern = &pPatternData[ubPatternIdx * 1024];
+			tModVoice *pLineVoices = (tModVoice*)&pCurrentPattern[mt_PatternPos];
 
 			// play new note for each channel, apply some effects
-			mt_playvoice(&g_pCustom->aud[0], &mt_chan1);
-			mt_playvoice(&g_pCustom->aud[1], &mt_chan2);
-			mt_playvoice(&g_pCustom->aud[2], &mt_chan3);
-			mt_playvoice(&g_pCustom->aud[3], &mt_chan4);
+			mt_playvoice(&mt_chan[0], &g_pCustom->aud[0], pLineVoices[0]);
+			mt_playvoice(&mt_chan[1], &g_pCustom->aud[1], pLineVoices[1]);
+			mt_playvoice(&mt_chan[2], &g_pCustom->aud[2], pLineVoices[2]);
+			mt_playvoice(&mt_chan[3], &g_pCustom->aud[3], pLineVoices[3]);
 		}
 		else {
 			// we have a pattern delay, check effects then step
-			mt_checkfx(&g_pCustom->aud[0], &mt_chan1);
-			mt_checkfx(&g_pCustom->aud[1], &mt_chan2);
-			mt_checkfx(&g_pCustom->aud[2], &mt_chan3);
-			mt_checkfx(&g_pCustom->aud[3], &mt_chan4);
+			mt_checkfx(&mt_chan[0], &g_pCustom->aud[0]);
+			mt_checkfx(&mt_chan[1], &g_pCustom->aud[1]);
+			mt_checkfx(&mt_chan[2], &g_pCustom->aud[2]);
+			mt_checkfx(&mt_chan[3], &g_pCustom->aud[3]);
 		}
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon & 0xFF) {
@@ -281,123 +799,6 @@ void mt_music(UNUSED_ARG APTR custom) {
 	}
 }
 
-static void startSfx(
-	UWORD uwLen, tChannelStatus *pChannelData, struct AudChannel *pChannelReg
-) {
-	// play new sound effect on this channel
-	g_pCustom->dmacon = pChannelData->n_dmabit;
-	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
-	pChannelReg->ac_len = uwLen;
-	pChannelReg->ac_per = pChannelData->n_sfxper;
-	pChannelReg->ac_vol = pChannelData->n_sfxvol;
-
-	// save repeat and period for TimerB interrupt
-	pChannelData->n_loopstart = pChannelData->n_sfxptr;
-	pChannelData->n_replen = 1;
-	pChannelData->n_period = pChannelData->n_period;
-	pChannelData->n_looped = 0;
-	pChannelData->n_sfxlen = 0;
-
-	mt_dmaon |= pChannelData->n_dmabit;
-}
-
-static void chan_sfx_only(
-	struct AudChannel *pChannelReg, tChannelStatus *pChannelData
-) {
-	if(pChannelData->n_sfxpri <= 0) {
-		return;
-	}
-	startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
-
-	UWORD uwIntBits = pChannelData->n_intbit & g_pCustom->intreqr;
-	if(
-		(pChannelData->n_intbit & g_pCustom->intreqr) &&
-		(pChannelData->n_dmabit & mt_dmaon)
-	) {
-		// Last sound effect sample has played, so unblock this channel again
-		pChannelData->n_sfxpri = 0;
-	}
-}
-
-// Called from interrupt.
-// Plays sound effects on free channels.
-void mt_sfxonly(void) {
-	mt_dmaon &= 0xFF00;
-	chan_sfx_only(&g_pCustom->aud[0], &mt_chan1);
-	chan_sfx_only(&g_pCustom->aud[1], &mt_chan2);
-	chan_sfx_only(&g_pCustom->aud[2], &mt_chan3);
-	chan_sfx_only(&g_pCustom->aud[3], &mt_chan4);
-
-	if(mt_dmaon & 0xFF) {
-		*mt_Lev6Int = mt_TimerBdmaon;
-		g_pCiaB->crb = 0x19; // load/start timer B, one-shot
-	}
-}
-
-// TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
-// which defaults to 50 times per second.
-void mt_TimerAInt(void) {
-	// clear EXTER interrupt flag
-	g_pCustom->intreq = INTF_EXTER;
-
-	// check and clear CIAB interrupt flags
-	if(g_pCiaB->icr & CIAICR_TIMER_A) {
-		// it was a TA interrupt, do music when enabled
-		if(mt_Enable) {
-			// music with sfx inserted
-			mt_music(g_pCustom);
-		}
-		else {
-			// no music, only sfx
-			mt_sfxonly();
-		}
-	}
-}
-
-// One-shot TimerB interrupt to set repeat samples after another 496 ticks.
-void mt_TimerBsetrep(void) {
-	// check and clear CIAB interrupt flags
-	if(g_pCiaB->icr & CIAICR_TIMER_B) {
-
-		// clear EXTER and possible audio interrupt flags
-		// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
-		g_pCustom->intreq = INTF_EXTER | (mt_dmaon & 0xFF) << 7;
-
-		// it was a TB interrupt, set repeat sample pointers and lengths
-		g_pCustom->aud[0].ac_ptr = mt_chan1.n_loopstart;
-		g_pCustom->aud[0].ac_len = mt_chan1.n_replen;
-		g_pCustom->aud[1].ac_ptr = mt_chan2.n_loopstart;
-		g_pCustom->aud[1].ac_len = mt_chan2.n_replen;
-		g_pCustom->aud[2].ac_ptr = mt_chan3.n_loopstart;
-		g_pCustom->aud[2].ac_len = mt_chan3.n_replen;
-		g_pCustom->aud[3].ac_ptr = mt_chan4.n_loopstart;
-		g_pCustom->aud[3].ac_len = mt_chan4.n_replen;
-
-
-		// restore TimerA music interrupt vector
-		*mt_Lev6Int = (ULONG)mt_TimerAInt;
-	}
-
-	// just clear EXTER interrupt flag and return
-	g_pCustom->intreq = INTF_EXTER;
-}
-
-// One-shot TimerB interrupt to enable audio DMA after 496 ticks.
-void mt_TimerBdmaon(void) {
-	// clear EXTER interrupt flag
-	g_pCustom->intreq = INTF_EXTER;
-
-	// check and clear CIAB interrupt flags
-	if(g_pCiaB->icr & CIAICR_TIMER_B) {
-		// it was a TB interrupt, restart timer to set repeat, enable DMA
-		g_pCiaB->crb = 0x19;
-		g_pCustom->dmacon = mt_dmaon;
-
-		// set level 6 interrupt to mt_TimerBsetrep
-		*mt_Lev6Int = (ULONG)mt_TimerBsetrep;
-	}
-}
-
 // Stop playing current module.
 void mt_end(void) {
 	g_pCustom->aud[0].ac_vol = 0;
@@ -417,53 +818,48 @@ void mt_reset(void) {
 	g_pCiaA->pra |= 0x02;
 
 	// set master volume to 64
-	mt_MasterVolTab = MasterVolTab64;
+	mt_MasterVolTab = MasterVolTab[64];
 
 	// initialise channel DMA, interrupt bits and audio register base
-	mt_chan1.n_dmabit = DMAF_AUD0;
-	mt_chan2.n_dmabit = DMAF_AUD1;
-	mt_chan3.n_dmabit = DMAF_AUD2;
-	mt_chan4.n_dmabit = DMAF_AUD3;
-	mt_chan1.n_intbit = INTF_AUD0;
-	mt_chan2.n_intbit = INTF_AUD1;
-	mt_chan3.n_intbit = INTF_AUD2;
-	mt_chan4.n_intbit = INTF_AUD3;
-	mt_chan1.n_audreg = &g_pCustom->aud[0].ac_ptr;
-	mt_chan2.n_audreg = &g_pCustom->aud[1].ac_ptr;
-	mt_chan3.n_audreg = &g_pCustom->aud[2].ac_ptr;
-	mt_chan4.n_audreg = &g_pCustom->aud[3].ac_ptr;
+	mt_chan[0].n_dmabit = DMAF_AUD0;
+	mt_chan[1].n_dmabit = DMAF_AUD1;
+	mt_chan[2].n_dmabit = DMAF_AUD2;
+	mt_chan[3].n_dmabit = DMAF_AUD3;
+	mt_chan[0].n_intbit = INTF_AUD0;
+	mt_chan[1].n_intbit = INTF_AUD1;
+	mt_chan[2].n_intbit = INTF_AUD2;
+	mt_chan[3].n_intbit = INTF_AUD3;
 
 	// make sure n_period doesn't start as 0
-	mt_chan1.n_period = 320;
-	mt_chan2.n_period = 320;
-	mt_chan3.n_period = 320;
-	mt_chan4.n_period = 320;
+	mt_chan[0].n_period = 320;
+	mt_chan[1].n_period = 320;
+	mt_chan[2].n_period = 320;
+	mt_chan[3].n_period = 320;
 
 	// disable sound effects
-	mt_chan1.n_sfxlen = 0;
-	mt_chan2.n_sfxlen = 0;
-	mt_chan3.n_sfxlen = 0;
-	mt_chan4.n_sfxlen = 0;
+	mt_chan[0].n_sfxlen = 0;
+	mt_chan[1].n_sfxlen = 0;
+	mt_chan[2].n_sfxlen = 0;
+	mt_chan[3].n_sfxlen = 0;
 
 	mt_SilCntValid = 0;
 	mt_E8Trigger = 0;
 	mt_end();
 }
 
-void mt_install_cia(UNUSED_ARG APTR custom, APTR *AutoVecBase, UBYTE PALflag) {
+void mt_install_cia(APTR *AutoVecBase, UBYTE PALflag) {
 	mt_Enable = 0;
 
 	// Level 6 interrupt vector
-	mt_Lev6Int = (ULONG*)&AutoVecBase[0x78/sizeof(ULONG)];
+	mt_Lev6Int = (void*)&AutoVecBase[0x78/sizeof(ULONG)];
 
 	// remember level 6 interrupt enable
-	AutoVecBase[0x78/sizeof(ULONG)] = mt_Lev6Int;
 	mt_Lev6Ena = (g_pCustom->intenar & INTF_EXTER) | INTF_SETCLR;
 
 	// disable level 6 EXTER interrupts, set player interrupt vector
 	g_pCustom->intena = INTF_EXTER;
 	mt_oldLev6 = *mt_Lev6Int;
-	*mt_Lev6Int = (ULONG)mt_TimerAInt;
+	*mt_Lev6Int = mt_TimerAInt;
 
 	// disable CIA-B interrupts, stop and save all timers
 	g_pCiaB->icr = 0x7f;
@@ -500,7 +896,7 @@ void mt_install_cia(UNUSED_ARG APTR custom, APTR *AutoVecBase, UBYTE PALflag) {
 	mt_reset();
 }
 
-void mt_remove_cia(UNUSED_ARG APTR custom) {
+void mt_remove_cia(void) {
 	// disable level 6 and CIA-B interrupts
 	g_pCiaB->icr = 0x7F;
 	g_pCustom->intena = INTF_EXTER;
@@ -523,20 +919,16 @@ void mt_remove_cia(UNUSED_ARG APTR custom) {
 	g_pCustom->intena = mt_Lev6Ena;
 }
 
-// Patterns - each has 64 rows, each row has 4-8 notes, each note has 4 bytes
-#define MOD_OFFS_PATTERN_START 1084
+// Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes
 // Length of single pattern.
 #define MOD_PATTERN_LENGTH 1024
 
-void mt_init(
-	UNUSED_ARG APTR custom, UBYTE *TrackerModule, UBYTE *Samples,
-	UWORD InitialSongPos
-) {
+void mt_init(UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos) {
 	// Initialize new module.
 	// Reset speed to 6, tempo to 125 and start at given song position.
 	// Master volume is at 64 (maximum).
 
-	mt_mod = (tModFile*)TrackerModule;
+	mt_mod = (tModFileHeader*)TrackerModule;
 
 	// set initial song position
 	if(InitialSongPos >= 950) {
@@ -557,7 +949,7 @@ void mt_init(
 
 		// now we can calculate the base address of the sample data
 		ULONG ulSampleOffs = (
-			MOD_OFFS_PATTERN_START + ubPatternCount * MOD_PATTERN_LENGTH
+			sizeof(tModFileHeader) + ubPatternCount * MOD_PATTERN_LENGTH
 		);
 		Samples = &TrackerModule[ulSampleOffs];
 		// FIXME: use as pointer for empty samples
@@ -603,10 +995,10 @@ static void ptSetSfx(tSfxStructure *pSfx, tChannelStatus *pChannel) {
 // the older sample is replaced.
 // The chosen channel is blocked for music until the effect has
 // completely been replayed.
-void mt_playfx(UNUSED_ARG APTR custom, tSfxStructure *SfxStructurePointer) {
+void mt_playfx(tSfxStructure *SfxStructurePointer) {
 	if(SfxStructurePointer->sfx_cha > 0) {
 		// use fixed channel for effect
-		tChannelStatus *pChannels[] = {&mt_chan1, &mt_chan2, &mt_chan3, &mt_chan4};
+		tChannelStatus *pChannels[] = {&mt_chan[0], &mt_chan[1], &mt_chan[2], &mt_chan[3]};
 		tChannelStatus *pChannel = pChannels[SfxStructurePointer->sfx_cha];
 
 		// Priority high enough to replace a present effect on this channel?
@@ -623,87 +1015,59 @@ void mt_playfx(UNUSED_ARG APTR custom, tSfxStructure *SfxStructurePointer) {
 		UBYTE i = 8;
 
 		// remember which channels are not available for sound effects
-		UBYTE d4 = mt_chan1.n_musiconly;
-		UBYTE d5 = mt_chan2.n_musiconly;
-		UBYTE d6 = mt_chan3.n_musiconly;
-		UBYTE d7 = mt_chan4.n_musiconly;
+		UBYTE pMusicOnly[4];
+		for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
+			pMusicOnly[ubChannel] = mt_chan[ubChannel].n_musiconly;
+		}
 
 		// reset freecnts for all channels
-		mt_chan1.n_freecnt = 0;
-		mt_chan2.n_freecnt = 0;
-		mt_chan3.n_freecnt = 0;
-		mt_chan4.n_freecnt = 0;
+		mt_chan[0].n_freecnt = 0;
+		mt_chan[1].n_freecnt = 0;
+		mt_chan[2].n_freecnt = 0;
+		mt_chan[3].n_freecnt = 0;
 
 		// get pattern pointer
-		UBYTE *pPatterns = (UBYTE*)mt_mod + sizeof(tModFile);
+		UBYTE *pPatterns = (UBYTE*)mt_mod + sizeof(tModFileHeader);
 
 		UBYTE ubSongPos = mt_SongPos;
 		UWORD uwPatternPos = mt_PatternPos;
-
-	l1:
+		UBYTE isEnd = 0;
 		UBYTE *pPatternStart = &pPatterns[
 			mt_mod->pArrangement[ubSongPos] * MOD_PATTERN_LENGTH
 		];
-		ULONG *pPatternEnd = (ULONG*)(pPatternStart + MOD_PATTERN_LENGTH);
-		ULONG *pPatternPos = (ULONG*)(pPatternStart + uwPatternPos);
+		tModVoice *pPatternEnd = (tModVoice*)(pPatternStart + MOD_PATTERN_LENGTH);
+		tModVoice *pPatternPos = (tModVoice*)(pPatternStart + uwPatternPos);
+		do {
+			UBYTE d0 = 4;
 
-	l2:
-		UBYTE d0 = 4;
-
-		ULONG d1 = *pPatternPos++;
-		if(!d4) {
-			++mt_chan1.n_freecnt;
-			if(d1 & 0xFFFFF000) { // mask to ignore effects
-				d4 = 1;
+			for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
+				if(!pMusicOnly[ubChannel]) {
+					++mt_chan[0].n_freecnt;
+					if(pPatternPos->uwNote) {
+						pMusicOnly[ubChannel] = 1;
+					}
+				}
+				++pPatternPos;
+				d0 -= pMusicOnly[ubChannel];
 			}
-		}
 
-		d0 += d4;
-
-		d1 = *pPatternPos++;
-		if(!d5) {
-			++mt_chan2.n_freecnt;
-			if(d1 & 0xFFFFF000) { // mask to ignore effects
-				d5 = 1;
-			}
-		}
-
-		d0 += d5;
-
-		d1 = *pPatternPos++;
-		if(!d6) {
-			++mt_chan2.n_freecnt;
-			if(d1 & 0xFFFFF000) { // mask to ignore effects
-				d6 = 1;
-			}
-		}
-
-		d0 += d6;
-
-		d1 = *pPatternPos++;
-		if(!d7) {
-			++mt_chan2.n_freecnt;
-			if(d1 & 0xFFFFF000) { // mask to ignore effects
-				d7 = 1;
-			}
-		}
-
-		d0 += d7;
-
-		// break the loop when no channel has any more free pattern steps
-		// otherwise break after 8 pattern steps
-		if(d0 != 0 && --i != 0) {
+			// break the loop when no channel has any more free pattern steps
+			// otherwise break after 8 pattern steps
+			isEnd = (d0 != 0 && --i != 0);
 			// End of pattern reached? Then load next pattern pointer
-			if(pPatternPos < pPatternEnd) {
-				goto l2;
+			if(!isEnd && pPatternPos >= pPatternEnd) {
+				uwPatternPos = 0;
+				ubSongPos = (mt_SongPos + 1) & 127;
+				if(ubSongPos >= mt_mod->ubArrangementLength) {
+					ubSongPos = 0;
+				}
+				pPatternStart = &pPatterns[
+					mt_mod->pArrangement[ubSongPos] * MOD_PATTERN_LENGTH
+				];
+				pPatternEnd = (tModVoice*)(pPatternStart + MOD_PATTERN_LENGTH);
+				pPatternPos = (tModVoice*)pPatternStart;
 			}
-			uwPatternPos = 0;
-			ubSongPos = mt_SongPos + 1 & 127;
-			if(ubSongPos >= mt_mod->ubArrangementLength) {
-				ubSongPos = 0;
-			}
-			goto l1;
-		}
+		} while(!isEnd);
 		mt_SilCntValid = 1;
 	}
 
@@ -714,16 +1078,16 @@ void mt_playfx(UNUSED_ARG APTR custom, tSfxStructure *SfxStructurePointer) {
 	// effects and check if the limit was reached. In this case only
 	// replace sound effect channels by higher priority.
 	BYTE bFreeChannels = 3 - mt_MusicChannels;
-	if(mt_chan1.n_sfxpri) {
+	if(mt_chan[0].n_sfxpri) {
 		bFreeChannels += 1;
 	}
-	if(mt_chan2.n_sfxpri) {
+	if(mt_chan[1].n_sfxpri) {
 		bFreeChannels += 1;
 	}
-	if(mt_chan3.n_sfxpri) {
+	if(mt_chan[2].n_sfxpri) {
 		bFreeChannels += 1;
 	}
-	if(mt_chan4.n_sfxpri) {
+	if(mt_chan[3].n_sfxpri) {
 		bFreeChannels += 1;
 	}
 	if(bFreeChannels >= 0) {
@@ -731,16 +1095,16 @@ void mt_playfx(UNUSED_ARG APTR custom, tSfxStructure *SfxStructurePointer) {
 		// Exclude channels which have set a repeat loop.
 		// Try not to break them!
 		UWORD uwChannels = 0;
-		if(!mt_chan1.n_looped) {
+		if(!mt_chan[0].n_looped) {
 			uwChannels |= INTF_AUD0;
 		}
-		else if(!mt_chan2.n_looped) {
+		else if(!mt_chan[1].n_looped) {
 			uwChannels |= INTF_AUD1;
 		}
-		else if(!mt_chan3.n_looped) {
+		else if(!mt_chan[2].n_looped) {
 			uwChannels |= INTF_AUD2;
 		}
-		else if(!mt_chan4.n_looped) {
+		else if(!mt_chan[3].n_looped) {
 			uwChannels |= INTF_AUD3;
 		}
 
@@ -755,66 +1119,65 @@ void mt_playfx(UNUSED_ARG APTR custom, tSfxStructure *SfxStructurePointer) {
 
 		// First look for the best unused channel
 		UBYTE ubBestFreeCnt = 0;
-		if(!(uwChannels & INTF_AUD0) && !mt_chan1.n_sfxpri) {
-			if(mt_chan1.n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan1.n_freecnt;
-				pBestChannel = &mt_chan1;
+		if(!(uwChannels & INTF_AUD0) && !mt_chan[0].n_sfxpri) {
+			if(mt_chan[0].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[0].n_freecnt;
+				pBestChannel = &mt_chan[0];
 			}
 		}
-		if(!(uwChannels & INTF_AUD1) && !mt_chan2.n_sfxpri) {
-			if(mt_chan2.n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan2.n_freecnt;
-				pBestChannel = &mt_chan2;
+		if(!(uwChannels & INTF_AUD1) && !mt_chan[1].n_sfxpri) {
+			if(mt_chan[1].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[1].n_freecnt;
+				pBestChannel = &mt_chan[1];
 			}
 		}
-		if(!(uwChannels & INTF_AUD2) && !mt_chan3.n_sfxpri) {
-			if(mt_chan3.n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan3.n_freecnt;
-				pBestChannel = &mt_chan3;
+		if(!(uwChannels & INTF_AUD2) && !mt_chan[2].n_sfxpri) {
+			if(mt_chan[2].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[2].n_freecnt;
+				pBestChannel = &mt_chan[2];
 			}
 		}
-		if(!(uwChannels & INTF_AUD3) && !mt_chan4.n_sfxpri) {
-			if(mt_chan4.n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan4.n_freecnt;
-				pBestChannel = &mt_chan4;
+		if(!(uwChannels & INTF_AUD3) && !mt_chan[3].n_sfxpri) {
+			if(mt_chan[3].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[3].n_freecnt;
+				pBestChannel = &mt_chan[3];
 			}
 		}
 	}
 	else {
 		// Finally try to overwrite a sound effect with lower/equal priority
-		SfxStructurePointer->sfx_pri; // d2
 		UBYTE ubBestFreeCnt = 0;
 		if(
-			mt_chan1.n_sfxpri > 0 &&
-			mt_chan1.n_sfxpri < SfxStructurePointer->sfx_pri &&
-			mt_chan1.n_freecnt > ubBestFreeCnt
+			mt_chan[0].n_sfxpri > 0 &&
+			mt_chan[0].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[0].n_freecnt > ubBestFreeCnt
 		) {
-			ubBestFreeCnt = mt_chan1.n_freecnt;
-			pBestChannel = &mt_chan1;
+			ubBestFreeCnt = mt_chan[0].n_freecnt;
+			pBestChannel = &mt_chan[0];
 		}
 		else if(
-			mt_chan2.n_sfxpri > 0 &&
-			mt_chan2.n_sfxpri < SfxStructurePointer->sfx_pri &&
-			mt_chan2.n_freecnt > ubBestFreeCnt
+			mt_chan[1].n_sfxpri > 0 &&
+			mt_chan[1].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[1].n_freecnt > ubBestFreeCnt
 		) {
-			ubBestFreeCnt = mt_chan2.n_freecnt;
-			pBestChannel = &mt_chan2;
+			ubBestFreeCnt = mt_chan[1].n_freecnt;
+			pBestChannel = &mt_chan[1];
 		}
 		else if(
-			mt_chan3.n_sfxpri > 0 &&
-			mt_chan3.n_sfxpri < SfxStructurePointer->sfx_pri &&
-			mt_chan3.n_freecnt > ubBestFreeCnt
+			mt_chan[2].n_sfxpri > 0 &&
+			mt_chan[2].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[2].n_freecnt > ubBestFreeCnt
 		) {
-			ubBestFreeCnt = mt_chan3.n_freecnt;
-			pBestChannel = &mt_chan3;
+			ubBestFreeCnt = mt_chan[2].n_freecnt;
+			pBestChannel = &mt_chan[2];
 		}
 		else if(
-			mt_chan4.n_sfxpri > 0 &&
-			mt_chan4.n_sfxpri < SfxStructurePointer->sfx_pri &&
-			mt_chan4.n_freecnt > ubBestFreeCnt
+			mt_chan[3].n_sfxpri > 0 &&
+			mt_chan[3].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[3].n_freecnt > ubBestFreeCnt
 		) {
-			ubBestFreeCnt = mt_chan4.n_freecnt;
-			pBestChannel = &mt_chan4;
+			ubBestFreeCnt = mt_chan[3].n_freecnt;
+			pBestChannel = &mt_chan[3];
 		}
 	}
 	if(!pBestChannel) {
@@ -827,8 +1190,7 @@ void mt_playfx(UNUSED_ARG APTR custom, tSfxStructure *SfxStructurePointer) {
 // This function is for compatibility with the old API only!
 // You should call mt_playfx instead.
 void mt_soundfx(
-	APTR custom, APTR SamplePointer, UWORD SampleLength,
-	UWORD SamplePeriod, UWORD SampleVolume
+	APTR SamplePointer, UWORD SampleLength, UWORD SamplePeriod, UWORD SampleVolume
 ) {
 	tSfxStructure sSfx;
 	sSfx.sfx_ptr = SamplePointer;
@@ -838,7 +1200,7 @@ void mt_soundfx(
 	// any channel, priority = 1
 	sSfx.sfx_cha = -1;
 	sSfx.sfx_pri = 1;
-	mt_playfx(custom, &sSfx);
+	mt_playfx(&sSfx);
 }
 
 // Set bits in the mask define which specific channels are reserved
@@ -846,12 +1208,12 @@ void mt_soundfx(
 // When calling _mt_soundfx or _mt_playfx with automatic channel selection
 // (sfx_cha=-1) then these masked channels will never be picked.
 // The mask defaults to 0.
-void mt_musicmask(UNUSED_ARG APTR custom, UBYTE ChannelMask) {
+void mt_musicmask(UBYTE ChannelMask) {
 	g_pCustom->intena = INTF_INTEN;
-	mt_chan1.n_musiconly = BTST(ChannelMask, 0);
-	mt_chan2.n_musiconly = BTST(ChannelMask, 1);
-	mt_chan3.n_musiconly = BTST(ChannelMask, 2);
-	mt_chan4.n_musiconly = BTST(ChannelMask, 3);
+	mt_chan[0].n_musiconly = BTST(ChannelMask, 0);
+	mt_chan[1].n_musiconly = BTST(ChannelMask, 1);
+	mt_chan[2].n_musiconly = BTST(ChannelMask, 2);
+	mt_chan[3].n_musiconly = BTST(ChannelMask, 3);
 
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
@@ -859,7 +1221,7 @@ void mt_musicmask(UNUSED_ARG APTR custom, UBYTE ChannelMask) {
 // Set a master volume from 0 to 64 for all music channels.
 // Note that the master volume does not affect the volume of external
 // sound effects (which is desired).
-void mt_mastervol(UNUSED_ARG APTR custom, UWORD MasterVolume) {
+void mt_mastervol(UWORD MasterVolume) {
 	g_pCustom->intena = INTF_INTEN;
 	mt_MasterVolTab = MasterVolTab[MasterVolume];
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;

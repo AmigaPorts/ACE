@@ -23,14 +23,14 @@ extern "C" {
     effects only.
 */
 
-void mt_install_cia(APTR custom, APTR *AutoVecBase, UBYTE PALflag);
+void mt_install_cia(APTR *AutoVecBase, UBYTE PALflag);
 
 /*
   _mt_remove_cia(a6=CUSTOM)
     Remove the CIA-B music interrupt and restore the old vector.
 */
 
-void mt_remove_cia(APTR custom);
+void mt_remove_cia(void);
 
 /*
   _mt_init(a6=CUSTOM, a0=TrackerModule, a1=Samples|NULL, d0=InitialSongPos.b)
@@ -41,7 +41,7 @@ void mt_remove_cia(APTR custom);
 */
 
 void mt_init(
-	APTR custom, UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos
+	UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos
 );
 
 /*
@@ -60,7 +60,7 @@ void mt_end(void);
 */
 
 void mt_soundfx(
-	APTR custom, APTR SamplePointer, UWORD SampleLength,
+	APTR SamplePointer, UWORD SampleLength,
 	UWORD SamplePeriod, UWORD SampleVolume
 );
 
@@ -92,7 +92,7 @@ typedef struct _tSfxStructure
 	UBYTE sfx_pri; /* unsigned priority, must be non-zero */
 } tSfxStructure;
 
-void mt_playfx(APTR custom, tSfxStructure *SfxStructurePointer);
+void mt_playfx(tSfxStructure *SfxStructurePointer);
 
 /*
   _mt_musicmask(a6=CUSTOM, d0=ChannelMask.b)
@@ -103,7 +103,7 @@ void mt_playfx(APTR custom, tSfxStructure *SfxStructurePointer);
     The mask defaults to 0.
 */
 
-void mt_musicmask(APTR custom, UBYTE ChannelMask);
+void mt_musicmask(UBYTE ChannelMask);
 
 /*
   _mt_mastervol(a6=CUSTOM, d0=MasterVolume.w)
@@ -112,14 +112,14 @@ void mt_musicmask(APTR custom, UBYTE ChannelMask);
     sound effects (which is desired).
 */
 
-void mt_mastervol(APTR custom, UWORD MasterVolume);
+void mt_mastervol(UWORD MasterVolume);
 
 /*
   _mt_music(a6=CUSTOM)
     The replayer routine. Is called automatically after mt_install_cia().
 */
 
-void mt_music(APTR custom);
+void mt_music(void);
 
 /*
   _mt_Enable
