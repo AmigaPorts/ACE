@@ -405,8 +405,212 @@ static UBYTE MasterVolTab[][65] = {
 	}
 };
 
+static const BYTE mt_VibratoSineTable[] = {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,
+	0,0,0,0,0,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,
+	0,0,0,1,1,1,2,2,2,3,3,3,3,3,3,3,
+	3,3,3,3,3,3,3,3,2,2,2,1,1,1,0,0,
+	0,0,0,-1,-1,-1,-2,-2,-2,-3,-3,-3,-3,-3,-3,-3,
+	-3,-3,-3,-3,-3,-3,-3,-3,-2,-2,-2,-1,-1,-1,0,0,
+	0,0,1,1,2,2,3,3,4,4,4,5,5,5,5,5,
+	5,5,5,5,5,5,4,4,4,3,3,2,2,1,1,0,
+	0,0,-1,-1,-2,-2,-3,-3,-4,-4,-4,-5,-5,-5,-5,-5,
+	-5,-5,-5,-5,-5,-5,-4,-4,-4,-3,-3,-2,-2,-1,-1,0,
+	0,0,1,2,3,3,4,5,5,6,6,7,7,7,7,7,
+	7,7,7,7,7,7,6,6,5,5,4,3,3,2,1,0,
+	0,0,-1,-2,-3,-3,-4,-5,-5,-6,-6,-7,-7,-7,-7,-7,
+	-7,-7,-7,-7,-7,-7,-6,-6,-5,-5,-4,-3,-3,-2,-1,0,
+	0,0,1,2,3,4,5,6,7,7,8,8,9,9,9,9,
+	9,9,9,9,9,8,8,7,7,6,5,4,3,2,1,0,
+	0,0,-1,-2,-3,-4,-5,-6,-7,-7,-8,-8,-9,-9,-9,-9,
+	-9,-9,-9,-9,-9,-8,-8,-7,-7,-6,-5,-4,-3,-2,-1,0,
+	0,1,2,3,4,5,6,7,8,9,9,10,11,11,11,11,
+	11,11,11,11,11,10,9,9,8,7,6,5,4,3,2,1,
+	0,-1,-2,-3,-4,-5,-6,-7,-8,-9,-9,-10,-11,-11,-11,-11,
+	-11,-11,-11,-11,-11,-10,-9,-9,-8,-7,-6,-5,-4,-3,-2,-1,
+	0,1,2,4,5,6,7,8,9,10,11,12,12,13,13,13,
+	13,13,13,13,12,12,11,10,9,8,7,6,5,4,2,1,
+	0,-1,-2,-4,-5,-6,-7,-8,-9,-10,-11,-12,-12,-13,-13,-13,
+	-13,-13,-13,-13,-12,-12,-11,-10,-9,-8,-7,-6,-5,-4,-2,-1,
+	0,1,3,4,6,7,8,10,11,12,13,14,14,15,15,15,
+	15,15,15,15,14,14,13,12,11,10,8,7,6,4,3,1,
+	0,-1,-3,-4,-6,-7,-8,-10,-11,-12,-13,-14,-14,-15,-15,-15,
+	-15,-15,-15,-15,-14,-14,-13,-12,-11,-10,-8,-7,-6,-4,-3,-1,
+	0,1,3,5,6,8,9,11,12,13,14,15,16,17,17,17,
+	17,17,17,17,16,15,14,13,12,11,9,8,6,5,3,1,
+	0,-1,-3,-5,-6,-8,-9,-11,-12,-13,-14,-15,-16,-17,-17,-17,
+	-17,-17,-17,-17,-16,-15,-14,-13,-12,-11,-9,-8,-6,-5,-3,-1,
+	0,1,3,5,7,9,11,12,14,15,16,17,18,19,19,19,
+	19,19,19,19,18,17,16,15,14,12,11,9,7,5,3,1,
+	0,-1,-3,-5,-7,-9,-11,-12,-14,-15,-16,-17,-18,-19,-19,-19,
+	-19,-19,-19,-19,-18,-17,-16,-15,-14,-12,-11,-9,-7,-5,-3,-1,
+	0,2,4,6,8,10,12,13,15,16,18,19,20,20,21,21,
+	21,21,21,20,20,19,18,16,15,13,12,10,8,6,4,2,
+	0,-2,-4,-6,-8,-10,-12,-13,-15,-16,-18,-19,-20,-20,-21,-21,
+	-21,-21,-21,-20,-20,-19,-18,-16,-15,-13,-12,-10,-8,-6,-4,-2,
+	0,2,4,6,9,11,13,15,16,18,19,21,22,22,23,23,
+	23,23,23,22,22,21,19,18,16,15,13,11,9,6,4,2,
+	0,-2,-4,-6,-9,-11,-13,-15,-16,-18,-19,-21,-22,-22,-23,-23,
+	-23,-23,-23,-22,-22,-21,-19,-18,-16,-15,-13,-11,-9,-6,-4,-2,
+	0,2,4,7,9,12,14,16,18,20,21,22,23,24,25,25,
+	25,25,25,24,23,22,21,20,18,16,14,12,9,7,4,2,
+	0,-2,-4,-7,-9,-12,-14,-16,-18,-20,-21,-22,-23,-24,-25,-25,
+	-25,-25,-25,-24,-23,-22,-21,-20,-18,-16,-14,-12,-9,-7,-4,-2,
+	0,2,5,8,10,13,15,17,19,21,23,24,25,26,27,27,
+	27,27,27,26,25,24,23,21,19,17,15,13,10,8,5,2,
+	0,-2,-5,-8,-10,-13,-15,-17,-19,-21,-23,-24,-25,-26,-27,-27,
+	-27,-27,-27,-26,-25,-24,-23,-21,-19,-17,-15,-13,-10,-8,-5,-2,
+	0,2,5,8,11,14,16,18,21,23,24,26,27,28,29,29,
+	29,29,29,28,27,26,24,23,21,18,16,14,11,8,5,2,
+	0,-2,-5,-8,-11,-14,-16,-18,-21,-23,-24,-26,-27,-28,-29,-29,
+	-29,-29,-29,-28,-27,-26,-24,-23,-21,-18,-16,-14,-11,-8,-5,-2
+};
+
+static const BYTE mt_VibratoSawTable[] = {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
+	2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,
+	-3,-3,-3,-3,-3,-3,-3,-3,-2,-2,-2,-2,-2,-2,-2,-2,
+	-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,
+	3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,
+	-5,-5,-5,-5,-5,-5,-4,-4,-4,-4,-4,-3,-3,-3,-3,-3,
+	-2,-2,-2,-2,-2,-2,-1,-1,-1,-1,-1,0,0,0,0,0,
+	0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,
+	4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,
+	-7,-7,-7,-7,-6,-6,-6,-6,-5,-5,-5,-5,-4,-4,-4,-4,
+	-3,-3,-3,-3,-2,-2,-2,-2,-1,-1,-1,-1,0,0,0,0,
+	0,0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,
+	5,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,
+	-9,-9,-9,-9,-8,-8,-8,-7,-7,-7,-6,-6,-6,-5,-5,-5,
+	-4,-4,-4,-4,-3,-3,-3,-2,-2,-2,-1,-1,-1,0,0,0,
+	0,0,0,1,1,1,2,2,3,3,3,4,4,4,5,5,
+	6,6,6,7,7,7,8,8,9,9,9,10,10,10,11,11,
+	-11,-11,-11,-10,-10,-10,-9,-9,-8,-8,-8,-7,-7,-7,-6,-6,
+	-5,-5,-5,-4,-4,-4,-3,-3,-2,-2,-2,-1,-1,-1,0,0,
+	0,0,0,1,1,2,2,3,3,3,4,4,5,5,6,6,
+	7,7,7,8,8,9,9,10,10,10,11,11,12,12,13,13,
+	-13,-13,-13,-12,-12,-11,-11,-10,-10,-10,-9,-9,-8,-8,-7,-7,
+	-6,-6,-6,-5,-5,-4,-4,-3,-3,-3,-2,-2,-1,-1,0,0,
+	0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,
+	8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15,
+	-15,-15,-14,-14,-13,-13,-12,-12,-11,-11,-10,-10,-9,-9,-8,-8,
+	-7,-7,-6,-6,-5,-5,-4,-4,-3,-3,-2,-2,-1,-1,0,0,
+	0,0,1,1,2,2,3,3,4,5,5,6,6,7,7,8,
+	9,9,10,10,11,11,12,12,13,14,14,15,15,16,16,17,
+	-17,-17,-16,-16,-15,-15,-14,-13,-13,-12,-12,-11,-11,-10,-10,-9,
+	-8,-8,-7,-7,-6,-6,-5,-4,-4,-3,-3,-2,-2,-1,-1,0,
+	0,0,1,1,2,3,3,4,5,5,6,6,7,8,8,9,
+	10,10,11,11,12,13,13,14,15,15,16,16,17,18,18,19,
+	-19,-19,-18,-18,-17,-16,-16,-15,-14,-14,-13,-13,-12,-11,-11,-10,
+	-9,-9,-8,-8,-7,-6,-6,-5,-4,-4,-3,-3,-2,-1,-1,0,
+	0,0,1,2,2,3,4,4,5,6,6,7,8,8,9,10,
+	11,11,12,13,13,14,15,15,16,17,17,18,19,19,20,21,
+	-21,-21,-20,-19,-19,-18,-17,-17,-16,-15,-15,-14,-13,-12,-12,-11,
+	-10,-10,-9,-8,-8,-7,-6,-6,-5,-4,-4,-3,-2,-1,-1,0,
+	0,0,1,2,3,3,4,5,6,6,7,8,9,9,10,11,
+	12,12,13,14,15,15,16,17,18,18,19,20,21,21,22,23,
+	-23,-23,-22,-21,-20,-20,-19,-18,-17,-17,-16,-15,-14,-14,-13,-12,
+	-11,-11,-10,-9,-8,-8,-7,-6,-5,-5,-4,-3,-2,-2,-1,0,
+	0,0,1,2,3,4,4,5,6,7,8,8,9,10,11,12,
+	13,13,14,15,16,17,17,18,19,20,21,21,22,23,24,25,
+	-25,-25,-24,-23,-22,-21,-21,-20,-19,-18,-17,-16,-16,-15,-14,-13,
+	-12,-12,-11,-10,-9,-8,-8,-7,-6,-5,-4,-3,-3,-2,-1,0,
+	0,0,1,2,3,4,5,6,7,7,8,9,10,11,12,13,
+	14,14,15,16,17,18,19,20,21,21,22,23,24,25,26,27,
+	-27,-27,-26,-25,-24,-23,-22,-21,-20,-20,-19,-18,-17,-16,-15,-14,
+	-13,-13,-12,-11,-10,-9,-8,-7,-6,-6,-5,-4,-3,-2,-1,0,
+	0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,
+	15,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,
+	-29,-28,-28,-27,-26,-25,-24,-23,-22,-21,-20,-19,-18,-17,-16,-15,
+	-14,-13,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0
+};
+
+static const BYTE mt_VibratoRectTable[] = {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+	-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,
+	-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,
+	5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+	5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+	-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,
+	-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,
+	7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,
+	-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,-7,
+	9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+	9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+	-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,
+	-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,
+	11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+	11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
+	-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,
+	-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,-11,
+	13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
+	13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
+	-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,
+	-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,-13,
+	15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
+	15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
+	-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,
+	-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,-15,
+	17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,
+	17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,
+	-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,
+	-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,-17,
+	19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,
+	19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,
+	-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,
+	-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,-19,
+	21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,
+	21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,
+	-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,
+	-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,-21,
+	23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,
+	23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,
+	-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,
+	-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,-23,
+	25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,
+	25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,
+	-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,
+	-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,-25,
+	27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,
+	27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,27,
+	-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,
+	-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,-27,
+	29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,
+	29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,
+	-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,
+	-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29
+};
+
 typedef void (*tVoidFn)(void);
-typedef tVoidFn tFx;
+typedef void (*tFx)(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+);
 
 typedef struct _tModSampleHeader {
 	char szName[22];
@@ -435,7 +639,7 @@ typedef struct _tModFileHeader {
  */
 typedef struct _tModVoice {
 	UWORD uwNote;
-	UBYTE uwCmd;
+	UWORD uwCmd;
 } tModVoice;
 
 typedef struct _tChannelStatus {
@@ -448,7 +652,7 @@ typedef struct _tChannelStatus {
 	UWORD n_replen;
 	UWORD n_period;
 	UWORD n_volume;
-	ULONG n_pertab;
+	UWORD *n_pertab; ///< Period table, used in arpeggio
 	UWORD n_dmabit;
 	UWORD n_noteoff;
 	UWORD n_toneportspeed;
@@ -481,6 +685,9 @@ typedef struct _tChannelStatus {
 	UBYTE n_freecnt;
 	UBYTE n_musiconly;
 } tChannelStatus;
+
+static const tFx fx_tab[16];
+static const tFx blmorefx_tab[16];
 
 UBYTE mt_MusicChannels = 0;
 UBYTE mt_E8Trigger = 0;
@@ -524,10 +731,6 @@ static void ptSongStep(void) {
 	// set it in the meantime
 }
 
-static void mt_nop(void) {
-
-}
-
 static void startSfx(
 	UWORD uwLen, tChannelStatus *pChannelData,
 	volatile struct AudChannel *pChannelReg
@@ -549,30 +752,51 @@ static void startSfx(
 	mt_dmaon |= pChannelData->n_dmabit;
 }
 
-static void mt_playvoice(
-	tChannelStatus *pChannelData, struct AudChannel *pChannelReg
+void moreBlockedFx(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
 ) {
-
+	blmorefx_tab[uwCmd >> 8](uwCmd, pChannelData, pChannelReg);
 }
 
-tFx fx_tab[] = {
-	mt_arpeggio,
-	mt_portaup,
-	mt_portadown,
-	mt_toneporta,
-	mt_vibrato,
-	mt_tonevolslide,
-	mt_vibrvolslide,
-	mt_tremolo,
-	mt_nop,
-	mt_nop,
-	mt_volumeslide,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_e_cmds,
-	mt_nop
-};
+static void mt_playvoice(
+	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg,
+	tModVoice *pVoice
+) {
+	// channel blocked by external sound effect?
+	if(pChannelData->n_sfxpri) {
+		if(pChannelData->n_sfxlen) {
+			startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
+			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
+			return;
+		}
+		// do only some limited commands, while sound effect is in progress
+		if(
+			!(pChannelData->n_intbit & g_pCustom->intreqr) ||
+			(pChannelData->n_dmabit & mt_dmaon)
+		) {
+			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
+			return;
+		}
+		// sound effect sample has played, so unblock this channel again
+		pChannelData->n_sfxpri = 0;
+	}
+	// n_note/cmd: any note or cmd set?
+	if(pChannelData->n_note) {
+		pChannelReg->ac_per = pChannelData->n_period;
+	}
+	pChannelData->n_note = pVoice->uwNote;
+	pChannelData->n_cmd = pVoice->uwCmd >> 8;
+	pChannelData->n_cmdlo = pVoice->uwCmd & 0xFF;
+
+	UWORD d5 = (pChannelData->n_cmd & 0x000F) * 2; // cmd * 2
+	// cmd argument in MSW
+	ULONG d4 = (pChannelData->n_cmd & 0x00FF) << 16;
+	// for checking E-cmd in LSW
+	d4 |= pChannelData->n_cmd & 0x0FF0;
+
+	// TODO: implement rest
+}
 
 static void mt_checkfx(
 	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg
@@ -746,10 +970,10 @@ void mt_music(void) {
 			tModVoice *pLineVoices = (tModVoice*)&pCurrentPattern[mt_PatternPos];
 
 			// play new note for each channel, apply some effects
-			mt_playvoice(&mt_chan[0], &g_pCustom->aud[0], pLineVoices[0]);
-			mt_playvoice(&mt_chan[1], &g_pCustom->aud[1], pLineVoices[1]);
-			mt_playvoice(&mt_chan[2], &g_pCustom->aud[2], pLineVoices[2]);
-			mt_playvoice(&mt_chan[3], &g_pCustom->aud[3], pLineVoices[3]);
+			mt_playvoice(&mt_chan[0], &g_pCustom->aud[0], &pLineVoices[0]);
+			mt_playvoice(&mt_chan[1], &g_pCustom->aud[1], &pLineVoices[1]);
+			mt_playvoice(&mt_chan[2], &g_pCustom->aud[2], &pLineVoices[2]);
+			mt_playvoice(&mt_chan[3], &g_pCustom->aud[3], &pLineVoices[3]);
 		}
 		else {
 			// we have a pattern delay, check effects then step
@@ -1225,4 +1449,197 @@ void mt_mastervol(UWORD MasterVolume) {
 	g_pCustom->intena = INTF_INTEN;
 	mt_MasterVolTab = MasterVolTab[MasterVolume];
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
+}
+
+//-------------------------------------------------- COMMANDS WITHOUT CMD PASSED
+
+static void mt_toneporta_nc(
+	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg
+) {
+	if(pChannelData->n_wantedperiod) {
+		UWORD uwNew;
+		if(pChannelData->n_period > pChannelData->n_wantedperiod) {
+			// tone porta up
+			uwNew = pChannelData->n_period - pChannelData->n_toneportspeed;
+			if(uwNew < pChannelData->n_wantedperiod) {
+				uwNew = pChannelData->n_wantedperiod;
+				pChannelData->n_wantedperiod = 0;
+			}
+		}
+		else {
+			// tone porta down
+			uwNew = pChannelData->n_period + pChannelData->n_toneportspeed;
+			if(uwNew > pChannelData->n_wantedperiod) {
+				uwNew = pChannelData->n_wantedperiod;
+				pChannelData->n_wantedperiod = 0;
+			}
+		}
+		pChannelData->n_period = uwNew;
+		if(pChannelData->n_gliss) {
+			// glissando: find nearest note for new period
+			// TODO
+		}
+		pChannelReg->ac_per = pChannelData->n_period;
+	}
+}
+
+static void mt_vibrato_nc(
+	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg,
+	UBYTE ubAmplitude, UBYTE ubSpeed
+) {
+	// calculate vibrato table offset
+	UBYTE ubOffs = 64 * ubAmplitude + (pChannelData->n_vibratopos & 63);
+
+	// select vibrato waveform
+	UBYTE *pTable;
+	UBYTE ubCtl = pChannelData->n_vibratoctrl & 3;
+	if(!ubCtl) {
+		pTable = mt_VibratoSineTable;
+	}
+	else if(ubCtl == 1) {
+		pTable = mt_VibratoSawTable;
+	}
+	else {
+		// ctrl 2 & 3 select a rectangle vibrato
+		pTable = mt_VibratoRectTable;
+	}
+
+	// add vibrato-offset to period
+	pChannelReg->ac_per = pChannelData->n_period + pTable[ubOffs];
+
+	// Increase vibratopos by speed
+	pChannelData->n_vibratopos += ubSpeed;
+}
+
+//-------------------------------------------------------- EFFECTS WITH CMD WORD
+
+static void mt_nop(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+
+}
+
+static void mt_arpeggio(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0 x y (x = first arpeggio offset, y = second arpeggio offset)
+	static const UBYTE pArpTab[] = {
+		0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0,
+		1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1
+	};
+
+	// Step 0, just use normal period
+	pChannelReg->ac_per = pChannelData->n_period;
+
+	UWORD uwVal;
+	if(pArpTab[mt_Counter] >= 0) {
+		// Step 1, arpeggio by left nibble
+		uwVal = (uwCmd >> 4) & 0xF;
+	}
+	else {
+		// Step 2, arpeggio by right nibble
+		uwVal = uwCmd & 0xF;
+	}
+	// offset current note
+	uwVal *= 2;
+	uwVal += pChannelData->n_noteoff;
+	// TODO: check if bhs is properly translated here
+	if(uwVal < 2 * 36) {
+		// Set period with arpeggio offset from note table
+		pChannelReg->ac_per = pChannelData->n_pertab[uwVal / 2];
+		// TODO: noteoff has byte offs from start of array, set it to divided by 2
+		// since we're using UWORD pointers, not UBYTE
+	}
+}
+
+static void mt_portaup(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 1 x x (subtract xx from period)
+	do_porta_up(uwCmd);
+}
+
+static void mt_portadown(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 2 x x (add xx to period)
+	do_porta_down(uwCmd);
+}
+
+static void mt_toneporta(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 3 x y (xy = tone portamento speed)
+	if(!(uwCmd & 0xFF)) {
+		pChannelData->n_toneportspeed = uwCmd;
+		pChannelData->n_cmdlo = 0;
+	}
+	mt_toneporta_nc(pChannelData, pChannelReg);
+}
+
+static void mt_vibrato(
+	UWORD uwCmd, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 4 x y (x = speed, y = amplitude)
+	UBYTE ubAmplitude = uwCmd & 0xF;
+	if(ubAmplitude) {
+		pChannelData->n_vibratoamp = ubAmplitude;
+	}
+	else {
+		ubAmplitude = pChannelData->n_vibratoamp;
+	}
+	UBYTE ubSpeed = (uwCmd >> 4) & 0xF;
+	if(ubSpeed) {
+		pChannelData->n_vibratospd = ubSpeed;
+	}
+	else {
+		ubSpeed = pChannelData->n_vibratospd;
+	}
+	mt_vibrato_nc(pChannelData, pChannelReg, ubAmplitude, ubSpeed);
+}
+
+static const tFx fx_tab[16] = {
+	mt_arpeggio,
+	mt_portaup,
+	mt_portadown,
+	mt_toneporta,
+	mt_vibrato,
+	mt_tonevolslide,
+	mt_vibrvolslide,
+	mt_tremolo,
+	mt_nop,
+	mt_nop,
+	mt_volumeslide,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_e_cmds,
+	mt_nop
+};
+
+//---------------------------------------------------------------- MORE FX TABLE
+
+static const tFx blmorefx_tab[16] = {
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_nop,
+	mt_posjump, // 0xB
+	mt_nop,
+	mt_patternbrk, // 0xD
+	blocked_e_cmds,
+	mt_setspeed, // 0xF
 }
