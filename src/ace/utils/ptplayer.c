@@ -11,6 +11,89 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 
+static UWORD mt_PeriodTable[][36] = {
+	{
+		856,808,762,720,678,640,604,570,538,508,480,453,
+		428,404,381,360,339,320,302,285,269,254,240,226,
+		214,202,190,180,170,160,151,143,135,127,120,113
+	},
+	{
+		850,802,757,715,674,637,601,567,535,505,477,450,
+		425,401,379,357,337,318,300,284,268,253,239,225,
+		213,201,189,179,169,159,150,142,134,126,119,113
+	},
+	{
+		844,796,752,709,670,632,597,563,532,502,474,447,
+		422,398,376,355,335,316,298,282,266,251,237,224,
+		211,199,188,177,167,158,149,141,133,125,118,112
+	},
+	{
+		838,791,746,704,665,628,592,559,528,498,470,444,
+		419,395,373,352,332,314,296,280,264,249,235,222,
+		209,198,187,176,166,157,148,140,132,125,118,111
+	},
+	{
+		832,785,741,699,660,623,588,555,524,495,467,441,
+		416,392,370,350,330,312,294,278,262,247,233,220,
+		208,196,185,175,165,156,147,139,131,124,117,110
+	},
+	{
+		826,779,736,694,655,619,584,551,520,491,463,437,
+		413,390,368,347,328,309,292,276,260,245,232,219,
+		206,195,184,174,164,155,146,138,130,123,116,109
+	},
+	{
+		820,774,730,689,651,614,580,547,516,487,460,434,
+		410,387,365,345,325,307,290,274,258,244,230,217,
+		205,193,183,172,163,154,145,137,129,122,115,109
+	},
+	{
+		814,768,725,684,646,610,575,543,513,484,457,431,
+		407,384,363,342,323,305,288,272,256,242,228,216,
+		204,192,181,171,161,152,144,136,128,121,114,108
+	},
+	{
+		907,856,808,762,720,678,640,604,570,538,508,480,
+		453,428,404,381,360,339,320,302,285,269,254,240,
+		226,214,202,190,180,170,160,151,143,135,127,120
+	},
+	{
+		900,850,802,757,715,675,636,601,567,535,505,477,
+		450,425,401,379,357,337,318,300,284,268,253,238,
+		225,212,200,189,179,169,159,150,142,134,126,119
+	},
+	{
+		894,844,796,752,709,670,632,597,563,532,502,474,
+		447,422,398,376,355,335,316,298,282,266,251,237,
+		223,211,199,188,177,167,158,149,141,133,125,118
+	},
+	{
+		887,838,791,746,704,665,628,592,559,528,498,470,
+		444,419,395,373,352,332,314,296,280,264,249,235,
+		222,209,198,187,176,166,157,148,140,132,125,118
+	},
+	{
+		881,832,785,741,699,660,623,588,555,524,494,467,
+		441,416,392,370,350,330,312,294,278,262,247,233,
+		220,208,196,185,175,165,156,147,139,131,123,117
+	},
+	{
+		875,826,779,736,694,655,619,584,551,520,491,463,
+		437,413,390,368,347,328,309,292,276,260,245,232,
+		219,206,195,184,174,164,155,146,138,130,123,116
+	},
+	{
+		868,820,774,730,689,651,614,580,547,516,487,460,
+		434,410,387,365,345,325,307,290,274,258,244,230,
+		217,205,193,183,172,163,154,145,137,129,122,115
+	},
+	{
+		862,814,768,725,684,646,610,575,543,513,484,457,
+		431,407,384,363,342,323,305,288,272,256,242,228,
+		216,203,192,181,171,161,152,144,136,128,121,114
+	}
+};
+
 static UBYTE MasterVolTab[][65] = {
 	{
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -405,6 +488,10 @@ static UBYTE MasterVolTab[][65] = {
 	}
 };
 
+static const UBYTE mt_FunkTable[] = {
+	0, 5, 6, 7, 8, 10, 11, 13, 16, 19, 22, 26, 32, 43, 64, 128
+};
+
 static const BYTE mt_VibratoSineTable[] = {
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -606,12 +693,6 @@ static const BYTE mt_VibratoRectTable[] = {
 	-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29
 };
 
-typedef void (*tVoidFn)(void);
-typedef void (*tFx)(
-	UWORD uwCmd, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
-);
-
 typedef struct _tModSampleHeader {
 	char szName[22];
 	UWORD uwLength; ///< Sample data length, in words.
@@ -646,7 +727,7 @@ typedef struct _tChannelStatus {
 	UWORD n_note;
 	UBYTE n_cmd;
 	UBYTE n_cmdlo;
-	ULONG n_start;
+	UWORD *n_start; ///< Pointer to start of sample
 	UWORD *n_loopstart;
 	UWORD n_length;
 	UWORD n_replen;
@@ -658,8 +739,8 @@ typedef struct _tChannelStatus {
 	UWORD n_toneportspeed;
 	UWORD n_wantedperiod;
 	UWORD n_pattpos;
-	UWORD n_funk;
-	ULONG n_wavestart;
+	UWORD n_funk; ///< Funk speed
+	UBYTE *n_wavestart;
 	UWORD n_reallength;
 	UWORD n_intbit;
 	UWORD n_sfxlen;
@@ -678,16 +759,33 @@ typedef struct _tChannelStatus {
 	UBYTE n_tremoloctrl;
 	UBYTE n_gliss;
 	UBYTE n_sampleoffset;
-	UBYTE n_loopcount;
-	UBYTE n_funkoffset;
+	BYTE n_loopcount;
+	BYTE n_funkoffset;
 	UBYTE n_retrigcount;
 	UBYTE n_sfxpri;
 	UBYTE n_freecnt;
 	UBYTE n_musiconly;
 } tChannelStatus;
 
+typedef void (*tVoidFn)(void);
+typedef void (*tFx)(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+);
+typedef void (*tEFn)(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+);
+
 static const tFx fx_tab[16];
 static const tFx blmorefx_tab[16];
+static const tEFn ecmd_tab[16];
+static const tEFn blecmd_tab[16];
+
+static void blocked_e_cmds(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+);
 
 UBYTE mt_MusicChannels = 0;
 UBYTE mt_E8Trigger = 0;
@@ -722,6 +820,7 @@ static void ptSongStep(void) {
 
 	// Next position in song
 	UBYTE ubNextPos = (mt_SongPos + 1) & 0x7F;
+
 	// End of song reached?
 	if(ubNextPos >= mt_mod->ubArrangementLength) {
 		ubNextPos = 0;
@@ -796,6 +895,25 @@ static void mt_playvoice(
 	d4 |= pChannelData->n_cmd & 0x0FF0;
 
 	// TODO: implement rest
+	// swap & stuff
+
+	// A...B... -> ......BA
+}
+
+static void mt_updatefunk(tChannelStatus *pChannelData) {
+	UBYTE ubVal = mt_FunkTable[pChannelData->n_funk];
+	pChannelData->n_funkoffset += ubVal;
+	if(pChannelData->n_funkoffset > 0) {
+		return;
+	}
+	UBYTE *pOffs = (UBYTE*)&pChannelData->n_loopstart[pChannelData->n_replen];
+	UBYTE *pWaveStart = pChannelData->n_wavestart + 1;
+	if(pOffs < pWaveStart
+	) {
+		pWaveStart = pOffs;
+	}
+	pChannelData->n_wavestart = pWaveStart;
+	// TODO: asm NOT
 }
 
 static void mt_checkfx(
@@ -814,9 +932,11 @@ static void mt_checkfx(
 			UWORD uwCmd = pChannelData->n_cmd & 0x0FFF;
 			if((uwCmd & 0xF00) == 0xE00) {
 				// NOP command
-				return;
 			}
-			goto lBlockedECmds;
+			else {
+				blocked_e_cmds(uwCmd, pChannelData, pChannelReg);
+			}
+			return;
 		}
 		else {
 			// sound effect sample has played, so unblock this channel again
@@ -825,7 +945,7 @@ static void mt_checkfx(
 	}
 	// do channel effects between notes
 	if(pChannelData->n_funk) {
-		mt_updatefunk();
+		mt_updatefunk(pChannelData);
 	}
 	UWORD uwCmd = pChannelData->n_cmd & 0x0FFF;
 	if(!uwCmd) {
@@ -835,7 +955,7 @@ static void mt_checkfx(
 	else {
 		uwCmd &= 0xFF;
 		UWORD uwCmd2 = (pChannelData->n_cmd & 0xF);
-		fx_tab[uwCmd2]();
+		fx_tab[uwCmd2](uwCmd, pChannelData, pChannelReg);
 	}
 }
 
@@ -1491,7 +1611,7 @@ static void mt_vibrato_nc(
 	UBYTE ubOffs = 64 * ubAmplitude + (pChannelData->n_vibratopos & 63);
 
 	// select vibrato waveform
-	UBYTE *pTable;
+	const BYTE *pTable;
 	UBYTE ubCtl = pChannelData->n_vibratoctrl & 3;
 	if(!ubCtl) {
 		pTable = mt_VibratoSineTable;
@@ -1514,18 +1634,18 @@ static void mt_vibrato_nc(
 //-------------------------------------------------------- EFFECTS WITH CMD WORD
 
 static void mt_nop(
-	UWORD uwCmd, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UNUSED_ARG UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 
 }
 
 static void mt_arpeggio(
-	UWORD uwCmd, tChannelStatus *pChannelData,
+	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile struct AudChannel *pChannelReg
 ) {
-	// cmd 0 x y (x = first arpeggio offset, y = second arpeggio offset)
-	static const UBYTE pArpTab[] = {
+	// uwCmd: 0x00'XY (x = first arpeggio offset, y = second arpeggio offset)
+	static const BYTE pArpTab[] = {
 		0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0,
 		1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1
 	};
@@ -1536,11 +1656,11 @@ static void mt_arpeggio(
 	UWORD uwVal;
 	if(pArpTab[mt_Counter] >= 0) {
 		// Step 1, arpeggio by left nibble
-		uwVal = (uwCmd >> 4) & 0xF;
+		uwVal = ubArgs >> 4;
 	}
 	else {
 		// Step 2, arpeggio by right nibble
-		uwVal = uwCmd & 0xF;
+		uwVal = ubArgs & 0xF;
 	}
 	// offset current note
 	uwVal *= 2;
@@ -1554,47 +1674,65 @@ static void mt_arpeggio(
 	}
 }
 
+static void ptDoPortaUp(
+	UBYTE ubVal, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	UWORD uwNewPer = MAX(113, pChannelData->n_period - ubVal);
+	pChannelData->n_period = uwNewPer;
+	pChannelReg->ac_per = uwNewPer;
+}
+
 static void mt_portaup(
-	UWORD uwCmd, tChannelStatus *pChannelData,
+	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 1 x x (subtract xx from period)
-	do_porta_up(uwCmd);
+	ptDoPortaUp(ubArgs, pChannelData, pChannelReg);
+}
+
+static void ptDoPortaDn(
+	UBYTE ubVal, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	UWORD uwNewPer = MIN(pChannelData->n_period - ubVal, 856);
+	pChannelData->n_period = uwNewPer;
+	pChannelReg->ac_per = uwNewPer;
 }
 
 static void mt_portadown(
-	UWORD uwCmd, tChannelStatus *pChannelData,
+	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 2 x x (add xx to period)
-	do_porta_down(uwCmd);
+	ptDoPortaDn(ubArgs, pChannelData, pChannelReg);
 }
 
 static void mt_toneporta(
-	UWORD uwCmd, tChannelStatus *pChannelData,
+	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile struct AudChannel *pChannelReg
 ) {
-	// cmd 3 x y (xy = tone portamento speed)
-	if(!(uwCmd & 0xFF)) {
-		pChannelData->n_toneportspeed = uwCmd;
+	// uwCmd: 0x03'XY (xy = tone portamento speed)
+	if(ubArgs) {
+		pChannelData->n_toneportspeed = ubArgs;
 		pChannelData->n_cmdlo = 0;
 	}
 	mt_toneporta_nc(pChannelData, pChannelReg);
 }
 
 static void mt_vibrato(
-	UWORD uwCmd, tChannelStatus *pChannelData,
+	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile struct AudChannel *pChannelReg
 ) {
-	// cmd 4 x y (x = speed, y = amplitude)
-	UBYTE ubAmplitude = uwCmd & 0xF;
+	// uwCmd: 0x04'XY (x = speed, y = amplitude)
+	UBYTE ubAmplitude = ubArgs & 0xF;
 	if(ubAmplitude) {
 		pChannelData->n_vibratoamp = ubAmplitude;
 	}
 	else {
 		ubAmplitude = pChannelData->n_vibratoamp;
 	}
-	UBYTE ubSpeed = (uwCmd >> 4) & 0xF;
+	UBYTE ubSpeed = ubArgs >> 4;
 	if(ubSpeed) {
 		pChannelData->n_vibratospd = ubSpeed;
 	}
@@ -1602,6 +1740,123 @@ static void mt_vibrato(
 		ubSpeed = pChannelData->n_vibratospd;
 	}
 	mt_vibrato_nc(pChannelData, pChannelReg, ubAmplitude, ubSpeed);
+}
+
+static void ptVolSlide(
+	BYTE bVolNew, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	bVolNew = CLAMP(bVolNew, 0, 64);
+	pChannelData->n_volume = bVolNew;
+	pChannelReg->ac_per = pChannelData->n_period;
+	pChannelReg->ac_vol = mt_MasterVolTab[bVolNew];
+}
+
+static void mt_volumeslide(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x0A'XY (x = volume-up, y = volume-down)
+	UBYTE ubVolDn  = ubArgs & 0x0F;
+	UBYTE ubVolUp = ubArgs >> 4;
+
+	BYTE bVol = pChannelData->n_volume;
+	if(!ubVolUp) {
+		// Slide up, until 64
+		ptVolSlide(bVol + ubVolUp, pChannelData, pChannelReg);
+	}
+	else {
+		// Slide down, until 0
+		ptVolSlide(bVol - ubVolDn, pChannelData, pChannelReg);
+	}
+}
+
+static void mt_tonevolslide(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x05'XY (x = volume up, y = volume down)
+	// TODO ensure that it works as I think if works
+	mt_toneporta_nc(pChannelData, pChannelReg);
+
+	// Do a volume slide with current cmd's args
+	mt_volumeslide(ubArgs, pChannelData, pChannelReg);
+}
+
+static void mt_vibrvolslide(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x06'XY (x = volume-up, y = volume-down)
+
+	// Do vibrato with previously stored args
+	mt_vibrato_nc(
+		pChannelData, pChannelReg,
+		pChannelData->n_vibratoamp, pChannelData->n_vibratospd
+	);
+
+	// Do a volume slide with current cmd's args
+	mt_volumeslide(ubArgs, pChannelData, pChannelReg);
+}
+
+static void mt_tremolo(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x07'XY (x = speed, y = amplitude)
+	UBYTE ubAmplitude = ubArgs & 0x0F;
+	UBYTE ubSpeed = ubArgs >> 4;
+	if(ubAmplitude) {
+		pChannelData->n_tremoloamp = ubAmplitude;
+	}
+	else {
+		ubAmplitude = pChannelData->n_tremoloamp;
+	}
+	if(ubSpeed) {
+		pChannelData->n_tremolospd = ubSpeed;
+	}
+	else {
+		ubSpeed = pChannelData->n_tremolospd;
+	}
+
+	// calculate tremolo table offset
+	UWORD uwOffset = 64 * ubAmplitude + (pChannelData->n_tremolopos & 63);
+
+	// select tremolo waveform
+	UBYTE ubWaveformIdx = pChannelData->n_tremoloctrl & 3;
+	const BYTE *pWaveform;
+	if(ubWaveformIdx == 0) {
+		// ctrl 0 selects a sine tremolo
+		pWaveform = mt_VibratoSineTable;
+	}
+	else if(ubWaveformIdx == 1) {
+		// ctrl 1 selects a sawtooth tremolo
+		pWaveform = mt_VibratoSawTable;
+	}
+	else {
+		// ctrl 2 & 3 select a rectangle tremolo
+		pWaveform = mt_VibratoRectTable;
+	}
+
+	// add tremolo-offset to volume
+	WORD wNewVol = pChannelData->n_volume + pWaveform[uwOffset];
+	wNewVol = CLAMP(wNewVol, 0, 64);
+
+	pChannelReg->ac_per = pChannelData->n_period;
+	pChannelReg->ac_vol = wNewVol;
+
+	// increase tremolopos by speed
+	pChannelData->n_tremolopos += ubSpeed;
+}
+
+static void mt_e_cmds(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x0E'XY (x = command, y = argument)
+	UBYTE ubArgE = ubArgs & 0x0F;
+	UBYTE ubCmdE = (ubArgs & 0xF0) >> 4;
+	ecmd_tab[ubCmdE](ubArgE, pChannelData, pChannelReg);
 }
 
 static const tFx fx_tab[16] = {
@@ -1625,6 +1880,69 @@ static const tFx fx_tab[16] = {
 
 //---------------------------------------------------------------- MORE FX TABLE
 
+static void mt_posjump(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x0B'XY (xy = new song position)
+	mt_SongPos = ubArgs - 1;
+	mt_PBreakPos = 0;
+	mt_PosJumpFlag = 0;
+}
+
+static void mt_patternbrk(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x0D'XY (xy = break pos in decimal)
+
+	static const UBYTE pMult10[] = {
+		0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 0, 0, 0, 0, 0, 0
+	};
+
+	UBYTE ubY = ubArgs & 0xF;
+	UBYTE ubX = ubArgs >> 4;
+	UBYTE ubVal = pMult10[ubX] + ubY;
+	// TODO: I'm not sure if mt_PosJumpFlag assignments are correct
+	if(ubVal > 63) {
+		mt_PBreakPos = 0;
+		mt_PosJumpFlag = 0;
+	}
+	else {
+		mt_PBreakPos = ubVal << 4;
+		mt_PosJumpFlag = 1;
+	}
+}
+
+static void blocked_e_cmds(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x0E'XY (x = command, y = argument)
+	UBYTE ubArg = ubArgs & 0x0F;
+	UBYTE ubCmdE = ubArgs & 0xF0 >> 4;
+	blecmd_tab[ubCmdE](ubArg, pChannelData, pChannelReg);
+}
+
+static void mt_setspeed(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// uwCmd: 0x0F'XY (xy < 0x20: new speed, xy >= 0x20: new tempo)
+	if(ubArgs < 0x20) {
+		mt_Speed = ubArgs;
+		if(!ubArgs) {
+			mt_end();
+		}
+	}
+	else {
+		// Set tempo (CIA only)
+		UWORD uwTempo = mt_timerval / ubArgs;
+		g_pCiaB->talo = uwTempo & 0xFF;
+		g_pCiaB->tahi = uwTempo >> 8;
+	}
+}
+
 static const tFx blmorefx_tab[16] = {
 	mt_nop,
 	mt_nop,
@@ -1642,4 +1960,264 @@ static const tFx blmorefx_tab[16] = {
 	mt_patternbrk, // 0xD
 	blocked_e_cmds,
 	mt_setspeed, // 0xF
+};
+
+//----------------------------------------------------------------- E CMDS TABLE
+
+static void mt_filter(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'0X (x=1 disable, x=0 enable)
+	if(ubArg & 1) {
+		g_pCiaA->pra |= BV(1);
+	}
+	else {
+		g_pCiaA->pra &= ~BV(1);
+	}
 }
+
+static void mt_fineportaup(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'1X (subtract x from period)
+	if(!mt_Counter) {
+		ptDoPortaUp(ubArg, pChannelData, pChannelReg);
+	}
+}
+
+static void mt_fineportadn(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'1X (subtract x from period)
+	if(!mt_Counter) {
+		ptDoPortaDn(ubArg, pChannelData, pChannelReg);
+	}
+}
+
+static void mt_glissctrl(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'3X (x = gliss)
+	pChannelData->n_gliss = (pChannelData->n_gliss & 4) | ubArg;
+}
+
+static void mt_vibratoctrl(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'4X (x = vibrato)
+	pChannelData->n_vibratoctrl = ubArg;
+}
+
+static void mt_finetune(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'5X (x = finetune)
+	pChannelData->n_pertab = mt_PeriodTable[ubArg];
+	// TODO report asm: shs
+	// TODO is it set? d0 &= 0xF, 0xF+0xF == 30 && 30 < 32
+	pChannelData->n_minusft = (ubArg >= 32);
+}
+
+static void mt_jumploop(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'6X (x = 0: loop start, else loop count)
+	if(mt_Counter) {
+		return;
+	}
+	if(!ubArg) {
+		// remember start of loop position
+		pChannelData->n_pattpos = mt_PatternPos;
+		return;
+	}
+	// otherwise we are at the end of the loop
+	--pChannelData->n_loopcount;
+	if(!pChannelData->n_loopcount) {
+		// loop finished
+		return;
+	}
+	else if(pChannelData->n_loopcount < 0) {
+		// initialize loop counter
+		pChannelData->n_loopcount  = ubArg;
+	}
+
+	// jump back to start of loop
+	mt_PBreakPos = pChannelData->n_pattpos;
+	// TODO ensure st polarity, if non-zero then set?
+	mt_PBreakFlag = (mt_PBreakPos != 0);
+}
+
+static void mt_tremoctrl(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'7X (x = tremolo)
+	pChannelData->n_tremoloctrl = ubArg;
+}
+
+static void mt_e8(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'8X (x = trigger value)
+	mt_E8Trigger = ubArg;
+}
+
+static void ptDoRetrigger(
+	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg
+) {
+	// DMA off, set sample pointer and length
+	g_pCustom->dmacon = pChannelData->n_dmabit;
+	pChannelReg->ac_ptr = pChannelData->n_start;
+	pChannelReg->ac_len = pChannelData->n_length;
+	mt_dmaon |= pChannelData->n_dmabit;
+}
+
+static void mt_retrignote(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'9X (x = retrigger count)
+	if(!ubArg) {
+		return;
+	}
+
+	// set new retrigger count when Counter = 0
+	if(!mt_Counter) {
+		pChannelData->n_retrigcount = ubArg;
+		// avoid double retrigger, when Counter=0 and a note was set
+		if(pChannelData->n_note & 0x0FFF) {
+			return;
+		}
+	}
+	else {
+		// check if retrigger count is reached
+		--pChannelData->n_retrigcount;
+		if(pChannelData->n_retrigcount) {
+			return;
+		}
+		// reset
+		pChannelData->n_retrigcount = ubArg;
+	}
+
+	ptDoRetrigger(pChannelData, pChannelReg);
+}
+
+static void mt_volfineup(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'AX (x = volume add)
+	if(!mt_Counter) {
+		ptVolSlide(pChannelData->n_volume + ubArg, pChannelData, pChannelReg);
+	}
+}
+
+static void mt_volfinedn(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'BX (x = volume subtract)
+	if(!mt_Counter) {
+		ptVolSlide(pChannelData->n_volume - ubArg, pChannelData, pChannelReg);
+	}
+}
+
+static void mt_notecut(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'CX (x = counter to cut at)
+	if(mt_Counter == ubArg) {
+		pChannelData->n_volume = 0;
+		pChannelReg->ac_vol = 0;
+	}
+}
+
+static void mt_notedelay(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'DX (x = counter to retrigger at)
+	if(mt_Counter == ubArg) {
+		// Trigger note when given
+		if(pChannelData->n_note) {
+			ptDoRetrigger(pChannelData, pChannelReg);
+		}
+	}
+}
+
+static void mt_patterndelay(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'EX (x = delay count)
+	if(!mt_Counter && !mt_PattDelTime2) {
+		mt_PattDelTime = ubArg + 1;
+	}
+}
+
+static void mt_funk(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile struct AudChannel *pChannelReg
+) {
+	// cmd 0x0E'FX (x = delay count)
+	if(!mt_Counter) {
+		pChannelData->n_funk = ubArg;
+		if(ubArg) {
+			mt_updatefunk(pChannelData);
+		}
+	}
+}
+
+static void mt_rts(
+	UNUSED_ARG UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
+) {
+	// NOP
+}
+
+static const tEFn ecmd_tab[16] = {
+	mt_filter,
+	mt_fineportaup,
+	mt_fineportadn,
+	mt_glissctrl,
+	mt_vibratoctrl,
+	mt_finetune,
+	mt_jumploop,
+	mt_tremoctrl,
+	mt_e8,
+	mt_retrignote,
+	mt_volfineup,
+	mt_volfinedn,
+	mt_notecut,
+	mt_notedelay,
+	mt_patterndelay,
+	mt_funk
+};
+
+static const tEFn blecmd_tab[16] = {
+	mt_filter,
+	mt_rts,
+	mt_rts,
+	mt_glissctrl,
+	mt_vibratoctrl,
+	mt_finetune,
+	mt_jumploop,
+	mt_tremoctrl,
+	mt_e8,
+	mt_rts,
+	mt_rts,
+	mt_rts,
+	mt_rts,
+	mt_rts,
+	mt_patterndelay,
+	mt_rts
+};
