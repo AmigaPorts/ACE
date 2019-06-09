@@ -64,6 +64,7 @@ void _logWrite(char *szFormat, ...) {
 }
 
 void _logClose(void) {
+	logWrite("Log closed successfully");
 	if (g_sLogManager.pFile) {
 		fileClose(g_sLogManager.pFile);
 	}
