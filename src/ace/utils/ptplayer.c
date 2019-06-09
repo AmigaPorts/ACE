@@ -11,6 +11,10 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 
+// Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes
+// Length of single pattern.
+#define MOD_PATTERN_LENGTH (64 * 4 * 4)
+
 static UWORD mt_PeriodTable[][36] = {
 	{
 		856,808,762,720,678,640,604,570,538,508,480,453,
@@ -1191,7 +1195,7 @@ void mt_reset(void) {
 	mt_end();
 }
 
-void mt_install_cia(APTR *AutoVecBase, UBYTE PALflag) {
+void mt_install_cia(UNUSED_ARG APTR *AutoVecBase, UBYTE PALflag) {
 	mt_Enable = 0;
 
 	// Level 6 interrupt vector
@@ -1262,10 +1266,6 @@ void mt_remove_cia(void) {
 	// reenable previous level 6 interrupt
 	g_pCustom->intena = mt_Lev6Ena;
 }
-
-// Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes
-// Length of single pattern.
-#define MOD_PATTERN_LENGTH 1024
 
 void mt_init(UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos) {
 	// Initialize new module.
@@ -1881,8 +1881,8 @@ static const tFx fx_tab[16] = {
 //---------------------------------------------------------------- MORE FX TABLE
 
 static void mt_posjump(
-	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// uwCmd: 0x0B'XY (xy = new song position)
 	mt_SongPos = ubArgs - 1;
@@ -1891,8 +1891,8 @@ static void mt_posjump(
 }
 
 static void mt_patternbrk(
-	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// uwCmd: 0x0D'XY (xy = break pos in decimal)
 
@@ -1925,8 +1925,8 @@ static void blocked_e_cmds(
 }
 
 static void mt_setspeed(
-	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// uwCmd: 0x0F'XY (xy < 0x20: new speed, xy >= 0x20: new tempo)
 	if(ubArgs < 0x20) {
@@ -1965,8 +1965,8 @@ static const tFx blmorefx_tab[16] = {
 //----------------------------------------------------------------- E CMDS TABLE
 
 static void mt_filter(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'0X (x=1 disable, x=0 enable)
 	if(ubArg & 1) {
@@ -1999,7 +1999,7 @@ static void mt_fineportadn(
 
 static void mt_glissctrl(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'3X (x = gliss)
 	pChannelData->n_gliss = (pChannelData->n_gliss & 4) | ubArg;
@@ -2007,7 +2007,7 @@ static void mt_glissctrl(
 
 static void mt_vibratoctrl(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'4X (x = vibrato)
 	pChannelData->n_vibratoctrl = ubArg;
@@ -2015,7 +2015,7 @@ static void mt_vibratoctrl(
 
 static void mt_finetune(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'5X (x = finetune)
 	pChannelData->n_pertab = mt_PeriodTable[ubArg];
@@ -2026,7 +2026,7 @@ static void mt_finetune(
 
 static void mt_jumploop(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'6X (x = 0: loop start, else loop count)
 	if(mt_Counter) {
@@ -2056,15 +2056,15 @@ static void mt_jumploop(
 
 static void mt_tremoctrl(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'7X (x = tremolo)
 	pChannelData->n_tremoloctrl = ubArg;
 }
 
 static void mt_e8(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'8X (x = trigger value)
 	mt_E8Trigger = ubArg;
@@ -2155,8 +2155,8 @@ static void mt_notedelay(
 }
 
 static void mt_patterndelay(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'EX (x = delay count)
 	if(!mt_Counter && !mt_PattDelTime2) {
@@ -2166,7 +2166,7 @@ static void mt_patterndelay(
 
 static void mt_funk(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile struct AudChannel *pChannelReg
 ) {
 	// cmd 0x0E'FX (x = delay count)
 	if(!mt_Counter) {
