@@ -26,13 +26,6 @@ extern "C" {
 void mt_install_cia(APTR *AutoVecBase, UBYTE PALflag);
 
 /*
-  _mt_remove_cia(a6=CUSTOM)
-    Remove the CIA-B music interrupt and restore the old vector.
-*/
-
-void mt_remove_cia(void);
-
-/*
   _mt_init(a6=CUSTOM, a0=TrackerModule, a1=Samples|NULL, d0=InitialSongPos.b)
     Initialize a new module.
     Reset speed to 6, tempo to 125 and start at the given position.

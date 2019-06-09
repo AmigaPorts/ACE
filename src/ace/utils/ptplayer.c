@@ -7,6 +7,7 @@
 // - http://lclevy.free.fr/mo3/mod.txt
 
 #include <ace/utils/ptplayer.h>
+#include <ace/managers/system.h>
 #include <ace/utils/custom.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
@@ -798,11 +799,8 @@ UBYTE mt_Enable = 0;
 tChannelStatus mt_chan[4];
 UWORD *mt_SampleStarts[31];
 tModFileHeader *mt_mod;
-tVoidFn mt_oldLev6;
 ULONG mt_timerval;
-UBYTE mt_oldtimers[4];
 UBYTE *mt_MasterVolTab;
-UWORD mt_Lev6Ena;
 UWORD mt_PatternPos;
 UWORD mt_PBreakPos; ///< Pattern break pos
 UBYTE mt_PosJumpFlag;
@@ -814,8 +812,6 @@ UBYTE mt_PattDelTime;
 UBYTE mt_PattDelTime2;
 UBYTE mt_SilCntValid;
 UWORD mt_dmaon = DMAF_SETCLR;
-
-tVoidFn *mt_Lev6Int;
 
 static void ptSongStep(void) {
 	mt_PatternPos = mt_PBreakPos;
@@ -967,66 +963,55 @@ static void mt_sfxonly(void);
 
 // TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
 // which defaults to 50 times per second.
-static void mt_TimerAInt(void) {
-	// clear EXTER interrupt flag
-	g_pCustom->intreq = INTF_EXTER;
-
-	// check and clear CIAB interrupt flags
-	if(g_pCia[CIA_B]->icr & CIAICRF_TIMER_A) {
-		// it was a TA interrupt, do music when enabled
-		if(mt_Enable) {
-			// music with sfx inserted
-			mt_music();
-		}
-		else {
-			// no music, only sfx
-			mt_sfxonly();
-		}
+static void mt_TimerAInt(
+	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+) {
+	// it was a TA interrupt, do music when enabled
+	if(mt_Enable) {
+		// music with sfx inserted
+		mt_music();
+	}
+	else {
+		// no music, only sfx
+		mt_sfxonly();
 	}
 }
 
 // One-shot TimerB interrupt to set repeat samples after another 496 ticks.
-static void mt_TimerBsetrep(void) {
+static void mt_TimerBsetrep(
+	volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+) {
 	// check and clear CIAB interrupt flags
-	if(g_pCia[CIA_B]->icr & CIAICRF_TIMER_B) {
+	// clear EXTER and possible audio interrupt flags
+	// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
+	pCustom->intreq = INTF_EXTER | (mt_dmaon & 0xFF) << 7;
 
-		// clear EXTER and possible audio interrupt flags
-		// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
-		g_pCustom->intreq = INTF_EXTER | (mt_dmaon & 0xFF) << 7;
+	// Set repeat sample pointers and lengths
+	pCustom->aud[0].ac_ptr = mt_chan[0].n_loopstart;
+	pCustom->aud[0].ac_len = mt_chan[0].n_replen;
+	pCustom->aud[1].ac_ptr = mt_chan[1].n_loopstart;
+	pCustom->aud[1].ac_len = mt_chan[1].n_replen;
+	pCustom->aud[2].ac_ptr = mt_chan[2].n_loopstart;
+	pCustom->aud[2].ac_len = mt_chan[2].n_replen;
+	pCustom->aud[3].ac_ptr = mt_chan[3].n_loopstart;
+	pCustom->aud[3].ac_len = mt_chan[3].n_replen;
 
-		// it was a TB interrupt, set repeat sample pointers and lengths
-		g_pCustom->aud[0].ac_ptr = mt_chan[0].n_loopstart;
-		g_pCustom->aud[0].ac_len = mt_chan[0].n_replen;
-		g_pCustom->aud[1].ac_ptr = mt_chan[1].n_loopstart;
-		g_pCustom->aud[1].ac_len = mt_chan[1].n_replen;
-		g_pCustom->aud[2].ac_ptr = mt_chan[2].n_loopstart;
-		g_pCustom->aud[2].ac_len = mt_chan[2].n_replen;
-		g_pCustom->aud[3].ac_ptr = mt_chan[3].n_loopstart;
-		g_pCustom->aud[3].ac_len = mt_chan[3].n_replen;
-
-
-		// restore TimerA music interrupt vector
-		*mt_Lev6Int = mt_TimerAInt;
-	}
-
-	// just clear EXTER interrupt flag and return
-	g_pCustom->intreq = INTF_EXTER;
+	// restore TimerA music interrupt vector
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
 // One-shot TimerB interrupt to enable audio DMA after 496 ticks.
-static void mt_TimerBdmaon(void) {
-	// clear EXTER interrupt flag
-	g_pCustom->intreq = INTF_EXTER;
+static void mt_TimerBdmaon(
+	volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+) {
+	// Restart timer to set repeat, enable DMA
+	g_pCia[CIA_B]->crb = 0x19;
+	pCustom->dmacon = mt_dmaon;
 
-	// check and clear CIAB interrupt flags
-	if(g_pCia[CIA_B]->icr & CIAICRF_TIMER_B) {
-		// it was a TB interrupt, restart timer to set repeat, enable DMA
-		g_pCia[CIA_B]->crb = 0x19;
-		g_pCustom->dmacon = mt_dmaon;
-
-		// set level 6 interrupt to mt_TimerBsetrep
-		*mt_Lev6Int = mt_TimerBsetrep;
-	}
+	// set level 6 interrupt to mt_TimerBsetrep
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBsetrep, 0);
 }
 
 static void chan_sfx_only(
@@ -1056,7 +1041,8 @@ void mt_sfxonly(void) {
 	chan_sfx_only(&g_pCustom->aud[3], &mt_chan[3]);
 
 	if(mt_dmaon & 0xFF) {
-		*mt_Lev6Int = mt_TimerBdmaon;
+		systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+		systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 		g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
 	}
 }
@@ -1077,7 +1063,8 @@ void mt_music(void) {
 
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon & 0xFF) {
-			*mt_Lev6Int = mt_TimerBdmaon;
+			systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 			g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
 		}
 	}
@@ -1108,7 +1095,8 @@ void mt_music(void) {
 		}
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon & 0xFF) {
-			*mt_Lev6Int = mt_TimerBdmaon;
+			systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 			g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
 		}
 
@@ -1198,25 +1186,10 @@ void mt_reset(void) {
 void mt_install_cia(UNUSED_ARG APTR *AutoVecBase, UBYTE PALflag) {
 	mt_Enable = 0;
 
-	// Level 6 interrupt vector
-	mt_Lev6Int = (void*)&AutoVecBase[0x78/sizeof(ULONG)];
-
-	// remember level 6 interrupt enable
-	mt_Lev6Ena = (g_pCustom->intenar & INTF_EXTER) | INTF_SETCLR;
-
 	// disable level 6 EXTER interrupts, set player interrupt vector
 	g_pCustom->intena = INTF_EXTER;
-	mt_oldLev6 = *mt_Lev6Int;
-	*mt_Lev6Int = mt_TimerAInt;
-
-	// disable CIA-B interrupts, stop and save all timers
-	g_pCia[CIA_B]->icr = 0x7f;
-	g_pCia[CIA_B]->cra = 0x10;
-	g_pCia[CIA_B]->crb = 0x10;
-	mt_oldtimers[0] = g_pCia[CIA_B]->talo;
-	mt_oldtimers[1] = g_pCia[CIA_B]->tahi;
-	mt_oldtimers[2] = g_pCia[CIA_B]->tblo;
-	mt_oldtimers[3] = g_pCia[CIA_B]->tbhi;
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 
 	// determine if 02 clock for timers is based on PAL or NTSC
 	if(PALflag) {
@@ -1242,29 +1215,6 @@ void mt_install_cia(UNUSED_ARG APTR *AutoVecBase, UBYTE PALflag) {
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
 
 	mt_reset();
-}
-
-void mt_remove_cia(void) {
-	// disable level 6 and CIA-B interrupts
-	g_pCia[CIA_B]->icr = 0x7F;
-	g_pCustom->intena = INTF_EXTER;
-
-	// restore old timer values
-	g_pCia[CIA_B]->talo = mt_oldtimers[0];
-	g_pCia[CIA_B]->tahi = mt_oldtimers[1];
-	g_pCia[CIA_B]->tblo = mt_oldtimers[2];
-	g_pCia[CIA_B]->tbhi = mt_oldtimers[3];
-	g_pCia[CIA_B]->cra = 0x10;
-	g_pCia[CIA_B]->crb = 0x10;
-
-	// restore original level 6 interrupt vector
-	*mt_Lev6Int = mt_oldLev6;
-
-	// reenable CIA-B ALRM interrupt, which was set by AmigaOS
-	g_pCia[CIA_B]->icr = 0x84;
-
-	// reenable previous level 6 interrupt
-	g_pCustom->intena = mt_Lev6Ena;
 }
 
 void mt_init(UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos) {
