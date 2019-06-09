@@ -53,7 +53,7 @@ UBYTE joyUse(UBYTE ubJoyCode) {
 }
 
 void joyProcess(void) {
-	UBYTE ubCiaAPra = g_pCiaA->pra;
+	UBYTE ubCiaAPra = g_pCia[CIA_A]->pra;
 	UWORD uwJoyDataPort1 = g_pCustom->joy0dat;
 	UWORD uwJoyDataPort2 = g_pCustom->joy1dat;
 
@@ -74,8 +74,8 @@ void joyProcess(void) {
 	UBYTE ubJoyCode;
 	if(s_isParallelEnabled) {
 		ubJoyCode = 20;
-		UBYTE ubParData = g_pCiaA->prb;
-		UBYTE ubParStatus = g_pCiaB->pra;
+		UBYTE ubParData = g_pCia[CIA_A]->prb;
+		UBYTE ubParStatus = g_pCia[CIA_B]->pra;
 
 		pJoyLookup[10] = !BTST(ubParStatus, 2); // Joy 3 fire
 		pJoyLookup[11] = !BTST(ubParData, 0);   // Joy 3 up

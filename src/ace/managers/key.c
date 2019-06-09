@@ -43,11 +43,11 @@ void INTERRUPT keyIntServer(
 ) {
 	tKeyManager *pKeyManager = (tKeyManager*)pData;
 	volatile tRayPos *pRayPos = (tRayPos*)&pCustom->vposr;
-
-	// Get key code and start handshake
-	UBYTE ubKeyCode = ~g_pCiaA->sdr;
-	g_pCiaA->cra |= CIACRA_SPMODE;
-	UWORD uwStart = pRayPos->bfPosY;
+	
+	// Get the key code and start handshake
+	UBYTE ubKeyCode = ~g_pCia[CIA_A]->sdr;
+	g_pCia[CIA_A]->cra |= CIACRA_SPMODE;
+	UWORD uwStart = ciaGetTimerB(g_pCia[CIA_A]);
 
 	// Get keypress flag and shift key code
 	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
@@ -67,7 +67,7 @@ void INTERRUPT keyIntServer(
 			uwDelta = 0xFFFF - uwStart + uwEnd;
 		}
 	} while(uwDelta < 3);
-	g_pCiaA->cra &= ~CIACRA_SPMODE;
+	g_pCia[CIA_A]->cra &= ~CIACRA_SPMODE;
 	INTERRUPT_END;
 }
 
@@ -88,13 +88,13 @@ const UBYTE g_pToAscii[] = {
 
 void keyCreate(void) {
 	logBlockBegin("keyCreate()");
-	systemSetInt(INTB_PORTS, keyIntServer, &g_sKeyManager);
+	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, keyIntServer, &g_sKeyManager);
 	logBlockEnd("keyCreate()");
 }
 
 void keyDestroy(void) {
 	logBlockBegin("keyDestroy()");
-	systemSetInt(INTB_PORTS, 0, 0);
+	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, 0, 0);
 	logBlockEnd("keyDestroy()");
 }
 

@@ -25,8 +25,7 @@ tCopperUlong FAR REGPTR g_pCopLc = (tCopperUlong REGPTR)(
 	CUSTOM_BASE + offsetof(tCustom, cop1lc)
 );
 
-tCia FAR REGPTR g_pCiaA = (tCia*)0xBFE001;
-tCia FAR REGPTR g_pCiaB = (tCia*)0xBFD000;
+tCia FAR REGPTR g_pCia[CIA_COUNT] = {(tCia*)0xBFE001, (tCia*)0xBFD000};
 
 UWORD ciaGetTimerA(tCia REGPTR pCia) {
 	UBYTE ubHi, ubLo;

@@ -35,7 +35,7 @@ void audioCreate(void) {
 		systemSetInt(INTB_AUD0+i, audioIntHandler, &s_pControls[i]);
 	}
 	// Disable audio filter
-	g_pCiaA->pra ^= BV(1);
+	g_pCia[CIA_A]->pra ^= BV(1);
 	logBlockEnd("audioCreate()");
 }
 

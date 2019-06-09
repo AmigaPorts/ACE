@@ -102,13 +102,13 @@ void mouseProcess(void) {
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_1) {
 		mouseProcessPort(
 			MOUSE_PORT_1, g_pCustom->joy0dat,
-			BTST(g_pCiaA->pra, 6), BTST(g_pCustom->potinp, 10), BTST(g_pCustom->potinp, 8)
+			BTST(g_pCia[CIA_A]->pra, 6), BTST(g_pCustom->potinp, 10), BTST(g_pCustom->potinp, 8)
 		);
 	}
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_2) {
 		mouseProcessPort(
 			MOUSE_PORT_2, g_pCustom->joy1dat,
-			BTST(g_pCiaA->pra, 7), BTST(g_pCustom->potinp, 14), BTST(g_pCustom->potinp, 12)
+			BTST(g_pCia[CIA_A]->pra, 7), BTST(g_pCustom->potinp, 14), BTST(g_pCustom->potinp, 12)
 		);
 	}
 

@@ -80,6 +80,10 @@ typedef struct _tCia {
 /**
  * CIA defines.
  */
+#define CIA_A 0
+#define CIA_B 1
+#define CIA_COUNT 2
+
 #define CIAAPRA_OVL  BV(0)
 #define CIAAPRA_LED  BV(1)
 #define CIAAPRA_CHNG BV(2)
@@ -98,12 +102,19 @@ typedef struct _tCia {
 #define CIABPRB_SEL3 BV(6)
 #define CIABPRB_MTR  BV(7)
 
-#define CIAICR_TIMER_A BV(0)
-#define CIAICR_TIMER_B BV(1)
-#define CIAICR_TOD     BV(2)
-#define CIAICR_SERIAL  BV(3)
-#define CIAICR_FLAG    BV(4)
-#define CIAICR_SETCLR  BV(7)
+#define CIAICRB_TIMER_A 0
+#define CIAICRB_TIMER_B 1
+#define CIAICRB_TOD     2
+#define CIAICRB_SERIAL  3
+#define CIAICRB_FLAG    4
+#define CIAICRB_SETCLR  7
+
+#define CIAICRF_TIMER_A BV(CIAICRB_TIMER_A)
+#define CIAICRF_TIMER_B BV(CIAICRB_TIMER_B)
+#define CIAICRF_TOD     BV(CIAICRB_TOD)
+#define CIAICRF_SERIAL  BV(CIAICRB_SERIAL)
+#define CIAICRF_FLAG    BV(CIAICRB_FLAG)
+#define CIAICRF_SETCLR  BV(CIAICRB_SETCLR)
 
 #define CIACRA_START   BV(0)
 #define CIACRA_PBON    BV(1)
@@ -147,8 +158,7 @@ extern tCopperUlong FAR REGPTR g_pSprFetch;
 extern tCopperUlong FAR REGPTR g_pBplFetch;
 extern tCopperUlong FAR REGPTR g_pCopLc;
 
-extern tCia FAR REGPTR g_pCiaA;
-extern tCia FAR REGPTR g_pCiaB;
+extern tCia FAR REGPTR g_pCia[CIA_COUNT];
 
 #endif // AMIGA
 

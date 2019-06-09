@@ -33,6 +33,10 @@ void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
+void systemSetCiaInt(
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
+);
+
 void systemUse(void);
 
 void systemUnuse(void);
