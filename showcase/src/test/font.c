@@ -157,11 +157,11 @@ void testFontDrawTable(void) {
 	// Background
 	blitRect(
 		s_pTestFontBfr->pBack, 0,0,
-		s_pTestFontBfr->uBfrBounds.sUwCoord.uwX,
-		s_pTestFontBfr->uBfrBounds.sUwCoord.uwY, 2
+		s_pTestFontBfr->uBfrBounds.uwX,
+		s_pTestFontBfr->uBfrBounds.uwY, 2
 	);
-	UWORD uwMaxX = s_pTestFontBfr->uBfrBounds.sUwCoord.uwX-1;
-	UWORD uwMaxY = s_pTestFontBfr->uBfrBounds.sUwCoord.uwY-1;
+	UWORD uwMaxX = s_pTestFontBfr->uBfrBounds.uwX-1;
+	UWORD uwMaxY = s_pTestFontBfr->uBfrBounds.uwY-1;
 	for(i = 0; i < 8; ++i) {
 		// Vertical lines
 		blitLine(s_pTestFontBfr->pBack, 40*i, 0, 40*i, uwMaxY, 0, 0xFFFF, 0);

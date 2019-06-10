@@ -53,40 +53,40 @@ void cameraReset(
 		pManager, uwStartX, uwStartY, uwWidth, uwHeight, isDblBfr
 	);
 
-	pManager->uPos.sUwCoord.uwX = uwStartX;
-	pManager->uPos.sUwCoord.uwY = uwStartY;
-	pManager->uLastPos[0].sUwCoord.uwX = uwStartX;
-	pManager->uLastPos[0].sUwCoord.uwY = uwStartY;
-	pManager->uLastPos[1].sUwCoord.uwX = uwStartX;
-	pManager->uLastPos[1].sUwCoord.uwY = uwStartY;
+	pManager->uPos.uwX = uwStartX;
+	pManager->uPos.uwY = uwStartY;
+	pManager->uLastPos[0].uwX = uwStartX;
+	pManager->uLastPos[0].uwY = uwStartY;
+	pManager->uLastPos[1].uwX = uwStartX;
+	pManager->uLastPos[1].uwY = uwStartY;
 	pManager->isDblBfr = isDblBfr;
 	pManager->ubBfr = 0;
 
 	// Max camera coords based on viewport size
-	pManager->uMaxPos.sUwCoord.uwX = uwWidth - pManager->sCommon.pVPort->uwWidth;
-	pManager->uMaxPos.sUwCoord.uwY = uwHeight - pManager->sCommon.pVPort->uwHeight;
-	logWrite("Camera max coord: %u,%u\n", pManager->uMaxPos.sUwCoord.uwX, pManager->uMaxPos.sUwCoord.uwY);
+	pManager->uMaxPos.uwX = uwWidth - pManager->sCommon.pVPort->uwWidth;
+	pManager->uMaxPos.uwY = uwHeight - pManager->sCommon.pVPort->uwHeight;
+	logWrite("Camera max coord: %u,%u\n", pManager->uMaxPos.uwX, pManager->uMaxPos.uwY);
 
 	logBlockEnd("cameraReset()");
 }
 
 void cameraSetCoord(tCameraManager *pManager, UWORD uwX, UWORD uwY) {
-	pManager->uPos.sUwCoord.uwX = uwX;
-	pManager->uPos.sUwCoord.uwY = uwY;
+	pManager->uPos.uwX = uwX;
+	pManager->uPos.uwY = uwY;
 	// logWrite("New camera pos: %u,%u\n", uwX, uwY);
 }
 
 void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy) {
-	pManager->uPos.sUwCoord.uwX = CLAMP(pManager->uPos.sUwCoord.uwX+wDx, 0, pManager->uMaxPos.sUwCoord.uwX);
-	pManager->uPos.sUwCoord.uwY = CLAMP(pManager->uPos.sUwCoord.uwY+wDy, 0, pManager->uMaxPos.sUwCoord.uwY);
+	pManager->uPos.uwX = CLAMP(pManager->uPos.uwX+wDx, 0, pManager->uMaxPos.uwX);
+	pManager->uPos.uwY = CLAMP(pManager->uPos.uwY+wDy, 0, pManager->uMaxPos.uwY);
 }
 
 void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY) {
 	tVPort *pVPort;
 
 	pVPort = pManager->sCommon.pVPort;
-	pManager->uPos.sUwCoord.uwX = CLAMP(uwAvgX - (pVPort->uwWidth>>1), 0, pManager->uMaxPos.sUwCoord.uwX);
-	pManager->uPos.sUwCoord.uwY = CLAMP(uwAvgY - (pVPort->uwHeight>>1), 0, pManager->uMaxPos.sUwCoord.uwY);
+	pManager->uPos.uwX = CLAMP(uwAvgX - (pVPort->uwWidth>>1), 0, pManager->uMaxPos.uwX);
+	pManager->uPos.uwY = CLAMP(uwAvgY - (pVPort->uwHeight>>1), 0, pManager->uMaxPos.uwY);
 }
 
 UBYTE cameraIsMoved(tCameraManager *pManager) {
@@ -102,9 +102,9 @@ UWORD cameraGetYDiff(tCameraManager *pManager) {
 }
 
 WORD cameraGetDeltaX(tCameraManager *pManager) {
-	return (pManager->uPos.sUwCoord.uwX - pManager->uLastPos[pManager->ubBfr].sUwCoord.uwX);
+	return (pManager->uPos.uwX - pManager->uLastPos[pManager->ubBfr].uwX);
 }
 
 WORD cameraGetDeltaY(tCameraManager *pManager) {
-	return (pManager->uPos.sUwCoord.uwY - pManager->uLastPos[pManager->ubBfr].sUwCoord.uwY);
+	return (pManager->uPos.uwY - pManager->uLastPos[pManager->ubBfr].uwY);
 }

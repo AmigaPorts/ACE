@@ -30,8 +30,8 @@ tMenuList *menuListCreate(
 	pList->ubFontFlags = ubFontFlags;
 
 	// Positioning & spacing
-	pList->sCoord.sUwCoord.uwX = uwX;
-	pList->sCoord.sUwCoord.uwY = uwY;
+	pList->sCoord.uwX = uwX;
+	pList->sCoord.uwY = uwY;
 	pList->ubSpacing = ubSpacing;
 
 	for(UBYTE i = 0; i < ubMaxCount; ++i) {
@@ -70,8 +70,8 @@ void menuListDrawPos(tMenuList *pList, UBYTE ubIdx) {
 		return;
 	}
 
-	uwX = pList->sCoord.sUwCoord.uwX;
-	uwY = pList->sCoord.sUwCoord.uwY + ubIdx*(pList->ubSpacing+pList->pFont->uwHeight);
+	uwX = pList->sCoord.uwX;
+	uwY = pList->sCoord.uwY + ubIdx*(pList->ubSpacing+pList->pFont->uwHeight);
 
 	// Color
 	if(pList->pEntries[ubIdx].ubDisplayMode == MENULIST_DISABLED) {

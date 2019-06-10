@@ -143,8 +143,8 @@ void menuDrawBg(void) {
 	UBYTE isOdd = 0;
 
 	// Draw checkerboard
-	for(uwY = 0; uwY <= s_pMenuBfr->uBfrBounds.sUwCoord.uwY - 16; uwY += 16) {
-		for(uwX = 0; uwX <= s_pMenuBfr->uBfrBounds.sUwCoord.uwX - 16; uwX += 16) {
+	for(uwY = 0; uwY <= s_pMenuBfr->uBfrBounds.uwY - 16; uwY += 16) {
+		for(uwX = 0; uwX <= s_pMenuBfr->uBfrBounds.uwX - 16; uwX += 16) {
 			UBYTE ubColor = isOdd ? 0 : 4;
 			blitRect(s_pMenuBfr->pBack, uwX, uwY, 16, 16, ubColor);
 			isOdd = !isOdd;
@@ -153,8 +153,8 @@ void menuDrawBg(void) {
 	}
 
 	// Draw border
-	UWORD uwMaxX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX-1;
-	UWORD uwMaxY = s_pMenuBfr->uBfrBounds.sUwCoord.uwY-1;
+	UWORD uwMaxX = s_pMenuBfr->uBfrBounds.uwX-1;
+	UWORD uwMaxY = s_pMenuBfr->uBfrBounds.uwY-1;
 	blitLine(s_pMenuBfr->pBack, 0, 0, uwMaxX, 0, 1, 0xFFFF, 0);
 	blitLine(s_pMenuBfr->pBack, 0, uwMaxY, uwMaxX, uwMaxY, 1, 0xFFFF, 0);
 	blitLine(s_pMenuBfr->pBack, 0, 0, 0, uwMaxY, 1, 0xFFFF, 0);
@@ -171,13 +171,13 @@ void menuShowMain(void) {
 	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBack, s_pMenuFont,
-		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
+		s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
 		"ACE Showcase", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
 	);
 
 	// Prepare new list
-	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
-	s_pMenuList->sCoord.sUwCoord.uwY = 100;
+	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
+	s_pMenuList->sCoord.uwY = 100;
 	menuListResetCount(s_pMenuList, 3);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Tests");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_DISABLED, "Examples");
@@ -211,13 +211,13 @@ void menuShowTests(void) {
 	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBack, s_pMenuFont,
-		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
+		s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
 		"Tests", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
 	);
 
 	// Prepare new list
-	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
-	s_pMenuList->sCoord.sUwCoord.uwY = 100;
+	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
+	s_pMenuList->sCoord.uwY = 100;
 	menuListResetCount(s_pMenuList, 8);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
@@ -278,13 +278,13 @@ void menuShowExamples(void) {
 	menuDrawBg();
 	fontDrawStr(
 		s_pMenuBfr->pBack, s_pMenuFont,
-		s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1, 80,
+		s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
 		"Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
 	);
 
 	// Prepare new list
-	s_pMenuList->sCoord.sUwCoord.uwX = s_pMenuBfr->uBfrBounds.sUwCoord.uwX >> 1;
-	s_pMenuList->sCoord.sUwCoord.uwY = 100;
+	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
+	s_pMenuList->sCoord.uwY = 100;
 	menuListResetCount(s_pMenuList, 1);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	s_ubMenuType = MENU_EXAMPLES;

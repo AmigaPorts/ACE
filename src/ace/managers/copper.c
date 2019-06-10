@@ -95,7 +95,7 @@ void copDumpBlocks(void) {
 		}
 		logWrite(
 			"Block %p starts at %u,%u and has %u/%u cmds:\n",
-			pBlock, pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY,
+			pBlock, pBlock->uWaitPos.uwX, pBlock->uWaitPos.uwY,
 			pBlock->uwCurrCount, pBlock->uwMaxCmds
 		);
 		logPushIndent();
@@ -381,7 +381,7 @@ UBYTE copUpdateFromBlocks(void) {
 		if(!pBlock->ubDisabled) {
 			if(pBlock->ubUpdated) {
 				// Update WAIT
-				if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
+				if(pBlock->uWaitPos.uwY > 0xFF) {
 					// FIXME: double WAIT only when previous line ended before some pos
 					if(!ubWasLimitY) {
 						// FIXME: If copper block was moved down, so that WAIT suddenly
@@ -392,11 +392,11 @@ UBYTE copUpdateFromBlocks(void) {
 						++uwListPos;
 						ubWasLimitY = 1;
 					}
-					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF);
+					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.uwX, pBlock->uWaitPos.uwY & 0xFF);
 					++uwListPos;
 				}
 				else {
-					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY);
+					copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], pBlock->uWaitPos.uwX, pBlock->uWaitPos.uwY);
 					++uwListPos;
 				}
 
@@ -426,7 +426,7 @@ UBYTE copUpdateFromBlocks(void) {
 		}
 
 		// Update WAIT
-		if(pBlock->uWaitPos.sUwCoord.uwY > 0xFF) {
+		if(pBlock->uWaitPos.uwY > 0xFF) {
 			// FIXME: double WAIT only when previous line ended before some pos
 			if(!ubWasLimitY) {
 				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
@@ -435,14 +435,14 @@ UBYTE copUpdateFromBlocks(void) {
 			}
 			copSetWait(
 				(tCopWaitCmd*)&pBackBfr->pList[uwListPos],
-				pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY & 0xFF
+				pBlock->uWaitPos.uwX, pBlock->uWaitPos.uwY & 0xFF
 			);
 			++uwListPos;
 		}
 		else {
 			copSetWait(
 				(tCopWaitCmd*)&pBackBfr->pList[uwListPos],
-				pBlock->uWaitPos.sUwCoord.uwX, pBlock->uWaitPos.sUwCoord.uwY
+				pBlock->uWaitPos.uwX, pBlock->uWaitPos.uwY
 			);
 			++uwListPos;
 		}
@@ -491,8 +491,8 @@ void copProcessBlocks(void) {
 }
 
 void copBlockWait(tCopList *pCopList, tCopBlock *pBlock, UWORD uwX, UWORD uwY) {
-	pBlock->uWaitPos.sUwCoord.uwY  = uwY;
-	pBlock->uWaitPos.sUwCoord.uwX  = uwX;
+	pBlock->uWaitPos.uwY  = uwY;
+	pBlock->uWaitPos.uwX  = uwX;
 
 	pBlock->ubUpdated = 2;
 	pCopList->ubStatus |= STATUS_UPDATE | STATUS_REORDER;

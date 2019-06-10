@@ -88,8 +88,8 @@ void gsTestBlitSmallDestLoop(void) {
 		ubFrameIdx += bUpdate;
 		blitRect(
 			s_pTestBlitBfr->pBack, 0, 0,
-			s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX,
-			s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY,
+			s_pTestBlitBfr->uBfrBounds.uwX,
+			s_pTestBlitBfr->uBfrBounds.uwY,
 			0
 		);
 		blitCopy(s_pRefBitmap, ubFrameIdx, ubFrameIdx*32, s_pDstBitmap, 0, 0, 32, 32, 0xCA, 0xFF);

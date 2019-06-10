@@ -84,12 +84,12 @@ void gsTestCopperCreate(void) {
 	s_pTestCopperVPort->pPalette[1] = 0xAAA;
 	s_pTestCopperVPort->pPalette[2] = 0x666;
 
-	UWORD uwMaxX = s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX-1;
-	UWORD uwMaxY = s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY-1;
+	UWORD uwMaxX = s_pTestCopperBfr->uBfrBounds.uwX-1;
+	UWORD uwMaxY = s_pTestCopperBfr->uBfrBounds.uwY-1;
 	blitRect(
 		s_pTestCopperBfr->pBack, 0,0,
-		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwX,
-		s_pTestCopperBfr->uBfrBounds.sUwCoord.uwY,
+		s_pTestCopperBfr->uBfrBounds.uwX,
+		s_pTestCopperBfr->uBfrBounds.uwY,
 		TEST_COPPER_COLOR_INSIDE
 	);
 	blitLine(

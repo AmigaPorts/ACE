@@ -88,8 +88,8 @@ UBYTE fontTextFitsInTextBitmap(
 ) {
 	tUwCoordYX sBounds = fontMeasureText(pFont, szText);
 	if(
-		sBounds.sUwCoord.uwX <= bitmapGetByteWidth(pTextBitmap->pBitMap) * 8 &&
-		sBounds.sUwCoord.uwY <= pTextBitmap->pBitMap->Rows
+		sBounds.uwX <= bitmapGetByteWidth(pTextBitmap->pBitMap) * 8 &&
+		sBounds.uwY <= pTextBitmap->pBitMap->Rows
 	) {
 		return 1;
 	}
@@ -109,7 +109,7 @@ tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText) {
 		}
 	}
 	uwHeight += pFont->uwHeight; // Add height of last line
-	tUwCoordYX sBounds = {.sUwCoord = {.uwX = uwMaxWidth, .uwY = uwHeight}};
+	tUwCoordYX sBounds = {.uwX = uwMaxWidth, .uwY = uwHeight};
 	return sBounds;
 }
 

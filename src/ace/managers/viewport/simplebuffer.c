@@ -34,12 +34,12 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 	}
 #endif
 
-	pManager->uBfrBounds.sUwCoord.uwX = bitmapGetByteWidth(pFront) << 3;
-	pManager->uBfrBounds.sUwCoord.uwY = pFront->Rows;
+	pManager->uBfrBounds.uwX = bitmapGetByteWidth(pFront) << 3;
+	pManager->uBfrBounds.uwY = pFront->Rows;
 	pManager->pFront = pFront;
 	UWORD uwModulo = pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 	UWORD uwDDfStrt;
-	if(pManager->uBfrBounds.sUwCoord.uwX <= pManager->sCommon.pVPort->uwWidth) {
+	if(pManager->uBfrBounds.uwX <= pManager->sCommon.pVPort->uwWidth) {
 		uwDDfStrt = 0x0038;
 		pManager->ubFlags &= ~SIMPLEBUFFER_FLAG_X_SCROLLABLE;
 	}
@@ -240,17 +240,17 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 
 	// Calculate X movement: bitplane shift, starting word to fetch
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-		uwShift = (16 - (pCamera->uPos.sUwCoord.uwX & 0xF)) & 0xF;  // Bitplane shift - single
+		uwShift = (16 - (pCamera->uPos.uwX & 0xF)) & 0xF;  // Bitplane shift - single
 		uwShift = (uwShift << 4) | uwShift;                         // Bitplane shift - PF1 | PF2
-		ulBplOffs = ((pCamera->uPos.sUwCoord.uwX - 1) >> 4) << 1; // Must be ULONG!
+		ulBplOffs = ((pCamera->uPos.uwX - 1) >> 4) << 1; // Must be ULONG!
 	}
 	else {
 		uwShift = 0;
-		ulBplOffs = (pCamera->uPos.sUwCoord.uwX >> 4) << 1;
+		ulBplOffs = (pCamera->uPos.uwX >> 4) << 1;
 	}
 
 	// Calculate Y movement
-	ulBplOffs += pManager->pBack->BytesPerRow * pCamera->uPos.sUwCoord.uwY;
+	ulBplOffs += pManager->pBack->BytesPerRow * pCamera->uPos.uwY;
 
 	// Copperlist - regen bitplane ptrs, update shift
 	// TODO could be unified by using copSetMove in copBlock
@@ -286,10 +286,10 @@ UBYTE simpleBufferIsRectVisible(
 	UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
 ) {
 	return (
-		uwX >= pManager->pCamera->uPos.sUwCoord.uwX - uwWidth &&
-		uwX <= pManager->pCamera->uPos.sUwCoord.uwX + pManager->sCommon.pVPort->uwWidth &&
-		uwY >= pManager->pCamera->uPos.sUwCoord.uwY - uwHeight &&
-		uwY <= pManager->pCamera->uPos.sUwCoord.uwY + pManager->sCommon.pVPort->uwHeight
+		uwX >= pManager->pCamera->uPos.uwX - uwWidth &&
+		uwX <= pManager->pCamera->uPos.uwX + pManager->sCommon.pVPort->uwWidth &&
+		uwY >= pManager->pCamera->uPos.uwY - uwHeight &&
+		uwY <= pManager->pCamera->uPos.uwY + pManager->sCommon.pVPort->uwHeight
 	);
 }
 

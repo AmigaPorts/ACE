@@ -103,7 +103,7 @@ typedef union _tUwCoordYX {
 	struct {
 		UWORD uwY;
 		UWORD uwX;
-	} sUwCoord;
+	};
 } tUwCoordYX;
 
 typedef union _tUbCoordYX {
@@ -111,7 +111,7 @@ typedef union _tUbCoordYX {
 	struct {
 		UBYTE ubY;
 		UBYTE ubX;
-	} sUbCoord;
+	};
 } tUbCoordYX;
 
 typedef struct _tBCoordYX {

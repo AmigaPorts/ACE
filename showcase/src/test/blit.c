@@ -45,8 +45,8 @@ void gsTestBlitCreate(void) {
 	s_pTestBlitVPort->pPalette[4] = 0x111;
 
 	// Loop vars
-	s_uwX = s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX >> 1;
-	s_uwY = s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY >> 1;
+	s_uwX = s_pTestBlitBfr->uBfrBounds.uwX >> 1;
+	s_uwY = s_pTestBlitBfr->uBfrBounds.uwY >> 1;
 	s_ubType = TYPE_RECT;
 	s_fnKeyPoll = keyUse;
 
@@ -108,7 +108,7 @@ void gsTestBlitLoop(void) {
 
 	if(s_ubType & TYPE_AUTO) {
 		if(bSpeedX > 0) {
-			if(s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwX - 16) {
+			if(s_uwX < s_pTestBlitBfr->uBfrBounds.uwX - 16) {
 				++s_uwX;
 			}
 			else {
@@ -145,13 +145,13 @@ void gsTestBlitLoop(void) {
 		if(s_fnKeyPoll(KEY_UP) && s_uwY) {
 			--s_uwY;
 		}
-		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16) {
+		if(s_fnKeyPoll(KEY_DOWN) && s_uwY < s_pTestBlitBfr->uBfrBounds.uwY-16) {
 			++s_uwY;
 		}
 		if(s_fnKeyPoll(KEY_LEFT) && s_uwX) {
 			--s_uwX;
 		}
-		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < s_pTestBlitBfr->uBfrBounds.sUwCoord.uwY-16) {
+		if(s_fnKeyPoll(KEY_RIGHT) && s_uwX < s_pTestBlitBfr->uBfrBounds.uwY-16) {
 			++s_uwX;
 		}
 	}

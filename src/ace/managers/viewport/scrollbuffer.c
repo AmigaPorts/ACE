@@ -157,8 +157,8 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 	UWORD uwVpHeight = pManager->sCommon.pVPort->uwHeight;
 
 	// convert camera pos to scroll pos
-	UWORD uwScrollX = pManager->pCamera->uPos.sUwCoord.uwX;
-	UWORD uwScrollY = pManager->pCamera->uPos.sUwCoord.uwY & (pManager->uwBmAvailHeight - 1);
+	UWORD uwScrollX = pManager->pCamera->uPos.uwX;
+	UWORD uwScrollY = pManager->pCamera->uPos.uwY & (pManager->uwBmAvailHeight - 1);
 
 	// preparations for new copperlist
 	UWORD uwShift = (16 - (uwScrollX & 0xF)) & 0xF; // Bitplane shift - single
@@ -232,8 +232,8 @@ void scrollBufferReset(
 
 	// Reset manager fields
 	pManager->uwVpHeightPrev = 0;
-	pManager->uBfrBounds.sUwCoord.uwX = uwBoundWidth;
-	pManager->uBfrBounds.sUwCoord.uwY = uwBoundHeight;
+	pManager->uBfrBounds.uwX = uwBoundWidth;
+	pManager->uBfrBounds.uwY = uwBoundHeight;
 	// Optimize avail height to power of two so that modulo can be an AND
 	pManager->uwBmAvailHeight = nearestPowerOf2(ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4));
 

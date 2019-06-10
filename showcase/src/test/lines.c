@@ -37,9 +37,9 @@ void gsTestLinesCreate(void) {
 	s_pVPort->pPalette[3] = 0x00F;
 
 	UWORD uwMinX = 0;
-	UWORD uwMaxX = s_pBfrManager->uBfrBounds.sUwCoord.uwX-1;
+	UWORD uwMaxX = s_pBfrManager->uBfrBounds.uwX-1;
 	UWORD uwMinY = 0;
-	UWORD uwMaxY = s_pBfrManager->uBfrBounds.sUwCoord.uwY-1;
+	UWORD uwMaxY = s_pBfrManager->uBfrBounds.uwY-1;
 
 	UWORD uwPattern = 0xFFFF;
 
@@ -59,8 +59,8 @@ void gsTestLinesCreate(void) {
 	UWORD uwRadius = 64;
 	for(UBYTE v = 0; v != uwVertCount; ++v) {
 		fAngle = (fix16_pi*v*2) / uwVertCount;
-		pVerts[v].sUwCoord.uwX = uwMaxX/2 + fix16_to_int(uwRadius * fix16_sin(fAngle) + fHalf);
-		pVerts[v].sUwCoord.uwY = uwMaxY/2 + fix16_to_int(uwRadius * fix16_cos(fAngle) + fHalf);
+		pVerts[v].uwX = uwMaxX/2 + fix16_to_int(uwRadius * fix16_sin(fAngle) + fHalf);
+		pVerts[v].uwY = uwMaxY/2 + fix16_to_int(uwRadius * fix16_cos(fAngle) + fHalf);
 	}
 
 	// Draw circle
@@ -69,16 +69,16 @@ void gsTestLinesCreate(void) {
 	for(v = 0; v < uwVertCount-1; ++v) {
 		blitLine(
 			s_pBfrManager->pBack,
-			pVerts[v].sUwCoord.uwX, pVerts[v].sUwCoord.uwY,
-			pVerts[v+1].sUwCoord.uwX, pVerts[v+1].sUwCoord.uwY,
+			pVerts[v].uwX, pVerts[v].uwY,
+			pVerts[v+1].uwX, pVerts[v+1].uwY,
 			2, uwPattern, 0
 		);
 	}
 	// Close the circle
 	blitLine(
 		s_pBfrManager->pBack,
-		pVerts[v].sUwCoord.uwX, pVerts[v].sUwCoord.uwY,
-		pVerts[0].sUwCoord.uwX, pVerts[0].sUwCoord.uwY,
+		pVerts[v].uwX, pVerts[v].uwY,
+		pVerts[0].uwX, pVerts[0].uwY,
 		2, uwPattern, 0
 	);
 
