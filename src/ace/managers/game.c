@@ -65,7 +65,6 @@ void gameChangeState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy) {
 		cbCreate, cbLoop, cbDestroy
 	);
 	if (g_sGameManager.pStateFirst->cbDestroy) {
-		// extViewFadeOut(g_sWindowManager.pExtView);
 		g_sGameManager.pStateFirst->cbDestroy();
 	}
 	g_sGameManager.pStateFirst->cbCreate = cbCreate;
@@ -75,8 +74,6 @@ void gameChangeState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy) {
 
 	if (g_sGameManager.pStateFirst->cbCreate) {
 		g_sGameManager.pStateFirst->cbCreate();
-
-		// extViewFadeIn(g_sWindowManager.pExtView);
 	}
 	logBlockEnd("gameChangeState");
 }
