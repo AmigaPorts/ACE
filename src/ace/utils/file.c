@@ -31,6 +31,7 @@ LONG fileGetSize(const char *szPath) {
 }
 
 tFile *fileOpen(const char *szPath, const char *szMode) {
+	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
 	systemUse();
 	FILE *pFile = fopen(szPath, szMode);
 	systemUnuse();
