@@ -30,6 +30,10 @@ public:
 
 	bool toAct(const std::string &szPath);
 
+	bool isValid(void) const;
+
+	uint8_t getBpp(void) const;
+
 	std::vector<tRgb> m_vColors;
 
 	tPalette(void) {}

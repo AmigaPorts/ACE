@@ -29,6 +29,11 @@ namespace nEndian {
 		);
 	}
 
+	constexpr uint16_t fromBig16(uint16_t uwIn)
+	{
+		return toBig16(uwIn);
+	}
+
 	constexpr uint32_t toBig32(uint32_t ulIn)
 	{
 		if(isBig()) {
@@ -40,6 +45,11 @@ namespace nEndian {
 			((ulIn & 0x00'00'FF'00) <<  8) |
 			((ulIn & 0x00'00'00'FF) << 24)
 		);
+	}
+
+	constexpr uint16_t fromBig32(uint16_t uwIn)
+	{
+		return toBig32(uwIn);
 	}
 }
 

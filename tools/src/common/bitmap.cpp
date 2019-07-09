@@ -7,6 +7,49 @@
 #include "../common/logging.h"
 #include "../common/lodepng.h"
 #include "../common/endian.h"
+#include "../common/flags/flags.hpp"
+
+enum class tBmFlags: uint8_t {
+	NONE = 0,
+	INTERLEAVED = 1
+};
+ALLOW_FLAGS_FOR_ENUM(tBmFlags);
+
+tChunkyBitmap::tChunkyBitmap(
+	const tPlanarBitmap &Planar, const tPalette &Palette
+):
+	m_uwWidth(Planar.m_uwWidth), m_uwHeight(Planar.m_uwHeight)
+{
+	if(!Planar.m_pPlanes[0].size()) {
+		m_uwWidth = 0;
+		m_uwHeight = 0;
+		return;
+	}
+	m_vData.reserve(m_uwWidth * m_uwHeight);
+	auto PxPerCell = sizeof(Planar.m_pPlanes[0][0]) * 8;
+	for(uint32_t ulY = 0; ulY < m_uwHeight; ++ulY) {
+		for(uint32_t ulX = 0; ulX < m_uwWidth; ++ulX) {
+			uint8_t ubColorIdx = 0;
+			uint32_t ulOffs = (ulY * m_uwWidth + ulX) / PxPerCell;
+			for(uint8_t ubPlane = Planar.m_ubDepth; ubPlane--;) {
+				auto &Plane = Planar.m_pPlanes[ubPlane];
+				ubColorIdx <<= 1;
+				ubColorIdx |= (Plane.at(ulOffs) >> (15 - (ulX & 15))) & 1;
+			}
+			if(ubColorIdx >= Palette.m_vColors.size()) {
+				nLog::error(
+					"Attempted to read color {} from palette of size {}",
+					ubColorIdx, Palette.m_vColors.size()
+				);
+				m_uwWidth = 0;
+				m_uwHeight = 0;
+				return;
+			}
+			auto Color = Palette.m_vColors.at(ubColorIdx);
+			this->pixelAt(ulX, ulY) = Color;
+		}
+	}
+}
 
 tChunkyBitmap::tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, tRgb Bg):
 	m_uwWidth(uwWidth), m_uwHeight(uwHeight), m_vData(m_uwWidth * m_uwHeight, Bg)
@@ -24,7 +67,8 @@ tChunkyBitmap::tChunkyBitmap(
 	m_vData = std::vector<tRgb>(pRgbData, pRgbDataEnd);
 }
 
-tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath) {
+tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath)
+{
 	unsigned uWidth, uHeight;
 	uint8_t *pData;
 	auto LodeError = lodepng_decode24_file(&pData, &uWidth, &uHeight, szPath.c_str());
@@ -38,7 +82,8 @@ tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath) {
 	return Chunky;
 }
 
-bool tChunkyBitmap::toPng(const std::string &szPngPath) {
+bool tChunkyBitmap::toPng(const std::string &szPngPath)
+{
 	auto LodeErr = lodepng_encode_file(
 		szPngPath.c_str(), reinterpret_cast<uint8_t*>(m_vData.data()),
 		m_uwWidth, m_uwHeight, LCT_RGB, 8
@@ -48,37 +93,53 @@ bool tChunkyBitmap::toPng(const std::string &szPngPath) {
 }
 
 tPlanarBitmap::tPlanarBitmap(
+	uint16_t uwWidth, uint16_t uwHeight, uint8_t ubDepth
+)
+{
+	if(uwWidth & 0xF) {
+		nLog::error("Width is not divisible by 16");
+		return;
+	}
+	if(ubDepth > 8) {
+		nLog::error("More than 8bpp not supported, got {}", m_ubDepth);
+		return;
+	}
+
+	m_uwWidth = uwWidth;
+	m_uwHeight = uwHeight;
+	m_ubDepth = ubDepth;
+
+	for(uint8_t i = 0; i < ubDepth; ++i) {
+		m_pPlanes[i].reserve(uwWidth * uwHeight / sizeof(m_pPlanes[0][0]));
+	}
+}
+
+tPlanarBitmap::tPlanarBitmap(
 	const tChunkyBitmap &Chunky, const tPalette &Palette,
 	const tPalette &PaletteIgnore
-):
-	m_uwWidth(Chunky.m_uwWidth), m_uwHeight(Chunky.m_uwHeight)
+)
 {
-	if(m_uwWidth & 0xF) {
+	if(Chunky.m_uwWidth & 0xF) {
 		nLog::error("Width is not divisible by 16");
 		return;
 	}
 
 	// Determine depth
-	m_ubDepth = 1;
-	for(uint16_t i = 2; i < (uint16_t)Palette.m_vColors.size(); i <<= 1) {
-		++m_ubDepth;
-	}
-	if(m_ubDepth > 8) {
-		nLog::error("More than 8bpp not supported, got {}", m_ubDepth);
+	uint8_t ubDepth = Palette.getBpp();
+	if(ubDepth > 8) {
+		nLog::error("More than 8bpp not supported, got {}", ubDepth);
 		return;
 	}
 
 	// Write bitplanes - from LSB to MSB
 	uint16_t uwPixelBuffer;
 	uint32_t ulPos;
-	for(uint8_t ubPlane = 0; ubPlane != m_ubDepth; ++ubPlane) {
-		for(uint16_t y = 0; y != m_uwHeight; ++y) {
+	for(uint8_t ubPlane = 0; ubPlane != ubDepth; ++ubPlane) {
+		for(uint16_t y = 0; y != Chunky.m_uwHeight; ++y) {
 			uwPixelBuffer = 0;
-			for(uint16_t x = 0; x != m_uwWidth; ++x) {
-				uwPixelBuffer <<= 1;
-				auto Color = Chunky.pixelAt(x, y);
-
+			for(uint16_t x = 0; x != Chunky.m_uwWidth; ++x) {
 				// Determine bit value for given color at specified bitplane's pos
+				auto Color = Chunky.pixelAt(x, y);
 				int16_t wIdx = Palette.getColorIdx(Color);
 				uint8_t ubBit = 0;
 				if(wIdx == -1) {
@@ -87,8 +148,6 @@ tPlanarBitmap::tPlanarBitmap(
 							"Unexpected color: {}, {}, {} @{},{}",
 							Color.ubR, Color.ubG,	Color.ubB, x, y
 						);
-						this->m_uwHeight = 0;
-						this->m_uwWidth = 0;
 						return;
 					}
 				}
@@ -96,6 +155,7 @@ tPlanarBitmap::tPlanarBitmap(
 					ubBit = 1;
 				}
 
+				uwPixelBuffer <<= 1;
 				uwPixelBuffer |= ubBit;
 				if((x & 0xF) == 0xF) {
 					m_pPlanes[ubPlane].push_back(uwPixelBuffer);
@@ -103,20 +163,18 @@ tPlanarBitmap::tPlanarBitmap(
 			}
 		}
 	}
-}
 
+	// Everything's okay - write dimensions to apropriate fields
+	m_uwWidth = Chunky.m_uwWidth;
+	m_uwHeight = Chunky.m_uwHeight;
+	m_ubDepth = ubDepth;
+}
 
 bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 {
-	enum class tBmFlags: uint8_t {
-		NONE = 0,
-		INTERLEAVED = 1
-	};
-	// TODO: in future include flags.hpp for bit flag ops on enum class
-
-	tBmFlags eFlags = tBmFlags::NONE;
+	flags::flags<tBmFlags> eFlags(tBmFlags::NONE);
 	if(isInterleaved) {
-		eFlags = tBmFlags::INTERLEAVED;
+		eFlags |= tBmFlags::INTERLEAVED;
 	}
 
 	std::ofstream OutFile(szPath.c_str(), std::ios::out | std::ios::binary);
@@ -167,7 +225,71 @@ bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 	return true;
 }
 
-tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY) {
+tPlanarBitmap tPlanarBitmap::fromBm(const std::string &szPath)
+{
+	std::ifstream File(szPath, std::ios::in | std::ios::binary);
+	if(!File.is_open()) {
+		return tPlanarBitmap(0, 0, 0);
+	}
+
+	uint16_t uwWidth, uwHeight;
+	uint8_t ubBpp, ubVersion, ubReserved1, ubReserved2;
+	tBmFlags eFlags;
+	File.read(reinterpret_cast<char*>(&uwWidth), sizeof(uwWidth));
+	File.read(reinterpret_cast<char*>(&uwHeight), sizeof(uwHeight));
+	File.read(reinterpret_cast<char*>(&ubBpp), sizeof(ubBpp));
+	File.read(reinterpret_cast<char*>(&ubVersion), sizeof(ubVersion));
+	File.read(reinterpret_cast<char*>(&eFlags), sizeof(eFlags));
+	File.read(reinterpret_cast<char*>(&ubReserved1), sizeof(ubReserved1));
+	File.read(reinterpret_cast<char*>(&ubReserved2), sizeof(ubReserved2));
+
+	uwWidth = nEndian::fromBig16(uwWidth);
+	uwHeight = nEndian::fromBig16(uwHeight);
+
+	if(ubVersion == 0) {
+		tPlanarBitmap Bm(uwWidth, uwHeight, ubBpp);
+		for(uint8_t i = 0; i < ubBpp; ++i) {
+			Bm.m_pPlanes[i].resize(uwWidth * uwHeight / sizeof(Bm.m_pPlanes[0][0]));
+		}
+		if(eFlags & tBmFlags::INTERLEAVED) {
+			for(uint32_t y = 0; y < uwHeight; ++y) {
+				for(uint8_t i = 0; i < ubBpp; ++i) {
+					File.read(
+						&(reinterpret_cast<char*>(Bm.m_pPlanes[i].data())[y * uwWidth / 8]),
+						uwWidth / 8
+					);
+				}
+			}
+		}
+		else {
+			for(uint8_t i = 0; i < ubBpp; ++i) {
+				File.read(
+					reinterpret_cast<char*>(Bm.m_pPlanes[i].data()),
+					(uwWidth / 8) * uwHeight
+				);
+			}
+		}
+
+		// Convert endianness on data
+		for(uint8_t i = ubBpp; i--;) {
+			for(auto &Cell: Bm.m_pPlanes[i]) {
+				Cell = nEndian::fromBig16(Cell);
+			}
+		}
+
+		Bm.m_uwWidth = uwWidth;
+		Bm.m_uwHeight = uwHeight;
+		Bm.m_ubDepth = ubBpp;
+		return Bm;
+	}
+	else {
+		nLog::error("Unsupported bitmap file version: 0x{:02X}", ubVersion);
+		return tPlanarBitmap(0, 0, 0);
+	}
+}
+
+tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY)
+{
 	uint32_t ulPos = m_uwWidth * (uwY) + uwX;
 	return m_vData[ulPos];
 }
@@ -183,7 +305,7 @@ bool tChunkyBitmap::copyRect(
 	uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
 )
 {
-	if(uwSrcX + uwWidth > this->m_uwWidth || uwSrcY + uwHeight > this->m_uwHeight) {
+	if(uwSrcX + uwWidth > m_uwWidth || uwSrcY + uwHeight > m_uwHeight) {
 		// Source out of range
 		return false;
 	}
@@ -194,9 +316,46 @@ bool tChunkyBitmap::copyRect(
 
 	for(uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
 		for(uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
-			Dst.pixelAt(uwDstX + uwX, uwDstY + uwY) = this->pixelAt(uwSrcX + uwX, uwSrcY + uwY);
+			Dst.pixelAt(uwDstX + uwX, uwDstY + uwY) = pixelAt(uwSrcX + uwX, uwSrcY + uwY);
 		}
 	}
 
 	return true;
+}
+
+bool tChunkyBitmap::mergeWithMask(const tChunkyBitmap &Mask)
+{
+	if(Mask.m_uwHeight != m_uwHeight || Mask.m_uwWidth != m_uwWidth) {
+		return false;
+	}
+
+	for(uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
+		for(uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
+			auto & MaskPixel = Mask.pixelAt(uwX, uwY);
+			if(MaskPixel != tRgb(0)) {
+				pixelAt(uwX, uwY) = MaskPixel;
+			}
+		}
+	}
+	return true;
+}
+
+tChunkyBitmap tChunkyBitmap::filterColors(
+	const tPalette &Palette, const tRgb &ColorDefault
+)
+{
+	const auto &Colors = Palette.m_vColors;
+	tChunkyBitmap Out(m_uwWidth, m_uwHeight);
+	for(uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
+		for(uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
+			const auto &Ref = pixelAt(uwX, uwY);
+			if(std::find(Colors.begin(), Colors.end(), Ref) != Colors.end()) {
+				Out.pixelAt(uwX, uwY) = Ref;
+			}
+			else {
+				Out.pixelAt(uwX, uwY) = ColorDefault;
+			}
+		}
+	}
+	return Out;
 }

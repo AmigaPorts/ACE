@@ -19,9 +19,7 @@ public:
 	uint16_t m_uwHeight = 0;
 	std::vector<tRgb> m_vData;
 
-	tChunkyBitmap(
-		const tPlanarBitmap &Planar, const tPalette &vPalette
-	);
+	tChunkyBitmap(const tPlanarBitmap &Planar, const tPalette &Palette);
 
 	tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, tRgb Bg = tRgb(0));
 
@@ -33,10 +31,6 @@ public:
 
 	static tChunkyBitmap fromPng(const std::string &szPath);
 
-	static tChunkyBitmap get1bppMask(
-		const tChunkyBitmap &Src, const tRgb &ColorTransparent, bool isInterleaved
-	);
-
 	tRgb &pixelAt(uint16_t uwX, uint16_t uwY);
 	const tRgb &pixelAt(uint16_t uwX, uint16_t uwY) const;
 
@@ -44,6 +38,10 @@ public:
 		uint16_t uwSrcX, uint16_t uwSrcY, tChunkyBitmap &Dst,
 		uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
 	);
+
+	bool mergeWithMask(const tChunkyBitmap &Mask);
+
+	tChunkyBitmap filterColors(const tPalette &Palette, const tRgb &ColorDefault);
 };
 
 class tPlanarBitmap {
@@ -58,7 +56,11 @@ public:
 		const tPalette &PaletteIgnore = tPalette()
 	);
 
+	tPlanarBitmap(uint16_t uwWidth, uint16_t uwHeight, uint8_t ubDepth);
+
 	bool toBm(const std::string &szPath, bool isInterleaved);
+
+	static tPlanarBitmap fromBm(const std::string &szPath);
 };
 
 #endif // _ACE_TOOLS_COMMON_BITMAP_H_

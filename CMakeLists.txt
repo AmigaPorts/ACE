@@ -116,11 +116,11 @@ function(convertBitmaps)
 		endif()
 
 		if(NOT "${convertBitmaps_MASK_COLOR} " STREQUAL " ")
-			set(extraFlags ${extraFlags} -mc ${convertBitmaps_MASK_COLOR} -mo ${maskPath})
+			set(extraFlags ${extraFlags} -mc ${convertBitmaps_MASK_COLOR} -mf ${maskPath})
 		endif()
 		add_custom_command(
 			OUTPUT ${outPath} ${maskPath}
-			COMMAND ${ACE_DIR}/tools/bitmap_conv/bitmap_conv ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlags}
+			COMMAND ${ACE_DIR}/tools/bin/bitmap_conv ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlags}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			DEPENDS ${convertBitmaps_PALETTE} ${bitmapPath}
 		)

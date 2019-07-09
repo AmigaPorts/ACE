@@ -209,10 +209,10 @@ void bitmapLoadFromMem(
 
 	memcpy(&uwSrcHeight,&pData[ulCurByte],sizeof(UWORD));
 	ulCurByte+=sizeof(UWORD);
-	
+
 	memcpy(&ubSrcBpp,&pData[ulCurByte],sizeof(UBYTE));
 	ulCurByte+=sizeof(UBYTE);
-	
+
 	memcpy(&ubSrcVersion,&pData[ulCurByte],sizeof(UBYTE));
 	ulCurByte+=sizeof(UBYTE);
 

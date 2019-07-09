@@ -259,3 +259,15 @@ int16_t tPalette::getColorIdx(const tRgb &Ref) const
 	}
 	return -1;
 }
+
+bool tPalette::isValid(void) const {
+	return m_vColors.size() != 0;
+}
+
+uint8_t tPalette::getBpp(void) const {
+	uint8_t ubBpp = 1;
+	for(size_t i = 2; i < m_vColors.size(); i <<= 1) {
+		++ubBpp;
+	}
+	return ubBpp;
+}
