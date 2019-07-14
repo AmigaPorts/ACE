@@ -37,6 +37,8 @@ void systemUse(void);
 
 void systemUnuse(void);
 
+UBYTE systemIsUsed(void);
+
 void systemDump(void);
 
 void systemSetInt(

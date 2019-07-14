@@ -432,6 +432,10 @@ void systemUse(void) {
 	++s_wSystemUses;
 }
 
+UBYTE systemIsUsed(void) {
+	return s_wSystemUses > 0;
+}
+
 void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 ) {
