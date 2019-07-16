@@ -45,7 +45,7 @@ tFont *fontCreate(const char *szFontName) {
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
 #ifdef AMIGA
-	UWORD uwPlaneByteSize = (pFont->uwWidth+15)/8  * pFont->uwHeight;
+	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
 	fileRead(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
 #else
 	logWrite("ERR: Unimplemented\n");
