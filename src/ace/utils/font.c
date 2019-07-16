@@ -60,6 +60,47 @@ tFont *fontCreate(const char *szFontName) {
 	return pFont;
 }
 
+tFont *fontCreateFromMem(const UBYTE* pData) {
+	tFont *pFont;
+	UWORD uwCurByte = 0;
+
+	logBlockBegin("fontCreateFromMem(szFontName: '%p')", pData);
+ 	pFont = (tFont *) memAllocFast(sizeof(tFont));
+	if (!pFont) {
+		logBlockEnd("fontCreateFromMem()");
+		return 0;
+	}
+	memcpy(&pFont->uwWidth,&pData[uwCurByte],sizeof(UWORD));
+	uwCurByte+=sizeof(UWORD);
+	memcpy(&pFont->uwHeight,&pData[uwCurByte],sizeof(UWORD));
+	uwCurByte+=sizeof(UWORD);
+	memcpy(&pFont->ubChars,&pData[uwCurByte],sizeof(UBYTE));
+	uwCurByte+=sizeof(UBYTE);
+
+	logWrite(
+		"Addr: %p, data width: %upx, chars: %u, font height: %upx\n",
+		pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight
+	);
+
+	pFont->pCharOffsets = memAllocFast(sizeof(UWORD) * pFont->ubChars);
+	memcpy(pFont->pCharOffsets,&pData[uwCurByte],sizeof(UWORD) * pFont->ubChars);
+	uwCurByte+=(sizeof(UWORD) * pFont->ubChars);
+
+	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
+
+#ifdef AMIGA
+	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
+	memcpy(pFont->pRawData->Planes[0],&pData[uwCurByte],uwPlaneByteSize);
+#else
+	logWrite("ERR: Unimplemented\n");
+	memFree(pFont, sizeof(tFont));
+	logBlockEnd("fontCreateFromMem()");
+	return 0;
+#endif // AMIGA
+	logBlockEnd("fontCreateFromMem()");
+	return pFont;
+}
+
 void fontDestroy(tFont *pFont) {
 	logBlockBegin("fontDestroy(pFont: %p)", pFont);
 	if (pFont) {
