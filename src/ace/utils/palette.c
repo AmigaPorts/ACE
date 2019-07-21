@@ -11,7 +11,10 @@ void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	tFile *pFile;
 	UBYTE ubPaletteLength;
 
-	logBlockBegin("paletteLoad(szFileName: '%s', pPalette: %p, ubMaxLength: %hu)", szFileName, pPalette, ubMaxLength);
+	logBlockBegin(
+		"paletteLoad(szFileName: '%s', pPalette: %p, ubMaxLength: %hu)",
+		szFileName, pPalette, ubMaxLength
+	);
 
 	pFile = fileOpen(szFileName, "r");
 	fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
@@ -26,20 +29,12 @@ void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 }
 
 void paletteLoadFromMem(const UBYTE* pData, UWORD *pPalette, UBYTE ubMaxLength) {
-	UBYTE ubPaletteLength;
-	UBYTE ubCurByte = 0;
+	logBlockBegin(
+		"paletteLoadFromMem(pPalette: %p, ubMaxLength: %hu)", pPalette, ubMaxLength
+	);
 
-	logBlockBegin("paletteLoadFromMem(pPalette: %p, ubMaxLength: %hu)", pPalette, ubMaxLength);
-	
-	memcpy(&ubPaletteLength,&pData[ubCurByte],sizeof(UBYTE));
-	ubCurByte+=sizeof(UBYTE);
-
-	logWrite(" Color count: %u\n", ubPaletteLength);
-	if(ubPaletteLength > ubMaxLength) {
-		ubPaletteLength = ubMaxLength;
-	}
-
-	memcpy(pPalette,&pData[ubCurByte],sizeof(UWORD)*ubPaletteLength);
+	UBYTE ubPaletteLength = pData[0];
+	memcpy(pPalette, &pData[1], MIN(ubMaxLength, sizeof(UWORD) * ubPaletteLength));
 
 	logBlockEnd("paletteLoadFromMem()");
 }
