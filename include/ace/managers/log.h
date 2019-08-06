@@ -65,6 +65,7 @@ void _logAvgDestroy(tAvg *pAvg);
 void _logAvgBegin(tAvg *pAvg);
 void _logAvgEnd(tAvg *pAvg);
 void _logAvgWrite(tAvg *pAvg);
+void _logAssertFailed(const char *szFile, UWORD uwLine);
 
 /* Functions - struct dump */
 
@@ -82,6 +83,7 @@ void _logAvgWrite(tAvg *pAvg);
 #define logAvgBegin(pAvg) _logAvgBegin(pAvg)
 #define logAvgEnd(pAvg) _logAvgEnd(pAvg)
 #define logAvgWrite(pAvg) _logAvgWrite(pAvg)
+#define logAssert(expr) if (!(expr)) _logAssertFailed(__FILE__, __LINE__)
 
 #else
 #define logOpen()
@@ -98,6 +100,7 @@ void _logAvgWrite(tAvg *pAvg);
 #define logAvgBegin(pAvg)
 #define logAvgEnd(pAvg)
 #define logAvgWrite(pAvg)
+#define logAssert(expr)
 #endif // ACE_DEBUG
 
 #ifdef __cplusplus

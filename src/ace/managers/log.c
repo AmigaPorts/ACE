@@ -205,4 +205,8 @@ void _logAvgWrite(tAvg *pAvg) {
 	logWrite("Avg %s: %s, min: %s, max: %s\n", pAvg->szName, szAvg, szMin, szMax);
 }
 
+void _logAssertFailed(const char *szFile, UWORD uwLine) {
+	logWrite("ERR: Assert failed (%s:%u)", szFile, uwLine);
+}
+
 #endif // ACE_DEBUG
