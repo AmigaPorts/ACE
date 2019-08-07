@@ -70,12 +70,12 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile);
 #endif // ACE_DEBUG
 
 // Shorthands
-#define memAllocFast(ulSize) memAlloc(ulSize, 0)
+#define memAllocFast(ulSize) memAlloc(ulSize, MEMF_ANY)
 #define memAllocChip(ulSize) memAlloc(ulSize, MEMF_CHIP)
-#define memAllocFastClear(ulSize) memAlloc(ulSize, MEMF_CLEAR)
+#define memAllocFastClear(ulSize) memAlloc(ulSize, MEMF_ANY | MEMF_CLEAR)
 #define memAllocChipClear(ulSize) memAlloc(ulSize, MEMF_CHIP | MEMF_CLEAR)
 #define memAllocChipFlags(ulSize, ulFlags) memAlloc(ulSize, MEMF_CHIP | ulFlags)
-#define memAllocFastFlags(ulSize, ulFlags) memAlloc(ulSize, ulFlags)
+#define memAllocFastFlags(ulSize, ulFlags) memAlloc(ulSize, MEMF_ANY |ulFlags)
 
 #ifdef __cplusplus
 }

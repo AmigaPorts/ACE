@@ -190,6 +190,11 @@ void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	void *pResult;
 	#ifdef AMIGA
 	pResult = AllocMem(ulSize, ulFlags);
+	if(!(ulFlags & MEMF_CHIP) && !pResult) {
+		// No FAST available - allocate CHIP instead
+		filePrintf(s_pMemLog, "WARN: Couldn't allocate FAST mem\r\n");
+		pResult = AllocMem(ulSize, (ulFlags & ~MEMF_FAST) | MEMF_ANY);
+	}
 	#else
 	pResult =  malloc(ulSize);
 	#endif // AMIGA

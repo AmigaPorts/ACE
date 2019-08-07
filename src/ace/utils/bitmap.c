@@ -38,7 +38,7 @@ tBitMap *bitmapCreate(
 
 		pBitMap->Planes[0] = (PLANEPTR) memAlloc(
 			pBitMap->BytesPerRow*uwHeight,
-			(ubFlags & BMF_FASTMEM) ? MEMF_FAST : MEMF_CHIP
+			(ubFlags & BMF_FASTMEM) ? MEMF_ANY : MEMF_CHIP
 		);
 		if(!pBitMap->Planes[0]) {
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
