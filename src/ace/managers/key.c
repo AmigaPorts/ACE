@@ -37,21 +37,20 @@ void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState) {
  */
 FN_HOTSPOT
 void INTERRUPT keyIntServer(
-	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
+	REGARG(volatile tCustom *pCustom, "a0"),
 	REGARG(volatile void *pData, "a1")
 ) {
 	tKeyManager *pKeyManager = (tKeyManager*)pData;
+	volatile tRayPos *pRayPos = (tRayPos*)&pCustom->vposr;
 
+	// Get key code and start handshake
 	UBYTE ubKeyCode = ~g_pCiaA->sdr;
-
-	// Start handshake
 	g_pCiaA->cra |= CIACRA_SPMODE;
-	UWORD uwStart = ciaGetTimerB(g_pCiaA);
+	UWORD uwStart = pRayPos->bfPosY;
 
-	// Get keypress flag and shift keyCode
+	// Get keypress flag and shift key code
 	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
 	ubKeyCode >>= 1;
-
 	keyIntSetState(
 		pKeyManager, ubKeyCode, ubKeyReleased ? KEY_NACTIVE : KEY_ACTIVE
 	);
@@ -59,14 +58,14 @@ void INTERRUPT keyIntServer(
 	// End handshake
 	UWORD uwDelta;
 	do {
-		UWORD uwEnd = ciaGetTimerB(g_pCiaA);
+		UWORD uwEnd = pRayPos->bfPosY;
 		if(uwEnd > uwStart) {
 			uwDelta = uwEnd - uwStart;
 		}
 		else {
 			uwDelta = 0xFFFF - uwStart + uwEnd;
 		}
-	} while(uwDelta < 65);
+	} while(uwDelta < 3);
 	g_pCiaA->cra &= ~CIACRA_SPMODE;
 	INTERRUPT_END;
 }
