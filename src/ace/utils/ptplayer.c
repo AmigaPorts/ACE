@@ -15,8 +15,9 @@
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes
 // Length of single pattern.
 #define MOD_PATTERN_LENGTH (64 * 4 * 4)
+#define MOD_PERIOD_TABLE_LENGTH 36
 
-static UWORD mt_PeriodTable[][36] = {
+static UWORD mt_PeriodTable[][MOD_PERIOD_TABLE_LENGTH] = {
 	{
 		856,808,762,720,678,640,604,570,538,508,480,453,
 		428,404,381,360,339,320,302,285,269,254,240,226,
@@ -1547,9 +1548,21 @@ static void mt_toneporta_nc(
 		pChannelData->n_period = uwNew;
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
-			// TODO
+			UWORD *pPeriodTable = pChannelData->n_pertab;
+			UWORD uwD1 = 0;
+			UBYTE ubPeriodPos;
+			for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
+				if (uwD1 >= pPeriodTable[ubPeriodPos]) {
+					break;
+				}
+				uwD1 += 2;
+				++ubPeriodPos;
+			}
+
+			pChannelData->n_noteoff = uwD1;
+			uwNew = pPeriodTable[ubPeriodPos];
 		}
-		pChannelReg->ac_per = pChannelData->n_period;
+		pChannelReg->ac_per = uwNew;
 	}
 }
 
@@ -1618,8 +1631,8 @@ static void mt_arpeggio(
 	if(uwVal < 2 * 36) {
 		// Set period with arpeggio offset from note table
 		pChannelReg->ac_per = pChannelData->n_pertab[uwVal / 2];
-		// TODO: noteoff has byte offs from start of array, set it to divided by 2
-		// since we're using UWORD pointers, not UBYTE
+		// TODO later: noteoff has byte offs from start of array, set it to divided
+		// by 2 since we're using UWORD pointers, not UBYTE
 	}
 }
 
@@ -1725,7 +1738,6 @@ static void mt_tonevolslide(
 	volatile struct AudChannel *pChannelReg
 ) {
 	// uwCmd: 0x05'XY (x = volume up, y = volume down)
-	// TODO ensure that it works as I think if works
 	mt_toneporta_nc(pChannelData, pChannelReg);
 
 	// Do a volume slide with current cmd's args
@@ -1967,7 +1979,7 @@ static void mt_finetune(
 ) {
 	// cmd 0x0E'5X (x = finetune)
 	pChannelData->n_pertab = mt_PeriodTable[ubArg];
-	// TODO is it set? d0 &= 0xF, 0xF+0xF == 30 && 30 < 32
+	// TODO later: ask phx if it's correct. d0 &= 0xF, 0xF+0xF == 30 && 30 < 32
 	pChannelData->n_minusft = (ubArg >= 32);
 }
 
