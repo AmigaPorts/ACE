@@ -906,14 +906,14 @@ static void mt_updatefunk(tChannelStatus *pChannelData) {
 	if(pChannelData->n_funkoffset > 0) {
 		return;
 	}
+	pChannelData->n_funkoffset = 0;
 	UBYTE *pOffs = (UBYTE*)&pChannelData->n_loopstart[pChannelData->n_replen];
-	UBYTE *pWaveStart = pChannelData->n_wavestart + 1;
-	if(pOffs < pWaveStart
-	) {
+	UBYTE *pWaveStart = &pChannelData->n_wavestart[1];
+	if(pWaveStart >= pOffs) {
 		pWaveStart = pOffs;
 	}
 	pChannelData->n_wavestart = pWaveStart;
-	// TODO: asm NOT
+	*pWaveStart = ~*pWaveStart;
 }
 
 static void mt_checkfx(
@@ -1615,7 +1615,6 @@ static void mt_arpeggio(
 	// offset current note
 	uwVal *= 2;
 	uwVal += pChannelData->n_noteoff;
-	// TODO: check if bhs is properly translated here
 	if(uwVal < 2 * 36) {
 		// Set period with arpeggio offset from note table
 		pChannelReg->ac_per = pChannelData->n_pertab[uwVal / 2];
@@ -1837,7 +1836,7 @@ static void mt_posjump(
 	// uwCmd: 0x0B'XY (xy = new song position)
 	mt_SongPos = ubArgs - 1;
 	mt_PBreakPos = 0;
-	mt_PosJumpFlag = 0;
+	mt_PosJumpFlag = 1;
 }
 
 static void mt_patternbrk(
@@ -1853,15 +1852,14 @@ static void mt_patternbrk(
 	UBYTE ubY = ubArgs & 0xF;
 	UBYTE ubX = ubArgs >> 4;
 	UBYTE ubVal = pMult10[ubX] + ubY;
-	// TODO: I'm not sure if mt_PosJumpFlag assignments are correct
+
 	if(ubVal > 63) {
 		mt_PBreakPos = 0;
-		mt_PosJumpFlag = 0;
 	}
 	else {
 		mt_PBreakPos = ubVal << 4;
-		mt_PosJumpFlag = 1;
 	}
+	mt_PosJumpFlag = 1;
 }
 
 static void blocked_e_cmds(
@@ -1969,7 +1967,6 @@ static void mt_finetune(
 ) {
 	// cmd 0x0E'5X (x = finetune)
 	pChannelData->n_pertab = mt_PeriodTable[ubArg];
-	// TODO report asm: shs
 	// TODO is it set? d0 &= 0xF, 0xF+0xF == 30 && 30 < 32
 	pChannelData->n_minusft = (ubArg >= 32);
 }
@@ -2000,8 +1997,7 @@ static void mt_jumploop(
 
 	// jump back to start of loop
 	mt_PBreakPos = pChannelData->n_pattpos;
-	// TODO ensure st polarity, if non-zero then set?
-	mt_PBreakFlag = (mt_PBreakPos != 0);
+	mt_PBreakFlag = 1;
 }
 
 static void mt_tremoctrl(
