@@ -17,86 +17,86 @@
 #define MOD_PATTERN_LENGTH (64 * 4 * 4)
 #define MOD_PERIOD_TABLE_LENGTH 36
 
-static UWORD mt_PeriodTable[][MOD_PERIOD_TABLE_LENGTH] = {
+static UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
 	{
-		856,808,762,720,678,640,604,570,538,508,480,453,
-		428,404,381,360,339,320,302,285,269,254,240,226,
-		214,202,190,180,170,160,151,143,135,127,120,113
+		856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480, 453,
+		428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240, 226,
+		214, 202, 190, 180, 170, 160, 151, 143, 135, 127, 120, 113
 	},
 	{
-		850,802,757,715,674,637,601,567,535,505,477,450,
-		425,401,379,357,337,318,300,284,268,253,239,225,
-		213,201,189,179,169,159,150,142,134,126,119,113
+		850, 802, 757, 715, 674, 637, 601, 567, 535, 505, 477, 450,
+		425, 401, 379, 357, 337, 318, 300, 284, 268, 253, 239, 225,
+		213, 201, 189, 179, 169, 159, 150, 142, 134, 126, 119, 113
 	},
 	{
-		844,796,752,709,670,632,597,563,532,502,474,447,
-		422,398,376,355,335,316,298,282,266,251,237,224,
-		211,199,188,177,167,158,149,141,133,125,118,112
+		844, 796, 752, 709, 670, 632, 597, 563, 532, 502, 474, 447,
+		422, 398, 376, 355, 335, 316, 298, 282, 266, 251, 237, 224,
+		211, 199, 188, 177, 167, 158, 149, 141, 133, 125, 118, 112
 	},
 	{
-		838,791,746,704,665,628,592,559,528,498,470,444,
-		419,395,373,352,332,314,296,280,264,249,235,222,
-		209,198,187,176,166,157,148,140,132,125,118,111
+		838, 791, 746, 704, 665, 628, 592, 559, 528, 498, 470, 444,
+		419, 395, 373, 352, 332, 314, 296, 280, 264, 249, 235, 222,
+		209, 198, 187, 176, 166, 157, 148, 140, 132, 125, 118, 111
 	},
 	{
-		832,785,741,699,660,623,588,555,524,495,467,441,
-		416,392,370,350,330,312,294,278,262,247,233,220,
-		208,196,185,175,165,156,147,139,131,124,117,110
+		832, 785, 741, 699, 660, 623, 588, 555, 524, 495, 467, 441,
+		416, 392, 370, 350, 330, 312, 294, 278, 262, 247, 233, 220,
+		208, 196, 185, 175, 165, 156, 147, 139, 131, 124, 117, 110
 	},
 	{
-		826,779,736,694,655,619,584,551,520,491,463,437,
-		413,390,368,347,328,309,292,276,260,245,232,219,
-		206,195,184,174,164,155,146,138,130,123,116,109
+		826, 779, 736, 694, 655, 619, 584, 551, 520, 491, 463, 437,
+		413, 390, 368, 347, 328, 309, 292, 276, 260, 245, 232, 219,
+		206, 195, 184, 174, 164, 155, 146, 138, 130, 123, 116, 109
 	},
 	{
-		820,774,730,689,651,614,580,547,516,487,460,434,
-		410,387,365,345,325,307,290,274,258,244,230,217,
-		205,193,183,172,163,154,145,137,129,122,115,109
+		820, 774, 730, 689, 651, 614, 580, 547, 516, 487, 460, 434,
+		410, 387, 365, 345, 325, 307, 290, 274, 258, 244, 230, 217,
+		205, 193, 183, 172, 163, 154, 145, 137, 129, 122, 115, 109
 	},
 	{
-		814,768,725,684,646,610,575,543,513,484,457,431,
-		407,384,363,342,323,305,288,272,256,242,228,216,
-		204,192,181,171,161,152,144,136,128,121,114,108
+		814, 768, 725, 684, 646, 610, 575, 543, 513, 484, 457, 431,
+		407, 384, 363, 342, 323, 305, 288, 272, 256, 242, 228, 216,
+		204, 192, 181, 171, 161, 152, 144, 136, 128, 121, 114, 108
 	},
 	{
-		907,856,808,762,720,678,640,604,570,538,508,480,
-		453,428,404,381,360,339,320,302,285,269,254,240,
-		226,214,202,190,180,170,160,151,143,135,127,120
+		907, 856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480,
+		453, 428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240,
+		226, 214, 202, 190, 180, 170, 160, 151, 143, 135, 127, 120
 	},
 	{
-		900,850,802,757,715,675,636,601,567,535,505,477,
-		450,425,401,379,357,337,318,300,284,268,253,238,
-		225,212,200,189,179,169,159,150,142,134,126,119
+		900, 850, 802, 757, 715, 675, 636, 601, 567, 535, 505, 477,
+		450, 425, 401, 379, 357, 337, 318, 300, 284, 268, 253, 238,
+		225, 212, 200, 189, 179, 169, 159, 150, 142, 134, 126, 119
 	},
 	{
-		894,844,796,752,709,670,632,597,563,532,502,474,
-		447,422,398,376,355,335,316,298,282,266,251,237,
-		223,211,199,188,177,167,158,149,141,133,125,118
+		894, 844, 796, 752, 709, 670, 632, 597, 563, 532, 502, 474,
+		447, 422, 398, 376, 355, 335, 316, 298, 282, 266, 251, 237,
+		223, 211, 199, 188, 177, 167, 158, 149, 141, 133, 125, 118
 	},
 	{
-		887,838,791,746,704,665,628,592,559,528,498,470,
-		444,419,395,373,352,332,314,296,280,264,249,235,
-		222,209,198,187,176,166,157,148,140,132,125,118
+		887, 838, 791, 746, 704, 665, 628, 592, 559, 528, 498, 470,
+		444, 419, 395, 373, 352, 332, 314, 296, 280, 264, 249, 235,
+		222, 209, 198, 187, 176, 166, 157, 148, 140, 132, 125, 118
 	},
 	{
-		881,832,785,741,699,660,623,588,555,524,494,467,
-		441,416,392,370,350,330,312,294,278,262,247,233,
-		220,208,196,185,175,165,156,147,139,131,123,117
+		881, 832, 785, 741, 699, 660, 623, 588, 555, 524, 494, 467,
+		441, 416, 392, 370, 350, 330, 312, 294, 278, 262, 247, 233,
+		220, 208, 196, 185, 175, 165, 156, 147, 139, 131, 123, 117
 	},
 	{
-		875,826,779,736,694,655,619,584,551,520,491,463,
-		437,413,390,368,347,328,309,292,276,260,245,232,
-		219,206,195,184,174,164,155,146,138,130,123,116
+		875, 826, 779, 736, 694, 655, 619, 584, 551, 520, 491, 463,
+		437, 413, 390, 368, 347, 328, 309, 292, 276, 260, 245, 232,
+		219, 206, 195, 184, 174, 164, 155, 146, 138, 130, 123, 116
 	},
 	{
-		868,820,774,730,689,651,614,580,547,516,487,460,
-		434,410,387,365,345,325,307,290,274,258,244,230,
-		217,205,193,183,172,163,154,145,137,129,122,115
+		868, 820, 774, 730, 689, 651, 614, 580, 547, 516, 487, 460,
+		434, 410, 387, 365, 345, 325, 307, 290, 274, 258, 244, 230,
+		217, 205, 193, 183, 172, 163, 154, 145, 137, 129, 122, 115
 	},
 	{
-		862,814,768,725,684,646,610,575,543,513,484,457,
-		431,407,384,363,342,323,305,288,272,256,242,228,
-		216,203,192,181,171,161,152,144,136,128,121,114
+		862, 814, 768, 725, 684, 646, 610, 575, 543, 513, 484, 457,
+		431, 407, 384, 363, 342, 323, 305, 288, 272, 256, 242, 228,
+		216, 203, 192, 181, 171, 161, 152, 144, 136, 128, 121, 114
 	}
 };
 
@@ -721,6 +721,8 @@ typedef struct _tModFileHeader {
 	// MOD pattern/sample data follows
 } tModFileHeader;
 
+typedef struct AudChannel tChannelRegs;
+
 /**
  * Each pattern line consists of following data for each channel.
  */
@@ -776,11 +778,11 @@ typedef struct _tChannelStatus {
 typedef void (*tVoidFn)(void);
 typedef void (*tFx)(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 );
 typedef void (*tEFn)(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 );
 
 static const tFx fx_tab[16];
@@ -790,7 +792,7 @@ static const tEFn blecmd_tab[16];
 
 static void blocked_e_cmds(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 );
 
 UBYTE mt_MusicChannels = 0;
@@ -833,7 +835,7 @@ static void ptSongStep(void) {
 
 static void startSfx(
 	UWORD uwLen, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// play new sound effect on this channel
 	g_pCustom->dmacon = pChannelData->n_dmabit;
@@ -854,13 +856,13 @@ static void startSfx(
 
 void moreBlockedFx(
 	UWORD uwCmd, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	blmorefx_tab[uwCmd >> 8](uwCmd, pChannelData, pChannelReg);
 }
 
 static void mt_playvoice(
-	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg,
 	tModVoice *pVoice
 ) {
 	// channel blocked by external sound effect?
@@ -918,7 +920,7 @@ static void mt_updatefunk(tChannelStatus *pChannelData) {
 }
 
 static void mt_checkfx(
-	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	if(pChannelData->n_sfxpri) {
 		UWORD uwLen = pChannelData->n_sfxlen;
@@ -1016,7 +1018,7 @@ static void mt_TimerBdmaon(
 }
 
 static void chan_sfx_only(
-	volatile struct AudChannel *pChannelReg, tChannelStatus *pChannelData
+	volatile tChannelRegs *pChannelReg, tChannelStatus *pChannelData
 ) {
 	if(pChannelData->n_sfxpri <= 0) {
 		return;
@@ -1525,7 +1527,7 @@ void mt_mastervol(UWORD MasterVolume) {
 //-------------------------------------------------- COMMANDS WITHOUT CMD PASSED
 
 static void mt_toneporta_nc(
-	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	if(pChannelData->n_wantedperiod) {
 		UWORD uwNew;
@@ -1567,7 +1569,7 @@ static void mt_toneporta_nc(
 }
 
 static void mt_vibrato_nc(
-	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg,
 	UBYTE ubAmplitude, UBYTE ubSpeed
 ) {
 	// calculate vibrato table offset
@@ -1598,14 +1600,14 @@ static void mt_vibrato_nc(
 
 static void mt_nop(
 	UNUSED_ARG UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 
 }
 
 static void mt_arpeggio(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x00'XY (x = first arpeggio offset, y = second arpeggio offset)
 	static const BYTE pArpTab[] = {
@@ -1638,7 +1640,7 @@ static void mt_arpeggio(
 
 static void ptDoPortaUp(
 	UBYTE ubVal, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	UWORD uwNewPer = MAX(113, pChannelData->n_period - ubVal);
 	pChannelData->n_period = uwNewPer;
@@ -1647,7 +1649,7 @@ static void ptDoPortaUp(
 
 static void mt_portaup(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 1 x x (subtract xx from period)
 	ptDoPortaUp(ubArgs, pChannelData, pChannelReg);
@@ -1655,7 +1657,7 @@ static void mt_portaup(
 
 static void ptDoPortaDn(
 	UBYTE ubVal, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	UWORD uwNewPer = MIN(pChannelData->n_period - ubVal, 856);
 	pChannelData->n_period = uwNewPer;
@@ -1664,7 +1666,7 @@ static void ptDoPortaDn(
 
 static void mt_portadown(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 2 x x (add xx to period)
 	ptDoPortaDn(ubArgs, pChannelData, pChannelReg);
@@ -1672,7 +1674,7 @@ static void mt_portadown(
 
 static void mt_toneporta(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x03'XY (xy = tone portamento speed)
 	if(ubArgs) {
@@ -1684,7 +1686,7 @@ static void mt_toneporta(
 
 static void mt_vibrato(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x04'XY (x = speed, y = amplitude)
 	UBYTE ubAmplitude = ubArgs & 0xF;
@@ -1706,7 +1708,7 @@ static void mt_vibrato(
 
 static void ptVolSlide(
 	BYTE bVolNew, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	bVolNew = CLAMP(bVolNew, 0, 64);
 	pChannelData->n_volume = bVolNew;
@@ -1716,7 +1718,7 @@ static void ptVolSlide(
 
 static void mt_volumeslide(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x0A'XY (x = volume-up, y = volume-down)
 	UBYTE ubVolDn  = ubArgs & 0x0F;
@@ -1735,7 +1737,7 @@ static void mt_volumeslide(
 
 static void mt_tonevolslide(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x05'XY (x = volume up, y = volume down)
 	mt_toneporta_nc(pChannelData, pChannelReg);
@@ -1746,7 +1748,7 @@ static void mt_tonevolslide(
 
 static void mt_vibrvolslide(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x06'XY (x = volume-up, y = volume-down)
 
@@ -1762,7 +1764,7 @@ static void mt_vibrvolslide(
 
 static void mt_tremolo(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x07'XY (x = speed, y = amplitude)
 	UBYTE ubAmplitude = ubArgs & 0x0F;
@@ -1812,7 +1814,7 @@ static void mt_tremolo(
 
 static void mt_e_cmds(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArgE = ubArgs & 0x0F;
@@ -1843,7 +1845,7 @@ static const tFx fx_tab[16] = {
 
 static void mt_posjump(
 	UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x0B'XY (xy = new song position)
 	mt_SongPos = ubArgs - 1;
@@ -1853,7 +1855,7 @@ static void mt_posjump(
 
 static void mt_patternbrk(
 	UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x0D'XY (xy = break pos in decimal)
 
@@ -1876,7 +1878,7 @@ static void mt_patternbrk(
 
 static void blocked_e_cmds(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArg = ubArgs & 0x0F;
@@ -1886,7 +1888,7 @@ static void blocked_e_cmds(
 
 static void mt_setspeed(
 	UBYTE ubArgs, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x0F'XY (xy < 0x20: new speed, xy >= 0x20: new tempo)
 	if(ubArgs < 0x20) {
@@ -1926,7 +1928,7 @@ static const tFx blmorefx_tab[16] = {
 
 static void mt_filter(
 	UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'0X (x=1 disable, x=0 enable)
 	if(ubArg & 1) {
@@ -1939,7 +1941,7 @@ static void mt_filter(
 
 static void mt_fineportaup(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'1X (subtract x from period)
 	if(!mt_Counter) {
@@ -1949,7 +1951,7 @@ static void mt_fineportaup(
 
 static void mt_fineportadn(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'1X (subtract x from period)
 	if(!mt_Counter) {
@@ -1959,7 +1961,7 @@ static void mt_fineportadn(
 
 static void mt_glissctrl(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'3X (x = gliss)
 	pChannelData->n_gliss = (pChannelData->n_gliss & 4) | ubArg;
@@ -1967,7 +1969,7 @@ static void mt_glissctrl(
 
 static void mt_vibratoctrl(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'4X (x = vibrato)
 	pChannelData->n_vibratoctrl = ubArg;
@@ -1975,17 +1977,17 @@ static void mt_vibratoctrl(
 
 static void mt_finetune(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'5X (x = finetune)
-	pChannelData->n_pertab = mt_PeriodTable[ubArg];
+	pChannelData->n_pertab = mt_PeriodTables[ubArg];
 	// TODO later: ask phx if it's correct. d0 &= 0xF, 0xF+0xF == 30 && 30 < 32
 	pChannelData->n_minusft = (ubArg >= 32);
 }
 
 static void mt_jumploop(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'6X (x = 0: loop start, else loop count)
 	if(mt_Counter) {
@@ -2014,7 +2016,7 @@ static void mt_jumploop(
 
 static void mt_tremoctrl(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'7X (x = tremolo)
 	pChannelData->n_tremoloctrl = ubArg;
@@ -2022,14 +2024,14 @@ static void mt_tremoctrl(
 
 static void mt_e8(
 	UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'8X (x = trigger value)
 	mt_E8Trigger = ubArg;
 }
 
 static void ptDoRetrigger(
-	tChannelStatus *pChannelData, volatile struct AudChannel *pChannelReg
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// DMA off, set sample pointer and length
 	g_pCustom->dmacon = pChannelData->n_dmabit;
@@ -2040,7 +2042,7 @@ static void ptDoRetrigger(
 
 static void mt_retrignote(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'9X (x = retrigger count)
 	if(!ubArg) {
@@ -2070,7 +2072,7 @@ static void mt_retrignote(
 
 static void mt_volfineup(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'AX (x = volume add)
 	if(!mt_Counter) {
@@ -2080,7 +2082,7 @@ static void mt_volfineup(
 
 static void mt_volfinedn(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'BX (x = volume subtract)
 	if(!mt_Counter) {
@@ -2090,7 +2092,7 @@ static void mt_volfinedn(
 
 static void mt_notecut(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'CX (x = counter to cut at)
 	if(mt_Counter == ubArg) {
@@ -2101,7 +2103,7 @@ static void mt_notecut(
 
 static void mt_notedelay(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile struct AudChannel *pChannelReg
+	volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'DX (x = counter to retrigger at)
 	if(mt_Counter == ubArg) {
@@ -2114,7 +2116,7 @@ static void mt_notedelay(
 
 static void mt_patterndelay(
 	UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'EX (x = delay count)
 	if(!mt_Counter && !mt_PattDelTime2) {
@@ -2124,7 +2126,7 @@ static void mt_patterndelay(
 
 static void mt_funk(
 	UBYTE ubArg, tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'FX (x = delay count)
 	if(!mt_Counter) {
@@ -2137,7 +2139,7 @@ static void mt_funk(
 
 static void mt_rts(
 	UNUSED_ARG UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile struct AudChannel *pChannelReg
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// NOP
 }
