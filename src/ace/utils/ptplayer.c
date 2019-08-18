@@ -728,7 +728,13 @@ typedef struct AudChannel tChannelRegs;
  */
 typedef struct _tModVoice {
 	UWORD uwNote;
-	UWORD uwCmd;
+	union {
+		struct {
+			UBYTE ubCmdHi;
+			UBYTE ubCmdLo;
+		};
+		UWORD uwCmd;
+	};
 } tModVoice;
 
 typedef struct _tChannelStatus {
@@ -785,10 +791,15 @@ typedef void (*tEFn)(
 	volatile tChannelRegs *pChannelReg
 );
 
+typedef void (*tPreFx)(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+);
+
 static const tFx fx_tab[16];
 static const tFx blmorefx_tab[16];
 static const tEFn ecmd_tab[16];
 static const tEFn blecmd_tab[16];
+static const tPreFx prefx_tab[16];
 
 static void blocked_e_cmds(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
@@ -861,6 +872,16 @@ void moreBlockedFx(
 	blmorefx_tab[uwCmd >> 8](uwCmd, pChannelData, pChannelReg);
 }
 
+static void set_finetune(void) {
+	// TODO: implement
+}
+
+static void checkmorefx(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+) {
+	// TODO: implement
+}
+
 static void mt_playvoice(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg,
 	tModVoice *pVoice
@@ -884,23 +905,69 @@ static void mt_playvoice(
 		pChannelData->n_sfxpri = 0;
 	}
 	// n_note/cmd: any note or cmd set?
-	if(pChannelData->n_note) {
+	if(!pChannelData->n_note && !pChannelData->n_cmd && !pChannelData->n_cmdlo) {
 		pChannelReg->ac_per = pChannelData->n_period;
 	}
 	pChannelData->n_note = pVoice->uwNote;
-	pChannelData->n_cmd = pVoice->uwCmd >> 8;
-	pChannelData->n_cmdlo = pVoice->uwCmd & 0xFF;
+	pChannelData->n_cmd = pVoice->ubCmdHi;
+	pChannelData->n_cmdlo = pVoice->ubCmdLo;
 
-	UWORD d5 = (pChannelData->n_cmd & 0x000F) * 2; // cmd * 2
-	// cmd argument in MSW
-	ULONG d4 = (pChannelData->n_cmd & 0x00FF) << 16;
-	// for checking E-cmd in LSW
-	d4 |= pChannelData->n_cmd & 0x0FF0;
+	UWORD uwCmd = (pChannelData->n_cmd & 0x000F);
+	UWORD uwCmdArg = pVoice->ubCmdLo;
+	UWORD uwMaskedCmdE = pVoice->uwCmd & 0x0FF0;
 
-	// TODO: implement rest
-	// swap & stuff
-
+	// Get sample start address - BA is sample number
 	// A...B... -> ......BA
+	UWORD uwD0 = ((pVoice->uwNote & 0xF000) >> 8) | ((pVoice->ubCmdHi & 0xF) >> 4);
+	if(uwD0) {
+
+		UWORD *pSampleStart = mt_SampleStarts[uwD0-1];
+
+		// Read length, volume and repeat from sample info table
+		tModSampleHeader *pSampleDef = &mt_mod->pSamples[uwD0];
+		uwD0 = pSampleDef->uwLength;
+		if(!uwD0) {
+			// Use the first two bytes from the first sample for empty samples
+			pSampleStart = mt_SampleStarts[0];
+			uwD0 = 1;
+		}
+		pChannelData->n_start = pSampleStart;
+		pChannelData->n_reallength = uwD0;
+
+		// Determine period table from fine-tune parameter
+		UBYTE ubNibble = pSampleDef->ubNibble; // d3
+		UWORD *pPeriodTable = mt_PeriodTables[ubNibble];
+		pChannelData->n_pertab = pPeriodTable;
+		pChannelData->n_minusft = (ubNibble >= 16);
+
+		pChannelData->n_volume = pSampleDef->ubVolume;
+		if(!pSampleDef->uwRepeatOffs) {
+			pChannelData->n_looped = 0;
+			pChannelData->n_replen = pSampleDef->uwRepeatLength;
+		}
+		else {
+			// Set repeat
+			pChannelData->n_looped = 1;
+			pChannelData->n_replen = pSampleDef->uwRepeatLength;
+			uwD0 = pSampleDef->uwRepeatLength + ubNibble * 2;
+			pSampleStart += pSampleDef->uwRepeatLength;
+		}
+
+		// set_loop:
+		pChannelData->n_length = uwD0;
+		pChannelData->n_loopstart = pSampleStart;
+		pChannelData->n_wavestart = (UBYTE*)pSampleStart;
+		pChannelReg->ac_vol = mt_MasterVolTab[pSampleDef->ubVolume];
+	}
+
+	// set_regs:
+	if(!pVoice->uwNote) {
+		checkmorefx(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice);
+	}
+	if(uwMaskedCmdE == 0x0E50) {
+		set_finetune();
+	}
+	prefx_tab[uwCmd](uwCmd, uwCmdArg, uwMaskedCmdE, pVoice);
 }
 
 static void mt_updatefunk(tChannelStatus *pChannelData) {
@@ -2165,19 +2232,37 @@ static const tEFn ecmd_tab[16] = {
 
 static const tEFn blecmd_tab[16] = {
 	mt_filter,
-	mt_rts,
-	mt_rts,
+	mt_rts, mt_rts,
 	mt_glissctrl,
 	mt_vibratoctrl,
 	mt_finetune,
 	mt_jumploop,
 	mt_tremoctrl,
 	mt_e8,
-	mt_rts,
-	mt_rts,
-	mt_rts,
-	mt_rts,
-	mt_rts,
-	mt_patterndelay,
-	mt_rts
+	mt_rts, mt_rts, mt_rts, mt_rts, mt_rts
+};
+
+static void set_period(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+) {
+	// TODO: implement
+}
+
+static void set_toneporta(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+) {
+	// TODO: implement
+}
+
+static void set_sampleoffset(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+) {
+	// TODO: implement
+}
+
+static const tPreFx prefx_tab[16] = {
+	set_period,
+	[3] = set_toneporta,
+	[5] = set_toneporta,
+	[9] = set_sampleoffset
 };
