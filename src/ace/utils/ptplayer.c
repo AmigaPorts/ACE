@@ -749,7 +749,7 @@ typedef struct _tChannelStatus {
 	UWORD n_volume;
 	UWORD *n_pertab; ///< Period table, used in arpeggio
 	UWORD n_dmabit;
-	UWORD n_noteoff;
+	UWORD n_noteoff; ///< TODO Later: convert it from byte offs to word offs (div by 2)
 	UWORD n_toneportspeed;
 	UWORD n_wantedperiod;
 	UWORD n_pattpos;
@@ -796,6 +796,7 @@ typedef void (*tPreFx)(
 );
 
 static const tFx fx_tab[16];
+static const tFx morefx_tab[16];
 static const tFx blmorefx_tab[16];
 static const tEFn ecmd_tab[16];
 static const tEFn blecmd_tab[16];
@@ -804,6 +805,11 @@ static const tPreFx prefx_tab[16];
 static void blocked_e_cmds(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
+);
+
+static void set_finetune(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 );
 
 UBYTE mt_MusicChannels = 0;
@@ -872,14 +878,30 @@ void moreBlockedFx(
 	blmorefx_tab[uwCmd >> 8](uwCmd, pChannelData, pChannelReg);
 }
 
-static void set_finetune(void) {
-	// TODO: implement
+static void mt_updatefunk(tChannelStatus *pChannelData) {
+	UBYTE ubVal = mt_FunkTable[pChannelData->n_funk];
+	pChannelData->n_funkoffset += ubVal;
+	if(pChannelData->n_funkoffset > 0) {
+		return;
+	}
+	pChannelData->n_funkoffset = 0;
+	UBYTE *pOffs = (UBYTE*)&pChannelData->n_loopstart[pChannelData->n_replen];
+	UBYTE *pWaveStart = &pChannelData->n_wavestart[1];
+	if(pWaveStart >= pOffs) {
+		pWaveStart = pOffs;
+	}
+	pChannelData->n_wavestart = pWaveStart;
+	*pWaveStart = ~*pWaveStart;
 }
 
 static void checkmorefx(
-	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+	UWORD uwCmd, UWORD uwCmdArg,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	// TODO: implement
+	if(pChannelData->n_funk) {
+		mt_updatefunk(pChannelData);
+	}
+	morefx_tab[uwCmd](uwCmdArg, pChannelData, pChannelReg);
 }
 
 static void mt_playvoice(
@@ -962,28 +984,12 @@ static void mt_playvoice(
 
 	// set_regs:
 	if(!pVoice->uwNote) {
-		checkmorefx(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice);
+		checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 	}
 	if(uwMaskedCmdE == 0x0E50) {
-		set_finetune();
+		set_finetune(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 	}
 	prefx_tab[uwCmd](uwCmd, uwCmdArg, uwMaskedCmdE, pVoice);
-}
-
-static void mt_updatefunk(tChannelStatus *pChannelData) {
-	UBYTE ubVal = mt_FunkTable[pChannelData->n_funk];
-	pChannelData->n_funkoffset += ubVal;
-	if(pChannelData->n_funkoffset > 0) {
-		return;
-	}
-	pChannelData->n_funkoffset = 0;
-	UBYTE *pOffs = (UBYTE*)&pChannelData->n_loopstart[pChannelData->n_replen];
-	UBYTE *pWaveStart = &pChannelData->n_wavestart[1];
-	if(pWaveStart >= pOffs) {
-		pWaveStart = pOffs;
-	}
-	pChannelData->n_wavestart = pWaveStart;
-	*pWaveStart = ~*pWaveStart;
 }
 
 static void mt_checkfx(
@@ -1972,23 +1978,40 @@ static void mt_setspeed(
 	}
 }
 
+static void mt_pernop(
+	UNUSED_ARG UBYTE ubArgs,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+) {
+	// just set the current period
+	pChannelReg->ac_per = pChannelData->n_period;
+}
+
+static void mt_volchange(
+	UBYTE ubNewVolume,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+) {
+	// cmd C x y (xy = new volume)
+	if(ubNewVolume > 64) {
+		ubNewVolume = 64;
+	}
+	pChannelReg->ac_vol = mt_MasterVolTab[ubNewVolume];
+}
+
 static const tFx blmorefx_tab[16] = {
 	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_nop,
-	mt_posjump, // 0xB
-	mt_nop,
-	mt_patternbrk, // 0xD
-	blocked_e_cmds,
-	mt_setspeed, // 0xF
+	[11] = mt_posjump, // 0xB
+	[13] = mt_patternbrk, // 0xD
+	[14] = blocked_e_cmds,
+	[15] = mt_setspeed, // 0xF
+};
+
+static const tFx morefx_tab[16] = {
+	mt_pernop,
+	[11] = mt_posjump,
+	[12] = mt_volchange,
+	[13] = mt_patternbrk,
+	[14] = mt_e_cmds,
+	[15] = mt_setspeed
 };
 
 //----------------------------------------------------------------- E CMDS TABLE
@@ -2243,18 +2266,78 @@ static const tEFn blecmd_tab[16] = {
 };
 
 static void set_period(
-	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	// TODO: implement
+	// Find nearest period for a note value, then apply finetuning
+	UWORD uwNote = pVoice->uwNote & 0xFFF;
+	UBYTE ubPeriodPos;
+	for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
+		if (uwNote >= mt_PeriodTables[0][ubPeriodPos]) {
+			break;
+		}
+		++ubPeriodPos;
+	}
+
+	// Apply finetuning, set period and note-offset
+	UWORD uwPeriod = pChannelData->n_pertab[ubPeriodPos];
+	pChannelData->n_period = uwPeriod;
+	pChannelData->n_noteoff = ubPeriodPos * 2; // TODO later: convert to word offs (div by 2)
+
+	// Check for notedelay
+	if(uwMaskedCmdE != 0xED) {
+		// Disable DMA
+		g_pCustom->dmacon = pChannelData->n_dmabit;
+
+		if(!BTST(pChannelData->n_vibratoctrl, 2)) {
+			pChannelData->n_vibratopos = 0;
+		}
+		if(!BTST(pChannelData->n_tremoloctrl, 2)) {
+			pChannelData->n_tremolopos = 0;
+		}
+		pChannelReg->ac_ptr = pChannelData->n_start;
+		pChannelReg->ac_len = pChannelData->n_length;
+		pChannelReg->ac_per = uwPeriod;
+		mt_dmaon |= pChannelData->n_dmabit;
+	}
+	checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 }
 
-static void set_toneporta(
-	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+static void set_finetune(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	// TODO: implement
+	UBYTE ubPeriod = pChannelData->n_cmdlo & 0xF;
+	pChannelData->n_pertab = mt_PeriodTables[ubPeriod];
+	pChannelData->n_minusft = ubPeriod >= 16; // TODO can it trigger?
+	set_period(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 }
 
 static void set_sampleoffset(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+) {
+	// cmd 9 x y (xy = offset in 256 bytes)
+	// d4 = xy
+	UWORD ubArg = uwCmdArg;
+	if(!ubArg) {
+		ubArg = pChannelData->n_sampleoffset;
+	}
+	else {
+		pChannelData->n_sampleoffset = ubArg;
+	}
+	UWORD uwLength = ubArg << 7;
+	if(uwLength < pChannelData->n_length) {
+		pChannelData->n_length -= uwLength;
+		pChannelData->n_start += uwLength;
+	}
+	else {
+		pChannelData->n_length = 1;
+	}
+	set_period(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
+}
+
+static void set_toneporta(
 	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
 ) {
 	// TODO: implement
