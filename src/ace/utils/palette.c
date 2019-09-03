@@ -58,20 +58,12 @@ void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel)
 	}
 }
 
-void paletteColorDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorIndex, UBYTE ubLevel) {
+UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
   UBYTE r,g,b;
 
-  const UBYTE ubColorMaxIndex = 31;
-
-  if (ubColorIndex>ubColorMaxIndex)
-  {
-    logWrite("paletteColorDim: Color index out of range: %u (range 0-%u)\n",ubColorIndex,ubColorMaxIndex);
-    return ;
-  }
-
-  r = (pSource[ubColorIndex] >> 8) & 0xF;
-  g = (pSource[ubColorIndex] >> 4) & 0xF;
-  b = (pSource[ubColorIndex])      & 0xF;
+  r = (uwFullColor >> 8) & 0xF;
+  g = (uwFullColor >> 4) & 0xF;
+  b = (uwFullColor)      & 0xF;
 
   // Dim color
   r = ((r * ubLevel)/15) & 0xF;
@@ -79,7 +71,7 @@ void paletteColorDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorIndex, UBYTE ubL
   b = ((b * ubLevel)/15) & 0xF;
 
   // Output
-  pDest[ubColorIndex] = (r << 8) | (g << 4) | b;
+  return (r << 8) | (g << 4) | b;
 }
 
 void paletteDump(UWORD *pPalette, FUBYTE fubColorCnt, char *szPath) {
