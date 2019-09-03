@@ -49,13 +49,11 @@ void paletteLoadFromMem(const UBYTE *pData , UWORD *pPalette, UBYTE ubMaxLength)
 void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel);
 
 /**
- *  @brief Dims a single color from the palette palette to given brightness level.
- *  @param pSource      Pointer to source palette.
- *  @param pDest        Pointer to destination palette. May be same as pSource.
- *  @param ubColorIndex Index of the color (from 0 to 31) in palette.
+ *  @brief Dims a single input color to given brightness level.
+ *  @param uwFullColor Full color used as a base to calculate percentage.
  *  @param ubLevel      Brightness level - 15 for no dim, 0 for total blackness.
  */
-void paletteColorDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorIndex, UBYTE ubLevel);
+UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
 
 void paletteDump(UWORD *pPalette, FUBYTE fubColorCnt, char *szPath);
 
