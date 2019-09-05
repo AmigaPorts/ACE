@@ -34,7 +34,7 @@ void paletteLoadFromMem(const UBYTE* pData, UWORD *pPalette, UBYTE ubMaxLength) 
 	);
 
 	UBYTE ubPaletteLength = pData[0];
-	memcpy(pPalette, &pData[1], MIN(ubMaxLength, sizeof(UWORD) * ubPaletteLength));
+	memcpy(pPalette, &pData[1], MIN( sizeof(UWORD) * ubMaxLength, sizeof(UWORD) * ubPaletteLength));
 
 	logBlockEnd("paletteLoadFromMem()");
 }
