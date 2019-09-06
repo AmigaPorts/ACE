@@ -204,6 +204,13 @@ void vPortDestroy(tVPort *pVPort);
  */
 void vPortWaitForEnd(tVPort *pVPort);
 
+/**
+ * @brief Processes all managers of given VPort.
+ *
+ * @param pVPort VPort of which managers should be processed.
+ */
+void vPortProcessManagers(tVPort *pVPort);
+
 /*=========================== Viewport manager functions =====================*/
 
 /**
@@ -241,12 +248,6 @@ tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId);
 struct UCopList *vPortAddCopperBlock(tVPort *pVPort, UWORD uwLength);
 
 void vPortRmCopperBlock(tVPort *pVPort, struct UCopList *pUCopList);
-
-/*=========================== View fade functions ============================*/
-
-void extViewFadeOut(tView *pView);
-
-void extViewFadeIn(tView *pView);
 
 #ifdef __cplusplus
 }

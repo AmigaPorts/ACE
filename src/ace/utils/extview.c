@@ -71,16 +71,18 @@ void viewDestroy(tView *pView) {
 	logBlockEnd("viewDestroy()");
 }
 
+void vPortProcessManagers(tVPort *pVPort) {
+	tVpManager *pManager = pVPort->pFirstManager;
+	while(pManager) {
+		pManager->process(pManager);
+		pManager = pManager->pNext;
+	}
+}
+
 void viewProcessManagers(tView *pView) {
-	tVPort *pVPort;
-	tVpManager *pManager;
-	pVPort = pView->pFirstVPort;
+	tVPort *pVPort = pView->pFirstVPort;
 	while(pVPort) {
-		pManager = pVPort->pFirstManager;
-		while(pManager) {
-			pManager->process(pManager);
-			pManager = pManager->pNext;
-		}
+		vPortProcessManagers(pVPort);
 		pVPort = pVPort->pNext;
 	}
 }
@@ -365,82 +367,3 @@ tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {
 	}
 	return 0;
 }
-
-/*
-void extViewFadeOut(tExtView *pExtView) {
-	tExtVPort *pVPort;
-	BYTE bFadeStep;
-	UBYTE ubColorIdx;
-	UWORD pTmpPalette[32]; // TODO: view bpp aware
-	UBYTE ubR, ubG, ubB;
-
-	for (bFadeStep = 15; bFadeStep >= 0; --bFadeStep) {
-		pVPort = (tExtVPort*)pExtView->sView.ViewPort;
-		while(pVPort) {
-			for (ubColorIdx = 0; ubColorIdx != 32; ++ubColorIdx) {
-				// Wyluskanie skladowych
-				ubR = (pVPort->pPalette[ubColorIdx] >> 8) & 0xF;
-				ubG = (pVPort->pPalette[ubColorIdx] >> 4) & 0xF;
-				ubB = (pVPort->pPalette[ubColorIdx] >> 0) & 0xF;
-				// Przemnozenie i sciecie skladowych
-				ubR = ((ubR * bFadeStep) >> 4) & 0xF;
-				ubG = ((ubG * bFadeStep) >> 4) & 0xF;
-				ubB = ((ubB * bFadeStep) >> 4) & 0xF;
-				// Zlozenie w kolor
-				pTmpPalette[ubColorIdx] = (ubR << 8) + (ubG << 4) + (ubB << 0);
-			}
-			LoadRGB4(&pVPort->sVPort, pTmpPalette, pVPort->sVPort.ColorMap->Count);
-			pVPort = (tExtVPort*)pVPort->sVPort.Next;
-		}
-		WaitTOF();
-	}
-
-	// Zapisz trwale palete aktualnego bufora
-	// MakeVPort(pExtView->pView, pExtView->pMainViewPort);
-	// MrgCop(pExtView->pView);
-
-	// Zaktualizuj palete drugiego bufora
-	// swapScreenBuffers(pExtView);
-	// LoadRGB4(pExtView->pMainViewPort, pTmpPalette, 1 << WINDOW_SCREEN_BPP);
-	// MakeVPort(pExtView->pView, pExtView->pMainViewPort);
-	// MrgCop(pExtView->pView);
-
-	// Wroc do bufora wyjsciowego
-	// swapScreenBuffers(pExtView);
-}
-
-void extViewFadeIn(tExtView *pExtView) {
-	tExtVPort *pVPort;
-	BYTE bFadeStep;
-	UBYTE ubColorIdx;
-	UWORD pTmpPalette[32]; // TODO: view bpp aware
-	UBYTE ubR, ubG, ubB;
-
-	for (bFadeStep = 0; bFadeStep <= 15; ++bFadeStep) {
-		pVPort = (tExtVPort*)pExtView->sView.ViewPort;
-		while(pVPort) {
-			for(ubColorIdx = 0; ubColorIdx != 32; ++ubColorIdx) {
-				// Wyluskanie skladowych
-				ubR = (pVPort->pPalette[ubColorIdx] >> 8) & 0xF;
-				ubG = (pVPort->pPalette[ubColorIdx] >> 4) & 0xF;
-				ubB = (pVPort->pPalette[ubColorIdx] >> 0) & 0xF;
-				// Przemnozenie i sciecie skladowych
-				ubR = ((ubR * bFadeStep) >> 4) & 0xF;
-				ubG = ((ubG * bFadeStep) >> 4) & 0xF;
-				ubB = ((ubB * bFadeStep) >> 4) & 0xF;
-				// Zlozenie w kolor
-				pTmpPalette[ubColorIdx] = (ubR << 8) + (ubG << 4) + (ubB << 0);
-			}
-			LoadRGB4(&pVPort->sVPort, pTmpPalette, pVPort->sVPort.ColorMap->Count);
-			pVPort = (tExtVPort*)pVPort->sVPort.Next;
-		}
-		WaitTOF();
-	}
-
-	WaitTOF();
-	pVPort = (tExtVPort*)pExtView->sView.ViewPort;
-	while(pVPort) {
-		LoadRGB4(&pVPort->sVPort, pVPort->pPalette, pVPort->sVPort.ColorMap->Count);
-		pVPort = (tExtVPort*)pVPort->sVPort.Next;
-	}
-}*/
