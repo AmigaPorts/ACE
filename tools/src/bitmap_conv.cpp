@@ -151,8 +151,10 @@ int main(int lArgCount, const char *pArgs[])
 				PaletteMask.m_vColors.push_back(MaskColor);
 				PaletteMask.m_vColors.push_back(tRgb(0));
 			}
-			const auto Mask = In.filterColors(PaletteMask, tRgb(0));
-			tPlanarBitmap(Mask, PaletteMask).toBm(szMask, isWriteInterleaved);
+			if(isEnabledOutputMask) {
+				const auto Mask = In.filterColors(PaletteMask, tRgb(0));
+				tPlanarBitmap(Mask, PaletteMask).toBm(szMask, isWriteInterleaved);
+			}
 		}
 		tPlanarBitmap(In, Palette, PaletteMask).toBm(szOutput, isWriteInterleaved);
 	}
