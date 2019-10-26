@@ -124,7 +124,10 @@ void bitmapLoadFromFile(
 
 	// Interleaved check
 	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
-		logWrite("ERR: Interleaved flag conflict\n");
+		logWrite(
+			"ERR: Interleaved flag conflict (file: %d, bm: %hhu)\n",
+			!!(ubSrcFlags & BITMAP_INTERLEAVED), bitmapIsInterleaved(pBitMap)
+		);
 		fileClose(pFile);
 		logBlockEnd("bitmapLoadFromFile()");
 		systemUnuse();
