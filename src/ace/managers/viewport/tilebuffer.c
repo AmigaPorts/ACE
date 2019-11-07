@@ -18,6 +18,18 @@ static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 
 #ifdef AMIGA
 
+static void tileBufferResetRedrawState(tRedrawState *pState) {
+	memset(&pState->sMarginL, 0, sizeof(tMarginState));
+	memset(&pState->sMarginR, 0, sizeof(tMarginState));
+	memset(&pState->sMarginU, 0, sizeof(tMarginState));
+	memset(&pState->sMarginD, 0, sizeof(tMarginState));
+	pState->pMarginX         = &pState->sMarginR;
+	pState->pMarginOppositeX = &pState->sMarginL;
+	pState->pMarginY         = &pState->sMarginD;
+	pState->pMarginOppositeY = &pState->sMarginU;
+	pState->ubPendingCount = 0;
+}
+
 static void tileBufferQueueAdd(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 ) {
@@ -192,20 +204,8 @@ void tileBufferReset(
 		}
 	}
 
-	// Reset margin redraw structs
-	UBYTE ubTileShift = pManager->ubTileShift;
-	memset(&pManager->pRedrawStates[0], 0, sizeof(tRedrawState));
-	memset(&pManager->pRedrawStates[1], 0, sizeof(tRedrawState));
-	pManager->pRedrawStates[0].pMarginX         = &pManager->pRedrawStates[0].sMarginR;
-	pManager->pRedrawStates[0].pMarginOppositeX = &pManager->pRedrawStates[0].sMarginL;
-	pManager->pRedrawStates[0].pMarginY         = &pManager->pRedrawStates[0].sMarginD;
-	pManager->pRedrawStates[0].pMarginOppositeY = &pManager->pRedrawStates[0].sMarginU;
-	pManager->pRedrawStates[1].pMarginX         = &pManager->pRedrawStates[1].sMarginR;
-	pManager->pRedrawStates[1].pMarginOppositeX = &pManager->pRedrawStates[1].sMarginL;
-	pManager->pRedrawStates[1].pMarginY         = &pManager->pRedrawStates[1].sMarginD;
-	pManager->pRedrawStates[1].pMarginOppositeY = &pManager->pRedrawStates[1].sMarginU;
-
 	// Reset scrollManager, create if not exists
+	UBYTE ubTileShift = pManager->ubTileShift;
 	pManager->pScroll = (tScrollBufferManager*)vPortGetManager(
 		pManager->sCommon.pVPort, VPM_SCROLL
 	);
@@ -242,6 +242,10 @@ void tileBufferReset(
 		"Margin sizes: %hhu,%hhu\n",
 		pManager->ubMarginXLength, pManager->ubMarginYLength
 	);
+
+	// Reset margin redraw structs
+	tileBufferResetRedrawState(&pManager->pRedrawStates[0]);
+	tileBufferResetRedrawState(&pManager->pRedrawStates[1]);
 
 	logBlockEnd("tileBufferReset()");
 }
@@ -406,29 +410,30 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	pManager->ubStateIdx = !pManager->ubStateIdx;
 }
 
-void tileBufferInitialDraw(const tTileBufferManager *pManager) {
-	logBlockBegin("tileBufferInitialDraw(pManager: %p)", pManager);
+void tileBufferRedrawAll(tTileBufferManager *pManager) {
+	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
+
+	// Reset margin redraw structs as we're redrawing everything anyway
+	tileBufferResetRedrawState(&pManager->pRedrawStates[0]);
+	tileBufferResetRedrawState(&pManager->pRedrawStates[1]);
+
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
 
-	WORD wStartY = MAX(
-		0, (pManager->pCamera->uPos.uwY >> ubTileShift) -1
-	);
-	WORD wStartX = MAX(
-		0, (pManager->pCamera->uPos.uwX >> ubTileShift) -1
-	);
+	WORD wStartX = MAX(0, (pManager->pCamera->uPos.uwX >> ubTileShift) -1);
+	WORD wStartY = MAX(0, (pManager->pCamera->uPos.uwY >> ubTileShift) -1);
 	// One of bounds may be smaller than viewport + margin size
 	UWORD uwEndX = MIN(
 		pManager->uTileBounds.uwX,
-		pManager->uwMarginedWidth >> ubTileShift
+		wStartX + (pManager->uwMarginedWidth >> ubTileShift)
 	);
 	UWORD uwEndY = MIN(
 		pManager->uTileBounds.uwY,
-		pManager->uwMarginedHeight >> ubTileShift
+		wStartY + (pManager->uwMarginedHeight >> ubTileShift)
 	);
 
 	UWORD uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
-		for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
+	for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
 		UBYTE ubAddY =      (wStartX << ubTileShift) >> pManager->ubWidthShift;
 		UWORD uwTileOffsX = (wStartX << ubTileShift) & (pManager->uwMarginedWidth-1);
 
@@ -455,7 +460,7 @@ void tileBufferInitialDraw(const tTileBufferManager *pManager) {
 	scrollBufferProcess(pManager->pScroll);
 	scrollBufferProcess(pManager->pScroll);
 
-	logBlockEnd("tileBufferInitialDraw()");
+	logBlockEnd("tileBufferRedrawAll()");
 }
 
 void tileBufferDrawTile(
