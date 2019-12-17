@@ -1,5 +1,7 @@
 # ACE - Amiga C Engine
 
+[![Documentation](https://codedocs.xyz/AmigaPorts/ACE.svg)](https://codedocs.xyz/AmigaPorts/ACE/)
+
 Game engine written totally in C for classic Amiga hardware. Lightweight, flexible and hackable. Coded mostly for bare HW, OS function usage is receeding. Nonetheless code is OS-friendly, allowing running from and exiting to Workbench gracefully.
 
 Current feature set is OCS-oriented, although produced code should work on AGA just fine.
