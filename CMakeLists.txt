@@ -18,8 +18,6 @@ if(NOT AMIGA)
 	message(SEND_ERROR "This project only compiles for Amiga")
 endif()
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAMIGA -Wall -Wextra -fomit-frame-pointer")
 file(GLOB_RECURSE SOURCES src/*.c)
 file(GLOB HEADERS_ACE include/ace/*.h)
 file(GLOB HEADERS_ACE_GENERIC include/ace/generic/*.h)
@@ -33,19 +31,20 @@ set(
 	${HEADERS_ACE_MANAGERS} ${HEADERS_ACE_MANAGERS_VP} ${HEADERS_FIXMATH}
 )
 
-if(ACE_DEBUG)
-	# Add ACE debugging features to release build
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACE_DEBUG")
-endif()
-
-include_directories(
-	${PROJECT_SOURCE_DIR}/include
-)
-
 # Linux/other UNIX get a lower-case binary name
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
 add_library(${TARGET_NAME} ${SOURCES} ${HEADERS})
-target_link_libraries(${TARGET_NAME})
+
+set(CMAKE_C_STANDARD 11)
+target_compile_definitions(${TARGET_NAME} PUBLIC AMIGA)
+target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra)
+target_compile_options(${TARGET_NAME} PUBLIC -fomit-frame-pointer)
+if(ACE_DEBUG)
+	# Add ACE debugging features to release build
+	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG)
+endif()
+
+target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 #----------------------------------------------------------------------- INSTALL
 
