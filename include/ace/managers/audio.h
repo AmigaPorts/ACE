@@ -69,10 +69,10 @@ tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod);
  * @brief Creates sample from file, assigning to it specified playback rate.
  *
  * @param szPath Path to sample file.
- * @param uwSampleRateKhz Playback rate to be assigned to sample, in kHz.
+ * @param uwSampleRateHz Playback rate to be assigned to sample, in Hz.
  * @return tSample* Pointer to newly allocated sample, 0 on fail.
  */
-tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz);
+tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateHz);
 
 /**
  * @brief Destroys sample, freeing all associated memory.

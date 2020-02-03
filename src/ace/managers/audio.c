@@ -81,11 +81,11 @@ tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod) {
 	return pSample;
 }
 
-tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz) {
+tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateHz) {
 	systemUse();
 	logBlockBegin(
-		"sampleCreateFromFile(szPath: '%s', uwSampleRateKhz: %hu)",
-		szPath, uwSampleRateKhz
+		"sampleCreateFromFile(szPath: '%s', uwSampleRateHz: %hu)",
+		szPath, uwSampleRateHz
 	);
 	LONG lLength = fileGetSize(szPath);
 	if(lLength <= 0) {
@@ -94,7 +94,7 @@ tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateKhz) {
 		return 0;
 	}
 	// NOTE: 3546895 is for PAL, for NTSC use 3579545
-	UWORD uwPeriod = (3546895 + uwSampleRateKhz/2) / uwSampleRateKhz;
+	UWORD uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
 	tSample *pSample = sampleCreate(lLength, uwPeriod);
 	FILE *pSampleFile = fileOpen(szPath, "rb");
 	fileRead(pSampleFile, pSample->pData, lLength);
