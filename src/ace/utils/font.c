@@ -158,21 +158,10 @@ tTextBitMap *fontCreateTextBitMapFromStr(const tFont *pFont, const char *szText)
 	logBlockBegin(
 		"fontCreateTextBitMapFromStr(pFont: %p, szText: '%s')", pFont, szText
 	);
-	UWORD uwWidth = 0;
-	UWORD uwMaxWidth = 0;
-	UWORD uwHeight = pFont->uwHeight;
-	// Text width measurement
-	for (const char *p = szText; *p; ++p) {
-		if(*p == '\n') {
-			uwHeight += pFont->uwHeight;
-			uwWidth = 0;
-		}
-		else {
-			uwWidth += fontGlyphWidth(pFont, *p) + 1;
-			uwMaxWidth = MAX(uwMaxWidth, uwWidth);
-		}
-	}
-	tTextBitMap *pTextBitMap = fontCreateTextBitMap(uwWidth, uwHeight);
+	tUwCoordYX sBounds = fontMeasureText(pFont, szText);
+	// If bitmap is too tight then blitter goes nuts with bltXdat caching when
+	// going into next line of blit
+	tTextBitMap *pTextBitMap = fontCreateTextBitMap(sBounds.uwX + 16, sBounds.uwY);
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	logBlockEnd("fontCreateTextBitMapFromStr()");
 	return pTextBitMap;
