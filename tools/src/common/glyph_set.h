@@ -44,6 +44,8 @@ public:
 
 	bool isOk(void);
 
+	bool remapGlyphs(const std::vector<std::pair<uint32_t, uint32_t>> &vFromTo);
+
 private:
 	struct tBitmapGlyph {
 		uint8_t ubBearing;

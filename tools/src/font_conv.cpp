@@ -3,9 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <map>
+#include <fstream>
 #include "common/logging.h"
 #include "common/glyph_set.h"
 #include "common/fs.h"
+#include "common/json.h"
+#include "common/utf8.h"
 
 static const std::string s_szDefaultCharset = (
 	" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -41,14 +44,45 @@ void printUsage(const std::string &szAppName) {
 	print("\tfnt\tACE font file\n");
 	print("extraOpts:\n");
 	// -chars
-	print("\t-chars \"AB D\"\tInclude only 'A', 'B', ' ' and 'D' chars in font. Only for TTF input.\n");
-	print("\t\t\tUse backslash (\\) to escape quote (\") char inside charset specifier\n");
-	print("\t\t\tDefault charset is: \"{}\"\n", s_szDefaultCharset);
+	print("\t-chars \"AB D\"\t\tInclude only 'A', 'B', ' ' and 'D' chars in font. Only for TTF input.\n");
+	print("\t\t\t\tUse backslash (\\) to escape quote (\") char inside charset specifier\n");
+	print("\t\t\t\tDefault charset is: \"{}\"\n\n", s_szDefaultCharset);
+	// -charFile
+	print("\t-charfile \"file.txt\"\tInclude chars specified in file.txt.\n");
+	print("\t\t\t\tNewline chars (\\r, \\n) and repeats are omitted.\n\n");
+	// -size
+	print("\t-size 8\t\t\tRasterize font using size of 8pt. Default: 20.\n\n");
 	// -out
 	print("\t-out outPath\tSpecify output path, including file name.\n");
 	print("\t\t\tDefault is same name as input with changed extension\n");
 	// -fc
 	print("\t-fc firstchar\tSpecify first ASCII character idx in ProMotion NG font. Default: 33.");
+}
+
+static uint32_t getCharCodeFromTok(const tJson *pJson, uint16_t uwTok) {
+	uint32_t ulVal = 0;
+	const auto &Token = pJson->pTokens[uwTok];
+	if(Token.type == JSMN_STRING) {
+		// read unicode char and return its codepoint
+		uint32_t ulCodepoint, ulState = 0;
+
+		for(auto i = Token.start; i <= Token.end; ++i) {
+			auto CharCode = *reinterpret_cast<const uint8_t*>(&pJson->szData[i]);
+			if (
+				decode(&ulState, &ulCodepoint, CharCode) != UTF8_ACCEPT ||
+				ulCodepoint == '\n' || ulCodepoint == '\r'
+			) {
+				continue;
+			}
+			ulVal = ulCodepoint;
+			break;
+		}
+	}
+	else {
+		// read number as it is in file and return it
+		ulVal = jsonTokToUlong(pJson, uwTok);
+	}
+	return ulVal;
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -58,22 +92,24 @@ int main(int lArgCount, const char *pArgs[])
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	std::string szFontPath = pArgs[1];
 	tFontFormat eOutType = s_mOutType[pArgs[2]];
 
 	// Optional args' default values
-	std::string szCharset = s_szDefaultCharset;
+	std::string szCharset = "";
 	std::string szOutPath = "";
 	uint8_t ubFirstChar = 33;
+	std::string szRemapPath = "";
+	int32_t lSize = -1;
 
 	// Search for optional args
 	for(auto i = ubMandatoryArgCnt+1; i < lArgCount; ++i) {
 		if(pArgs[i] == std::string("-chars") && i < lArgCount - 1) {
 			++i;
-			szCharset = pArgs[i];
+			szCharset += pArgs[i];
 		}
 		else if(pArgs[i] == std::string("-out") && i < lArgCount - 1) {
 			++i;
@@ -91,11 +127,35 @@ int main(int lArgCount, const char *pArgs[])
 				return EXIT_FAILURE;
 			}
 		}
+		else if(pArgs[i] == std::string("-charFile") && i < lArgCount - 1) {
+			++i;
+			auto File = std::ifstream(pArgs[i], std::ios::binary);
+			while(!File.eof()) {
+				char c;
+				File.read(&c, 1);
+				szCharset += c;
+			}
+		}
+		else if(pArgs[i] == std::string("-size") && i < lArgCount - 1) {
+			++i;
+			lSize = std::stol(pArgs[i]);
+		}
+		else if(pArgs[i] == std::string("-remap") && i < lArgCount - 1) {
+			++i;
+			szRemapPath = pArgs[i];
+		}
 		else {
 			nLog::error("Unknown arg or missing value: '{}'", pArgs[i]);
 			printUsage(pArgs[0]);
-			return 1;
+			return EXIT_FAILURE;
 		}
+	}
+
+	if(szCharset.length() == 0) {
+		szCharset = s_szDefaultCharset;
+	}
+	if(lSize < 0) {
+		lSize = 20;
 	}
 
 	// Load glyphs from input file
@@ -106,10 +166,10 @@ int main(int lArgCount, const char *pArgs[])
 		eInType = tFontFormat::TTF;
 	}
 	else if(nFs::isDir(szFontPath)) {
-		mGlyphs = tGlyphSet::fromDir(szFontPath);
-		if(!mGlyphs.isOk()) {
+		Glyphs = tGlyphSet::fromDir(szFontPath);
+		if(!Glyphs.isOk()) {
 			nLog::error("Loading glyphs from dir '{}' failed", szFontPath);
-			return 1;
+			return EXIT_FAILURE;
 		}
 		eInType = tFontFormat::DIR;
 	}
@@ -124,11 +184,32 @@ int main(int lArgCount, const char *pArgs[])
 	}
 	else {
 		nLog::error("Unsupported font source: '{}'", pArgs[1]);
-		return 1;
+		return EXIT_FAILURE;
 	}
 	if(eInType == tFontFormat::INVALID || !mGlyphs.isOk()) {
 		nLog::error("Couldn't read any font glyphs");
-		return 1;
+		return EXIT_FAILURE;
+	}
+
+	// Remap chars accordingly
+	if(!szRemapPath.empty()) {
+		auto *pJson = jsonCreate(szRemapPath.c_str());
+		if(pJson == nullptr) {
+			nLog::error("Couldn't open remap file: '{}'", szRemapPath);
+			return EXIT_FAILURE;
+		}
+		auto TokRemapArray = jsonGetDom(pJson, "remap");
+		auto ElementCount = pJson->pTokens[TokRemapArray].size;
+		std::vector<std::pair<uint32_t, uint32_t>> vFromTo;
+		for(auto i = ElementCount; i--;) {
+			auto TokRemapEntry = jsonGetElementInArray(pJson, TokRemapArray, i);
+			auto TokFrom = jsonGetElementInArray(pJson, TokRemapEntry, 0);
+			auto TokTo = jsonGetElementInArray(pJson, TokRemapEntry, 1);
+			auto From = getCharCodeFromTok(pJson, TokFrom);
+			auto To = getCharCodeFromTok(pJson, TokTo);
+			vFromTo.push_back({std::move(From), std::move(To)});
+		}
+		Glyphs.remapGlyphs(vFromTo);
 	}
 
 	// Determine default output path
@@ -141,14 +222,14 @@ int main(int lArgCount, const char *pArgs[])
 	}
 	if(eInType == eOutType) {
 		nLog::error("Output file type can't be same as input");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	if(eOutType == tFontFormat::DIR) {
 		if(szOutPath == szFontPath) {
 			szOutPath += ".dir";
 		}
-		mGlyphs.toDir(szOutPath);
+		Glyphs.toDir(szOutPath);
 	}
 	else {
 		if(eOutType == tFontFormat::PNG) {
@@ -162,13 +243,13 @@ int main(int lArgCount, const char *pArgs[])
 			if(szOutPath.substr(szOutPath.length() - 4) != ".fnt") {
 				szOutPath += ".fnt";
 			}
-			mGlyphs.toAceFont(szOutPath);
+			Glyphs.toAceFont(szOutPath);
 		}
 		else {
 			nLog::error("Unsupported output type");
-			return 1;
+			return EXIT_FAILURE;
 		}
 	}
 	fmt::print("All done!\n");
-	return 0;
+	return EXIT_SUCCESS;
 }
