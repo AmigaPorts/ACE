@@ -207,6 +207,7 @@ int main(int lArgCount, const char *pArgs[])
 			auto TokTo = jsonGetElementInArray(pJson, TokRemapEntry, 1);
 			auto From = getCharCodeFromTok(pJson, TokFrom);
 			auto To = getCharCodeFromTok(pJson, TokTo);
+			fmt::print("Remapping {} => {}\n", From, To);
 			vFromTo.push_back({std::move(From), std::move(To)});
 		}
 		Glyphs.remapGlyphs(vFromTo);
