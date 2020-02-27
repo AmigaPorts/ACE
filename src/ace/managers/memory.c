@@ -281,3 +281,7 @@ UBYTE memType(const void *pMem) {
 	return MEMF_FAST;
 #endif // AMIGA
 }
+
+ULONG memGetChipSize(void) {
+	return AvailMem(MEMF_CHIP);
+}
