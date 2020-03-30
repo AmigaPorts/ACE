@@ -65,26 +65,26 @@ UBYTE blitIsIdle(void);
 void blitWait(void);
 
 UBYTE blitUnsafeCopy(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask
 );
 
 UBYTE blitSafeCopy(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask,
-	UWORD uwLine, char *szFile
+	UWORD uwLine, const char *szFile
 );
 
 #ifdef ACE_DEBUG
 
 UBYTE _blitCheck(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
-	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UWORD uwLine, char *szFile
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UWORD uwLine, const char *szFile
 );
 
 # define blitCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask) blitSafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask, __LINE__, __FILE__)
@@ -95,16 +95,16 @@ UBYTE _blitCheck(
 #endif
 
 UBYTE blitUnsafeCopyAligned(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight
 );
 
 UBYTE blitSafeCopyAligned(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight,
-	UWORD uwLine, char *szFile
+	UWORD uwLine, const char *szFile
 );
 
 #ifdef ACE_DEBUG
@@ -114,16 +114,16 @@ UBYTE blitSafeCopyAligned(
 #endif
 
 UBYTE blitUnsafeCopyMask(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, UWORD *pMsk
+	WORD wWidth, WORD wHeight, const UWORD *pMsk
 );
 
 UBYTE blitSafeCopyMask(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, UWORD *pMsk,
-	UWORD uwLine, char *szFile
+	WORD wWidth, WORD wHeight, const UWORD *pMsk,
+	UWORD uwLine, const char *szFile
 );
 
 #ifdef ACE_DEBUG
@@ -135,7 +135,7 @@ UBYTE blitSafeCopyMask(
 UBYTE _blitRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UBYTE ubColor,
-	UWORD uwLine, char *szFile
+	UWORD uwLine, const char *szFile
 );
 
 #define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \

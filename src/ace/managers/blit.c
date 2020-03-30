@@ -31,9 +31,9 @@ void blitManagerDestroy(void) {
  * Checks if blit is allowable at coords at given source and destination
  */
 UBYTE _blitCheck(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
-	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UWORD uwLine, char *szFile
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UWORD uwLine, const char *szFile
 ) {
 	WORD wSrcWidth, wSrcHeight, wDstWidth, wDstHeight;
 
@@ -135,7 +135,7 @@ UBYTE blitIsIdle(void) {
  * 	- Rewriting to assembly could speed things up a bit
  */
 UBYTE blitUnsafeCopy(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm, UBYTE ubMask
 ) {
@@ -219,9 +219,9 @@ UBYTE blitUnsafeCopy(
 }
 
 UBYTE blitSafeCopy(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubMinterm, UBYTE ubMask, UWORD uwLine, char *szFile
+	UBYTE ubMinterm, UBYTE ubMask, UWORD uwLine, const char *szFile
 ) {
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
@@ -236,7 +236,7 @@ UBYTE blitSafeCopy(
  * Best for drawing tilemaps
  */
 UBYTE blitUnsafeCopyAligned(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
 	#ifdef AMIGA
@@ -304,9 +304,9 @@ UBYTE blitUnsafeCopyAligned(
 }
 
 UBYTE blitSafeCopyAligned(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UWORD uwLine, char *szFile
+	UWORD uwLine, const char *szFile
 ) {
 	if(!blitCheck(
 		pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile
@@ -326,9 +326,9 @@ UBYTE blitSafeCopyAligned(
  * - mask must have same dimensions as source bitplane
  */
 UBYTE blitUnsafeCopyMask(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, UWORD *pMsk
+	WORD wWidth, WORD wHeight, const UWORD *pMsk
 ) {
 #ifdef AMIGA
 	WORD wDstModulo, wSrcModulo;
@@ -406,9 +406,9 @@ UBYTE blitUnsafeCopyMask(
 }
 
 UBYTE blitSafeCopyMask(
-	tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, UWORD *pMsk, UWORD uwLine, char *szFile
+	WORD wWidth, WORD wHeight, const UWORD *pMsk, UWORD uwLine, const char *szFile
 ) {
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
@@ -427,7 +427,7 @@ UBYTE blitSafeCopyMask(
  */
 UBYTE _blitRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubColor, UWORD uwLine, char *szFile
+	UBYTE ubColor, UWORD uwLine, const char *szFile
 ) {
 	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
