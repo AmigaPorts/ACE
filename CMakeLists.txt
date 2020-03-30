@@ -127,7 +127,6 @@ function(convertBitmaps)
 				list(APPEND extraFlagsPerFile -mf ${maskPath})
 			endif()
 		endif()
-		message(STATUS "cmd: ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlagsPerFile}")
 		add_custom_command(
 			OUTPUT ${outPath} ${maskPath}
 			COMMAND ${ACE_DIR}/tools/bin/bitmap_conv ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlagsPerFile}

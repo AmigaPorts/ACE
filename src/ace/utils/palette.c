@@ -7,7 +7,7 @@
 #include <ace/utils/bitmap.h>
 #include <ace/utils/file.h>
 
-void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
+void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	tFile *pFile;
 	UBYTE ubPaletteLength;
 

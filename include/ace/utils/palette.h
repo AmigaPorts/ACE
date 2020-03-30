@@ -28,7 +28,7 @@ extern "C" {
  *  @param pPalette    Palette destination pointer.
  *  @param ubMaxLength Maximum number of colors in palette.
  */
-void paletteLoad(char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
+void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
 
 /**
  *  @brief Loads palette from supplied .plt stored in memory to given address.
