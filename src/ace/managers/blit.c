@@ -92,6 +92,14 @@ UBYTE _blitCheck(
 		);
 		return 0;
 	}
+	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
+		if(wHeight * pSrc->Depth > 1024) {
+			logWrite(
+				"ERR: Blit too big for OCS: height %hd, depth: %hhu, interleaved: %d\n",
+				wHeight, pSrc->Depth, wHeight * pSrc->Depth
+			);
+		}
+	}
 
 	return 1;
 }
@@ -192,7 +200,7 @@ UBYTE blitUnsafeCopy(
 
 	ubMask &= 0xFF >> (8- (pSrc->Depth < pDst->Depth? pSrc->Depth: pDst->Depth));
 	ubPlane = 0;
-	blitWait();
+	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltcon0 = uwBltCon0;
 	g_pCustom->bltcon1 = uwBltCon1;
 	g_pCustom->bltafwm = uwFirstMask;
@@ -254,7 +262,7 @@ UBYTE blitUnsafeCopyAligned(
 
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		wHeight *= pSrc->Depth;
-		blitWait();
+		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
 		g_pCustom->bltafwm = 0xFFFF;
@@ -283,7 +291,7 @@ UBYTE blitUnsafeCopyAligned(
 			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
 		}
 
-		blitWait();
+		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
 		g_pCustom->bltafwm = 0xFFFF;
@@ -352,7 +360,7 @@ UBYTE blitUnsafeCopyMask(
 		wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
 		wHeight *= pSrc->Depth;
 
-		blitWait();
+		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = uwBltCon1;
 		g_pCustom->bltafwm = uwFirstMask;
@@ -381,7 +389,7 @@ UBYTE blitUnsafeCopyMask(
 #endif // ACE_DEBUG
 		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
-		blitWait();
+		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = uwBltCon1;
 		g_pCustom->bltafwm = uwFirstMask;
@@ -453,7 +461,7 @@ UBYTE _blitRect(
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 	uwBltCon0 = USEC|USED;
 
-	blitWait();
+	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltcon1 = uwBltCon1;
 	g_pCustom->bltafwm = uwFirstMask;
 	g_pCustom->bltalwm = uwLastMask;
@@ -531,7 +539,7 @@ void blitLine(
 	UWORD uwBltSize = (wDx << 6) + 66;
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
-	blitWait();
+	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltafwm = -1;
 	g_pCustom->bltalwm = -1;
 	g_pCustom->bltadat = 0x8000;
