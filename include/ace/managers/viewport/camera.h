@@ -19,7 +19,7 @@ extern "C" {
 #include <ace/types.h>
 #include <ace/utils/extview.h>
 
-typedef struct {
+typedef struct _tCameraManager {
 	tVpManager sCommon;
 	tUwCoordYX uPos;        ///< Current camera pos
 	tUwCoordYX uLastPos[2]; ///< Previous camera pos

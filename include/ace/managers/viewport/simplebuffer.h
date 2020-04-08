@@ -33,7 +33,7 @@ extern "C" {
 // instructions, specified in copper instruction count since beginning.
 #define TAG_SIMPLEBUFFER_COPLIST_OFFSET (TAG_USER|6)
 
-typedef struct {
+typedef struct _tSimpleBufferManager {
 	tVpManager sCommon;
 	tCameraManager *pCamera;
 	// scroll-specific fields

@@ -55,7 +55,7 @@ extern "C" {
 #define JOY_USED 1
 #define JOY_ACTIVE 2
 
-typedef struct {
+typedef struct _tJoyManager {
 	UBYTE pStates[20];
 } tJoyManager;
 

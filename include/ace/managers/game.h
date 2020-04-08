@@ -29,7 +29,7 @@ typedef struct _tGameState {
 	struct _tGameState *pPrev;
 } tGameState;
 
-typedef struct {
+typedef struct _tGameManager {
 	UBYTE ubStateCount;
 	UBYTE isRunning;
 	tGameState *pStateFirst;

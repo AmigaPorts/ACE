@@ -49,7 +49,7 @@ extern "C" {
 
 /* Types */
 
-typedef struct {
+typedef struct _tScrollBufferManager {
 	tVpManager sCommon;
 	tCameraManager *pCamera; ///< Quick ref to camera
 

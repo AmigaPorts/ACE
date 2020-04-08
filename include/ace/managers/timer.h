@@ -27,7 +27,7 @@ extern "C" {
  * Game pause should be implemented as setting ubPause to 1
  * and still calling timerProcess during pause loop
  */
-typedef struct {
+typedef struct _tTimerManager {
 	ULONG ulGameTicks;             /// Actual ticks passed in game
 	ULONG ulLastTime;              /// Internal - used to update ulGameTicks
 	volatile UWORD uwFrameCounter; /// Incremented by VBlank interrupt

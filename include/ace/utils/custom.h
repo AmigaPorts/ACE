@@ -25,7 +25,7 @@ typedef struct Custom tCustom;
  * Setting fields as volatile is mandatory for VBCC 0.9d as setting pointer
  * to volatile struct was insufficient.
  */
-typedef struct {
+typedef struct _tRayPos {
 	volatile unsigned bfLaced:1;   ///< 1 for interlaced screens
 	volatile unsigned bfUnused:14;
 	volatile unsigned bfPosY:9;    ///< PAL: 0..312, NTSC: 0..?
@@ -33,7 +33,7 @@ typedef struct {
 } tRayPos;
 
 
-typedef struct {
+typedef struct _tCopperUlong {
 	UWORD uwHi; ///< upper WORD
 	UWORD uwLo; ///< lower WORD
 } tCopperUlong;

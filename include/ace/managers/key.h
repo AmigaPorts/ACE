@@ -143,7 +143,7 @@ extern "C" {
 
 /* ******************************************************************** TYPES */
 
-typedef struct {
+typedef struct _tKeyManager {
 	UBYTE pStates[103];
 	UBYTE ubLastKey;
 } tKeyManager;

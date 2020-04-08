@@ -50,7 +50,7 @@ typedef void (*tTileDrawCallback)(
 	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
 );
 
-typedef struct {
+typedef struct _tMarginState {
 	WORD wTilePos; ///< Index of row/col to update
 	WORD wTileCurr; ///< Index of current tile to update in row/col
 	WORD wTileEnd;  ///< Index of last+1  tile to update in row/col
@@ -71,7 +71,7 @@ typedef struct _tRedrawState {
 	UBYTE ubPendingCount;
 } tRedrawState;
 
-typedef struct {
+typedef struct _tTileBufferManager {
 	tVpManager sCommon;
 	tCameraManager *pCamera;       ///< Quick ref to Camera
 	tScrollBufferManager *pScroll; ///< Quick ref to Scroll

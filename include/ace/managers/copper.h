@@ -56,7 +56,7 @@ extern "C" {
 
 /* ******************************************************************** TYPES */
 
-typedef struct {
+typedef struct tCopMoveCmd {
 	// Higher word
 	unsigned bfUnused  :7;  /// Always set to 0
 	unsigned bfDestAddr:9;  /// Register offset from &custom segment
@@ -65,7 +65,7 @@ typedef struct {
 	unsigned bfValue:16;    /// New value
 } tCopMoveCmd;
 
-typedef struct {
+typedef struct _tCopWaitCmd {
 	// Higher word
 	unsigned bfWaitY        :8; /// Y position
 	unsigned bfWaitX        :7; /// X position
@@ -77,13 +77,13 @@ typedef struct {
 	unsigned bfIsSkip       :1; /// Set to 1 for SKIP, 0 for WAIT
 } tCopWaitCmd;
 
-typedef union {
+typedef union _tCopCmd {
 	tCopMoveCmd sMove;
 	tCopWaitCmd sWait;
 	ULONG ulCode;
 } tCopCmd;
 
-typedef struct {
+typedef struct _tCopBfr {
 	UWORD uwAllocSize; /// Allocated memory size
 	UWORD uwCmdCount;  /// Copper command count
 	tCopCmd *pList;    /// HW Copperlist pointer
@@ -109,7 +109,7 @@ typedef struct _tCopList {
 	tCopBlock *pFirstBlock; /// Block list
 } tCopList;
 
-typedef struct {
+typedef struct _tCopManager {
 	tCopList *pCopList;   /// Currently displayed tCopList
 	tCopList *pBlankList; /// Empty copperlist - LoadView(0) equivalent
 } tCopManager;

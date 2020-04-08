@@ -12,7 +12,7 @@ extern "C" {
 #include <ace/types.h>
 
 /* Types */
-typedef struct {
+typedef struct _tRandManager {
 	ULONG ulRandX;
 	ULONG ulRandY;
 	ULONG ulRandZ;
