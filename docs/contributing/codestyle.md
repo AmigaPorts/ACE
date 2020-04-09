@@ -57,14 +57,16 @@ camelCase with prefixes. List of prefixes:
 - `ub` - unsigned byte (`UBYTE`, `uint8_t`)
 - `uw` - unsigned word (`UWORD`, `uint16_t`)
 - `ul` - unsigned long (`ULONG`, `uint32_t`)
--`b`, `w`, `l` for signed variants
+- `ull` - unsigned long long (`uint64_t`)
+-`b`, `w`, `l`, `ll` for signed variants
 - `p` - any pointer or array
 - `cb` - any function pointer (callback)
 - `t` - typedef
+- `e` - enum instance
 - `s` - struct instance
 - `u` - union instance
 - `f` - `float` or fixed-point var
-- undecided prefixes for `double`, `uint64_t`
+- `d` - double
 
 for global var scoping additionally:
 
