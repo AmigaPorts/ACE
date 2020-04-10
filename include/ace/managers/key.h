@@ -146,6 +146,8 @@ extern "C" {
 typedef struct _tKeyManager {
 	UBYTE pStates[103];
 	UBYTE ubLastKey;
+	volatile UBYTE ubIntCount;
+	UBYTE ubPrevIntCount;
 } tKeyManager;
 
 /* ****************************************************************** GLOBALS */

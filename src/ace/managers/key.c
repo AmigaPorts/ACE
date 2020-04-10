@@ -42,6 +42,7 @@ void INTERRUPT keyIntServer(
 ) {
 	tKeyManager *pKeyManager = (tKeyManager*)pData;
 	volatile tRayPos *pRayPos = (tRayPos*)&pCustom->vposr;
+	++pKeyManager->ubIntCount;
 
 	// Get key code and start handshake
 	UBYTE ubKeyCode = ~g_pCiaA->sdr;
@@ -87,6 +88,7 @@ const UBYTE g_pToAscii[] = {
 
 void keyCreate(void) {
 	logBlockBegin("keyCreate()");
+	g_sKeyManager.ubIntCount = 0;
 	systemSetInt(INTB_PORTS, keyIntServer, &g_sKeyManager);
 	logBlockEnd("keyCreate()");
 }
@@ -100,4 +102,12 @@ void keyDestroy(void) {
 void keyProcess(void) {
 	// This function is left out for other platforms - they will prob'ly not be
 	// interrupt-driven.
+	if(g_sKeyManager.ubIntCount != g_sKeyManager.ubPrevIntCount) {
+		WORD wDelta = g_sKeyManager.ubIntCount - g_sKeyManager.ubPrevIntCount;
+		if(wDelta < 0) {
+			wDelta += 256;
+		}
+		logWrite("Key events since last process: %hd\n", wDelta);
+		g_sKeyManager.ubPrevIntCount = g_sKeyManager.ubIntCount;
+	}
 }
