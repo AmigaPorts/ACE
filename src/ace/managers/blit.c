@@ -55,7 +55,7 @@ UBYTE _blitCheck(
 	}
 
 	if(pDst) {
-		if(!bitmapIsChip(pSrc)) {
+		if(!bitmapIsChip(pDst)) {
 			isErr = 1;
 			logWrite("ERR: Dest is in FAST mem: %p (%p)\n", pDst, pDst->Planes[0]);
 		}
