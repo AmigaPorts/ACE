@@ -137,19 +137,19 @@ UBYTE joyEnableParallel(void) {
 	}
 
 	// Save old DDR & value regs
-	s_ubOldDataDdr = g_pCiaA->ddrb;
-	s_ubOldStatusDdr = g_pCiaB->ddra;
-	s_ubOldDataVal = g_pCiaA->prb;
-	s_ubOldStatusVal = g_pCiaB->pra;
+	s_ubOldDataDdr = g_pCia[CIA_A]->ddrb;
+	s_ubOldStatusDdr = g_pCia[CIA_B]->ddra;
+	s_ubOldDataVal = g_pCia[CIA_A]->prb;
+	s_ubOldStatusVal = g_pCia[CIA_B]->pra;
 
 	// Set data direction register to input. Status lines are as follows:
 	// bit 0: BUSY
 	// bit 2: SEL
-	g_pCiaB->ddra |= BV(0) | BV(2); // Status lines DDR
-	g_pCiaA->ddrb = 0xFF; // Data lines DDR
+	g_pCia[CIA_B]->ddra |= BV(0) | BV(2); // Status lines DDR
+	g_pCia[CIA_A]->ddrb = 0xFF; // Data lines DDR
 
-	g_pCiaB->pra &= 0xFF^(BV(0) | BV(2)); // Status lines values
-	g_pCiaA->prb = 0; // Data lines values
+	g_pCia[CIA_B]->pra &= 0xFF^(BV(0) | BV(2)); // Status lines values
+	g_pCia[CIA_A]->prb = 0; // Data lines values
 
 	s_isParallelEnabled = 1;
 	systemUnuse();
@@ -162,10 +162,10 @@ void joyDisableParallel(void) {
 	}
 
 	// Restore old status/data DDR/val regs
-	g_pCiaA->prb = s_ubOldDataVal;
-	g_pCiaB->pra = s_ubOldStatusVal;
-	g_pCiaA->ddrb = s_ubOldDataDdr;
-	g_pCiaB->ddra = s_ubOldStatusDdr;
+	g_pCia[CIA_A]->prb = s_ubOldDataVal;
+	g_pCia[CIA_B]->pra = s_ubOldStatusVal;
+	g_pCia[CIA_A]->ddrb = s_ubOldDataDdr;
+	g_pCia[CIA_B]->ddra = s_ubOldStatusDdr;
 
 	// Close misc.resource
 	systemUse();
