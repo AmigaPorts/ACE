@@ -792,7 +792,8 @@ typedef void (*tEFn)(
 );
 
 typedef void (*tPreFx)(
-	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 );
 
 static const tFx fx_tab[16];
@@ -989,7 +990,9 @@ static void mt_playvoice(
 	if(uwMaskedCmdE == 0x0E50) {
 		set_finetune(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 	}
-	prefx_tab[uwCmd](uwCmd, uwCmdArg, uwMaskedCmdE, pVoice);
+	prefx_tab[uwCmd](
+		uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg
+	);
 }
 
 static void mt_checkfx(
@@ -1149,7 +1152,6 @@ void mt_music(void) {
 		mt_Counter = 0;
 		if(mt_PattDelTime2 <= 0) {
 			// determine pointer to current pattern line
-			tModSampleHeader *pSamples = mt_mod->pSamples;
 			UBYTE *pPatternData = &((UBYTE*)mt_mod)[sizeof(tModFileHeader)];
 			UBYTE *pArrangement = mt_mod->pArrangement;
 			UBYTE ubPatternIdx = pArrangement[mt_SongPos];
@@ -1624,17 +1626,16 @@ static void mt_toneporta_nc(
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
 			UWORD *pPeriodTable = pChannelData->n_pertab;
-			UWORD uwD1 = 0;
+			UWORD uwNoteOffs = 0;
 			UBYTE ubPeriodPos;
 			for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
-				if (uwD1 >= pPeriodTable[ubPeriodPos]) {
+				if (uwNoteOffs >= pPeriodTable[ubPeriodPos]) {
 					break;
 				}
-				uwD1 += 2;
-				++ubPeriodPos;
+				uwNoteOffs += 2;
 			}
 
-			pChannelData->n_noteoff = uwD1;
+			pChannelData->n_noteoff = uwNoteOffs;
 			uwNew = pPeriodTable[ubPeriodPos];
 		}
 		pChannelReg->ac_per = uwNew;
@@ -2276,7 +2277,6 @@ static void set_period(
 		if (uwNote >= mt_PeriodTables[0][ubPeriodPos]) {
 			break;
 		}
-		++ubPeriodPos;
 	}
 
 	// Apply finetuning, set period and note-offset
@@ -2338,9 +2338,44 @@ static void set_sampleoffset(
 }
 
 static void set_toneporta(
-	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	// TODO: implement
+	// tuned period table
+	UWORD *pPeriodTable = pChannelData->n_pertab;
+
+	// find first period which is less or equal the note in d6
+	UWORD uwNote = pVoice->uwNote & 0xFFF;
+	UBYTE ubPeriodPos;
+	UWORD uwNoteOffs = 0;
+	for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
+		if (uwNote >= mt_PeriodTables[0][ubPeriodPos]) {
+			break;
+		}
+		uwNoteOffs += 2;
+	}
+
+	// Negative fine tune?
+	if(pChannelData->n_minusft && ubPeriodPos) {
+		// Then take the previous period
+		--ubPeriodPos;
+		uwNoteOffs -= 2;
+	}
+
+	// Note offset in period table
+	pChannelData->n_noteoff = uwNoteOffs;
+	UWORD uwPeriod = pChannelData->n_period;
+	UWORD uwNewPeriod = pPeriodTable[--ubPeriodPos];
+	if(uwNewPeriod == uwPeriod) {
+		uwNewPeriod = 0;
+	}
+	pChannelData->n_wantedperiod = uwNewPeriod;
+
+	if(pChannelData->n_funk) {
+		mt_updatefunk(pChannelData);
+	}
+
+	pChannelReg->ac_per = uwPeriod;
 }
 
 static const tPreFx prefx_tab[16] = {

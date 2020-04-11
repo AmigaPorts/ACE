@@ -140,7 +140,7 @@ extern UBYTE mt_E8Trigger;
 extern UBYTE mt_MusicChannels;
 
 #ifdef __cplusplus
-}|
+}
 #endif
 
 #endif // _ACE_UTILS_PTPLAYER_H_
