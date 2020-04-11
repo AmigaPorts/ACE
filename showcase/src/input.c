@@ -10,7 +10,7 @@
 
 /* Functions */
 void inputOpen(void) {
-	joyOpen(0);
+	joyOpen();
 	keyCreate();
 }
 

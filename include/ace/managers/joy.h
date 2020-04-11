@@ -63,7 +63,25 @@ typedef struct _tJoyManager {
 extern tJoyManager g_sJoyManager;
 
 /* Functions */
-void joyOpen(UBYTE is4joy);
+
+/**
+ * @brief Initializes joy manager.
+ */
+void joyOpen(void);
+
+/**
+ * @brief Enables additional joystricks through parallel adapter.
+ *
+ * @return 1 on success, otherwise 0.
+ */
+UBYTE joyEnableParallel(void);
+
+/**
+ * @brief Disables additional joysticks through parallel adapter.
+ */
+void joyDisableParallel(void);
+
+UBYTE joyIsParallelEnabled(void);
 
 void joySetState(UBYTE ubJoyCode, UBYTE ubJoyState);
 
@@ -73,6 +91,12 @@ UBYTE joyUse(UBYTE ubJoyCode);
 
 void joyProcess(void);
 
+/**
+ * @brief Finishes work of joy manager.
+ * This will also call joyDisableParallel() if needed.
+ *
+ * @see joyDisableParallel()
+ */
 void joyClose(void);
 
 #ifdef __cplusplus

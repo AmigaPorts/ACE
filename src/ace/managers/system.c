@@ -19,6 +19,8 @@
 // http://eab.abime.net/showthread.php?p=1081007
 // http://ada.untergrund.net/?p=boardthread&id=31
 // http://palbo.dk/dataskolen/maskinsprog/english/letter_09.pdf
+// Clearing bit is done twice for some high end configs
+// http://eab.abime.net/showthread.php?t=95263
 
 //---------------------------------------------------------------------- DEFINES
 
