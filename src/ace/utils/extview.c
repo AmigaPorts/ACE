@@ -130,7 +130,7 @@ void viewLoad(tView *pView) {
 	}
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
-	systemSetDma(DMAB_RASTER, pView != 0);
+	systemSetDmaBit(DMAB_RASTER, pView != 0);
 	while(g_pRayPos->bfPosY < 300) {}
 #endif // AMIGA
 	logBlockEnd("viewLoad()");

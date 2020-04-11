@@ -25,7 +25,7 @@ void copCreate(void) {
 	copProcessBlocks();
 	// Update copper-related regs
 	g_pCustom->copjmp1 = 1;
-	systemSetDma(DMAB_COPPER, 1);
+	systemSetDmaBit(DMAB_COPPER, 1);
 
 	logBlockEnd("copCreate()");
 }
@@ -34,7 +34,7 @@ void copDestroy(void) {
 	logBlockBegin("copDestroy()");
 
 	// Load system copperlist
-	systemSetDma(DMAB_COPPER, 0);
+	systemSetDmaBit(DMAB_COPPER, 0);
 	g_pCustom->cop1lc = (ULONG)GfxBase->copinit;
 	g_pCustom->copjmp1 = 1;
 

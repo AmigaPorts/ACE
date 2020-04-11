@@ -7,6 +7,7 @@
 // - http://lclevy.free.fr/mo3/mod.txt
 
 #include <ace/utils/ptplayer.h>
+#include <ace/managers/log.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
 #include <hardware/intbits.h>
@@ -17,7 +18,7 @@
 #define MOD_PATTERN_LENGTH (64 * 4 * 4)
 #define MOD_PERIOD_TABLE_LENGTH 36
 
-static UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
+static const UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
 	{
 		856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480, 453,
 		428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240, 226,
@@ -747,7 +748,7 @@ typedef struct _tChannelStatus {
 	UWORD n_replen;
 	UWORD n_period;
 	UWORD n_volume;
-	UWORD *n_pertab; ///< Period table, used in arpeggio
+	const UWORD *n_pertab; ///< Period table, used in arpeggio
 	UWORD n_dmabit;
 	UWORD n_noteoff; ///< TODO Later: convert it from byte offs to word offs (div by 2)
 	UWORD n_toneportspeed;
@@ -815,7 +816,7 @@ static void set_finetune(
 
 UBYTE mt_MusicChannels = 0;
 UBYTE mt_E8Trigger = 0;
-UBYTE mt_Enable = 0;
+volatile UBYTE mt_Enable = 0;
 
 tChannelStatus mt_chan[4];
 UWORD *mt_SampleStarts[31];
@@ -832,7 +833,7 @@ UBYTE mt_SongPos; ///< Position in arrangement.
 UBYTE mt_PattDelTime;
 UBYTE mt_PattDelTime2;
 UBYTE mt_SilCntValid;
-UWORD mt_dmaon = DMAF_SETCLR;
+UWORD mt_dmaon = 0;
 
 static void ptSongStep(void) {
 	mt_PatternPos = mt_PBreakPos;
@@ -856,7 +857,7 @@ static void startSfx(
 	volatile tChannelRegs *pChannelReg
 ) {
 	// play new sound effect on this channel
-	g_pCustom->dmacon = pChannelData->n_dmabit;
+	systemSetDmaMask(pChannelData->n_dmabit, 0);
 	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
 	pChannelReg->ac_len = uwLen;
 	pChannelReg->ac_per = pChannelData->n_sfxper;
@@ -943,7 +944,6 @@ static void mt_playvoice(
 	// A...B... -> ......BA
 	UWORD uwD0 = ((pVoice->uwNote & 0xF000) >> 8) | ((pVoice->ubCmdHi & 0xF) >> 4);
 	if(uwD0) {
-
 		UWORD *pSampleStart = mt_SampleStarts[uwD0-1];
 
 		// Read length, volume and repeat from sample info table
@@ -959,7 +959,7 @@ static void mt_playvoice(
 
 		// Determine period table from fine-tune parameter
 		UBYTE ubNibble = pSampleDef->ubNibble; // d3
-		UWORD *pPeriodTable = mt_PeriodTables[ubNibble];
+		const UWORD *pPeriodTable = mt_PeriodTables[ubNibble];
 		pChannelData->n_pertab = pPeriodTable;
 		pChannelData->n_minusft = (ubNibble >= 16);
 
@@ -1063,7 +1063,7 @@ static void mt_TimerBsetrep(
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
 	// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
-	pCustom->intreq = INTF_EXTER | (mt_dmaon & 0xFF) << 7;
+	pCustom->intreq = INTF_EXTER | (mt_dmaon << 7);
 
 	// Set repeat sample pointers and lengths
 	pCustom->aud[0].ac_ptr = mt_chan[0].n_loopstart;
@@ -1086,7 +1086,7 @@ static void mt_TimerBdmaon(
 ) {
 	// Restart timer to set repeat, enable DMA
 	g_pCia[CIA_B]->crb = 0x19;
-	pCustom->dmacon = mt_dmaon;
+	systemSetDmaMask(mt_dmaon, 1);
 
 	// set level 6 interrupt to mt_TimerBsetrep
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
@@ -1113,13 +1113,13 @@ static void chan_sfx_only(
 // Called from interrupt.
 // Plays sound effects on free channels.
 void mt_sfxonly(void) {
-	mt_dmaon &= 0xFF00;
+	mt_dmaon = 0;
 	chan_sfx_only(&g_pCustom->aud[0], &mt_chan[0]);
 	chan_sfx_only(&g_pCustom->aud[1], &mt_chan[1]);
 	chan_sfx_only(&g_pCustom->aud[2], &mt_chan[2]);
 	chan_sfx_only(&g_pCustom->aud[3], &mt_chan[3]);
 
-	if(mt_dmaon & 0xFF) {
+	if(mt_dmaon) {
 		systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
 		systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 		g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
@@ -1131,7 +1131,7 @@ void mt_sfxonly(void) {
 // Play next position when Counter equals Speed.
 // Effects are always handled.
 void mt_music(void) {
-	mt_dmaon &= 0xFF00;
+	mt_dmaon = 0;
 	++mt_Counter;
 	if(mt_Counter < mt_Speed) {
 		// no new note, just check effects, don't step to next position
@@ -1141,7 +1141,7 @@ void mt_music(void) {
 		mt_checkfx(&mt_chan[3], &g_pCustom->aud[3]);
 
 		// set one-shot TimerB interrupt for enabling DMA, when needed
-		if(mt_dmaon & 0xFF) {
+		if(mt_dmaon) {
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 			g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
@@ -1172,7 +1172,7 @@ void mt_music(void) {
 			mt_checkfx(&mt_chan[3], &g_pCustom->aud[3]);
 		}
 		// set one-shot TimerB interrupt for enabling DMA, when needed
-		if(mt_dmaon & 0xFF) {
+		if(mt_dmaon) {
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 			g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
@@ -1219,7 +1219,7 @@ void mt_end(void) {
 	g_pCustom->aud[1].ac_vol = 0;
 	g_pCustom->aud[2].ac_vol = 0;
 	g_pCustom->aud[3].ac_vol = 0;
-	g_pCustom->dmacon = DMAF_AUDIO;
+	systemSetDmaMask(DMAF_AUDIO, 0);
 }
 
 void mt_reset(void) {
@@ -1261,7 +1261,7 @@ void mt_reset(void) {
 	mt_end();
 }
 
-void mt_install_cia(UNUSED_ARG APTR *AutoVecBase, UBYTE PALflag) {
+void mt_install_cia(UBYTE PALflag) {
 	mt_Enable = 0;
 
 	// disable level 6 EXTER interrupts, set player interrupt vector
@@ -1286,30 +1286,35 @@ void mt_install_cia(UNUSED_ARG APTR *AutoVecBase, UBYTE PALflag) {
 	g_pCia[CIA_B]->tblo = 496 & 0xFF;
 	g_pCia[CIA_B]->tbhi = 496 >> 8;
 
-	// TimerA and TimerB interrupt enable
-	g_pCia[CIA_B]->icr = 0x83;
-
 	// enable level 6 interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
 
 	mt_reset();
 }
 
-void mt_init(UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos) {
+void mt_init(UBYTE *pTrackerModule, UBYTE *pSamples, UWORD uwInitialSongPos) {
+	logBlockBegin(
+		"mt_init(pTrackerModule: %p, pSamples: %p, uwInitialSongPos: %hu)",
+		pTrackerModule, pSamples, uwInitialSongPos
+	);
 	// Initialize new module.
 	// Reset speed to 6, tempo to 125 and start at given song position.
 	// Master volume is at 64 (maximum).
 
-	mt_mod = (tModFileHeader*)TrackerModule;
+	mt_mod = (tModFileHeader*)pTrackerModule;
+	logWrite(
+		"Song name: '%s', arrangement length: %hhu, end pos: %hhu\n",
+		mt_mod->szSongName, mt_mod->ubArrangementLength, mt_mod->ubSongEndPos
+	);
 
 	// set initial song position
-	if(InitialSongPos >= 950) {
-		InitialSongPos = 0;
+	if(uwInitialSongPos >= 950) {
+		uwInitialSongPos = 0;
 	}
-	mt_SongPos = InitialSongPos;
+	mt_SongPos = uwInitialSongPos;
 
 	// sample data location is given?
-	if(!Samples) {
+	if(!pSamples) {
 		// Get number of highest pattern
 		UBYTE ubLastPattern = 0;
 		for(UBYTE i = 0; i < 127; ++i) {
@@ -1318,19 +1323,20 @@ void mt_init(UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos) {
 			}
 		}
 		UBYTE ubPatternCount = ubLastPattern + 1;
+		logWrite("Pattern count: %hhu\n", ubPatternCount);
 
 		// now we can calculate the base address of the sample data
 		ULONG ulSampleOffs = (
 			sizeof(tModFileHeader) + ubPatternCount * MOD_PATTERN_LENGTH
 		);
-		Samples = &TrackerModule[ulSampleOffs];
+		pSamples = &pTrackerModule[ulSampleOffs];
 		// FIXME: use as pointer for empty samples
 	}
 
-	tModSampleHeader *pHeaders = (tModSampleHeader*)&TrackerModule[42];
+	tModSampleHeader *pHeaders = (tModSampleHeader*)&pTrackerModule[42];
 
 	// save start address of each sample
-	UBYTE *pSampleCurr = Samples;
+	UBYTE *pSampleCurr = pSamples;
 	for(UBYTE i = 0; i < 31; ++i) {
 		mt_SampleStarts[i] = (UWORD*)&pSampleCurr;
 
@@ -1347,6 +1353,7 @@ void mt_init(UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos) {
 	g_pCia[CIA_B]->tahi = uwTimer >> 8;
 
 	mt_reset();
+	logBlockEnd("mt_init()");
 }
 
 // activate the sound effect on this channel
@@ -1625,7 +1632,7 @@ static void mt_toneporta_nc(
 		pChannelData->n_period = uwNew;
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
-			UWORD *pPeriodTable = pChannelData->n_pertab;
+			const UWORD *pPeriodTable = pChannelData->n_pertab;
 			UWORD uwNoteOffs = 0;
 			UBYTE ubPeriodPos;
 			for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
@@ -1999,7 +2006,7 @@ static void mt_volchange(
 }
 
 static const tFx blmorefx_tab[16] = {
-	mt_nop,
+	[0 ... 10] = mt_nop,
 	[11] = mt_posjump, // 0xB
 	[13] = mt_patternbrk, // 0xD
 	[14] = blocked_e_cmds,
@@ -2007,7 +2014,7 @@ static const tFx blmorefx_tab[16] = {
 };
 
 static const tFx morefx_tab[16] = {
-	mt_pernop,
+	[0 ... 10] = mt_pernop,
 	[11] = mt_posjump,
 	[12] = mt_volchange,
 	[13] = mt_patternbrk,
@@ -2125,7 +2132,7 @@ static void ptDoRetrigger(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// DMA off, set sample pointer and length
-	g_pCustom->dmacon = pChannelData->n_dmabit;
+	systemSetDmaMask(pChannelData->n_dmabit, 0);
 	pChannelReg->ac_ptr = pChannelData->n_start;
 	pChannelReg->ac_len = pChannelData->n_length;
 	mt_dmaon |= pChannelData->n_dmabit;
@@ -2287,7 +2294,7 @@ static void set_period(
 	// Check for notedelay
 	if(uwMaskedCmdE != 0xED) {
 		// Disable DMA
-		g_pCustom->dmacon = pChannelData->n_dmabit;
+		systemSetDmaMask(pChannelData->n_dmabit, 0);
 
 		if(!BTST(pChannelData->n_vibratoctrl, 2)) {
 			pChannelData->n_vibratopos = 0;
@@ -2342,7 +2349,7 @@ static void set_toneporta(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// tuned period table
-	UWORD *pPeriodTable = pChannelData->n_pertab;
+	const UWORD *pPeriodTable = pChannelData->n_pertab;
 
 	// find first period which is less or equal the note in d6
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
@@ -2379,8 +2386,14 @@ static void set_toneporta(
 }
 
 static const tPreFx prefx_tab[16] = {
-	set_period,
+	[0 ... 2] = set_period,
 	[3] = set_toneporta,
+	[4] = set_period,
 	[5] = set_toneporta,
-	[9] = set_sampleoffset
+	[6 ... 8] = set_period,
+	[9] = set_sampleoffset,
+	[10 ... 15] = set_period,
 };
+
+volatile UWORD g_uwPtSuccess = 0;
+volatile char g_szPtLog[1000] = "";

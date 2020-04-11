@@ -573,8 +573,12 @@ void systemSetCiaInt(
 	s_pAceCiaInterrupts[ubCia][ubIntBit].pHandler = pHandler;
 }
 
-void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled) {
-	UWORD uwDmaMask = BV(ubDmaBit);
+void systemSetDmaBit(UBYTE ubDmaBit, UBYTE isEnabled) {
+	UWORD uwDmaFlag = BV(ubDmaBit);
+	systemSetDmaMask(uwDmaFlag, isEnabled);
+}
+
+void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled) {
 	if(isEnabled) {
 		s_uwAceDmaCon |= uwDmaMask;
 		s_uwOsDmaCon |= uwDmaMask;

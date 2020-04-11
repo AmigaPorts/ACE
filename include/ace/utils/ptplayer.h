@@ -23,7 +23,7 @@ extern "C" {
     effects only.
 */
 
-void mt_install_cia(APTR *AutoVecBase, UBYTE PALflag);
+void mt_install_cia(UBYTE PALflag);
 
 /*
   _mt_init(a6=CUSTOM, a0=TrackerModule, a1=Samples|NULL, d0=InitialSongPos.b)
@@ -114,13 +114,16 @@ void mt_mastervol(UWORD MasterVolume);
 
 void mt_music(void);
 
+extern volatile UWORD g_uwPtSuccess;
+extern volatile char g_szPtLog[1000];
+
 /*
   _mt_Enable
     Set this byte to non-zero to play music, zero to pause playing.
     Note that you can still play sound effects, while music is stopped.
 */
 
-extern UBYTE mt_Enable;
+extern volatile UBYTE mt_Enable;
 
 /*
   _mt_E8Trigger

@@ -14,7 +14,7 @@ tBlitManager g_sBlitManager = {0};
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 #if defined(AMIGA)
-	systemSetDma(DMAB_BLITTER, 1);
+	systemSetDmaBit(DMAB_BLITTER, 1);
 #endif
 	logBlockEnd("blitManagerCreate");
 }
@@ -22,7 +22,7 @@ void blitManagerCreate(void) {
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
 #if defined(AMIGA)
-	systemSetDma(DMAB_BLITTER, 0);
+	systemSetDmaBit(DMAB_BLITTER, 0);
 #endif
 	logBlockEnd("blitManagerDestroy");
 }
@@ -105,9 +105,9 @@ UBYTE _blitCheck(
 }
 
 void blitWait(void) {
-	systemSetDma(DMAB_BLITHOG, 1);
+	systemSetDmaBit(DMAB_BLITHOG, 1);
 	while(!blitIsIdle()) {}
-	systemSetDma(DMAB_BLITHOG, 0);
+	systemSetDmaBit(DMAB_BLITHOG, 0);
 }
 
 /**

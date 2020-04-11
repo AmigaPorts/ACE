@@ -49,7 +49,9 @@ void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
-void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled);
+void systemSetDmaBit(UBYTE ubDmaBit, UBYTE isEnabled);
+
+void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled);
 
 //---------------------------------------------------------------------- GLOBALS
 
