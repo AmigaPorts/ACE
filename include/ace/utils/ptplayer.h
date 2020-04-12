@@ -33,9 +33,7 @@ void mt_install_cia(UBYTE PALflag);
     When a1 is NULL the samples are assumed to be stored after the patterns.
 */
 
-void mt_init(
-	UBYTE *TrackerModule, UBYTE *Samples, UWORD InitialSongPos
-);
+void mt_init(UBYTE *TrackerModule, UWORD *Samples, UWORD InitialSongPos);
 
 /*
   _mt_end(a6=CUSTOM)
@@ -115,7 +113,7 @@ void mt_mastervol(UWORD MasterVolume);
 void mt_music(void);
 
 extern volatile UWORD g_uwPtSuccess;
-extern volatile char g_szPtLog[1000];
+extern volatile char g_szPtLog[100];
 
 /*
   _mt_Enable

@@ -819,7 +819,7 @@ UBYTE mt_E8Trigger = 0;
 volatile UBYTE mt_Enable = 0;
 
 tChannelStatus mt_chan[4];
-UWORD *mt_SampleStarts[31];
+UWORD *mt_SampleStarts[31]; ///< Start address of each sample
 tModFileHeader *mt_mod;
 ULONG mt_timerval;
 UBYTE *mt_MasterVolTab;
@@ -940,9 +940,9 @@ static void mt_playvoice(
 	UWORD uwCmdArg = pVoice->ubCmdLo;
 	UWORD uwMaskedCmdE = pVoice->uwCmd & 0x0FF0;
 
-	// Get sample start address - BA is sample number
+	// Get sample start address from cmd/note - BA is sample number
 	// A...B... -> ......BA
-	UWORD uwD0 = ((pVoice->uwNote & 0xF000) >> 8) | ((pVoice->ubCmdHi & 0xF) >> 4);
+	UWORD uwD0 = ((pVoice->uwNote & 0xF000) >> 8) | ((pVoice->ubCmdHi & 0xF0) >> 4);
 	if(uwD0) {
 		UWORD *pSampleStart = mt_SampleStarts[uwD0-1];
 
@@ -1082,7 +1082,7 @@ static void mt_TimerBsetrep(
 
 // One-shot TimerB interrupt to enable audio DMA after 496 ticks.
 static void mt_TimerBdmaon(
-	volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
 ) {
 	// Restart timer to set repeat, enable DMA
 	g_pCia[CIA_B]->crb = 0x19;
@@ -1229,7 +1229,7 @@ void mt_reset(void) {
 	mt_PatternPos = 0;
 
 	// Disable the filter
-	g_pCia[CIA_A]->pra |= 0x02;
+	g_pCia[CIA_A]->pra |= BV(1);
 
 	// set master volume to 64
 	mt_MasterVolTab = MasterVolTab[64];
@@ -1292,10 +1292,10 @@ void mt_install_cia(UBYTE PALflag) {
 	mt_reset();
 }
 
-void mt_init(UBYTE *pTrackerModule, UBYTE *pSamples, UWORD uwInitialSongPos) {
+void mt_init(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) {
 	logBlockBegin(
-		"mt_init(pTrackerModule: %p, pSamples: %p, uwInitialSongPos: %hu)",
-		pTrackerModule, pSamples, uwInitialSongPos
+		"mt_init(pTrackerModule: %p, pSampleData: %p, uwInitialSongPos: %hu)",
+		pTrackerModule, pSampleData, uwInitialSongPos
 	);
 	// Initialize new module.
 	// Reset speed to 6, tempo to 125 and start at given song position.
@@ -1314,7 +1314,7 @@ void mt_init(UBYTE *pTrackerModule, UBYTE *pSamples, UWORD uwInitialSongPos) {
 	mt_SongPos = uwInitialSongPos;
 
 	// sample data location is given?
-	if(!pSamples) {
+	if(!pSampleData) {
 		// Get number of highest pattern
 		UBYTE ubLastPattern = 0;
 		for(UBYTE i = 0; i < 127; ++i) {
@@ -1329,22 +1329,28 @@ void mt_init(UBYTE *pTrackerModule, UBYTE *pSamples, UWORD uwInitialSongPos) {
 		ULONG ulSampleOffs = (
 			sizeof(tModFileHeader) + ubPatternCount * MOD_PATTERN_LENGTH
 		);
-		pSamples = &pTrackerModule[ulSampleOffs];
+		pSampleData = (UWORD*)&pTrackerModule[ulSampleOffs];
 		// FIXME: use as pointer for empty samples
 	}
 
-	tModSampleHeader *pHeaders = (tModSampleHeader*)&pTrackerModule[42];
-
-	// save start address of each sample
-	UBYTE *pSampleCurr = pSamples;
+	// Save start address of each sample
+	ULONG ulOffs = 0;
+	logWrite("Sample data starts at: %p\n", pSampleData);
 	for(UBYTE i = 0; i < 31; ++i) {
-		mt_SampleStarts[i] = (UWORD*)&pSampleCurr;
+		mt_SampleStarts[i] = &pSampleData[ulOffs];
+		if(mt_mod->pSamples[i].uwLength > 0) {
+			logWrite(
+				"Sample %hhu name: '%.*s', word length: %hu, start: %p\n",
+				i, 22, mt_mod->pSamples[i].szName, mt_mod->pSamples[i].uwLength,
+				mt_SampleStarts[i]
+			);
+		}
 
 		// make sure sample starts with two 0-bytes
-		*mt_SampleStarts[i] = 0;
+		mt_SampleStarts[i][0] = 0;
 
 		// go to next sample
-		pSampleCurr += pHeaders[i].uwLength * 2;
+		ulOffs += mt_mod->pSamples[i].uwLength;
 	};
 
 	// reset CIA timer A to default (125)
@@ -1996,7 +2002,7 @@ static void mt_pernop(
 
 static void mt_volchange(
 	UBYTE ubNewVolume,
-	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+	UNUSED_ARG tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd C x y (xy = new volume)
 	if(ubNewVolume > 64) {
@@ -2345,7 +2351,8 @@ static void set_sampleoffset(
 }
 
 static void set_toneporta(
-	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	UNUSED_ARG UWORD uwCmd, UNUSED_ARG UWORD uwCmdArg,
+	UNUSED_ARG UWORD uwMaskedCmdE, const tModVoice *pVoice,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// tuned period table
@@ -2396,4 +2403,4 @@ static const tPreFx prefx_tab[16] = {
 };
 
 volatile UWORD g_uwPtSuccess = 0;
-volatile char g_szPtLog[1000] = "";
+volatile char g_szPtLog[100] = "";
