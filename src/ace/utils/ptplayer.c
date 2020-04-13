@@ -5,6 +5,7 @@
 // Info regarding MOD file format:
 // - https://www.fileformat.info/format/mod/corion.htm
 // - http://lclevy.free.fr/mo3/mod.txt
+// - https://www.stef.be/bassoontracker/docs/ProtrackerCommandReference.pdf
 
 #include <ace/utils/ptplayer.h>
 #include <ace/managers/log.h>
@@ -17,6 +18,7 @@
 // Length of single pattern.
 #define MOD_PATTERN_LENGTH (64 * 4 * 4)
 #define MOD_PERIOD_TABLE_LENGTH 36
+#define PTPLAYER_DEFER_INTERRUPTS
 
 static const UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
 	{
@@ -728,13 +730,13 @@ typedef struct AudChannel tChannelRegs;
  * Each pattern line consists of following data for each channel.
  */
 typedef struct _tModVoice {
-	UWORD uwNote;
+	UWORD uwNote; // Upper 4 bits: instrument, 12 lower bits: period
 	union {
 		struct {
-			UBYTE ubCmdHi;
-			UBYTE ubCmdLo;
+			UBYTE ubCmdHi; // Upper nibble: 4 lower bits of instrument, lower nibble: cmd number
+			UBYTE ubCmdLo; // Special effects data
 		};
-		UWORD uwCmd;
+		UWORD uwCmd; // [instrumentLo:4] [cmdNo:4] [cmdArg:8]
 	};
 } tModVoice;
 
@@ -804,6 +806,11 @@ static const tEFn ecmd_tab[16];
 static const tEFn blecmd_tab[16];
 static const tPreFx prefx_tab[16];
 
+#if defined(PTPLAYER_DEFER_INTERRUPTS)
+static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
+#endif
+
+
 static void blocked_e_cmds(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
@@ -856,6 +863,7 @@ static void startSfx(
 	UWORD uwLen, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
+	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
 	// play new sound effect on this channel
 	systemSetDmaMask(pChannelData->n_dmabit, 0);
 	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
@@ -936,26 +944,28 @@ static void mt_playvoice(
 	pChannelData->n_cmd = pVoice->ubCmdHi;
 	pChannelData->n_cmdlo = pVoice->ubCmdLo;
 
-	UWORD uwCmd = (pChannelData->n_cmd & 0x000F);
+	UWORD uwCmd = pChannelData->n_cmd & 0x000F;
 	UWORD uwCmdArg = pVoice->ubCmdLo;
 	UWORD uwMaskedCmdE = pVoice->uwCmd & 0x0FF0;
 
 	// Get sample start address from cmd/note - BA is sample number
 	// A...B... -> ......BA
-	UWORD uwD0 = ((pVoice->uwNote & 0xF000) >> 8) | ((pVoice->ubCmdHi & 0xF0) >> 4);
-	if(uwD0) {
-		UWORD *pSampleStart = mt_SampleStarts[uwD0-1];
-
+	UWORD uwSampleIdx = ((pVoice->uwNote & 0xF000) >> 8) | ((pVoice->ubCmdHi & 0xF0) >> 4);
+	if(uwSampleIdx) {
+		// Samples are internally zero-based, in file 1-based
+		--uwSampleIdx;
 		// Read length, volume and repeat from sample info table
-		tModSampleHeader *pSampleDef = &mt_mod->pSamples[uwD0];
-		uwD0 = pSampleDef->uwLength;
-		if(!uwD0) {
+		UWORD *pSampleStart = mt_SampleStarts[uwSampleIdx];
+		tModSampleHeader *pSampleDef = &mt_mod->pSamples[uwSampleIdx];
+		UWORD uwSampleLength = pSampleDef->uwLength;
+		if(!uwSampleLength) {
 			// Use the first two bytes from the first sample for empty samples
 			pSampleStart = mt_SampleStarts[0];
-			uwD0 = 1;
+			uwSampleLength = 1;
 		}
+		// logWrite("playvoice sample: %hu, length: %hu\n", uwSampleIdx, uwSampleLength);
 		pChannelData->n_start = pSampleStart;
-		pChannelData->n_reallength = uwD0;
+		pChannelData->n_reallength = uwSampleLength;
 
 		// Determine period table from fine-tune parameter
 		UBYTE ubNibble = pSampleDef->ubNibble; // d3
@@ -966,18 +976,18 @@ static void mt_playvoice(
 		pChannelData->n_volume = pSampleDef->ubVolume;
 		if(!pSampleDef->uwRepeatOffs) {
 			pChannelData->n_looped = 0;
-			pChannelData->n_replen = pSampleDef->uwRepeatLength;
+			pChannelData->n_replen = pSampleDef->uwLength;
 		}
 		else {
 			// Set repeat
 			pChannelData->n_looped = 1;
 			pChannelData->n_replen = pSampleDef->uwRepeatLength;
-			uwD0 = pSampleDef->uwRepeatLength + ubNibble * 2;
-			pSampleStart += pSampleDef->uwRepeatLength;
+			uwSampleLength = pSampleDef->uwRepeatLength + ubNibble * 2;
+			pSampleStart += pSampleDef->uwRepeatOffs;
 		}
 
 		// set_loop:
-		pChannelData->n_length = uwD0;
+		pChannelData->n_length = uwSampleLength;
 		pChannelData->n_loopstart = pSampleStart;
 		pChannelData->n_wavestart = (UBYTE*)pSampleStart;
 		pChannelReg->ac_vol = mt_MasterVolTab[pSampleDef->ubVolume];
@@ -987,12 +997,15 @@ static void mt_playvoice(
 	if(!pVoice->uwNote) {
 		checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 	}
-	if(uwMaskedCmdE == 0x0E50) {
+	else if(uwMaskedCmdE == 0x0E50) {
 		set_finetune(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 	}
-	prefx_tab[uwCmd](
-		uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg
-	);
+	else {
+		logWrite("call cmd %hhu from table\n", uwCmd);
+		prefx_tab[uwCmd](
+			uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg
+		);
+	}
 }
 
 static void mt_checkfx(
@@ -1040,11 +1053,7 @@ static void mt_checkfx(
 
 static void mt_sfxonly(void);
 
-// TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
-// which defaults to 50 times per second.
-static void mt_TimerAInt(
-	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
-) {
+static void intPlay(void) {
 	// it was a TA interrupt, do music when enabled
 	if(mt_Enable) {
 		// music with sfx inserted
@@ -1056,14 +1065,30 @@ static void mt_TimerAInt(
 	}
 }
 
-// One-shot TimerB interrupt to set repeat samples after another 496 ticks.
-static void mt_TimerBsetrep(
-	volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+// TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
+// which defaults to 50 times per second.
+static void mt_TimerAInt(
+	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
 ) {
+#if defined(PTPLAYER_DEFER_INTERRUPTS)
+	s_isPendingPlay = 1;
+#else
+	intPlay();
+#endif
+}
+
+static void intSetRep(volatile tCustom *pCustom) {
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
 	// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
-	pCustom->intreq = INTF_EXTER | (mt_dmaon << 7);
+
+	logWrite(
+		"set replen: %p %hu, %p %hu, %p %hu, %p %hu\n",
+		mt_chan[0].n_loopstart, mt_chan[0].n_replen,
+		mt_chan[1].n_loopstart, mt_chan[1].n_replen,
+		mt_chan[2].n_loopstart, mt_chan[2].n_replen,
+		mt_chan[3].n_loopstart, mt_chan[3].n_replen
+	);
 
 	// Set repeat sample pointers and lengths
 	pCustom->aud[0].ac_ptr = mt_chan[0].n_loopstart;
@@ -1080,10 +1105,18 @@ static void mt_TimerBsetrep(
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
-// One-shot TimerB interrupt to enable audio DMA after 496 ticks.
-static void mt_TimerBdmaon(
-	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+// One-shot TimerB interrupt to set repeat samples after another 496 ticks.
+static void mt_TimerBsetrep(
+	volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
 ) {
+#if defined(PTPLAYER_DEFER_INTERRUPTS)
+	s_isPendingSetRep = 1;
+#else
+	intSetRep(pCustom);
+#endif
+}
+
+static void intDmaOn(void) {
 	// Restart timer to set repeat, enable DMA
 	g_pCia[CIA_B]->crb = 0x19;
 	systemSetDmaMask(mt_dmaon, 1);
@@ -1091,6 +1124,17 @@ static void mt_TimerBdmaon(
 	// set level 6 interrupt to mt_TimerBsetrep
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBsetrep, 0);
+}
+
+// One-shot TimerB interrupt to enable audio DMA after 496 ticks.
+static void mt_TimerBdmaon(
+	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+) {
+#if defined(PTPLAYER_DEFER_INTERRUPTS)
+	s_isPendingDmaOn = 1;
+#else
+	intDmaOn();
+#endif
 }
 
 static void chan_sfx_only(
@@ -1157,6 +1201,13 @@ void mt_music(void) {
 			UBYTE ubPatternIdx = pArrangement[mt_SongPos];
 			UBYTE *pCurrentPattern = &pPatternData[ubPatternIdx * 1024];
 			tModVoice *pLineVoices = (tModVoice*)&pCurrentPattern[mt_PatternPos];
+			logWrite(
+				"new note (cmd note): %04X %04X, %04X %04X, %04X %04X, %04X %04X\n",
+				pLineVoices[0].uwCmd, pLineVoices[0].uwNote,
+				pLineVoices[1].uwCmd, pLineVoices[1].uwNote,
+				pLineVoices[2].uwCmd, pLineVoices[2].uwNote,
+				pLineVoices[3].uwCmd, pLineVoices[3].uwNote
+			);
 
 			// play new note for each channel, apply some effects
 			mt_playvoice(&mt_chan[0], &g_pCustom->aud[0], &pLineVoices[0]);
@@ -1181,17 +1232,21 @@ void mt_music(void) {
 		// next pattern line, handle delay and break
 		mt_SilCntValid = 0; // recalculate silence counters
 		UBYTE ubOffs = 16; // Offset to next pattern line
-		UBYTE d1 = mt_PattDelTime2;
+		UBYTE ubPatternDelay = mt_PattDelTime2;
 		if(mt_PattDelTime) {
-			d1 = mt_PattDelTime;
+			ubPatternDelay = mt_PattDelTime;
 			mt_PattDelTime = 0;
 		}
-		if(d1) {
-			--d1;
-			if(d1) {
+		logWrite("pattern delay: %hhu\n", ubPatternDelay);
+		if(ubPatternDelay) {
+			--ubPatternDelay;
+			if(ubPatternDelay) {
 				ubOffs = 0; // Do not advance to next line
 			}
-			mt_PattDelTime2 = d1;
+			else {
+				logWrite("Advance to next line\n");
+			}
+			mt_PattDelTime2 = ubPatternDelay;
 		}
 		UWORD uwNextLinePos = mt_PatternPos + ubOffs;
 
@@ -1263,6 +1318,11 @@ void mt_reset(void) {
 
 void mt_install_cia(UBYTE PALflag) {
 	mt_Enable = 0;
+#if defined(PTPLAYER_DEFER_INTERRUPTS)
+	s_isPendingDmaOn = 0;
+	s_isPendingPlay = 0;
+	s_isPendingSetRep = 0;
+#endif
 
 	// disable level 6 EXTER interrupts, set player interrupt vector
 	g_pCustom->intena = INTF_EXTER;
@@ -1276,6 +1336,12 @@ void mt_install_cia(UBYTE PALflag) {
 	else {
 		mt_timerval = 1789773;
 	}
+
+	// moved from mt_init: reset CIA timer A to default (125)
+	// FIXME: which one is correct?
+	UWORD uwTimer = mt_timerval / 125;
+	g_pCia[CIA_B]->talo = uwTimer;
+	g_pCia[CIA_B]->tahi = uwTimer >> 8;
 
 	// load TimerA in continuous mode for the default tempo of 125
 	g_pCia[CIA_B]->talo = 125;
@@ -1340,9 +1406,9 @@ void mt_init(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) 
 		mt_SampleStarts[i] = &pSampleData[ulOffs];
 		if(mt_mod->pSamples[i].uwLength > 0) {
 			logWrite(
-				"Sample %hhu name: '%.*s', word length: %hu, start: %p\n",
+				"Sample %hhu name: '%.*s', word length: %hu, start: %p, repeat offs: %hu, repeat len:%hu\n",
 				i, 22, mt_mod->pSamples[i].szName, mt_mod->pSamples[i].uwLength,
-				mt_SampleStarts[i]
+				mt_SampleStarts[i], mt_mod->pSamples[i].uwRepeatOffs, mt_mod->pSamples[i].uwRepeatLength
 			);
 		}
 
@@ -1352,11 +1418,6 @@ void mt_init(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) 
 		// go to next sample
 		ulOffs += mt_mod->pSamples[i].uwLength;
 	};
-
-	// reset CIA timer A to default (125)
-	UWORD uwTimer = mt_timerval / 125;
-	g_pCia[CIA_B]->talo = uwTimer;
-	g_pCia[CIA_B]->tahi = uwTimer >> 8;
 
 	mt_reset();
 	logBlockEnd("mt_init()");
@@ -2139,6 +2200,7 @@ static void ptDoRetrigger(
 ) {
 	// DMA off, set sample pointer and length
 	systemSetDmaMask(pChannelData->n_dmabit, 0);
+	logWrite("retrigger: %p:%hu\n", pChannelData->n_start, pChannelData->n_length);
 	pChannelReg->ac_ptr = pChannelData->n_start;
 	pChannelReg->ac_len = pChannelData->n_length;
 	mt_dmaon |= pChannelData->n_dmabit;
@@ -2225,6 +2287,7 @@ static void mt_patterndelay(
 	// cmd 0x0E'EX (x = delay count)
 	if(!mt_Counter && !mt_PattDelTime2) {
 		mt_PattDelTime = ubArg + 1;
+		logWrite("set pattern delay: %hu\n", mt_PattDelTime);
 	}
 }
 
@@ -2298,7 +2361,9 @@ static void set_period(
 	pChannelData->n_noteoff = ubPeriodPos * 2; // TODO later: convert to word offs (div by 2)
 
 	// Check for notedelay
-	if(uwMaskedCmdE != 0xED) {
+	logWrite("cmd: %04X, masked E: %04X\n", uwCmd, uwMaskedCmdE);
+	// Skip if notedelay
+	if(uwMaskedCmdE != 0x0ED0) {
 		// Disable DMA
 		systemSetDmaMask(pChannelData->n_dmabit, 0);
 
@@ -2308,6 +2373,11 @@ static void set_period(
 		if(!BTST(pChannelData->n_tremoloctrl, 2)) {
 			pChannelData->n_tremolopos = 0;
 		}
+		logWrite(
+			"setperiod: ptr %p, len: %hu, period: %hu\n",
+			pChannelData->n_start, pChannelData->n_length, uwPeriod
+		);
+
 		pChannelReg->ac_ptr = pChannelData->n_start;
 		pChannelReg->ac_len = pChannelData->n_length;
 		pChannelReg->ac_per = uwPeriod;
@@ -2320,6 +2390,7 @@ static void set_finetune(
 	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
+	logWrite("Set finetune\n");
 	UBYTE ubPeriod = pChannelData->n_cmdlo & 0xF;
 	pChannelData->n_pertab = mt_PeriodTables[ubPeriod];
 	pChannelData->n_minusft = ubPeriod >= 16; // TODO can it trigger?
@@ -2330,6 +2401,7 @@ static void set_sampleoffset(
 	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
+	logWrite("set_sampleoffset\n");
 	// cmd 9 x y (xy = offset in 256 bytes)
 	// d4 = xy
 	UWORD ubArg = uwCmdArg;
@@ -2404,3 +2476,21 @@ static const tPreFx prefx_tab[16] = {
 
 volatile UWORD g_uwPtSuccess = 0;
 volatile char g_szPtLog[100] = "";
+
+void ptplayerProcess(void) {
+#if !defined(PTPLAYER_DEFER_INTERRUPTS)
+	return;
+#endif
+	if(s_isPendingPlay) {
+		s_isPendingPlay = 0;
+		intPlay();
+	}
+	if(s_isPendingDmaOn) {
+		s_isPendingDmaOn = 0;
+		intDmaOn();
+	}
+	if(s_isPendingSetRep) {
+		s_isPendingSetRep = 0;
+		intSetRep(g_pCustom);
+	}
+}

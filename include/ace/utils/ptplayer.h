@@ -112,6 +112,8 @@ void mt_mastervol(UWORD MasterVolume);
 
 void mt_music(void);
 
+void ptplayerProcess(void);
+
 extern volatile UWORD g_uwPtSuccess;
 extern volatile char g_szPtLog[100];
 
