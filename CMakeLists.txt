@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.5)
-project(ACE)
+project(ACE LANGUAGES C)
 set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE) # needed for helper fns
 
 # Adhere to GNU filesystem layout conventions
