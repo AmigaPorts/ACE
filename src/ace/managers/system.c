@@ -228,6 +228,7 @@ void HWINTERRUPT int5Handler(void) {
 
 FN_HOTSPOT
 void HWINTERRUPT int6Handler(void) {
+	// TODO: perhaps I should disable CIA interrupts while I process them?
 	UWORD uwIntReq = g_pCustom->intreqr;
 	UWORD uwReqClr = 0;
 
@@ -256,7 +257,6 @@ void HWINTERRUPT int6Handler(void) {
 				);
 			}
 		}
-
 		uwReqClr |= INTF_EXTER;
 	}
 
@@ -486,7 +486,7 @@ void systemUnuse(void) {
 		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
 		// Everything that's supported by ACE to simplify things for now
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
-			INTF_BLIT | INTF_COPER | INTF_VERTB |
+			INTF_BLIT | INTF_COPER | INTF_VERTB | INTF_EXTER |
 			INTF_PORTS | INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
 		);
 	}
