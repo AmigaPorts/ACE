@@ -809,6 +809,7 @@ static const tPreFx prefx_tab[16];
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
+static volatile UWORD s_uwAudioInterrupts;
 
 
 static void blocked_e_cmds(
@@ -927,7 +928,7 @@ static void mt_playvoice(
 		}
 		// do only some limited commands, while sound effect is in progress
 		if(
-			!(pChannelData->n_intbit & g_pCustom->intreqr) ||
+			!(pChannelData->n_intbit & s_uwAudioInterrupts) ||
 			(pChannelData->n_dmabit & mt_dmaon)
 		) {
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
@@ -1017,7 +1018,7 @@ static void mt_checkfx(
 			startSfx(uwLen, pChannelData, pChannelReg);
 		}
 		if(uwLen || (
-			(pChannelData->n_intbit & g_pCustom->intreqr) ||
+			(pChannelData->n_intbit & s_uwAudioInterrupts) ||
 			(pChannelData->n_dmabit & g_pCustom->dmaconr)
 		)) {
 			// Channel is blocked, only check some E-commands
@@ -1081,6 +1082,7 @@ static void intSetRep(volatile tCustom *pCustom) {
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
 	// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
+	s_uwAudioInterrupts = 0;
 
 	logWrite(
 		"set replen: %p %hu, %p %hu, %p %hu, %p %hu\n",
@@ -1146,7 +1148,7 @@ static void chan_sfx_only(
 	startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
 
 	if(
-		(pChannelData->n_intbit & g_pCustom->intreqr) &&
+		(pChannelData->n_intbit & s_uwAudioInterrupts) &&
 		(pChannelData->n_dmabit & mt_dmaon)
 	) {
 		// Last sound effect sample has played, so unblock this channel again
@@ -1319,8 +1321,16 @@ static inline void setTempo(UWORD uwTempo) {
 	ciaSetTimerA(g_pCia[CIA_B], mt_timerval / uwTempo);
 }
 
+static void INTERRUPT onAudio(
+	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *pData, "a1")
+) {
+	ULONG ulIntFlag = (ULONG)pData;
+	s_uwAudioInterrupts |= ulIntFlag;
+};
+
 void mt_install_cia(UBYTE PALflag) {
 	mt_Enable = 0;
+	s_uwAudioInterrupts = 0;
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	s_isPendingDmaOn = 0;
 	s_isPendingPlay = 0;
@@ -1331,6 +1341,10 @@ void mt_install_cia(UBYTE PALflag) {
 	g_pCustom->intena = INTF_EXTER;
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
+	systemSetInt(INTB_AUD0, onAudio, (void*)INTF_AUD0);
+	systemSetInt(INTB_AUD1, onAudio, (void*)INTF_AUD1);
+	systemSetInt(INTB_AUD2, onAudio, (void*)INTF_AUD2);
+	systemSetInt(INTB_AUD3, onAudio, (void*)INTF_AUD3);
 
 	// determine if 02 clock for timers is based on PAL or NTSC
 	if(PALflag) {
@@ -1561,7 +1575,7 @@ void mt_playfx(tSfxStructure *SfxStructurePointer) {
 		// We will prefer a music channel which had an audio interrupt bit set,
 		// because that means the last instrument sample has been played
 		// completely, and the channel is now in an idle loop.
-		uwChannels &= g_pCustom->intreqr;
+		uwChannels &= s_uwAudioInterrupts;
 		if(!uwChannels) {
 			// All channels are busy, then it doesn't matter which one we break...
 			uwChannels = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
