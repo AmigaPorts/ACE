@@ -993,7 +993,7 @@ static void mt_playvoice(
 		pChannelReg->ac_vol = mt_MasterVolTab[pSampleDef->ubVolume];
 	}
 
-	// set_regs:
+	// inlined set_regs function here:
 	if(!pVoice->uwNote) {
 		checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 	}
@@ -1176,8 +1176,7 @@ void mt_sfxonly(void) {
 // Effects are always handled.
 void mt_music(void) {
 	mt_dmaon = 0;
-	++mt_Counter;
-	if(mt_Counter < mt_Speed) {
+	if(++mt_Counter < mt_Speed) {
 		// no new note, just check effects, don't step to next position
 		mt_checkfx(&mt_chan[0], &g_pCustom->aud[0]);
 		mt_checkfx(&mt_chan[1], &g_pCustom->aud[1]);
@@ -1331,6 +1330,11 @@ void mt_install_cia(UBYTE PALflag) {
 
 	// determine if 02 clock for timers is based on PAL or NTSC
 	if(PALflag) {
+		// Fcolor = 4.43361825 MHz (PAL color carrier frequency)
+		// CPU Clock = Fcolor * 1.6 = 7.0937892 MHz
+		// CIA Clock = Cpu Clock / 10 = 709.37892 kHz
+		// 50 Hz Timer = CIA Clock / 50 = 14187.5784
+		// Tempo num. = 50 Hz Timer*125 = 1773447
 		mt_timerval = 1773447;
 	}
 	else {
@@ -1363,10 +1367,10 @@ void mt_init(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) 
 		"mt_init(pTrackerModule: %p, pSampleData: %p, uwInitialSongPos: %hu)",
 		pTrackerModule, pSampleData, uwInitialSongPos
 	);
+
 	// Initialize new module.
 	// Reset speed to 6, tempo to 125 and start at given song position.
 	// Master volume is at 64 (maximum).
-
 	mt_mod = (tModFileHeader*)pTrackerModule;
 	logWrite(
 		"Song name: '%s', arrangement length: %hhu, end pos: %hhu\n",
