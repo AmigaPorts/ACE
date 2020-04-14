@@ -18,7 +18,7 @@ extern "C" {
 //------------------------------------------------------------------------ TYPES
 
 typedef void (*tAceIntHandler)(
-	REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *tData, "a1")
+	REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *pData, "a1")
 );
 
 //-------------------------------------------------------------------- FUNCTIONS

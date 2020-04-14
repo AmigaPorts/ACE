@@ -1315,6 +1315,10 @@ void mt_reset(void) {
 	mt_end();
 }
 
+static inline void setTempo(UWORD uwTempo) {
+	ciaSetTimerA(g_pCia[CIA_B], mt_timerval / uwTempo);
+}
+
 void mt_install_cia(UBYTE PALflag) {
 	mt_Enable = 0;
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
@@ -1342,19 +1346,15 @@ void mt_install_cia(UBYTE PALflag) {
 	}
 
 	// moved from mt_init: reset CIA timer A to default (125)
-	// FIXME: which one is correct?
-	UWORD uwTimer = mt_timerval / 125;
-	g_pCia[CIA_B]->talo = uwTimer;
-	g_pCia[CIA_B]->tahi = uwTimer >> 8;
+	// FIXME: which one is correct? I think the one which sets tempo
+	setTempo(125);
 
 	// load TimerA in continuous mode for the default tempo of 125
-	g_pCia[CIA_B]->talo = 125;
-	g_pCia[CIA_B]->tahi = 8;
+	// ciaSetTimerA(g_pCia[CIA_B], 0x87D); // tahi: 8, talo: 125
 	g_pCia[CIA_B]->cra = 0x11; // load timer, start continuous
 
 	// load TimerB with 496 ticks for setting DMA and repeat
-	g_pCia[CIA_B]->tblo = 496 & 0xFF;
-	g_pCia[CIA_B]->tbhi = 496 >> 8;
+	ciaSetTimerB(g_pCia[CIA_B], 496);
 
 	// enable level 6 interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
@@ -2051,9 +2051,7 @@ static void mt_setspeed(
 	}
 	else {
 		// Set tempo (CIA only)
-		UWORD uwTempo = mt_timerval / ubArgs;
-		g_pCia[CIA_B]->talo = uwTempo & 0xFF;
-		g_pCia[CIA_B]->tahi = uwTempo >> 8;
+		setTempo(ubArgs);
 	}
 }
 

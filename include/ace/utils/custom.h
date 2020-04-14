@@ -139,12 +139,16 @@ typedef struct _tCia {
  */
 UWORD ciaGetTimerA(tCia REGPTR pCia);
 
+void ciaSetTimerA(tCia REGPTR pCia, UWORD uwTicks);
+
 /**
  * @brief Gets consistent Timer A value from given CIA chip.
  * Based on https://github.com/keirf/HxC_FF_File_Selector/blob/master/amiga/amiga.c
  * @param pCia Base CIA chip address.
  */
 UWORD ciaGetTimerB(tCia REGPTR pCia);
+
+void ciaSetTimerB(tCia REGPTR pCia, UWORD uwTicks);
 
 extern tCustom FAR REGPTR g_pCustom;
 

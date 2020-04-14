@@ -36,6 +36,15 @@ UWORD ciaGetTimerA(tCia REGPTR pCia) {
 	return (ubHi << 8) | ubLo;
 }
 
+void ciaSetTimerA(tCia REGPTR pCia, UWORD uwTicks) {
+	// The latches should be loaded, low byte first, as a write access
+	// to the high register causes the timer to be stopped and reloaded with the
+	// latch value unless the LOAD bit in the control register is set, in which case
+	// the latch value is transferred to the timers regardless of the timer state
+	pCia->talo = uwTicks & 0xFF;
+	pCia->tahi = uwTicks >> 8;
+}
+
 UWORD ciaGetTimerB(tCia REGPTR pCia) {
 	UBYTE ubHi, ubLo;
 	do {
@@ -43,6 +52,15 @@ UWORD ciaGetTimerB(tCia REGPTR pCia) {
 		ubLo = pCia->tblo;
 	} while(ubHi != pCia->tbhi);
 	return (ubHi << 8) | ubLo;
+}
+
+void ciaSetTimerB(tCia REGPTR pCia, UWORD uwTicks) {
+	// The latches should be loaded, low byte first, as a write access
+	// to the high register causes the timer to be stopped and reloaded with the
+	// latch value unless the LOAD bit in the control register is set, in which case
+	// the latch value is transferred to the timers regardless of the timer state
+	pCia->tblo = uwTicks & 0xFF;
+	pCia->tbhi = uwTicks >> 8;
 }
 
 #endif // AMIGA
