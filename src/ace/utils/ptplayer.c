@@ -6,6 +6,8 @@
 // - https://www.fileformat.info/format/mod/corion.htm
 // - http://lclevy.free.fr/mo3/mod.txt
 // - https://www.stef.be/bassoontracker/docs/ProtrackerCommandReference.pdf
+// - http://coppershade.org/articles/More!/Topics/Protracker_Tempo
+// - http://coppershade.org/articles/More!/Topics/Protracker_File_Format/
 
 #include <ace/utils/ptplayer.h>
 #include <ace/managers/log.h>
@@ -18,7 +20,8 @@
 // Length of single pattern.
 #define MOD_PATTERN_LENGTH (64 * 4 * 4)
 #define MOD_PERIOD_TABLE_LENGTH 36
-#define PTPLAYER_DEFER_INTERRUPTS
+#define PTPLAYER_USE_VBL
+// #define PTPLAYER_DEFER_INTERRUPTS
 
 static const UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
 	{
@@ -822,9 +825,9 @@ static void set_finetune(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 );
 
-UBYTE mt_MusicChannels = 0;
-UBYTE mt_E8Trigger = 0;
-volatile UBYTE mt_Enable = 0;
+static volatile UBYTE mt_MusicChannels = 0;
+static volatile UBYTE mt_E8Trigger = 0;
+static volatile UBYTE mt_Enable = 0;
 
 tChannelStatus mt_chan[4];
 UWORD *mt_SampleStarts[31]; ///< Start address of each sample
@@ -835,8 +838,8 @@ UWORD mt_PatternPos;
 UWORD mt_PBreakPos; ///< Pattern break pos
 UBYTE mt_PosJumpFlag;
 UBYTE mt_PBreakFlag;
-UBYTE mt_Speed;
-UBYTE mt_Counter;
+UBYTE mt_Speed; ///< Number of times the main loop gets called per note step.
+UBYTE mt_Counter; ///< Number of main loop iterations in current note step so far.
 UBYTE mt_SongPos; ///< Position in arrangement.
 UBYTE mt_PattDelTime;
 UBYTE mt_PattDelTime2;
@@ -1078,6 +1081,19 @@ static void mt_TimerAInt(
 #endif
 }
 
+static inline void ptplayerEnableMainHandler(UBYTE isEnabled) {
+#if defined(PTPLAYER_USE_VBL)
+	// FIXME
+#else
+	if(isEnabled) {
+		systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+	}
+	else {
+		systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+	}
+#endif
+}
+
 static void intSetRep(volatile tCustom *pCustom) {
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
@@ -1103,7 +1119,7 @@ static void intSetRep(volatile tCustom *pCustom) {
 	pCustom->aud[3].ac_len = mt_chan[3].n_replen;
 
 	// restore TimerA music interrupt vector
-	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+	ptplayerEnableMainHandler(1);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
@@ -1120,11 +1136,11 @@ static void mt_TimerBsetrep(
 
 static void intDmaOn(void) {
 	// Restart timer to set repeat, enable DMA
-	g_pCia[CIA_B]->crb = 0x19;
+	g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START;
 	systemSetDmaMask(mt_dmaon, 1);
 
 	// set level 6 interrupt to mt_TimerBsetrep
-	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+	ptplayerEnableMainHandler(0);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBsetrep, 0);
 }
 
@@ -1166,13 +1182,13 @@ void mt_sfxonly(void) {
 	chan_sfx_only(&g_pCustom->aud[3], &mt_chan[3]);
 
 	if(mt_dmaon) {
-		systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+		ptplayerEnableMainHandler(0);
 		systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
-		g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
+		g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START; // load/start timer B, one-shot
 	}
 }
 
-// The replayer routine. Is called automatically after mt_install_cia().
+// The replayer routine. Is called automatically after ptplayerInstallInterrupts().
 // Called from interrupt.
 // Play next position when Counter equals Speed.
 // Effects are always handled.
@@ -1187,9 +1203,9 @@ void mt_music(void) {
 
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon) {
-			systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+			ptplayerEnableMainHandler(0);
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
-			g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
+			g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START; // load/start timer B, one-shot
 		}
 	}
 	else {
@@ -1225,9 +1241,9 @@ void mt_music(void) {
 		}
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon) {
-			systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+			ptplayerEnableMainHandler(0);
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
-			g_pCia[CIA_B]->crb = 0x19; // load/start timer B, one-shot
+			g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START; // load/start timer B, one-shot
 		}
 
 		// next pattern line, handle delay and break
@@ -1270,7 +1286,7 @@ void mt_music(void) {
 }
 
 // Stop playing current module.
-void mt_end(void) {
+void ptplayerEnd(void) {
 	g_pCustom->aud[0].ac_vol = 0;
 	g_pCustom->aud[1].ac_vol = 0;
 	g_pCustom->aud[2].ac_vol = 0;
@@ -1314,11 +1330,13 @@ void mt_reset(void) {
 
 	mt_SilCntValid = 0;
 	mt_E8Trigger = 0;
-	mt_end();
+	ptplayerEnd();
 }
 
 static inline void setTempo(UWORD uwTempo) {
+#if !defined(PTPLAYER_USE_VBL)
 	ciaSetTimerA(g_pCia[CIA_B], mt_timerval / uwTempo);
+#endif
 }
 
 static void INTERRUPT onAudio(
@@ -1328,7 +1346,7 @@ static void INTERRUPT onAudio(
 	s_uwAudioInterrupts |= ulIntFlag;
 };
 
-void mt_install_cia(UBYTE PALflag) {
+void ptplayerInstallInterrupts(UBYTE isPal) {
 	mt_Enable = 0;
 	s_uwAudioInterrupts = 0;
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
@@ -1337,9 +1355,9 @@ void mt_install_cia(UBYTE PALflag) {
 	s_isPendingSetRep = 0;
 #endif
 
-	// disable level 6 EXTER interrupts, set player interrupt vector
+	// disable CIA B interrupts, set player interrupt vector
 	g_pCustom->intena = INTF_EXTER;
-	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+	ptplayerEnableMainHandler(1);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 	systemSetInt(INTB_AUD0, onAudio, (void*)INTF_AUD0);
 	systemSetInt(INTB_AUD1, onAudio, (void*)INTF_AUD1);
@@ -1347,7 +1365,7 @@ void mt_install_cia(UBYTE PALflag) {
 	systemSetInt(INTB_AUD3, onAudio, (void*)INTF_AUD3);
 
 	// determine if 02 clock for timers is based on PAL or NTSC
-	if(PALflag) {
+	if(isPal) {
 		// Fcolor = 4.43361825 MHz (PAL color carrier frequency)
 		// CPU Clock = Fcolor * 1.6 = 7.0937892 MHz
 		// CIA Clock = Cpu Clock / 10 = 709.37892 kHz
@@ -1359,26 +1377,31 @@ void mt_install_cia(UBYTE PALflag) {
 		mt_timerval = 1789773;
 	}
 
-	// moved from mt_init: reset CIA timer A to default (125)
+	// moved from ptplayerInit: reset CIA timer A to default (125)
 	// FIXME: which one is correct? I think the one which sets tempo
 	setTempo(125);
 
+#if defined(PTPLAYER_USE_VBL)
+	systemSetInt(INTB_VERTB, mt_TimerAInt, 0);
+#else
 	// load TimerA in continuous mode for the default tempo of 125
 	// ciaSetTimerA(g_pCia[CIA_B], 0x87D); // tahi: 8, talo: 125
-	g_pCia[CIA_B]->cra = 0x11; // load timer, start continuous
+	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+#endif
 
 	// load TimerB with 496 ticks for setting DMA and repeat
 	ciaSetTimerB(g_pCia[CIA_B], 496);
 
-	// enable level 6 interrupts
+	// Enable CIA B interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
 
 	mt_reset();
 }
 
-void mt_init(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) {
+void ptplayerInit(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) {
 	logBlockBegin(
-		"mt_init(pTrackerModule: %p, pSampleData: %p, uwInitialSongPos: %hu)",
+		"ptplayerInit(pTrackerModule: %p, pSampleData: %p, uwInitialSongPos: %hu)",
 		pTrackerModule, pSampleData, uwInitialSongPos
 	);
 
@@ -1438,7 +1461,7 @@ void mt_init(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) 
 	};
 
 	mt_reset();
-	logBlockEnd("mt_init()");
+	logBlockEnd("ptplayerInit()");
 }
 
 // activate the sound effect on this channel
@@ -2060,7 +2083,7 @@ static void mt_setspeed(
 	if(ubArgs < 0x20) {
 		mt_Speed = ubArgs;
 		if(!ubArgs) {
-			mt_end();
+			ptplayerEnd();
 		}
 	}
 	else {
@@ -2490,13 +2513,8 @@ static const tPreFx prefx_tab[16] = {
 	[10 ... 15] = set_period,
 };
 
-volatile UWORD g_uwPtSuccess = 0;
-volatile char g_szPtLog[100] = "";
-
 void ptplayerProcess(void) {
-#if !defined(PTPLAYER_DEFER_INTERRUPTS)
-	return;
-#endif
+#if defined(PTPLAYER_DEFER_INTERRUPTS)
 	if(s_isPendingPlay) {
 		s_isPendingPlay = 0;
 		intPlay();
@@ -2509,4 +2527,31 @@ void ptplayerProcess(void) {
 		s_isPendingSetRep = 0;
 		intSetRep(g_pCustom);
 	}
+#endif
+}
+
+const tModVoice *ptplayerGetCurrentVoices(void) {
+	UBYTE *pPatternData = &((UBYTE*)mt_mod)[sizeof(tModFileHeader)];
+	UBYTE *pArrangement = mt_mod->pArrangement;
+	UBYTE ubPatternIdx = pArrangement[mt_SongPos];
+	UBYTE *pCurrentPattern = &pPatternData[ubPatternIdx * 1024];
+	tModVoice *pLineVoices = (tModVoice*)&pCurrentPattern[mt_PatternPos];
+	return pLineVoices;
+}
+
+void ptplayerGetVoiceProgress(UWORD *pCurr, UWORD *pMax) {
+	*pCurr = mt_Counter;
+	*pMax = mt_Speed;
+}
+
+void ptplayerEnableMusic(UBYTE isEnabled) {
+	mt_Enable = isEnabled;
+}
+
+UBYTE ptplayerGetE8(void) {
+	return mt_E8Trigger;
+}
+
+void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount) {
+	mt_MusicChannels = ubChannelCount;
 }

@@ -129,7 +129,10 @@ typedef struct _tCia {
 #define CIACRB_OUTMODE BV(2)
 #define CIACRB_RUNMODE BV(3)
 #define CIACRB_LOAD    BV(4)
-#define CIACRB_INMODE  (BV(5) | BV(6))
+#define CIACRB_INMODE_0 0
+#define CIACRB_INMODE_1 BV(5)
+#define CIACRB_INMODE_2 BV(6)
+#define CIACRB_INMODE_3 (BV(5) | BV(6))
 #define CIACRB_ALARM   BV(7)
 
 /**

@@ -15,32 +15,31 @@ extern "C" {
 
 #include <ace/types.h>
 
-/*
-  _mt_install_cia(a6=CUSTOM, a0=AutoVecBase, d0=PALflag.b)
-    Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
-    The music module is replayed via _mt_music when _mt_Enable is non-zero.
-    Otherwise the interrupt handler calls mt_sfxonly to play sound
-    effects only.
-*/
+/**
+ * @brief Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
+ * The music module is replayed via _mt_music when _mt_Enable is non-zero.
+ * Otherwise the interrupt handler calls mt_sfxonly to play sound effects only.
+ *
+ * @param isPal In CIA mode, Set to 1 on PAL configs, zero on NTSC.
+ */
+void ptplayerInstallInterrupts(UBYTE isPal);
 
-void mt_install_cia(UBYTE PALflag);
+/**
+ * @brief Initialize a new module.
+ * Reset speed to 6, tempo to 125 and start at the given position.
+ * Master volume is at 64 (maximum).
+ * When a1 is NULL the samples are assumed to be stored after the patterns.
+ *
+ * @param TrackerModule
+ * @param Samples
+ * @param InitialSongPos
+ */
+void ptplayerInit(UBYTE *TrackerModule, UWORD *Samples, UWORD InitialSongPos);
 
-/*
-  _mt_init(a6=CUSTOM, a0=TrackerModule, a1=Samples|NULL, d0=InitialSongPos.b)
-    Initialize a new module.
-    Reset speed to 6, tempo to 125 and start at the given position.
-    Master volume is at 64 (maximum).
-    When a1 is NULL the samples are assumed to be stored after the patterns.
-*/
-
-void mt_init(UBYTE *TrackerModule, UWORD *Samples, UWORD InitialSongPos);
-
-/*
-  _mt_end(a6=CUSTOM)
-    Stop playing current module.
-*/
-
-void mt_end(void);
+/**
+ * @brief Stop playing current module.
+ */
+void ptplayerEnd(void);
 
 /*
   _mt_soundfx(a6=CUSTOM, a0=SamplePointer,
@@ -107,40 +106,39 @@ void mt_mastervol(UWORD MasterVolume);
 
 /*
   _mt_music(a6=CUSTOM)
-    The replayer routine. Is called automatically after mt_install_cia().
+    The replayer routine. Is called automatically after ptplayerInstallInterrupts().
 */
-
 void mt_music(void);
 
 void ptplayerProcess(void);
 
-extern volatile UWORD g_uwPtSuccess;
-extern volatile char g_szPtLog[100];
+/**
+ * @brief Enables or disabls music playback.
+ * You can still play sound effects, while music is stopped.
+ * Music is by default disabled after ptplayerInit().
+ *
+ * @param isEnabled Set to 1 to enable music playback, zero to disable.
+ */
+void ptplayerEnableMusic(UBYTE isEnabled);
 
-/*
-  _mt_Enable
-    Set this byte to non-zero to play music, zero to pause playing.
-    Note that you can still play sound effects, while music is stopped.
-*/
+/**
+ * @brief Gets the value of the last E8 command.
+ * It is reset to 0 after ptplayerInit().
+ *
+ * @return UBYTE
+ */
+UBYTE ptplayerGetE8(void);
 
-extern volatile UBYTE mt_Enable;
-
-/*
-  _mt_E8Trigger
-    This byte reflects the value of the last E8 command.
-    It is reset to 0 after mt_init().
-*/
-
-extern UBYTE mt_E8Trigger;
-
-/*
-  _mt_MusicChannels
-    This byte defines the number of channels which should be dedicated
-    for playing music. So sound effects will never use more
-    than 4 - _mt_MusicChannels channels at once. Defaults to 0.
-*/
-
-extern UBYTE mt_MusicChannels;
+/**
+ * @brief Define the number of channels which should be dedicated only for music.
+ * If set to zero, sound effects can take over any channel if they have high
+ * enough priority. When set to 4, no sound effects are played.
+ *
+ * At initialization, zero channels are reserved for music.
+ *
+ * @param ubChannelCount Number of channels to be used only for playing music.
+ */
+void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount);
 
 #ifdef __cplusplus
 }
