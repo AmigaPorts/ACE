@@ -23,6 +23,13 @@
 #define PTPLAYER_USE_VBL
 // #define PTPLAYER_DEFER_INTERRUPTS
 
+/**
+ * @brief Period tables for each finetune value.
+ * Each period table consists of periods for notes:
+ * C-1, C#1, D-1, D#1, E-1, F-1, F#1, G-1, G#1, A-1, A#1, B-1,
+ * C-2, C#2, D-2, D#2, E-2, F-2, F#2, G-2, G#2, A-2, A#2, B-2,
+ * C-3, C#3, D-3, D#3, E-3, F-3, F#3, G-3, G#3, A-3, A#3, B-3
+ */
 static const UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
 	{
 		856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480, 453,
@@ -708,8 +715,8 @@ static const BYTE mt_VibratoRectTable[] = {
 typedef struct _tModSampleHeader {
 	char szName[22];
 	UWORD uwLength; ///< Sample data length, in words.
-	UBYTE ubNibble; ///< Finetune.
-	UBYTE ubVolume;
+	UBYTE ubFineTune; ///< Finetune. Only lower nibble is used. Values translate to finetune: {0..7, -8..-1}
+	UBYTE ubVolume; ///< Sample volume. 0..64
 	UWORD uwRepeatOffs; ///< In words.
 	UWORD uwRepeatLength; ///< In words.
 } tModSampleHeader;
@@ -723,7 +730,7 @@ typedef struct _tModFileHeader {
 	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
 		                       /// These list up to 128 pattern numbers
 													 /// and the order they should be played in.
-	char pFileFormatTag[4];
+	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
 	// MOD pattern/sample data follows
 } tModFileHeader;
 
@@ -733,11 +740,11 @@ typedef struct AudChannel tChannelRegs;
  * Each pattern line consists of following data for each channel.
  */
 typedef struct _tModVoice {
-	UWORD uwNote; // Upper 4 bits: instrument, 12 lower bits: period
+	UWORD uwNote; // [instrumentHi:4] [period:12]
 	union {
 		struct {
-			UBYTE ubCmdHi; // Upper nibble: 4 lower bits of instrument, lower nibble: cmd number
-			UBYTE ubCmdLo; // Special effects data
+			UBYTE ubCmdHi; // [instrumentLo:4] [cmdNo:4]
+			UBYTE ubCmdLo; // [cmdArg:8] - special effects data
 		};
 		UWORD uwCmd; // [instrumentLo:4] [cmdNo:4] [cmdArg:8]
 	};
@@ -745,8 +752,8 @@ typedef struct _tModVoice {
 
 typedef struct _tChannelStatus {
 	UWORD n_note;
-	UBYTE n_cmd;
-	UBYTE n_cmdlo;
+	UBYTE n_cmd; ///< high byte of command word ([instrumentLo:4] [cmdNo:4])
+	UBYTE n_cmdlo; ///< [cmdArg:8]
 	UWORD *n_start; ///< Pointer to start of sample
 	UWORD *n_loopstart;
 	UWORD n_length;
@@ -768,7 +775,7 @@ typedef struct _tChannelStatus {
 	UWORD n_sfxper;
 	UWORD n_sfxvol;
 	UBYTE n_looped;
-	UBYTE n_minusft;
+	UBYTE n_minusft; ///< Set to 1 on negative finetune value
 	UBYTE n_vibratoamp;
 	UBYTE n_vibratospd;
 	UBYTE n_vibratopos;
@@ -972,10 +979,9 @@ static void mt_playvoice(
 		pChannelData->n_reallength = uwSampleLength;
 
 		// Determine period table from fine-tune parameter
-		UBYTE ubNibble = pSampleDef->ubNibble; // d3
-		const UWORD *pPeriodTable = mt_PeriodTables[ubNibble];
-		pChannelData->n_pertab = pPeriodTable;
-		pChannelData->n_minusft = (ubNibble >= 16);
+		UBYTE ubFineTune = pSampleDef->ubFineTune; // d3
+		pChannelData->n_pertab = mt_PeriodTables[ubFineTune];
+		pChannelData->n_minusft = (ubFineTune >= 8);
 
 		pChannelData->n_volume = pSampleDef->ubVolume;
 		if(!pSampleDef->uwRepeatOffs) {
@@ -986,7 +992,7 @@ static void mt_playvoice(
 			// Set repeat
 			pChannelData->n_looped = 1;
 			pChannelData->n_replen = pSampleDef->uwRepeatLength;
-			uwSampleLength = pSampleDef->uwRepeatLength + ubNibble * 2;
+			uwSampleLength = pSampleDef->uwRepeatLength + ubFineTune * 2;
 			pSampleStart += pSampleDef->uwRepeatOffs;
 		}
 
@@ -1043,15 +1049,15 @@ static void mt_checkfx(
 	if(pChannelData->n_funk) {
 		mt_updatefunk(pChannelData);
 	}
-	UWORD uwCmd = pChannelData->n_cmd & 0x0FFF;
+	// TODO later: remove this OR by storing those values in a better way
+	UWORD uwCmd = (pChannelData->n_cmd | pChannelData->n_cmdlo) & 0x0FFF;
 	if(!uwCmd) {
 		// Just set the current period
 		pChannelReg->ac_per = pChannelData->n_period;
 	}
 	else {
-		uwCmd &= 0xFF;
-		UWORD uwCmd2 = (pChannelData->n_cmd & 0xF);
-		fx_tab[uwCmd2](uwCmd, pChannelData, pChannelReg);
+		UBYTE ubCmdIndex = (pChannelData->n_cmd & 0xF);
+		fx_tab[ubCmdIndex](pChannelData->n_cmdlo, pChannelData, pChannelReg);
 	}
 }
 
@@ -2011,6 +2017,9 @@ static void mt_e_cmds(
 	ecmd_tab[ubCmdE](ubArgE, pChannelData, pChannelReg);
 }
 
+/**
+ * @brief Protracker commands
+ */
 static const tFx fx_tab[16] = {
 	mt_arpeggio,
 	mt_portaup,
@@ -2185,8 +2194,7 @@ static void mt_finetune(
 ) {
 	// cmd 0x0E'5X (x = finetune)
 	pChannelData->n_pertab = mt_PeriodTables[ubArg];
-	// TODO later: ask phx if it's correct. d0 &= 0xF, 0xF+0xF == 30 && 30 < 32
-	pChannelData->n_minusft = (ubArg >= 32);
+	pChannelData->n_minusft = (ubArg >= 8);
 }
 
 static void mt_jumploop(
@@ -2389,7 +2397,7 @@ static void set_period(
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
 	UBYTE ubPeriodPos;
 	for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
-		if (uwNote >= mt_PeriodTables[0][ubPeriodPos]) {
+		if(uwNote >= mt_PeriodTables[0][ubPeriodPos]) {
 			break;
 		}
 	}
@@ -2430,9 +2438,9 @@ static void set_finetune(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	logWrite("Set finetune\n");
-	UBYTE ubPeriod = pChannelData->n_cmdlo & 0xF;
-	pChannelData->n_pertab = mt_PeriodTables[ubPeriod];
-	pChannelData->n_minusft = ubPeriod >= 16; // TODO can it trigger?
+	UBYTE ubFineTune = pChannelData->n_cmdlo & 0xF;
+	pChannelData->n_pertab = mt_PeriodTables[ubFineTune];
+	pChannelData->n_minusft = ubFineTune >= 8;
 	set_period(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 }
 
@@ -2466,10 +2474,7 @@ static void set_toneporta(
 	UNUSED_ARG UWORD uwMaskedCmdE, const tModVoice *pVoice,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	// tuned period table
-	const UWORD *pPeriodTable = pChannelData->n_pertab;
-
-	// find first period which is less or equal the note in d6
+	// Find first period which is less or equal the note in d6
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
 	UBYTE ubPeriodPos;
 	UWORD uwNoteOffs = 0;
@@ -2480,9 +2485,8 @@ static void set_toneporta(
 		uwNoteOffs += 2;
 	}
 
-	// Negative fine tune?
 	if(pChannelData->n_minusft && ubPeriodPos) {
-		// Then take the previous period
+		// Negative fine tune? Then take the previous period.
 		--ubPeriodPos;
 		uwNoteOffs -= 2;
 	}
@@ -2490,7 +2494,7 @@ static void set_toneporta(
 	// Note offset in period table
 	pChannelData->n_noteoff = uwNoteOffs;
 	UWORD uwPeriod = pChannelData->n_period;
-	UWORD uwNewPeriod = pPeriodTable[--ubPeriodPos];
+	UWORD uwNewPeriod = pChannelData->n_pertab[--ubPeriodPos];
 	if(uwNewPeriod == uwPeriod) {
 		uwNewPeriod = 0;
 	}
@@ -2510,7 +2514,7 @@ static const tPreFx prefx_tab[16] = {
 	[5] = set_toneporta,
 	[6 ... 8] = set_period,
 	[9] = set_sampleoffset,
-	[10 ... 15] = set_period,
+	[0xA ... 0xF] = set_period,
 };
 
 void ptplayerProcess(void) {
