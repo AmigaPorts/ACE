@@ -769,8 +769,8 @@ typedef struct _tChannelStatus {
 	UWORD n_funk; ///< Funk speed
 	UBYTE *n_wavestart;
 	UWORD n_reallength;
-	UWORD n_intbit;
-	UWORD n_sfxlen;
+	UWORD n_intbit; ///< channel's INTF_AUD# value.
+	UWORD n_sfxlen; ///< channel's DMAF_AUD# value.
 	UWORD *n_sfxptr;
 	UWORD n_sfxper;
 	UWORD n_sfxvol;
@@ -839,7 +839,7 @@ static volatile UBYTE mt_Enable = 0;
 tChannelStatus mt_chan[4];
 UWORD *mt_SampleStarts[31]; ///< Start address of each sample
 tModFileHeader *mt_mod;
-ULONG mt_timerval;
+ULONG mt_timerval; ///< Base nterrupt frequency of CIA-B timer A used to advance the song. Equals 125*50Hz.
 UBYTE *mt_MasterVolTab;
 UWORD mt_PatternPos;
 UWORD mt_PBreakPos; ///< Pattern break pos
@@ -851,7 +851,7 @@ UBYTE mt_SongPos; ///< Position in arrangement.
 UBYTE mt_PattDelTime;
 UBYTE mt_PattDelTime2;
 UBYTE mt_SilCntValid;
-UWORD mt_dmaon = 0;
+UWORD mt_dmaon = 0; ///< Set by DMAF_AUD# when
 
 static void ptSongStep(void) {
 	mt_PatternPos = mt_PBreakPos;
@@ -1052,7 +1052,7 @@ static void mt_checkfx(
 	// TODO later: remove this OR by storing those values in a better way
 	UWORD uwCmd = (pChannelData->n_cmd | pChannelData->n_cmdlo) & 0x0FFF;
 	if(!uwCmd) {
-		// Just set the current period
+		// Just set the current period - same as mt_pernop
 		pChannelReg->ac_per = pChannelData->n_period;
 	}
 	else {
@@ -1129,7 +1129,7 @@ static void intSetRep(volatile tCustom *pCustom) {
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
-// One-shot TimerB interrupt to set repeat samples after another 496 ticks.
+// One-shot TimerB interrupt to set repeat samples after another 576 ticks.
 static void mt_TimerBsetrep(
 	volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
 ) {
@@ -1150,7 +1150,7 @@ static void intDmaOn(void) {
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBsetrep, 0);
 }
 
-// One-shot TimerB interrupt to enable audio DMA after 496 ticks.
+// One-shot TimerB interrupt to enable audio DMA after 576 ticks.
 static void mt_TimerBdmaon(
 	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
 ) {
@@ -1383,21 +1383,18 @@ void ptplayerInstallInterrupts(UBYTE isPal) {
 		mt_timerval = 1789773;
 	}
 
-	// moved from ptplayerInit: reset CIA timer A to default (125)
-	// FIXME: which one is correct? I think the one which sets tempo
+	//Lload TimerA in continuous mode for the default tempo of 125
 	setTempo(125);
 
 #if defined(PTPLAYER_USE_VBL)
 	systemSetInt(INTB_VERTB, mt_TimerAInt, 0);
 #else
-	// load TimerA in continuous mode for the default tempo of 125
-	// ciaSetTimerA(g_pCia[CIA_B], 0x87D); // tahi: 8, talo: 125
-	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
 #endif
 
-	// load TimerB with 496 ticks for setting DMA and repeat
-	ciaSetTimerB(g_pCia[CIA_B], 496);
+	// load TimerB with 576 ticks for setting DMA and repeat
+	ciaSetTimerB(g_pCia[CIA_B], 576);
 
 	// Enable CIA B interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;

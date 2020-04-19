@@ -258,6 +258,9 @@ void HWINTERRUPT int6Handler(void) {
 			}
 		}
 		uwReqClr |= INTF_EXTER;
+		// TODO: I heart that Zorro and Clockport can trigger this interrupt
+		// and it sets the same bit. So there should be a handler for it in case of
+		// ICR intbits not being set.
 	}
 
 	// TOOD: is there any other interrupt source on level 6?
