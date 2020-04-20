@@ -585,13 +585,9 @@ void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled) {
 	if(isEnabled) {
 		s_uwAceDmaCon |= uwDmaMask;
 		s_uwOsDmaCon |= uwDmaMask;
-		if(!s_wSystemUses) {
+		if(!s_wSystemUses || !(uwDmaMask & s_uwOsMinDma)) {
+			// Enable right now if OS is asleep or it's not critical for it to live
 			g_pCustom->dmacon = DMAF_SETCLR | uwDmaMask;
-		}
-		else {
-			if(!(uwDmaMask & s_uwOsMinDma)) {
-				g_pCustom->dmacon = DMAF_SETCLR | uwDmaMask;
-			}
 		}
 	}
 	else {
@@ -599,13 +595,9 @@ void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled) {
 		if(!(uwDmaMask & s_uwOsMinDma)) {
 			s_uwOsDmaCon &= ~uwDmaMask;
 		}
-		if(!s_wSystemUses) {
+		if(!s_wSystemUses || !(uwDmaMask & s_uwOsMinDma)) {
+			// Disable right now if OS is asleep or it's not critical for it to live
 			g_pCustom->dmacon = uwDmaMask;
-		}
-		else {
-			if(!(uwDmaMask & s_uwOsMinDma)) {
-				g_pCustom->dmacon = uwDmaMask;
-			}
 		}
 	}
 }
