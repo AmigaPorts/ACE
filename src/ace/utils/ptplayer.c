@@ -1027,7 +1027,7 @@ static void mt_checkfx(
 			startSfx(uwLen, pChannelData, pChannelReg);
 		}
 		if(uwLen || (
-			(pChannelData->n_intbit & s_uwAudioInterrupts) ||
+			!(pChannelData->n_intbit & s_uwAudioInterrupts) ||
 			(pChannelData->n_dmabit & g_pCustom->dmaconr)
 		)) {
 			// Channel is blocked, only check some E-commands
@@ -1067,7 +1067,9 @@ static void intPlay(void) {
 	// it was a TA interrupt, do music when enabled
 	if(mt_Enable) {
 		// music with sfx inserted
+		g_pCustom->color[0] = 0xF00;
 		mt_music();
+		g_pCustom->color[0] = 0x000;
 	}
 	else {
 		// no music, only sfx
@@ -1101,6 +1103,7 @@ static inline void ptplayerEnableMainHandler(UBYTE isEnabled) {
 }
 
 static void intSetRep(volatile tCustom *pCustom) {
+	g_pCustom->color[0] = 0x0F0;
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
 	// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
@@ -1127,6 +1130,7 @@ static void intSetRep(volatile tCustom *pCustom) {
 	// restore TimerA music interrupt vector
 	ptplayerEnableMainHandler(1);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
+	g_pCustom->color[0] = 0x000;
 }
 
 // One-shot TimerB interrupt to set repeat samples after another 576 ticks.
@@ -1141,6 +1145,7 @@ static void mt_TimerBsetrep(
 }
 
 static void intDmaOn(void) {
+	g_pCustom->color[0] = 0x00F;
 	// Restart timer to set repeat, enable DMA
 	g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START;
 	systemSetDmaMask(mt_dmaon, 1);
@@ -1148,6 +1153,7 @@ static void intDmaOn(void) {
 	// set level 6 interrupt to mt_TimerBsetrep
 	ptplayerEnableMainHandler(0);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBsetrep, 0);
+	g_pCustom->color[0] = 0x000;
 }
 
 // One-shot TimerB interrupt to enable audio DMA after 576 ticks.
