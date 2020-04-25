@@ -1479,12 +1479,12 @@ void ptplayerInit(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSong
 				i, 22, mt_mod->pSamples[i].szName, mt_mod->pSamples[i].uwLength,
 				mt_SampleStarts[i], mt_mod->pSamples[i].uwRepeatOffs, mt_mod->pSamples[i].uwRepeatLength
 			);
+
+			// Make sure each sample starts with two 0-bytes
+			mt_SampleStarts[i][0] = 0;
 		}
 
-		// make sure sample starts with two 0-bytes
-		mt_SampleStarts[i][0] = 0;
-
-		// go to next sample
+		// Go to next sample
 		ulOffs += mt_mod->pSamples[i].uwLength;
 	};
 
