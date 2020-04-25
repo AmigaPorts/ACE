@@ -16,12 +16,17 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 
+// Flags which modify ptplayer functionality
+// #define PTPLAYER_USE_VBL // Otherwise use CIA
+// #define PTPLAYER_DEFER_INTERRUPTS
+
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes
 // Length of single pattern.
-#define MOD_PATTERN_LENGTH (64 * 4 * 4)
+#define MOD_ROWS_IN_PATTERN 64
+#define MOD_NOTES_IN_ROW 4
+#define MOD_BYTES_PER_NOTE 4
+#define MOD_PATTERN_LENGTH (MOD_ROWS_IN_PATTERN * MOD_NOTES_IN_ROW * MOD_BYTES_PER_NOTE)
 #define MOD_PERIOD_TABLE_LENGTH 36
-// #define PTPLAYER_USE_VBL
-// #define PTPLAYER_DEFER_INTERRUPTS
 
 /**
  * @brief Period tables for each finetune value.
