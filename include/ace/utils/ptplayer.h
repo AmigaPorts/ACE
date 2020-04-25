@@ -22,7 +22,9 @@ extern "C" {
  *
  * @param isPal In CIA mode, Set to 1 on PAL configs, zero on NTSC.
  */
-void ptplayerInstallInterrupts(UBYTE isPal);
+void ptplayerStartPlayback(UBYTE isPal);
+
+void ptplayerStopPlayback(void);
 
 /**
  * @brief Initialize a new module.
@@ -106,7 +108,7 @@ void mt_mastervol(UWORD MasterVolume);
 
 /*
   _mt_music(a6=CUSTOM)
-    The replayer routine. Is called automatically after ptplayerInstallInterrupts().
+    The replayer routine. Is called automatically after ptplayerStartPlayback().
 */
 void mt_music(void);
 

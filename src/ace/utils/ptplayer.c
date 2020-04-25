@@ -1213,7 +1213,7 @@ void mt_sfxonly(void) {
 	}
 }
 
-// The replayer routine. Is called automatically after ptplayerInstallInterrupts().
+// The replayer routine. Is called automatically after ptplayerStartPlayback().
 // Called from interrupt.
 // Play next position when Counter equals Speed.
 // Effects are always handled.
@@ -1312,6 +1312,7 @@ void mt_music(void) {
 
 // Stop playing current module.
 void ptplayerEnd(void) {
+	ptplayerEnableMusic(0);
 	g_pCustom->aud[0].ac_vol = 0;
 	g_pCustom->aud[1].ac_vol = 0;
 	g_pCustom->aud[2].ac_vol = 0;
@@ -1372,8 +1373,16 @@ static void INTERRUPT onAudio(
 	s_uwAudioInterrupts |= ulIntFlag;
 };
 
-void ptplayerInstallInterrupts(UBYTE isPal) {
-	mt_Enable = 0;
+void ptplayerStopPlayback(void) {
+	ptplayerEnd();
+	// Disable handling of music
+	ptplayerEnableMusic(0);
+	systemSetCiaInt(CIA_B, 0, 0, 0);
+	systemSetCiaInt(CIA_B, 1, 0, 0);
+}
+
+void ptplayerStartPlayback(UBYTE isPal) {
+	ptplayerEnableMusic(0);
 	s_uwAudioInterrupts = 0;
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	s_isPendingDmaOn = 0;
