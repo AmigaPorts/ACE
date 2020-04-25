@@ -879,7 +879,7 @@ static void startSfx(
 	UWORD uwLen, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
-	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
+	// logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
 	// play new sound effect on this channel
 	systemSetDmaMask(pChannelData->n_dmabit, 0);
 	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
@@ -1016,7 +1016,7 @@ static void mt_playvoice(
 		set_finetune(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 	}
 	else {
-		logWrite("call cmd %hhu from table\n", uwCmd);
+		// logWrite("call cmd %hhu from table\n", uwCmd);
 		prefx_tab[uwCmd](
 			uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg
 		);
@@ -1120,13 +1120,13 @@ static void intSetRep(volatile tCustom *pCustom) {
 	// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
 	s_uwAudioInterrupts = 0;
 
-	logWrite(
-		"set replen: %p %hu, %p %hu, %p %hu, %p %hu\n",
-		mt_chan[0].n_loopstart, mt_chan[0].n_replen,
-		mt_chan[1].n_loopstart, mt_chan[1].n_replen,
-		mt_chan[2].n_loopstart, mt_chan[2].n_replen,
-		mt_chan[3].n_loopstart, mt_chan[3].n_replen
-	);
+	// logWrite(
+	// 	"set replen: %p %hu, %p %hu, %p %hu, %p %hu\n",
+	// 	mt_chan[0].n_loopstart, mt_chan[0].n_replen,
+	// 	mt_chan[1].n_loopstart, mt_chan[1].n_replen,
+	// 	mt_chan[2].n_loopstart, mt_chan[2].n_replen,
+	// 	mt_chan[3].n_loopstart, mt_chan[3].n_replen
+	// );
 
 	// Set repeat sample pointers and lengths
 	pCustom->aud[0].ac_ptr = mt_chan[0].n_loopstart;
@@ -1243,13 +1243,13 @@ void mt_music(void) {
 			UBYTE ubPatternIdx = pArrangement[mt_SongPos];
 			UBYTE *pCurrentPattern = &pPatternData[ubPatternIdx * 1024];
 			tModVoice *pLineVoices = (tModVoice*)&pCurrentPattern[mt_PatternPos];
-			logWrite(
-				"new note (cmd note): %04X %04X, %04X %04X, %04X %04X, %04X %04X\n",
-				pLineVoices[0].uwCmd, pLineVoices[0].uwNote,
-				pLineVoices[1].uwCmd, pLineVoices[1].uwNote,
-				pLineVoices[2].uwCmd, pLineVoices[2].uwNote,
-				pLineVoices[3].uwCmd, pLineVoices[3].uwNote
-			);
+			// logWrite(
+			// 	"new note (cmd note): %04X %04X, %04X %04X, %04X %04X, %04X %04X\n",
+			// 	pLineVoices[0].uwCmd, pLineVoices[0].uwNote,
+			// 	pLineVoices[1].uwCmd, pLineVoices[1].uwNote,
+			// 	pLineVoices[2].uwCmd, pLineVoices[2].uwNote,
+			// 	pLineVoices[3].uwCmd, pLineVoices[3].uwNote
+			// );
 
 			// play new note for each channel, apply some effects
 			mt_playvoice(&mt_chan[0], &g_pCustom->aud[0], &pLineVoices[0]);
@@ -1279,14 +1279,14 @@ void mt_music(void) {
 			ubPatternDelay = mt_PattDelTime;
 			mt_PattDelTime = 0;
 		}
-		logWrite("pattern delay: %hhu\n", ubPatternDelay);
+		// logWrite("pattern delay: %hhu\n", ubPatternDelay);
 		if(ubPatternDelay) {
 			--ubPatternDelay;
 			if(ubPatternDelay) {
 				ubOffs = 0; // Do not advance to next line
 			}
 			else {
-				logWrite("Advance to next line\n");
+				// logWrite("Advance to next line\n");
 			}
 			mt_PattDelTime2 = ubPatternDelay;
 		}
@@ -2269,7 +2269,7 @@ static void ptDoRetrigger(
 ) {
 	// DMA off, set sample pointer and length
 	systemSetDmaMask(pChannelData->n_dmabit, 0);
-	logWrite("retrigger: %p:%hu\n", pChannelData->n_start, pChannelData->n_length);
+	// logWrite("retrigger: %p:%hu\n", pChannelData->n_start, pChannelData->n_length);
 	pChannelReg->ac_ptr = pChannelData->n_start;
 	pChannelReg->ac_len = pChannelData->n_length;
 	mt_dmaon |= pChannelData->n_dmabit;
@@ -2356,7 +2356,7 @@ static void mt_patterndelay(
 	// cmd 0x0E'EX (x = delay count)
 	if(!mt_Counter && !mt_PattDelTime2) {
 		mt_PattDelTime = ubArg + 1;
-		logWrite("set pattern delay: %hu\n", mt_PattDelTime);
+		// logWrite("set pattern delay: %hu\n", mt_PattDelTime);
 	}
 }
 
@@ -2430,7 +2430,7 @@ static void set_period(
 	pChannelData->n_noteoff = ubPeriodPos * 2; // TODO later: convert to word offs (div by 2)
 
 	// Check for notedelay
-	logWrite("cmd: %04X, masked E: %04X\n", uwCmd, uwMaskedCmdE);
+	// logWrite("cmd: %04X, masked E: %04X\n", uwCmd, uwMaskedCmdE);
 	// Skip if notedelay
 	if(uwMaskedCmdE != 0x0ED0) {
 		// Disable DMA
@@ -2442,10 +2442,10 @@ static void set_period(
 		if(!BTST(pChannelData->n_tremoloctrl, 2)) {
 			pChannelData->n_tremolopos = 0;
 		}
-		logWrite(
-			"setperiod: ptr %p, len: %hu, period: %hu\n",
-			pChannelData->n_start, pChannelData->n_length, uwPeriod
-		);
+		// logWrite(
+		// 	"setperiod: ptr %p, len: %hu, period: %hu\n",
+		// 	pChannelData->n_start, pChannelData->n_length, uwPeriod
+		// );
 
 		pChannelReg->ac_ptr = pChannelData->n_start;
 		pChannelReg->ac_len = pChannelData->n_length;
@@ -2459,7 +2459,7 @@ static void set_finetune(
 	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	logWrite("Set finetune\n");
+	// logWrite("Set finetune\n");
 	UBYTE ubFineTune = pChannelData->n_cmdlo & 0xF;
 	pChannelData->n_pertab = mt_PeriodTables[ubFineTune];
 	pChannelData->n_minusft = ubFineTune >= 8;
@@ -2470,7 +2470,7 @@ static void set_sampleoffset(
 	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	logWrite("set_sampleoffset\n");
+	// logWrite("set_sampleoffset\n");
 	// cmd 9 x y (xy = offset in 256 bytes)
 	// d4 = xy
 	UWORD ubArg = uwCmdArg;
