@@ -147,7 +147,7 @@ tPlanarBitmap::tPlanarBitmap(
 				if(wIdx == -1) {
 					if(PaletteIgnore.getColorIdx(Color) == -1) {
 						nLog::error(
-							"Unexpected color: {}, {}, {} @{},{}",
+							"Unexpected color: {0}, {1}, {2} (#{0:02X}{1:02X}{2:02X}) @{3},{4}",
 							Color.ubR, Color.ubG,	Color.ubB, x, y
 						);
 						return;
