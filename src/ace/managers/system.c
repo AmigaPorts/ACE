@@ -46,14 +46,10 @@ UWORD s_uwOsDmaCon;
 UWORD s_uwAceDmaCon = 0;
 UWORD s_uwOsInitialDma;
 
-UBYTE s_pOsCiaTaLo[CIA_COUNT];
-UBYTE s_pOsCiaTaHi[CIA_COUNT];
-UBYTE s_pOsCiaTbLo[CIA_COUNT];
-UBYTE s_pOsCiaTbHi[CIA_COUNT];
-UBYTE s_pAceCiaTaLo[CIA_COUNT];
-UBYTE s_pAceCiaTaHi[CIA_COUNT];
-UBYTE s_pAceCiaTbLo[CIA_COUNT];
-UBYTE s_pAceCiaTbHi[CIA_COUNT];
+UWORD s_pOsCiaTimerA[CIA_COUNT];
+UWORD s_pOsCiaTimerB[CIA_COUNT];
+UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
+UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
 
 // Interrupts
 void HWINTERRUPT int1Handler(void);
@@ -446,24 +442,16 @@ void systemUnuse(void) {
 		g_pCia[CIA_B]->icr = 0x7F;
 
 		// save OS CIA timer values
-		s_pOsCiaTaLo[CIA_A] = g_pCia[CIA_A]->talo;
-		s_pOsCiaTaHi[CIA_A] = g_pCia[CIA_A]->tahi;
-		// s_pOsCiaTbLo[CIA_A] = g_pCia[CIA_A]->tblo;
-		// s_pOsCiaTbHi[CIA_A] = g_pCia[CIA_A]->tbhi;
-		s_pOsCiaTaLo[CIA_B] = g_pCia[CIA_B]->talo;
-		s_pOsCiaTaHi[CIA_B] = g_pCia[CIA_B]->tahi;
-		s_pOsCiaTbLo[CIA_B] = g_pCia[CIA_B]->tblo;
-		s_pOsCiaTbHi[CIA_B] = g_pCia[CIA_B]->tbhi;
+		s_pOsCiaTimerA[CIA_A] = ciaGetTimerA(g_pCia[CIA_A]);
+		// s_pOsCiaTimerB[CIA_A] = ciaGetTimerB(g_pCia[CIA_A]);
+		s_pOsCiaTimerA[CIA_B] = ciaGetTimerA(g_pCia[CIA_B]);
+		s_pOsCiaTimerB[CIA_B] = ciaGetTimerB(g_pCia[CIA_B]);
 
 		// set ACE CIA timers
-		g_pCia[CIA_A]->talo = s_pAceCiaTaLo[CIA_A];
-		g_pCia[CIA_A]->tahi = s_pAceCiaTaHi[CIA_A];
-		// g_pCia[CIA_A]->tblo = s_pAceCiaTbLo[CIA_A];
-		// g_pCia[CIA_A]->tbhi = s_pAceCiaTbHi[CIA_A];
-		g_pCia[CIA_B]->talo = s_pAceCiaTaLo[CIA_B];
-		g_pCia[CIA_B]->tahi = s_pAceCiaTaHi[CIA_B];
-		g_pCia[CIA_B]->tblo = s_pAceCiaTbLo[CIA_B];
-		g_pCia[CIA_B]->tbhi = s_pAceCiaTbHi[CIA_B];
+		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
+		// ciaSetTimerB(g_pCia[CIA_A], s_pAceCiaTimerB[CIA_A]);
+		ciaSetTimerA(g_pCia[CIA_B], s_pAceCiaTimerA[CIA_B]);
+		ciaSetTimerB(g_pCia[CIA_B], s_pAceCiaTimerB[CIA_B]);
 
 		// Enable ACE CIA interrupts
 		g_pCia[CIA_A]->icr = (
@@ -509,34 +497,20 @@ void systemUse(void) {
 		g_pCustom->dmacon = s_uwOsMinDma;
 		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
 
-		// Restore interrupt vectors
-		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
-			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pOsHwInterrupts[i];
-		}
-
 		// Disable CIA interrupts
 		g_pCia[CIA_A]->icr = 0x7F;
 		g_pCia[CIA_B]->icr = 0x7F;
 
-		// Save ACE timer values
-		s_pOsCiaTaLo[CIA_A] = g_pCia[CIA_A]->talo;
-		s_pOsCiaTaHi[CIA_A] = g_pCia[CIA_A]->tahi;
-		// s_pOsCiaTbLo[CIA_A] = g_pCia[CIA_A]->tblo;
-		// s_pOsCiaTbHi[CIA_A] = g_pCia[CIA_A]->tbhi;
-		s_pOsCiaTaLo[CIA_B] = g_pCia[CIA_B]->talo;
-		s_pOsCiaTaHi[CIA_B] = g_pCia[CIA_B]->tahi;
-		s_pOsCiaTbLo[CIA_B] = g_pCia[CIA_B]->tblo;
-		s_pOsCiaTbHi[CIA_B] = g_pCia[CIA_B]->tbhi;
+		// Restore interrupt vectors - also CIA
+		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
+			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pOsHwInterrupts[i];
+		}
 
-		// // Restore old CIA timer values
-		g_pCia[CIA_A]->talo = s_pOsCiaTaLo[CIA_A];
-		g_pCia[CIA_A]->tahi = s_pOsCiaTaHi[CIA_A];
-		// g_pCia[CIA_A]->tblo = s_pOsCiaTbLo[CIA_A];
-		// g_pCia[CIA_A]->tbhi = s_pOsCiaTbHi[CIA_A];
-		g_pCia[CIA_B]->talo = s_pOsCiaTaLo[CIA_B];
-		g_pCia[CIA_B]->tahi = s_pOsCiaTaHi[CIA_B];
-		g_pCia[CIA_B]->tblo = s_pOsCiaTbLo[CIA_B];
-		g_pCia[CIA_B]->tbhi = s_pOsCiaTbHi[CIA_B];
+		// Restore old CIA timer values
+		ciaSetTimerA(g_pCia[CIA_A], s_pOsCiaTimerA[CIA_A]);
+		// ciaSetTimerB(g_pCia[CIA_A], s_pOsCiaTimerB[CIA_A]);
+		ciaSetTimerA(g_pCia[CIA_B], s_pOsCiaTimerA[CIA_B]);
+		ciaSetTimerB(g_pCia[CIA_B], s_pOsCiaTimerB[CIA_B]);
 
 		// re-enable CIA-B ALRM interrupt which was set by AmigaOS
 		// According to UAE debugger there's nothing in CIA_A
@@ -598,6 +572,23 @@ void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled) {
 		if(!s_wSystemUses || !(uwDmaMask & s_uwOsMinDma)) {
 			// Disable right now if OS is asleep or it's not critical for it to live
 			g_pCustom->dmacon = uwDmaMask;
+		}
+	}
+}
+
+void systemSetTimer(UBYTE ubCia, UBYTE ubTimer, UWORD uwTicks) {
+	// Save timer values since backing them up on the fly in continuous mode
+	// is impossible
+	UWORD *pTimers = ((ubTimer == 0) ? s_pAceCiaTimerA : s_pAceCiaTimerB);
+	pTimers[ubCia] = uwTicks;
+
+	if(!s_wSystemUses) {
+		// OS is already dead - set CIA timer right now
+		if(!ubTimer) {
+			ciaSetTimerA(g_pCia[ubCia], uwTicks);
+		}
+		else {
+			ciaSetTimerB(g_pCia[ubCia], uwTicks);
 		}
 	}
 }

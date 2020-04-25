@@ -20,7 +20,7 @@
 // Length of single pattern.
 #define MOD_PATTERN_LENGTH (64 * 4 * 4)
 #define MOD_PERIOD_TABLE_LENGTH 36
-#define PTPLAYER_USE_VBL
+// #define PTPLAYER_USE_VBL
 // #define PTPLAYER_DEFER_INTERRUPTS
 
 /**
@@ -1080,7 +1080,8 @@ static void intPlay(void) {
 // TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
 // which defaults to 50 times per second.
 static void mt_TimerAInt(
-	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+	REGARG(volatile tCustom *pCustom, "a0"),
+	UNUSED_ARG REGARG(volatile void *pData, "a1")
 ) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	s_isPendingPlay = 1;
@@ -1091,7 +1092,12 @@ static void mt_TimerAInt(
 
 static inline void ptplayerEnableMainHandler(UBYTE isEnabled) {
 #if defined(PTPLAYER_USE_VBL)
-	// FIXME
+	if(isEnabled) {
+		systemSetInt(INTB_VERTB, mt_TimerAInt, 0);
+	}
+	else {
+		systemSetInt(INTB_VERTB, 0, 0);
+	}
 #else
 	if(isEnabled) {
 		systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
@@ -1135,7 +1141,8 @@ static void intSetRep(volatile tCustom *pCustom) {
 
 // One-shot TimerB interrupt to set repeat samples after another 576 ticks.
 static void mt_TimerBsetrep(
-	volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+	REGARG(volatile tCustom *pCustom, "a0"),
+	UNUSED_ARG REGARG(volatile void *pData, "a1")
 ) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	s_isPendingSetRep = 1;
@@ -1158,7 +1165,8 @@ static void intDmaOn(void) {
 
 // One-shot TimerB interrupt to enable audio DMA after 576 ticks.
 static void mt_TimerBdmaon(
-	UNUSED_ARG volatile tCustom *pCustom, UNUSED_ARG volatile void *pData
+	REGARG(volatile tCustom *pCustom, "a0"),
+	UNUSED_ARG REGARG(volatile void *pData, "a1")
 ) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	s_isPendingDmaOn = 1;
@@ -1347,12 +1355,13 @@ void mt_reset(void) {
 
 static inline void setTempo(UWORD uwTempo) {
 #if !defined(PTPLAYER_USE_VBL)
-	ciaSetTimerA(g_pCia[CIA_B], mt_timerval / uwTempo);
+	systemSetTimer(CIA_B, 0, mt_timerval / uwTempo);
 #endif
 }
 
 static void INTERRUPT onAudio(
-	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *pData, "a1")
+	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
+	REGARG(volatile void *pData, "a1")
 ) {
 	ULONG ulIntFlag = (ULONG)pData;
 	s_uwAudioInterrupts |= ulIntFlag;
@@ -1389,18 +1398,14 @@ void ptplayerInstallInterrupts(UBYTE isPal) {
 		mt_timerval = 1789773;
 	}
 
-	//Lload TimerA in continuous mode for the default tempo of 125
+	//Load TimerA in continuous mode for the default tempo of 125
 	setTempo(125);
-
-#if defined(PTPLAYER_USE_VBL)
-	systemSetInt(INTB_VERTB, mt_TimerAInt, 0);
-#else
-	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, mt_TimerAInt, 0);
+#if !defined(PTPLAYER_USE_VBL)
 	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
 #endif
 
-	// load TimerB with 576 ticks for setting DMA and repeat
-	ciaSetTimerB(g_pCia[CIA_B], 576);
+	// Load TimerB with 576 ticks for setting DMA and repeat
+	systemSetTimer(CIA_B, 1, 576);
 
 	// Enable CIA B interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;

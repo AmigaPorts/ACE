@@ -53,6 +53,8 @@ void systemSetDmaBit(UBYTE ubDmaBit, UBYTE isEnabled);
 
 void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled);
 
+void systemSetTimer(UBYTE ubCia, UBYTE ubTimer, UWORD uwTicks);
+
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;
