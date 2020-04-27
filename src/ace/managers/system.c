@@ -258,9 +258,9 @@ void HWINTERRUPT int6Handler(void) {
 		// and it sets the same bit. So there should be a handler for it in case of
 		// ICR intbits not being set.
 	}
-
 	// TOOD: is there any other interrupt source on level 6?
 	// If yes, then detect it. If not, remove check for EXTER flag
+
 	// Clear int flags
 	g_pCustom->intreq = uwReqClr;
 	g_pCustom->intreq = uwReqClr;

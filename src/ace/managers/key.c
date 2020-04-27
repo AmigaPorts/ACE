@@ -43,11 +43,11 @@ void INTERRUPT keyIntServer(
 ) {
 	tKeyManager *pKeyManager = (tKeyManager*)pData;
 	volatile tRayPos *pRayPos = (tRayPos*)&pCustom->vposr;
-	
+
 	// Get the key code and start handshake
 	UBYTE ubKeyCode = ~g_pCia[CIA_A]->sdr;
 	g_pCia[CIA_A]->cra |= CIACRA_SPMODE;
-	UWORD uwStart = ciaGetTimerB(g_pCia[CIA_A]);
+	UWORD uwStart = pRayPos->bfPosY;
 
 	// Get keypress flag and shift key code
 	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
