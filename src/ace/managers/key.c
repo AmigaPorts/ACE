@@ -32,8 +32,9 @@ void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState) {
 }
 
 /**
- * Timer VBlank server
- * Increments frame counter
+ * Key interrupt server
+ * Gets key press/release from kbd controller and confirms reception
+ * by handshake
  */
 FN_HOTSPOT
 void INTERRUPT keyIntServer(
@@ -59,7 +60,7 @@ void INTERRUPT keyIntServer(
 	UWORD uwDelta;
 	do {
 		UWORD uwEnd = pRayPos->bfPosY;
-		if(uwEnd > uwStart) {
+		if(uwEnd >= uwStart) {
 			uwDelta = uwEnd - uwStart;
 		}
 		else {
