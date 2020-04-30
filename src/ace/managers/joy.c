@@ -57,7 +57,7 @@ void joyProcess(void) {
 	UWORD uwJoyDataPort1 = g_pCustom->joy0dat;
 	UWORD uwJoyDataPort2 = g_pCustom->joy1dat;
 
-	UWORD pJoyLookup[] = {
+	UWORD pJoyLookup[20] = {
 		!BTST(ubCiaAPra, 7),                           // Joy 1 fire  (PORT 2)
 		BTST(uwJoyDataPort2 >> 1 ^ uwJoyDataPort2, 8), // Joy 1 up    (PORT 2)
 		BTST(uwJoyDataPort2 >> 1 ^ uwJoyDataPort2, 0), // Joy 1 down  (PORT 2)
@@ -142,14 +142,13 @@ UBYTE joyEnableParallel(void) {
 	s_ubOldDataVal = g_pCia[CIA_A]->prb;
 	s_ubOldStatusVal = g_pCia[CIA_B]->pra;
 
-	// Set data direction register to input. Status lines are as follows:
-	// bit 0: BUSY
-	// bit 2: SEL
-	g_pCia[CIA_B]->ddra |= BV(0) | BV(2); // Status lines DDR
-	g_pCia[CIA_A]->ddrb = 0xFF; // Data lines DDR
+	// Set data direction register to input.
+	g_pCia[CIA_B]->ddra &= 0xFF ^ (BV(0) | BV(2)); // 0: BUSY, 2: SEL
+	g_pCia[CIA_A]->ddrb = 0; // Data
 
-	g_pCia[CIA_B]->pra &= 0xFF^(BV(0) | BV(2)); // Status lines values
-	g_pCia[CIA_A]->prb = 0; // Data lines values
+	// Activate pull-ups for BUSY / SEL / data pins
+	g_pCia[CIA_B]->pra |= BV(0) | BV(2); // Status lines values
+	g_pCia[CIA_A]->prb = 0xFF; // Data lines values
 
 	s_isParallelEnabled = 1;
 	systemUnuse();
