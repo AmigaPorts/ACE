@@ -81,6 +81,8 @@ UBYTE simpleBufferIsRectVisible(
 	UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
 );
 
+UBYTE simpleBufferGetRawCopperlistInstructionCount(UBYTE ubBpp);
+
 #endif // AMIGA
 
 #ifdef __cplusplus

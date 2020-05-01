@@ -232,14 +232,14 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
 	if(pCafe[0] != 0xCA || pCafe[1] != 0xFE || pCafe[2] != 0xBA || pCafe[3] != 0xBE) {
 		filePrintf(
 			s_pMemLog, "ERR: Left mem trashed: %hu@%p (%s:%u)\n",
-			pEntry->uwId, pMem, uwLine, szFile
+			pEntry->uwId, pMem, szFile, uwLine
 		);
 		fileFlush(s_pMemLog);
 	}
 	if(pDead[0] != 0xDE || pDead[1] != 0xAD || pDead[2] != 0xBE || pDead[3] != 0xEF) {
 		filePrintf(
 			s_pMemLog, "ERR: Right mem trashed: %hu@%p (%s:%u)\n",
-			pEntry->uwId, pMem, uwLine, szFile
+			pEntry->uwId, pMem, szFile, uwLine
 		);
 		fileFlush(s_pMemLog);
 	}

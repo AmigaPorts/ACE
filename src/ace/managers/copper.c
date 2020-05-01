@@ -309,9 +309,9 @@ UBYTE copBfrRealloc(void) {
 
 		pBackBfr->uwAllocSize = 0;
 		for(pBlock = pCopList->pFirstBlock; pBlock; pBlock = pBlock->pNext) {
-			pBackBfr->uwAllocSize += pBlock->uwMaxCmds;
+			pBackBfr->uwAllocSize += 1 + pBlock->uwMaxCmds; // WAIT + MOVEs
 		}
-		pBackBfr->uwAllocSize += pCopList->uwBlockCount + 1; // all WAITs + double WAIT
+		pBackBfr->uwAllocSize += 2; // final WAIT + room for double WAIT
 		pBackBfr->uwAllocSize *= sizeof(tCopCmd);
 		// Pass realloc to next buffer
 		ubNewStatus = STATUS_REALLOC_PREV;

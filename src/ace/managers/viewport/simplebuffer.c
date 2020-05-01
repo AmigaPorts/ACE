@@ -169,9 +169,8 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
 		// CopBlock contains: bitplanes + shiftX
 		pManager->pCopBlock = copBlockCreate(
-			pCopList,
-			// Shift +2 ddf +2 modulos +2*bpp bpladdr
-			2*pVPort->ubBPP + 5,
+			// WAIT is already in copBlock so 1 instruction less
+			pCopList, simpleBufferGetRawCopperlistInstructionCount(pVPort->ubBPP) - 1,
 			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
 			0xE2-7*4, pVPort->uwOffsY + 0x2C-1
@@ -221,7 +220,11 @@ fail:
 
 void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 	logBlockBegin("simpleBufferDestroy()");
-	copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pCopBlock);
+	if(!(pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW)) {
+		copBlockDestroy(
+			pManager->sCommon.pVPort->pView->pCopList, pManager->pCopBlock
+		);
+	}
 	if(pManager->pBack != pManager->pFront) {
 		bitmapDestroy(pManager->pBack);
 	}
@@ -241,8 +244,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	// Calculate X movement: bitplane shift, starting word to fetch
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
 		uwShift = (16 - (pCamera->uPos.uwX & 0xF)) & 0xF;  // Bitplane shift - single
-		uwShift = (uwShift << 4) | uwShift;                         // Bitplane shift - PF1 | PF2
-		ulBplOffs = ((pCamera->uPos.uwX - 1) >> 4) << 1; // Must be ULONG!
+		uwShift = (uwShift << 4) | uwShift;                // Bitplane shift - PF1 | PF2
+		ulBplOffs = ((pCamera->uPos.uwX - 1) >> 4) << 1;   // Must be ULONG!
 	}
 	else {
 		uwShift = 0;
@@ -291,6 +294,17 @@ UBYTE simpleBufferIsRectVisible(
 		uwY >= pManager->pCamera->uPos.uwY - uwHeight &&
 		uwY <= pManager->pCamera->uPos.uwY + pManager->sCommon.pVPort->uwHeight
 	);
+}
+
+UBYTE simpleBufferGetRawCopperlistInstructionCount(UBYTE ubBpp) {
+	UBYTE ubInstructionCount = (
+		1 +       // WAIT cmd
+		2 +       // DDFSTOP / DDFSTART setup
+		2 +       // Odd / even modulos
+		1 +       // X-shift setup in bplcon
+		2 * ubBpp // 2 * 16-bit MOVE for each bitplane
+	);
+	return ubInstructionCount;
 }
 
 #endif // AMIGA
