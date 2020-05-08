@@ -5,6 +5,11 @@
 #ifndef _ACE_MANAGERS_MEMORY_H_
 #define _ACE_MANAGERS_MEMORY_H_
 
+/**
+ * Memory manager functions.
+ * mainly used for debug, should be replaced by NOP on release builds.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,16 +41,14 @@ extern "C" {
 UBYTE memType(const void *pMem);
 
 void _memCreate(void);
-void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile);
-void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile);
 void _memDestroy(void);
 
-void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile);
-void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, char *szFile);
+void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile);
+void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile);
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags);
 void _memFreeRls(void *pMem, ULONG ulSize);
 
-void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile);
+void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
 
 /**
  * Macros for enabling or disabling logging
@@ -56,17 +59,13 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile);
 # define memFree(pMem, ulSize) _memFreeDbg(pMem, ulSize, __LINE__, __FILE__)
 # define memCreate() _memCreate()
 # define memDestroy() _memDestroy()
-# define memEntryAdd(pAddr, ulSize) _memEntryAdd(pAddr, ulSize, __LINE__, __FILE__)
-# define memEntryDelete(pAddr, ulSize) _memEntryDelete(pAddr, ulSize, __LINE__, __FILE__)
-# define memCheckTrash(pAddr) _memCheckTrash(pAddr, __LINE__, __FILE__)
+# define memCheckTrashAtAddr(pAddr) _memCheckTrashAtAddr(pAddr, __LINE__, __FILE__)
 #else
 # define memAlloc(ulSize, ulFlags) _memAllocRls(ulSize, ulFlags)
 # define memFree(pMem, ulSize) _memFreeRls(pMem, ulSize)
 # define memCreate()
 # define memDestroy()
-# define memEntryAdd(pAddr, ulSize)
-# define memEntryDelete(pAddr, ulSize)
-# define memCheckTrash(pAddr, ulSize)
+# define memCheckTrashAtAddr(pAddr, ulSize)
 #endif // ACE_DEBUG
 
 // Shorthands

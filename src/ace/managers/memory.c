@@ -10,7 +10,7 @@
 #include <clib/exec_protos.h> // AvailMem, AllocMem, FreeMem, etc.
 #endif
 
-/* Types */
+//------------------------------------------------------------------------ TYPES
 
 typedef struct _tMemEntry {
 	void *pAddr;
@@ -19,32 +19,18 @@ typedef struct _tMemEntry {
 	struct _tMemEntry *pNext;
 } tMemEntry;
 
-/* Globals */
+//----------------------------------------------------------------- PRIVATE VARS
 
 static UWORD s_uwLastId = 0;
+static tMemEntry *s_pMemTail;
+static tFile *s_pMemLog;
+static ULONG s_ulChipUsage, s_ulChipPeakUsage, s_ulFastUsage, s_ulFastPeakUsage;
 
-/* Vars */
-tMemEntry *s_pMemTail;
-tFile *s_pMemLog;
-ULONG s_ulChipUsage, s_ulChipPeakUsage, s_ulFastUsage, s_ulFastPeakUsage;
+//---------------------------------------------------------------- MEM ENTRY FNS
 
-/* Functions */
-
-/**
- * Memory manager functions
- * mainly used for debug, should be replaced by NOP on release builds
- */
-void _memCreate(void) {
-	s_pMemTail = 0;
-	s_ulChipUsage = 0;
-	s_ulChipPeakUsage = 0;
-	s_ulFastUsage = 0;
-	s_ulFastPeakUsage = 0;
-	s_uwLastId = 0;
-	s_pMemLog = fileOpen("memory.log", "w");
-}
-
-void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
+static void _memEntryAdd(
+	void *pAddr, ULONG ulSize, UWORD uwLine, const char *szFile
+) {
 	systemUse();
 	tMemEntry *pNext;
 	// Add mem usage entry
@@ -79,7 +65,9 @@ void _memEntryAdd(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	systemUnuse();
 }
 
-void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
+static void _memEntryDelete(
+	void *pAddr, ULONG ulSize, UWORD uwLine, const char *szFile
+) {
 	tMemEntry *pPrev = 0;
 	tMemEntry *pCurr = s_pMemTail;
 
@@ -130,6 +118,47 @@ void _memEntryDelete(void *pAddr, ULONG ulSize, UWORD uwLine, char *szFile) {
 	systemUnuse();
 }
 
+static void memEntryCheckTrash(
+	const tMemEntry *pEntry, UWORD uwLine, const char *szFile
+) {
+	UBYTE *pCafe = (UBYTE*)(pEntry->pAddr - 4*sizeof(UBYTE));
+	UBYTE *pDead = (UBYTE*)(pEntry->pAddr + pEntry->ulSize);
+	if(pCafe[0] != 0xCA || pCafe[1] != 0xFE || pCafe[2] != 0xBA || pCafe[3] != 0xBE) {
+		filePrintf(
+			s_pMemLog, "ERR: Left mem trashed: %hu@%p (%s:%u)\n",
+			pEntry->uwId, pEntry->pAddr, szFile, uwLine
+		);
+		fileFlush(s_pMemLog);
+	}
+	if(pDead[0] != 0xDE || pDead[1] != 0xAD || pDead[2] != 0xBE || pDead[3] != 0xEF) {
+		filePrintf(
+			s_pMemLog, "ERR: Right mem trashed: %hu@%p (%s:%u)\n",
+			pEntry->uwId, pEntry->pAddr, szFile, uwLine
+		);
+		fileFlush(s_pMemLog);
+	}
+}
+
+//---------------------------------------------------------------------- MEM FNS
+
+void _memCheckIntegrity(UWORD uwLine, const char *szFile) {
+	tMemEntry *pEntry = s_pMemTail;
+	while(pEntry) {
+		memEntryCheckTrash(pEntry, uwLine, szFile);
+		pEntry = pEntry->pNext;
+	}
+}
+
+void _memCreate(void) {
+	s_pMemTail = 0;
+	s_ulChipUsage = 0;
+	s_ulChipPeakUsage = 0;
+	s_ulFastUsage = 0;
+	s_ulFastPeakUsage = 0;
+	s_uwLastId = 0;
+	s_pMemLog = fileOpen("memory.log", "w");
+}
+
 void _memDestroy(void) {
 	systemUse();
 	filePrintf(
@@ -150,7 +179,9 @@ void _memDestroy(void) {
 	systemUnuse();
 }
 
-void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
+void *_memAllocDbg(
+	ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile
+) {
 	void *pAddr;
 	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
 	if(!pAddr) {
@@ -179,8 +210,10 @@ void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, char *szFile) {
 	return pAddr;
 }
 
-void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, char *szFile) {
-	_memCheckTrash(pMem, uwLine, szFile);
+void _memFreeDbg(
+	void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile
+) {
+	_memCheckIntegrity(uwLine, szFile);
 	_memEntryDelete(pMem, ulSize, uwLine, szFile);
 	_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
 }
@@ -212,7 +245,7 @@ void _memFreeRls(void *pMem, ULONG ulSize) {
 	systemUnuse();
 }
 
-void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
+void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile) {
 	// find memory entry
 	tMemEntry *pEntry = s_pMemTail;
 	while(pEntry && pEntry->pAddr != pMem) {
@@ -226,23 +259,7 @@ void _memCheckTrash(void *pMem, UWORD uwLine, char *szFile) {
 		fileFlush(s_pMemLog);
 		return;
 	}
-
-	UBYTE *pCafe = (UBYTE*)(pMem - 4*sizeof(UBYTE));
-	UBYTE *pDead = (UBYTE*)(pMem + pEntry->ulSize);
-	if(pCafe[0] != 0xCA || pCafe[1] != 0xFE || pCafe[2] != 0xBA || pCafe[3] != 0xBE) {
-		filePrintf(
-			s_pMemLog, "ERR: Left mem trashed: %hu@%p (%s:%u)\n",
-			pEntry->uwId, pMem, szFile, uwLine
-		);
-		fileFlush(s_pMemLog);
-	}
-	if(pDead[0] != 0xDE || pDead[1] != 0xAD || pDead[2] != 0xBE || pDead[3] != 0xEF) {
-		filePrintf(
-			s_pMemLog, "ERR: Right mem trashed: %hu@%p (%s:%u)\n",
-			pEntry->uwId, pMem, szFile, uwLine
-		);
-		fileFlush(s_pMemLog);
-	}
+	memEntryCheckTrash(pEntry, uwLine, szFile);
 }
 
 UBYTE memType(const void *pMem) {
