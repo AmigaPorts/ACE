@@ -292,24 +292,20 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 
 void vPortWaitForEnd(tVPort *pVPort) {
 #ifdef AMIGA
-	UWORD uwEndPos;
-	UWORD uwCurrFrame;
-
 	// Determine VPort end position
-	uwEndPos = pVPort->uwOffsY + pVPort->uwHeight + 0x2C; // Addition from DiWStrt
-	if(g_pRayPos->bfPosY < uwEndPos) {
-		// If current beam is before pos, wait for pos @ current frame
-		while(g_pRayPos->bfPosY < uwEndPos) {}
+	UWORD uwEndPos = pVPort->uwOffsY + pVPort->uwHeight;
+	uwEndPos += 0x2C; // Addition from DiWStrt
+#if defined(ACE_DEBUG)
+	if(uwEndPos >= 312) {
+		logWrite("ERR: vPortWaitForEnd - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
+		logWrite("\tVPort offs: %hu, height: %hu\n", pVPort->uwOffsY, pVPort->uwHeight);
 	}
-	else {
-		// Otherwise wait for pos @ next frame
-		uwCurrFrame = timerGet();
-		while(
-			g_pRayPos->bfPosY < uwEndPos ||
-			timerGet() == uwCurrFrame
-		) {}
-	}
+#endif
 
+	// If current beam pos is past end pos, wait for start of next frame
+	while(g_pRayPos->bfPosY > uwEndPos) {}
+	// If current beam pos is before end pos, wait for it
+	while(g_pRayPos->bfPosY < uwEndPos) {}
 #endif // AMIGA
 }
 
