@@ -349,10 +349,12 @@ void bitmapDestroy(tBitMap *pBitMap) {
 		if(bitmapIsInterleaved(pBitMap)) {
 			pBitMap->Depth = 1;
 		}
+		systemUse();
 		for(UBYTE i = pBitMap->Depth; i--;) {
 			memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*pBitMap->Rows);
 		}
 		memFree(pBitMap, sizeof(tBitMap));
+		systemUnuse();
 	}
 	logBlockEnd("bitmapDestroy()");
 }

@@ -4,6 +4,7 @@
 
 #include <ace/utils/font.h>
 #include <ace/utils/file.h>
+#include <ace/managers/system.h>
 
 /* Globals */
 
@@ -102,6 +103,7 @@ tFont *fontCreateFromMem(const UBYTE* pData) {
 }
 
 void fontDestroy(tFont *pFont) {
+	systemUse();
 	logBlockBegin("fontDestroy(pFont: %p)", pFont);
 	if (pFont) {
 		bitmapDestroy(pFont->pRawData);
@@ -109,9 +111,11 @@ void fontDestroy(tFont *pFont) {
 		memFree(pFont, sizeof(tFont));
 	}
 	logBlockEnd("fontDestroy()");
+	systemUnuse();
 }
 
 tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight) {
+	systemUse();
 	logBlockBegin(
 		"fontCreateTextBitMap(uwWidth: %hu, uwHeight: %hu)", uwWidth, uwHeight
 	);
@@ -121,6 +125,7 @@ tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight) {
 	pTextBitMap->uwActualWidth = 0;
 	pTextBitMap->uwActualHeight = 0;
 	logBlockEnd("fontCreateTextBitmap()");
+	systemUnuse();
 	return pTextBitMap;
 }
 
@@ -206,8 +211,10 @@ void fontFillTextBitMap(
 }
 
 void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
+	systemUse();
 	bitmapDestroy(pTextBitMap->pBitMap);
 	memFree(pTextBitMap, sizeof(tTextBitMap));
+	systemUnuse();
 }
 
 void fontDrawTextBitMap(
