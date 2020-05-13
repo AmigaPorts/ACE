@@ -74,19 +74,19 @@ UBYTE _blitCheck(
 		return 1;
 	}
 
-	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX+wWidth || pSrc->Rows < wSrcY+wHeight)) {
+	if(pSrc && (wSrcX < 0 || wSrcWidth < wSrcX + wWidth || wSrcHeight < wSrcY + wHeight)) {
 		logWrite(
 			"ERR: ILLEGAL BLIT Source out of range: "
-			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s @ %u\n",
+			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d (%s:%u)\n",
 			pSrc,	wSrcWidth, wSrcHeight, pDst, wDstWidth, wDstHeight,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
 		return 0;
 	}
-	if(pDst && (wDstY < 0 || wDstWidth < wDstX+wWidth || pDst->Rows < wDstY+wHeight)) {
+	if(pDst && (wDstY < 0 || wDstWidth < wDstX + wWidth || wDstHeight < wDstY + wHeight)) {
 		logWrite(
 			"ERR: ILLEGAL BLIT Dest out of range: "
-			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d %s @ %u\n",
+			"source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d (%s:%u)\n",
 			pSrc,	wSrcWidth, wSrcHeight, pDst, wDstWidth, wDstHeight,
 			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
 		);
@@ -95,8 +95,8 @@ UBYTE _blitCheck(
 	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		if(wHeight * pSrc->Depth > 1024) {
 			logWrite(
-				"ERR: Blit too big for OCS: height %hd, depth: %hhu, interleaved: %d\n",
-				wHeight, pSrc->Depth, wHeight * pSrc->Depth
+				"ERR: Blit too big for OCS: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
+				wHeight, pSrc->Depth, wHeight * pSrc->Depth, szFile, uwLine
 			);
 		}
 	}
