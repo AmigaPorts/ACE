@@ -11,13 +11,15 @@ void printUsage(const std::string &szAppName)
 {
 	// tileset_conv inPath tileSize outPath
 	using fmt::print;
-	print("Usage:\n\t{} inPath tileSize outPath\n", szAppName);
-	print("\ninPath\t\t- path to input file/directory\n");
+	print("Usage:\n\t{} inPath tileSize outPath\n\n", szAppName);
+	print("inPath  \t- path to input file/directory\n");
 	print("tileSize\t- size of tile's edge, in pixels\n");
-	print("outPath\t\t- path to output file/directory\n");
+	print("outPath \t- path to output file/directory\n");
 	print("\nWhen using .bm as output:\n");
-	print("-i\t\t\t- save as interleaved bitmap\n");
+	print("-i              \t- save as interleaved bitmap\n");
 	print("-plt palettePath\t- use following palette\n");
+	print("\nAdditional options:\n");
+	print("-h tileHeight\t- override height for rectangular tiles\n");
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -32,6 +34,7 @@ int main(int lArgCount, const char *pArgs[])
 	if(!nParse::toInt32(pArgs[2], "tileSize", lTileSize) || lTileSize < 0) {
 		return EXIT_FAILURE;
 	}
+	int32_t lTileHeight = lTileSize;
 
 	std::string szInPath = pArgs[1];
 	std::string szOutPath = pArgs[3];
@@ -52,6 +55,13 @@ int main(int lArgCount, const char *pArgs[])
 				"Read {} colors from '{}'\n", Palette.m_vColors.size(), pArgs[i]
 			);
 		}
+		else if(pArgs[i] == std::string("-h") && i + 1 <= lArgCount - 1) {
+			++i;
+			if(!nParse::toInt32(pArgs[i], "-h", lTileHeight) || lTileHeight <= 0) {
+				return EXIT_FAILURE;
+			}
+			fmt::print("Override tile height to {}\n", lTileHeight);
+		}
 	}
 
 	// Read input
@@ -63,15 +73,15 @@ int main(int lArgCount, const char *pArgs[])
 			nLog::error("Couldn't load input file: '{}'", szInPath);
 			return EXIT_FAILURE;
 		}
-		if(In.m_uwHeight % lTileSize != 0) {
-			nLog::error("Input bitmap is not divisible by {}", lTileSize);
+		if(In.m_uwHeight % lTileHeight != 0) {
+			nLog::error("Input bitmap is not divisible by {}", lTileHeight);
 			return EXIT_FAILURE;
 		}
-		uint16_t uwTileCount = In.m_uwHeight / lTileSize;
+		uint16_t uwTileCount = In.m_uwHeight / lTileHeight;
 		vTiles.reserve(uwTileCount);
 		for(uint16_t i = 0; i < uwTileCount; ++i) {
-			tChunkyBitmap Tile(lTileSize, lTileSize);
-			In.copyRect(0, i * lTileSize, Tile, 0, 0, lTileSize, lTileSize);
+			tChunkyBitmap Tile(lTileSize, lTileHeight);
+			In.copyRect(0, i * lTileHeight, Tile, 0, 0, lTileSize, lTileHeight);
 			vTiles.push_back(std::move(Tile));
 		}
 	}
@@ -100,12 +110,12 @@ int main(int lArgCount, const char *pArgs[])
 		if(Palette.m_vColors.size()) {
 			Bg = Palette.m_vColors.at(0);
 		}
-		fmt::print("Using color for bg: {} {} {}\n", Bg.ubR, Bg.ubG, Bg.ubB);
-		tChunkyBitmap Out(lTileSize, uwTileCount * lTileSize, Bg);
+		fmt::print("Using color for bg: #{:02X}{:02X}{:02X}\n", Bg.ubR, Bg.ubG, Bg.ubB);
+		tChunkyBitmap Out(lTileSize, uwTileCount * lTileHeight, Bg);
 		for(uint16_t i = 0; i < uwTileCount; ++i) {
 			auto &Tile = vTiles.at(i);
 			if(Tile.m_uwHeight != 0) {
-				Tile.copyRect(0, 0, Out, 0, lTileSize * i, lTileSize, lTileSize);
+				Tile.copyRect(0, 0, Out, 0, lTileHeight * i, lTileSize, lTileHeight);
 			}
 		}
 		if(szOutExt == "png" && !Out.toPng(szOutPath)) {

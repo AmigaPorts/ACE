@@ -22,6 +22,8 @@ struct tRgb {
 
 	tRgb(const std::string &szCode);
 
+	std::string toString(void);
+
 	bool operator == (const tRgb &Rhs) const {
 		return ubB == Rhs.ubB && ubG == Rhs.ubG && ubR == Rhs.ubR;
 	}

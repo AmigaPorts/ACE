@@ -151,3 +151,65 @@ function(convertFont TARGET FONT_IN FONT_OUT)
 	)
 	target_sources(${TARGET} PUBLIC ${FONT_OUT})
 endfunction()
+
+function(transformBitmap)
+	cmake_parse_arguments(args "" "TARGET;SOURCE;DESTINATION" "TRANSFORM" ${ARGN})
+	string(REPLACE "#" "\\#" args_TRANSFORM "${args_TRANSFORM}")
+	add_custom_command(
+		OUTPUT ${args_DESTINATION}
+		COMMAND ${ACE_DIR}/tools/bin/bitmap_transform ${args_SOURCE} ${args_DESTINATION} ${args_TRANSFORM}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${args_SOURCE}
+	)
+	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
+endfunction()
+
+function(extractBitmaps)
+	cmake_parse_arguments(args "" "TARGET;SOURCE" "DESTINATIONS" ${ARGN})
+	list(LENGTH args_DESTINATIONS destArgCount)
+	MATH(EXPR destCount "${destArgCount} / 5 - 1")
+	# message(STATUS "target: ${args_TARGET}, source: ${args_SOURCE}")
+	# message(STATUS "loop range: 0..${destCount}")
+	foreach(destIdx RANGE ${destCount})
+		MATH(EXPR idxOutName "5 * ${destIdx} + 0")
+		MATH(EXPR idxX "5 * ${destIdx} + 1")
+		MATH(EXPR idxY "5 * ${destIdx} + 2")
+		MATH(EXPR idxWidth "5 * ${destIdx} + 3")
+		MATH(EXPR idxHeight "5 * ${destIdx} + 4")
+
+		list(GET args_DESTINATIONS ${idxOutName} outName)
+		list(GET args_DESTINATIONS ${idxX} X)
+		list(GET args_DESTINATIONS ${idxY} Y)
+		list(GET args_DESTINATIONS ${idxWidth} width)
+		list(GET args_DESTINATIONS ${idxHeight} height)
+		# message(STATUS "argIdx: ${idxOutName} ${idxX} ${idxY} ${idxWidth} ${idxHeight}")
+		# message(STATUS "args: ${outName} ${X} ${Y} ${width} ${height}")
+		transformBitmap(
+			TARGET ${args_TARGET} SOURCE ${args_SOURCE} DESTINATION ${outName}
+			TRANSFORM -extract ${X} ${Y} ${width} ${height}
+		)
+	endforeach()
+endfunction()
+
+function(convertTileset)
+	cmake_parse_arguments(
+		args "" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT" "TILES" ${ARGN}
+	)
+
+	list(LENGTH args_TILES tilesCount)
+	foreach(tileNumber ${args_TILES})
+		set(convDepends "${convDepends};${args_SOURCE}/${tileNumber}")
+	endforeach()
+
+	if(DEFINED args_HEIGHT)
+		SET(argsOptional ${argsOptional} -h ${args_HEIGHT})
+	endif()
+
+	add_custom_command(
+		OUTPUT ${args_DESTINATION}
+		COMMAND ${ACE_DIR}/tools/bin/tileset_conv ${args_SOURCE} ${args_SIZE} ${args_DESTINATION} ${argsOptional}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${convDepends}
+	)
+	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
+endfunction()

@@ -303,7 +303,7 @@ const tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY) const
 bool tChunkyBitmap::copyRect(
 	uint16_t uwSrcX, uint16_t uwSrcY, tChunkyBitmap &Dst,
 	uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
-)
+) const
 {
 	if(uwSrcX + uwWidth > m_uwWidth || uwSrcY + uwHeight > m_uwHeight) {
 		// Source out of range

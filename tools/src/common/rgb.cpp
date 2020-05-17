@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "rgb.h"
+#include <fmt/format.h>
 #include <stdexcept>
 
 tRgb::tRgb(const std::string &szCode)
@@ -22,4 +23,9 @@ tRgb::tRgb(const std::string &szCode)
 			throw std::runtime_error("Can't convert color code");
 		}
 	}
+}
+
+std::string tRgb::toString(void)
+{
+	return fmt::format("#{:02X}{:02X}{:02X}", ubR, ubG, ubB);
 }

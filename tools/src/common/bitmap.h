@@ -37,7 +37,7 @@ public:
 	bool copyRect(
 		uint16_t uwSrcX, uint16_t uwSrcY, tChunkyBitmap &Dst,
 		uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
-	);
+	) const;
 
 	bool mergeWithMask(const tChunkyBitmap &Mask);
 

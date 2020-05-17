@@ -117,7 +117,7 @@ int main(int lArgCount, const char *pArgs[])
 		In = tChunkyBitmap(InPlanar, Palette);
 		if(isMaskColor) {
 			tPalette PaletteMask;
-			PaletteMask.m_vColors.push_back(tRgb(0, 0, 0));
+			PaletteMask.m_vColors.push_back(tRgb(0,0,0));
 			for(uint16_t i = 1; i < 256; ++i) {
 				PaletteMask.m_vColors.push_back(MaskColor);
 			}
@@ -141,18 +141,19 @@ int main(int lArgCount, const char *pArgs[])
 	if(szOutExt == "bm") {
 		tPalette PaletteMask;
 		if(isMaskColor) {
+			tRgb MaskAntiColor(~MaskColor.ubR, ~MaskColor.ubG, ~MaskColor.ubB);
 			// Generate mask palette - 0 is transparent, everything else is not
 			if(isWriteInterleaved) {
 				PaletteMask.m_vColors.resize(1 << Palette.getBpp(), tRgb(1, 1, 1));
 				PaletteMask.m_vColors.front() = MaskColor;
-				PaletteMask.m_vColors.back() = tRgb(0, 0, 0);
+				PaletteMask.m_vColors.back() = MaskAntiColor;
 			}
 			else {
 				PaletteMask.m_vColors.push_back(MaskColor);
-				PaletteMask.m_vColors.push_back(tRgb(0));
+				PaletteMask.m_vColors.push_back(MaskAntiColor);
 			}
 			if(isEnabledOutputMask) {
-				const auto Mask = In.filterColors(PaletteMask, tRgb(0));
+				const auto Mask = In.filterColors(PaletteMask, MaskAntiColor);
 				tPlanarBitmap(Mask, PaletteMask).toBm(szMask, isWriteInterleaved);
 			}
 		}
