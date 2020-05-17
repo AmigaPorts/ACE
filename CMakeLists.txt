@@ -59,8 +59,9 @@ install(FILES ${HEADERS_FIXMATH} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fixmath
 #--------------------------------------------------------------------- FUNCTIONS
 
 function(toAbsolute PATH_IN)
-	if(NOT IS_ABSOLUTE ${PATH_IN})
-			set(${PATH_IN} "${CMAKE_CURRENT_SOURCE_DIR}/${${PATH_IN}}" PARENT_SCOPE)
+	if(NOT IS_ABSOLUTE ${${PATH_IN}})
+		# message(STATUS "not absolute: ${${PATH_IN}}")
+		set(${PATH_IN} "${CMAKE_CURRENT_SOURCE_DIR}/${${PATH_IN}}" PARENT_SCOPE)
 	endif()
 endfunction()
 
@@ -138,15 +139,15 @@ function(convertBitmaps)
 endfunction()
 
 function(convertFont TARGET FONT_IN FONT_OUT)
-toAbsolute(FONT_IN)
-toAbsolute(FONT_OUT)
-get_filename_component(ext ${FONT_OUT} EXT)
-string(SUBSTRING ${ext} 1 -1 ext)
-add_custom_command(
-	OUTPUT ${FONT_OUT}
-	COMMAND ${ACE_DIR}/tools/bin/font_conv ${FONT_IN} ${ext} -out ${FONT_OUT}
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	DEPENDS ${FONT_IN}
-)
-target_sources(${TARGET} PUBLIC ${FONT_OUT})
+	toAbsolute(FONT_IN)
+	toAbsolute(FONT_OUT)
+	get_filename_component(ext ${FONT_OUT} EXT)
+	string(SUBSTRING ${ext} 1 -1 ext)
+	add_custom_command(
+		OUTPUT ${FONT_OUT}
+		COMMAND ${ACE_DIR}/tools/bin/font_conv ${FONT_IN} ${ext} -out ${FONT_OUT}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${FONT_IN}
+	)
+	target_sources(${TARGET} PUBLIC ${FONT_OUT})
 endfunction()
