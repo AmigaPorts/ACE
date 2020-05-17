@@ -65,7 +65,7 @@ static void _memEntryAdd(
 	systemUnuse();
 }
 
-static void _memEntryDelete(
+static ULONG _memEntryDelete(
 	void *pAddr, ULONG ulSize, UWORD uwLine, const char *szFile
 ) {
 	tMemEntry *pPrev = 0;
@@ -76,16 +76,17 @@ static void _memEntryDelete(
 		pPrev = pCurr;
 		pCurr = pCurr->pNext;
 	}
-	if(pCurr->pAddr != pAddr) {
+	if(!pCurr) {
+		systemUse();
 		filePrintf(
 			s_pMemLog, "ERR: can't find memory allocated at %p (%s:%u)\n",
 			pAddr, szFile, uwLine
 		);
 		fileFlush(s_pMemLog);
-		return;
+		systemUnuse();
+		return 0;
 	}
 
-	systemUse();
 	// unlink entry from list
 	if(pPrev) {
 		pPrev->pNext = pCurr->pNext;
@@ -95,6 +96,7 @@ static void _memEntryDelete(
 	}
 
 	// remove entry
+	systemUse();
 	if(ulSize != pCurr->ulSize) {
 		filePrintf(
 			s_pMemLog, "WARNING: memFree size mismatch at memory %hu@%p: %lu, should be %lu (%s:%u)\n",
@@ -116,6 +118,7 @@ static void _memEntryDelete(
 
 	fileFlush(s_pMemLog);
 	systemUnuse();
+	return pCurr->ulSize;
 }
 
 static void memEntryCheckTrash(
@@ -168,7 +171,7 @@ void _memDestroy(void) {
 		s_pMemLog, "If something is deallocated past here, you're a wuss!\n"
 	);
 	while(s_pMemTail) {
-		_memEntryDelete(s_pMemTail->pAddr, s_pMemTail->ulSize, 0, "memoryDestroy");
+		_memFreeDbg(s_pMemTail->pAddr, s_pMemTail->ulSize, 0, "memoryDestroy");
 	}
 	filePrintf(
 		s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n",
@@ -182,6 +185,10 @@ void _memDestroy(void) {
 void *_memAllocDbg(
 	ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile
 ) {
+	if(!ulSize) {
+		filePrintf(s_pMemLog, "ERR: zero alloc size! (%s:%u)\n", szFile, uwLine);
+		return 0;
+	}
 	void *pAddr;
 	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
 	if(!pAddr) {
@@ -214,8 +221,10 @@ void _memFreeDbg(
 	void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile
 ) {
 	_memCheckIntegrity(uwLine, szFile);
-	_memEntryDelete(pMem, ulSize, uwLine, szFile);
-	_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
+	ulSize = _memEntryDelete(pMem, ulSize, uwLine, szFile);
+	if(ulSize) {
+		_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
+	}
 }
 
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {

@@ -22,6 +22,7 @@ tFont *fontCreate(const char *szFontName) {
 
 	pFontFile = fileOpen(szFontName, "r");
 	if (!pFontFile) {
+		logWrite("ERR: Couldn't open file\n");
 		logBlockEnd("fontCreate()");
 		return 0;
 	}
@@ -29,6 +30,7 @@ tFont *fontCreate(const char *szFontName) {
 	pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont) {
 		fileClose(pFontFile);
+		logWrite("ERR: Couldn't alloc mem\n");
 		logBlockEnd("fontCreate()");
 		return 0;
 	}

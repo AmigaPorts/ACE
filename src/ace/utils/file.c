@@ -15,6 +15,7 @@ LONG fileGetSize(const char *szPath) {
 	// http://www.cplusplus.com/reference/cstdio/fseek/
 	// Also this variant is 14 bytes smaller on Amiga ;)
 	systemUse();
+	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
 	BPTR pLock = Lock((CONST_STRPTR)szPath, ACCESS_READ);
 	if(!pLock) {
 		systemUnuse();
@@ -23,6 +24,7 @@ LONG fileGetSize(const char *szPath) {
 	struct FileInfoBlock sFileBlock;
 	LONG lResult = Examine(pLock, &sFileBlock);
 	UnLock(pLock);
+	logBlockEnd("fileGetSize()");
 	systemUnuse();
 	if(lResult == DOSFALSE) {
 		return -1;

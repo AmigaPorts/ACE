@@ -17,10 +17,17 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	);
 
 	pFile = fileOpen(szFileName, "r");
-	fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
-	logWrite(" Color count: %u\n", ubPaletteLength);
-	fileRead(pFile, pPalette, sizeof(UWORD) * MIN(ubPaletteLength, ubMaxLength));
-	fileClose(pFile);
+	if(!pFile) {
+		logWrite("ERR: File doesn't exist!\n");
+		logBlockEnd("paletteLoad()");
+		return;
+	}
+	else {
+		fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
+		logWrite("Color count: %u\n", ubPaletteLength);
+		fileRead(pFile, pPalette, sizeof(UWORD) * MIN(ubPaletteLength, ubMaxLength));
+		fileClose(pFile);
+	}
 
 	logBlockEnd("paletteLoad()");
 }
