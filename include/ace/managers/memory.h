@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 #ifdef AMIGA
-#include <exec/memory.h>      // MEMF_CLEAR etc
+#include <exec/memory.h> // MEMF_CLEAR etc
 #else
 #define MEMF_CHIP    0
 #define MEMF_FAST    1

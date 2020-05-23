@@ -8,21 +8,23 @@
 #include <ace/managers/system.h>
 #ifdef ACE_DEBUG
 
-#ifndef LOG_FILE_NAME
-#define LOG_FILE_NAME "game.log"
-#endif
-
-/* Globals */
+// Globals
 tLogManager g_sLogManager = {0};
 
-/* Functions */
+#ifdef ACE_DEBUG_UAE
+volatile ULONG * const s_pUaeFmt = 0xBFFF04;
+#else
+volatile ULONG * const s_pUaeFmt = 0;
+#endif
+
+// Functions
 
 /**
  * Base debug functions
  */
 
-void _logOpen(void) {
-	g_sLogManager.pFile = fileOpen(LOG_FILE_NAME, "w");
+void _logOpen(const char *szFilePath) {
+	g_sLogManager.pFile = szFilePath ? fileOpen(szFilePath, "w") : 0;
 	g_sLogManager.ubIndent = 0;
 	g_sLogManager.wasLastInline = 0;
 	g_sLogManager.ubBlockEmpty = 1;
@@ -41,15 +43,17 @@ void _logWrite(char *szFormat, ...) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
-	if (!g_sLogManager.pFile) {
-		return;
-	}
 
 	g_sLogManager.ubBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
 		while (ubLogIndent--) {
-			fileWrite(g_sLogManager.pFile, "\t", 1);
+			if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
+				fileWrite(g_sLogManager.pFile, "\t", 1);
+			}
+			if(s_pUaeFmt) {
+				*s_pUaeFmt = (ULONG)((UBYTE*)"\t");
+			}
 		}
 	}
 
@@ -57,18 +61,24 @@ void _logWrite(char *szFormat, ...) {
 
 	va_list vaArgs;
 	va_start(vaArgs, szFormat);
-	fileVaPrintf(g_sLogManager.pFile, szFormat, vaArgs);
+	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
+		fileVaPrintf(g_sLogManager.pFile, szFormat, vaArgs);
+		fileFlush(g_sLogManager.pFile);
+	}
+	if(s_pUaeFmt) {
+		char szMsg[1024];
+		vsprintf(szMsg, szFormat, vaArgs);
+		*s_pUaeFmt = (ULONG)((UBYTE*)szMsg);
+	}
 	va_end(vaArgs);
-
-	fileFlush(g_sLogManager.pFile);
 }
 
 void _logClose(void) {
-	logWrite("Log closed successfully");
-	if (g_sLogManager.pFile) {
+	logWrite("Log closed successfully\n");
+	if(g_sLogManager.pFile) {
 		fileClose(g_sLogManager.pFile);
+		g_sLogManager.pFile = 0;
 	}
-	g_sLogManager.pFile = 0;
 }
 
 /**
@@ -116,7 +126,9 @@ void _logBlockEnd(char *szBlockName) {
 	if(g_sLogManager.ubBlockEmpty) {
 		// empty block - collapse to single line
 		g_sLogManager.wasLastInline = 1;
-		fileSeek(g_sLogManager.pFile, -1, SEEK_CUR);
+		if(g_sLogManager.pFile) {
+			fileSeek(g_sLogManager.pFile, -1, SEEK_CUR);
+		}
 		logWrite("...OK, time: %s\n", g_sLogManager.szTimeBfr);
 	}
 	else {
@@ -127,9 +139,7 @@ void _logBlockEnd(char *szBlockName) {
 }
 
 // Average logging
-/**
- *
- */
+
 tAvg *_logAvgCreate(char *szName, UWORD uwAllocCount) {
 	tAvg *pAvg = memAllocFast(sizeof(tAvg));
 	pAvg->szName = szName;
@@ -142,25 +152,16 @@ tAvg *_logAvgCreate(char *szName, UWORD uwAllocCount) {
 	return pAvg;
 }
 
-/**
- *
- */
 void _logAvgDestroy(tAvg *pAvg) {
 	logAvgWrite(pAvg);
 	memFree(pAvg->pDeltas, pAvg->uwAllocCount*sizeof(ULONG));
 	memFree(pAvg, sizeof(tAvg));
 }
 
-/**
- *
- */
 void _logAvgBegin(tAvg *pAvg) {
 	pAvg->ulStartTime = timerGetPrec();
 }
 
-/**
- *
- */
 void _logAvgEnd(tAvg *pAvg) {
 	// Calculate timestamp
 	pAvg->pDeltas[pAvg->uwCurrDelta] = timerGetDelta(pAvg->ulStartTime, timerGetPrec());
@@ -179,9 +180,6 @@ void _logAvgEnd(tAvg *pAvg) {
 	pAvg->uwUsedCount = MIN(pAvg->uwAllocCount, pAvg->uwUsedCount + 1);
 }
 
-/**
- *
- */
 void _logAvgWrite(tAvg *pAvg) {
 	ULONG ulAvg = 0;
 	char szAvg[15];
@@ -203,6 +201,16 @@ void _logAvgWrite(tAvg *pAvg) {
 	timerFormatPrec(szMin, pAvg->ulMin);
 	timerFormatPrec(szMax, pAvg->ulMax);
 	logWrite("Avg %s: %s, min: %s, max: %s\n", pAvg->szName, szAvg, szMin, szMax);
+}
+
+void _logPushInt(void) {
+	++g_sLogManager.wIntDepth;
+}
+
+void _logPopInt(void) {
+	if(--g_sLogManager.wIntDepth < 0) {
+		logWrite("ERR: INT DEPTH NEGATIVE!\n");
+	}
 }
 
 #endif // ACE_DEBUG

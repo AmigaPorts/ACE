@@ -23,6 +23,10 @@ extern "C" {
 #include <ace/managers/copper.h>
 #include <ace/managers/game.h>
 
+#ifndef GENERIC_MAIN_LOG_PATH
+#define GENERIC_MAIN_LOG_PATH 0
+#endif
+
 void genericCreate(void);
 void genericProcess(void);
 void genericDestroy(void);
@@ -46,9 +50,9 @@ void __stack_chk_fail(void) {
 #endif
 
 int main(void) {
+	logOpen(GENERIC_MAIN_LOG_PATH);
 	systemCreate();
 	memCreate();
-	logOpen();
 	timerCreate();
 
 	blitManagerCreate();
@@ -65,9 +69,9 @@ int main(void) {
 	blitManagerDestroy();
 
 	timerDestroy();
-	logClose();
 	memDestroy();
 	systemDestroy();
+	logClose();
 
 	return EXIT_SUCCESS;
 }

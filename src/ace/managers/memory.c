@@ -4,7 +4,7 @@
 
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
-#include <ace/utils/file.h>
+#include <ace/managers/log.h>
 
 #ifdef AMIGA
 #include <clib/exec_protos.h> // AvailMem, AllocMem, FreeMem, etc.
@@ -23,7 +23,6 @@ typedef struct _tMemEntry {
 
 static UWORD s_uwLastId = 0;
 static tMemEntry *s_pMemTail;
-static tFile *s_pMemLog;
 static ULONG s_ulChipUsage, s_ulChipPeakUsage, s_ulFastUsage, s_ulFastPeakUsage;
 
 //---------------------------------------------------------------- MEM ENTRY FNS
@@ -41,8 +40,8 @@ static void _memEntryAdd(
 	s_pMemTail->uwId = s_uwLastId++;
 	s_pMemTail->pNext = pNext;
 
-	filePrintf(
-		s_pMemLog, "Allocated %s memory %hu@%p, size %lu (%s:%u)\n",
+	logWrite(
+		"[MEM] Allocated %s memory %hu@%p, size %lu (%s:%u)\n",
 		(memType(pAddr) & MEMF_CHIP) ? "CHIP" : "FAST",
 		s_pMemTail->uwId, pAddr, ulSize, szFile, uwLine
 	);
@@ -60,8 +59,6 @@ static void _memEntryAdd(
 			s_ulFastPeakUsage = s_ulFastUsage;
 		}
 	}
-
-	fileFlush(s_pMemLog);
 	systemUnuse();
 }
 
@@ -77,13 +74,9 @@ static ULONG _memEntryDelete(
 		pCurr = pCurr->pNext;
 	}
 	if(!pCurr) {
-		systemUse();
-		filePrintf(
-			s_pMemLog, "ERR: can't find memory allocated at %p (%s:%u)\n",
-			pAddr, szFile, uwLine
+		logWrite(
+			"[MEM] ERR: can't find memory allocated at %p (%s:%u)\n", pAddr, szFile, uwLine
 		);
-		fileFlush(s_pMemLog);
-		systemUnuse();
 		return 0;
 	}
 
@@ -98,13 +91,13 @@ static ULONG _memEntryDelete(
 	// remove entry
 	systemUse();
 	if(ulSize != pCurr->ulSize) {
-		filePrintf(
-			s_pMemLog, "WARNING: memFree size mismatch at memory %hu@%p: %lu, should be %lu (%s:%u)\n",
+		logWrite(
+			"[MEM] WARN: memFree size mismatch at memory %hu@%p: %lu, should be %lu (%s:%u)\n",
 			pCurr->uwId, pAddr, ulSize, pCurr->ulSize, szFile, uwLine
 		);
 	}
-	filePrintf(
-		s_pMemLog, "freed memory %hu@%p, size %lu (%s:%u)\n",
+	logWrite(
+		"[MEM] Freed memory %hu@%p, size %lu (%s:%u)\n",
 		pCurr->uwId, pAddr, ulSize, szFile, uwLine
 	);
 
@@ -116,7 +109,6 @@ static ULONG _memEntryDelete(
 		s_ulFastUsage -= ulSize;
 	}
 
-	fileFlush(s_pMemLog);
 	systemUnuse();
 	return pCurr->ulSize;
 }
@@ -127,18 +119,16 @@ static void memEntryCheckTrash(
 	UBYTE *pCafe = (UBYTE*)(pEntry->pAddr - 4*sizeof(UBYTE));
 	UBYTE *pDead = (UBYTE*)(pEntry->pAddr + pEntry->ulSize);
 	if(pCafe[0] != 0xCA || pCafe[1] != 0xFE || pCafe[2] != 0xBA || pCafe[3] != 0xBE) {
-		filePrintf(
-			s_pMemLog, "ERR: Left mem trashed: %hu@%p (%s:%u)\n",
+		logWrite(
+			"[MEM] ERR: Left mem trashed: %hu@%p (%s:%u)\n",
 			pEntry->uwId, pEntry->pAddr, szFile, uwLine
 		);
-		fileFlush(s_pMemLog);
 	}
 	if(pDead[0] != 0xDE || pDead[1] != 0xAD || pDead[2] != 0xBE || pDead[3] != 0xEF) {
-		filePrintf(
-			s_pMemLog, "ERR: Right mem trashed: %hu@%p (%s:%u)\n",
+		logWrite(
+			"[MEM] ERR: Right mem trashed: %hu@%p (%s:%u)\n",
 			pEntry->uwId, pEntry->pAddr, szFile, uwLine
 		);
-		fileFlush(s_pMemLog);
 	}
 }
 
@@ -159,26 +149,19 @@ void _memCreate(void) {
 	s_ulFastUsage = 0;
 	s_ulFastPeakUsage = 0;
 	s_uwLastId = 0;
-	s_pMemLog = fileOpen("memory.log", "w");
 }
 
 void _memDestroy(void) {
 	systemUse();
-	filePrintf(
-		s_pMemLog, "\n=============== MEMORY MANAGER DESTROY ==============\n"
-	);
-	filePrintf(
-		s_pMemLog, "If something is deallocated past here, you're a wuss!\n"
-	);
+	logWrite("\n=============== MEMORY MANAGER DESTROY ==============\n");
+	logWrite("If something is deallocated past here, you're a wuss!\n");
 	while(s_pMemTail) {
 		_memFreeDbg(s_pMemTail->pAddr, s_pMemTail->ulSize, 0, "memoryDestroy");
 	}
-	filePrintf(
-		s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n",
+	logWrite(
+		"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
 		s_ulChipPeakUsage, s_ulFastPeakUsage
 	);
-	fileClose(s_pMemLog);
-	s_pMemLog = 0;
 	systemUnuse();
 }
 
@@ -186,23 +169,23 @@ void *_memAllocDbg(
 	ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile
 ) {
 	if(!ulSize) {
-		filePrintf(s_pMemLog, "ERR: zero alloc size! (%s:%u)\n", szFile, uwLine);
+		logWrite("[MEM] ERR: zero alloc size! (%s:%u)\n", szFile, uwLine);
 		return 0;
 	}
 	void *pAddr;
 	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
 	if(!pAddr) {
-		filePrintf(
-			s_pMemLog, "ERR: couldn't allocate %lu bytes! (%s:%u)\n",
+		logWrite(
+			"[MEM] ERR: couldn't allocate %lu bytes! (%s:%u)\n",
 			ulSize, szFile, uwLine
 		);
-		filePrintf(
-			s_pMemLog, "Peak usage: CHIP: %lu, FAST: %lu\n",
+		logWrite(
+			"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
 			s_ulChipPeakUsage, s_ulFastPeakUsage
 		);
 #ifdef AMIGA
-		filePrintf(
-			s_pMemLog, "Largest available chunk of given type: %lu\n",
+		logWrite(
+			"[MEM] Largest available chunk of given type: %lu\n",
 			AvailMem(ulFlags | MEMF_LARGEST)
 		);
 #endif // AMIGA
@@ -234,7 +217,7 @@ void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	pResult = AllocMem(ulSize, ulFlags);
 	if(!(ulFlags & MEMF_CHIP) && !pResult) {
 		// No FAST available - allocate CHIP instead
-		filePrintf(s_pMemLog, "WARN: Couldn't allocate FAST mem\r\n");
+		logWrite("[MEM] WARN: Couldn't allocate FAST mem\r\n");
 		pResult = AllocMem(ulSize, (ulFlags & ~MEMF_FAST) | MEMF_ANY);
 	}
 	#else
@@ -261,11 +244,10 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile) {
 		pEntry = pEntry->pNext;
 	}
 	if(pEntry->pAddr != pMem) {
-		filePrintf(
-			s_pMemLog, "ERR: can't find memory allocated at %p (%s:%u)\n",
+		logWrite(
+			"[MEM] ERR: can't find memory allocated at %p (%s:%u)\n",
 			pMem, szFile, uwLine
 		);
-		fileFlush(s_pMemLog);
 		return;
 	}
 	memEntryCheckTrash(pEntry, uwLine, szFile);

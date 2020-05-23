@@ -15,7 +15,7 @@ extern "C" {
 #include <ace/managers/timer.h>
 #include <ace/utils/file.h>
 
-/* Types */
+// Types
 
 typedef struct _tAvg {
 	UWORD uwAllocCount;
@@ -32,6 +32,7 @@ typedef struct _tAvg {
 typedef struct _tLogManager {
 	tFile *pFile;
 	UBYTE ubIndent;
+	WORD wIntDepth;
 	UBYTE wasLastInline;
 	ULONG pTimeStack[256];
 	char szTimeBfr[255];
@@ -40,25 +41,28 @@ typedef struct _tLogManager {
 } tLogManager;
 
 #ifdef ACE_DEBUG
-/* Globals */
+// Globals
 extern tLogManager g_sLogManager;
 
-/* Functions - general */
+// Functions - general
 
-void _logOpen(void);
+void _logOpen(const char *szFilePath);
 void _logClose(void);
 
 void _logPushIndent(void);
 void _logPopIndent(void);
 
+void _logPushInt(void);
+void _logPopInt(void);
+
 void _logWrite(char *szFormat, ...);
 
-/* Functions - block logging */
+// Functions - block logging
 
 void _logBlockBegin(char *szBlockName, ...);
 void _logBlockEnd(char *szBlockName);
 
-/* Functions - average block time */
+// Functions - average block time
 
 tAvg *_logAvgCreate(char *szName, UWORD uwCount);
 void _logAvgDestroy(tAvg *pAvg);
@@ -66,12 +70,14 @@ void _logAvgBegin(tAvg *pAvg);
 void _logAvgEnd(tAvg *pAvg);
 void _logAvgWrite(tAvg *pAvg);
 
-/* Functions - struct dump */
+// Functions - general logging
 
-#define logOpen() _logOpen()
+#define logOpen(szFilePath) _logOpen(szFilePath)
 #define logClose() _logClose()
 #define logPushIndent() _logPushIndent()
 #define logPopIndent() _logPopIndent()
+#define logPushInt() _logPushInt()
+#define logPopInt() _logPopInt()
 #define logWrite(...) _logWrite(__VA_ARGS__)
 
 #define logBlockBegin(...) _logBlockBegin(__VA_ARGS__)
@@ -88,6 +94,8 @@ void _logAvgWrite(tAvg *pAvg);
 #define logClose()
 #define logPushIndent()
 #define logPopIndent()
+#define logPushInt()
+#define logPopInt()
 #define logWrite(...)
 
 #define logBlockBegin(...)

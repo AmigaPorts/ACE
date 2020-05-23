@@ -82,11 +82,14 @@ const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 
 FN_HOTSPOT
 void HWINTERRUPT int1Handler(void) {
+	logPushInt();
 	// Soft / diskBlk / TBE (RS232 TX end)
+	logPopInt();
 }
 
 FN_HOTSPOT
 void HWINTERRUPT int2Handler(void) {
+	logPushInt();
 	UWORD uwIntReq = g_pCustom->intreqr;
 	if(uwIntReq & INTF_PORTS) {
 		// CIA A interrupt - Parallel, keyboard
@@ -123,10 +126,12 @@ void HWINTERRUPT int2Handler(void) {
 		g_pCustom->intreq = INTF_PORTS;
 	}
 	// TODO: handle "mouse, some of disk functions"
+	logPopInt();
 }
 
 FN_HOTSPOT
 void HWINTERRUPT int3Handler(void) {
+	logPushInt();
 	// VBL / Copper / Blitter
 	UWORD uwIntReq = g_pCustom->intreqr;
 	UWORD uwReqClr = 0;
@@ -165,12 +170,14 @@ void HWINTERRUPT int3Handler(void) {
 		}
 		uwReqClr |= INTF_BLIT;
 	}
+	logPopInt();
 	g_pCustom->intreq = uwReqClr;
 	g_pCustom->intreq = uwReqClr;
 }
 
 FN_HOTSPOT
 void HWINTERRUPT int4Handler(void) {
+	logPushInt();
 	UWORD uwIntReq = g_pCustom->intreqr;
 	UWORD uwReqClr = 0;
 
@@ -213,17 +220,21 @@ void HWINTERRUPT int4Handler(void) {
 		}
 		uwReqClr |= INTF_AUD3;
 	}
+	logPopInt();
 	g_pCustom->intreq = uwReqClr;
 	g_pCustom->intreq = uwReqClr;
 }
 
 FN_HOTSPOT
 void HWINTERRUPT int5Handler(void) {
+	logPushInt();
 	// DskSyn / RBF
+	logPopInt();
 }
 
 FN_HOTSPOT
 void HWINTERRUPT int6Handler(void) {
+	logPushInt();
 	// TODO: perhaps I should disable CIA interrupts while I process them?
 	UWORD uwIntReq = g_pCustom->intreqr;
 	UWORD uwReqClr = 0;
@@ -261,6 +272,7 @@ void HWINTERRUPT int6Handler(void) {
 	// TOOD: is there any other interrupt source on level 6?
 	// If yes, then detect it. If not, remove check for EXTER flag
 
+	logPopInt();
 	// Clear int flags
 	g_pCustom->intreq = uwReqClr;
 	g_pCustom->intreq = uwReqClr;
@@ -268,7 +280,9 @@ void HWINTERRUPT int6Handler(void) {
 
 FN_HOTSPOT
 void HWINTERRUPT int7Handler(void) {
+	logPushInt();
 	// EXTERNAL
+	logPopInt();
 }
 
 //-------------------------------------------------------------------- FUNCTIONS
@@ -389,7 +403,7 @@ void systemCreate(void) {
  * @brief Cleanup after app, restore anything that systemCreate took over.
  */
 void systemDestroy(void) {
-	// disable all interrupts
+	// Disable all interrupts
 	g_pCustom->intena = 0x7FFF;
 	g_pCustom->intreq = 0x7FFF;
 
@@ -399,13 +413,14 @@ void systemDestroy(void) {
 	g_pCustom->intreq = 0x7FFF;
 
 	// Start waking up OS
-	if(s_wSystemUses != 0) {
-		logWrite("ERR: unclosed system usage count: %hd", s_wSystemUses);
-		s_wSystemUses = 0;
+	if(s_wSystemUses != 1) {
+		logWrite("ERR: unclosed/overclosed system usage count: %hd\n", s_wSystemUses);
+		// Ensure that OS gets restured - along with
 	}
-	systemUse();
 
-	// Restore all OS DMA
+	// Restore every single OS DMA & interrupt
+	s_wSystemUses = 0;
+	systemUse();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// restore old view
@@ -416,9 +431,8 @@ void systemDestroy(void) {
 	WaitBlit();
 	DisownBlitter();
 
-	logWrite("Closing graphics.library...");
+	logWrite("Closing graphics.library...\n");
 	CloseLibrary((struct Library *) GfxBase);
-	logWrite("OK\n");
 }
 
 void systemUnuse(void) {
