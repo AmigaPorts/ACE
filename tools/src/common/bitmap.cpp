@@ -73,7 +73,6 @@ tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath)
 	uint8_t *pData;
 	auto LodeError = lodepng_decode24_file(&pData, &uWidth, &uHeight, szPath.c_str());
 	if(LodeError) {
-		free(pData);
 		return tChunkyBitmap();
 	}
 
