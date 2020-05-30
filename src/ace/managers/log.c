@@ -12,9 +12,9 @@
 tLogManager g_sLogManager = {0};
 
 #ifdef ACE_DEBUG_UAE
-volatile ULONG * const s_pUaeFmt = 0xBFFF04;
+volatile ULONG * const s_pUaeFmt = (ULONG *)0xBFFF04;
 #else
-volatile ULONG * const s_pUaeFmt = 0;
+volatile ULONG * const s_pUaeFmt = (ULONG *)0;
 #endif
 
 // Functions
