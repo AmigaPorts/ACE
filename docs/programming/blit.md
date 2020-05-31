@@ -135,7 +135,7 @@ void gameGsCreate(void) {
 //-------------------------------------------------------------- NEW STUFF START
   // Draw line separating score VPort and main VPort
   blitLine(
-    s_pScoreBuffer->pBuffer,
+    s_pScoreBuffer->pBack,
     0, s_pVpScore->uwHeight - 2,
     s_pVpScore->uwWidth - 1, s_pVpScore->uwHeight - 2,
     SCORE_COLOR, 0xFFFF, 0 // Try patterns 0xAAAA, 0xEEEE, etc.
@@ -143,7 +143,7 @@ void gameGsCreate(void) {
 
   // Draw wall on the bottom of main VPort
   blitRect(
-    s_pScoreBuffer->pBuffer,
+    s_pScoreBuffer->pBack,
     0, s_pVpMain->uwHeight - WALL_HEIGHT,
     s_pVpMain->uwWidth, WALL_HEIGHT, WALL_COLOR
   );
@@ -164,19 +164,19 @@ void gameGsLoop(void) {
 //-------------------------------------------------------------- NEW STUFF START
     // Draw first paddle
     blitRect(
-      s_pMainBuffer->pBuffer, 0, 0,
+      s_pMainBuffer->pBack, 0, 0,
       PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_LEFT_COLOR
     );
 
     // Draw second paddle
     blitRect(
-      s_pMainBuffer->pBuffer, s_pVpMain->uwWidth - PADDLE_WIDTH, 0,
+      s_pMainBuffer->pBack, s_pVpMain->uwWidth - PADDLE_WIDTH, 0,
       PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_RIGHT_COLOR
     );
 
     // Draw ball
     blitRect(
-      s_pMainBuffer->pBuffer,
+      s_pMainBuffer->pBack,
       // x center: half of screen width minus half of ball
       (s_pVpMain->uwWidth - BALL_WIDTH) / 2,
       // y center: half of screen height minus half of ball
