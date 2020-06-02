@@ -100,8 +100,6 @@ function(convertBitmaps)
 		if(${maskCount} GREATER 0)
 			message(FATAL_ERROR "MASK_COLOR unspecified")
 		endif()
-	else()
-		string(REPLACE "#" "\\#" convertBitmaps_MASK_COLOR "${convertBitmaps_MASK_COLOR}")
 	endif()
 
 	MATH(EXPR srcCount "${srcCount}-1")
@@ -154,7 +152,6 @@ endfunction()
 
 function(transformBitmap)
 	cmake_parse_arguments(args "" "TARGET;SOURCE;DESTINATION" "TRANSFORM" ${ARGN})
-	string(REPLACE "#" "\\#" args_TRANSFORM "${args_TRANSFORM}")
 	add_custom_command(
 		OUTPUT ${args_DESTINATION}
 		COMMAND ${ACE_DIR}/tools/bin/bitmap_transform ${args_SOURCE} ${args_DESTINATION} ${args_TRANSFORM}

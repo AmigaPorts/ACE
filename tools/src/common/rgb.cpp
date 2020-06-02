@@ -20,8 +20,11 @@ tRgb::tRgb(const std::string &szCode)
 			this->ubB = std::stoul(szCode.substr(5, 2), nullptr, 16);
 		}
 		else {
-			throw std::runtime_error("Can't convert color code");
+			throw std::runtime_error(fmt::format("Unknown RGB hex format: {}", szCode));
 		}
+	}
+	else {
+		throw std::runtime_error(fmt::format("Unknown RGB color format: {}", szCode));
 	}
 }
 
