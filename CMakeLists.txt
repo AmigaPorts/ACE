@@ -18,7 +18,7 @@ if(NOT AMIGA)
 	message(SEND_ERROR "This project only compiles for Amiga")
 endif()
 
-file(GLOB_RECURSE SOURCES src/*.c)
+file(GLOB_RECURSE SOURCES src/ace/*.c src/fixmath/*.c)
 file(GLOB HEADERS_ACE include/ace/*.h)
 file(GLOB HEADERS_ACE_GENERIC include/ace/generic/*.h)
 file(GLOB HEADERS_ACE_UTILS include/ace/utils/*.h)
@@ -42,6 +42,13 @@ target_compile_options(${TARGET_NAME} PUBLIC -fomit-frame-pointer)
 if(ACE_DEBUG)
 	# Add ACE debugging features to release build
 	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG)
+endif()
+if(M68K_COMPILER MATCHES "Bartman")
+	target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/mini_std)
+	file(GLOB SOURCES_MINI_STD src/mini_std/*.c)
+	file(GLOB HEADERS_MINI_STD include/mini_std/*.h)
+	target_sources(${TARGET_NAME} PRIVATE ${SOURCES_MINI_STD} ${HEADERS_MINI_STD})
+
 endif()
 
 target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)

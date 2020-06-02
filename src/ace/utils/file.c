@@ -87,6 +87,7 @@ UBYTE fileIsEof(tFile *pFile) {
 	return ubResult;
 }
 
+#if !defined(BARTMAN_GCC)
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
@@ -117,6 +118,7 @@ LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
 	va_end(vaArgs);
 	return lResult;
 }
+#endif
 
 void fileFlush(tFile *pFile) {
 	systemUse();

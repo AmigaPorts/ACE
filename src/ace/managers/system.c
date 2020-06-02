@@ -4,6 +4,9 @@
 
 #include <ace/managers/system.h>
 #include <stdlib.h>
+#if defined(BARTMAN_GCC)
+#include <proto/exec.h>
+#endif
 #include <clib/graphics_protos.h>
 #include <clib/dos_protos.h>
 #include <hardware/intbits.h>
