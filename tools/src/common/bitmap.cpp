@@ -116,7 +116,10 @@ tPlanarBitmap::tPlanarBitmap(
 tPlanarBitmap::tPlanarBitmap(
 	const tChunkyBitmap &Chunky, const tPalette &Palette,
 	const tPalette &PaletteIgnore
-)
+):
+	m_uwWidth(0),
+	m_uwHeight(0),
+	m_ubDepth(0)
 {
 	if(Chunky.m_uwWidth & 0xF) {
 		nLog::error("Width is not divisible by 16");

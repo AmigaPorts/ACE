@@ -157,7 +157,11 @@ int main(int lArgCount, const char *pArgs[])
 				tPlanarBitmap(Mask, PaletteMask).toBm(szMask, isWriteInterleaved);
 			}
 		}
-		tPlanarBitmap(In, Palette, PaletteMask).toBm(szOutput, isWriteInterleaved);
+		auto Planar = tPlanarBitmap(In, Palette, PaletteMask);
+		if(!Planar.m_uwWidth) {
+			return EXIT_FAILURE;
+		}
+		Planar.toBm(szOutput, isWriteInterleaved);
 	}
 	else if(szOutExt == "png") {
 		In.toPng(szOutput);
