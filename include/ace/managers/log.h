@@ -90,7 +90,7 @@ void _logAvgWrite(tAvg *pAvg);
 #define logAvgWrite(pAvg) _logAvgWrite(pAvg)
 
 #else
-#define logOpen()
+#define logOpen(szFilePath)
 #define logClose()
 #define logPushIndent()
 #define logPopIndent()
