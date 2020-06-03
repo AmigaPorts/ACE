@@ -2,11 +2,13 @@
 #include <stdarg.h>
 #include "printf.h"
 
-typedef int FILE;
+typedef int FILE; // Whatever, it's using pointer anyway
 
 #define SEEK_SET 0
 #define SEEK_CUR 1
 #define SEEK_END 2
+
+#define EOF -1
 
 FILE *fopen(const char *restrict filename, const char *restrict mode);
 
