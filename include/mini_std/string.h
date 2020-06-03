@@ -1,3 +1,6 @@
+#ifndef _MINI_STD_STRING_H_
+#define _MINI_STD_STRING_H_
+
 #include <stddef.h>
 #include <../sys-include/string.h>
 
@@ -14,3 +17,5 @@ char *strchr(const char *str, int ch);
 int memcmp(const void *lhs, const void *rhs, size_t count);
 
 unsigned long strtoul(const char *restrict str, char **restrict str_end, int base);
+
+#endif // _MINI_STD_STRING_H_

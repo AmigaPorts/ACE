@@ -1,3 +1,6 @@
+#ifndef _MINI_STD_STDIO_H_
+#define _MINI_STD_STDIO_H_
+
 #include <stddef.h>
 #include <stdarg.h>
 #include "printf.h"
@@ -29,3 +32,5 @@ int feof( FILE *stream );
 static inline int vsprintf(char *restrict buffer, const char *restrict format, va_list vlist) {
 	return vsnprintf(buffer, 65535, format, vlist);
 }
+
+#endif // _MINI_STD_STDIO_H_
