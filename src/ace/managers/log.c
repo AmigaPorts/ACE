@@ -12,9 +12,23 @@
 tLogManager g_sLogManager = {0};
 
 #ifdef ACE_DEBUG_UAE
-volatile ULONG * const s_pUaeFmt = (ULONG *)0xBFFF04;
+
+	#if defined(BARTMAN_GCC)
+long (*bartmanLog)(long mode, const char *string) = (long (*)(long, const char *))0xf0ff60;
+static inline void uaeWrite(const char *szMsg) {
+	if (*((UWORD *)bartmanLog) == 0x4eb9 || *((UWORD *)bartmanLog) == 0xa00e) {
+		bartmanLog(86, szMsg);
+	}
+}
+	#else
+static inline void uaeWrite(const char *szMsg) {
+	volatile ULONG * const s_pUaeFmt = (ULONG *)0xBFFF04;
+	*s_pUaeFmt = (ULONG)((UBYTE*)szMsg);
+}
+	#endif
+
 #else
-volatile ULONG * const s_pUaeFmt = (ULONG *)0;
+#define uaeWrite(x)
 #endif
 
 // Functions
@@ -51,9 +65,7 @@ void _logWrite(char *szFormat, ...) {
 			if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
 				fileWrite(g_sLogManager.pFile, "\t", 1);
 			}
-			if(s_pUaeFmt) {
-				*s_pUaeFmt = (ULONG)((UBYTE*)"\t");
-			}
+			uaeWrite("\t");
 		}
 	}
 
@@ -62,14 +74,14 @@ void _logWrite(char *szFormat, ...) {
 	va_list vaArgs;
 	va_start(vaArgs, szFormat);
 	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
-		fileVaPrintf(g_sLogManager.pFile, szFormat, vaArgs);
+		// fileVaPrintf(g_sLogManager.pFile, szFormat, vaArgs);
 		fileFlush(g_sLogManager.pFile);
 	}
-	if(s_pUaeFmt) {
-		char szMsg[1024];
-		vsprintf(szMsg, szFormat, vaArgs);
-		*s_pUaeFmt = (ULONG)((UBYTE*)szMsg);
-	}
+
+	char szMsg[1024];
+	vsprintf(szMsg, szFormat, vaArgs);
+	uaeWrite(szMsg);
+
 	va_end(vaArgs);
 }
 

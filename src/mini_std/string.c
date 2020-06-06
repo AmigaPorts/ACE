@@ -27,3 +27,13 @@ char *strchr(const char *szHaystack, int cNeedle) {
 	}
 	return 0;
 }
+
+char *strcpy(char *restrict szDest, const char *restrict szSrc) {
+	memcpy(szDest, szSrc, strlen(szSrc));
+	return szDest;
+}
+
+char *strcat(char *restrict szDest, const char *restrict szSrc) {
+	strcpy(&szDest[strlen(szDest)], szSrc);
+	return szDest;
+}
