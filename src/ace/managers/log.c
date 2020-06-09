@@ -103,19 +103,16 @@ void _logBlockBegin(char *szBlockName, ...) {
 		return;
 	}
 	systemUse();
-	char szFmtBfr[512];
-	char szStrBfr[1024];
-	// make format string
-	strcpy(szFmtBfr, "Block begin: ");
-	strcat(szFmtBfr, szBlockName);
-	strcat(szFmtBfr, "\n");
 
+	logWrite("Block begin: ");
+	char szStrBfr[1024];
 	va_list vaArgs;
 	va_start(vaArgs, szBlockName);
-	vsprintf(szStrBfr,szFmtBfr,vaArgs);
+	vsprintf(szStrBfr, szBlockName, vaArgs);
 	va_end(vaArgs);
-
 	logWrite(szStrBfr);
+	logWrite("\n");
+
 	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
 	logPushIndent();
 	g_sLogManager.ubBlockEmpty = 1;
