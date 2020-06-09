@@ -60,10 +60,9 @@ size_t fwrite(const void *restrict pBuffer, size_t Size, size_t Count, FILE *res
 int fclose(FILE *pStream) {
 	// http://www.cplusplus.com/reference/cstdio/fclose/
 	// http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_3._guide/node0149.html
-	if(Close((BPTR)pStream)) {
-		return 0;
-	}
-	return EOF;
+	// NOTE: Close() doesn't return anything in ks1.3! So we'll just return success.
+	Close((BPTR)pStream);
+	return 0;
 }
 
 int fseek(FILE *pStream, long Offset, int Origin) {
