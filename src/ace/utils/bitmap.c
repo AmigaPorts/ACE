@@ -23,7 +23,7 @@ tBitMap *bitmapCreate(
 	UBYTE i;
 
 	logBlockBegin(
-		"bitmapCreate(uwWidth: %u, uwHeight: %u, ubDepth: %hu, ubFlags: %hu)",
+		"bitmapCreate(uwWidth: %hu, uwHeight: %hu, ubDepth: %hhu, ubFlags: %hhu)",
 		uwWidth, uwHeight, ubDepth, ubFlags
 	);
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
