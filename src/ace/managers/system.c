@@ -375,6 +375,14 @@ void systemCreate(void) {
 		return;
 	}
 
+  // Determine original stack size
+  struct Process *pProcess = (struct Process *)FindTask(NULL);
+  ULONG ulStackSize = (char *)pProcess->pr_Task.tc_SPUpper - (char *)pProcess->pr_Task.tc_SPLower;
+  if (pProcess->pr_CLI) {
+    ulStackSize = *(ULONG *)pProcess->pr_ReturnAddr;
+  }
+	logWrite("Stack size: %lu\n", ulStackSize);
+
 	// Disable as much of OS stuff as possible so that it won't trash stuff when
 	// re-enabled periodically.
 	// Save the system copperlists and flush the view
