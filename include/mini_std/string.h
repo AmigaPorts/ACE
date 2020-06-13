@@ -18,4 +18,8 @@ int memcmp(const void *lhs, const void *rhs, size_t count);
 
 unsigned long strtoul(const char *restrict str, char **restrict str_end, int base);
 
+int strcmp(const char *szA, const char *szB);
+
+char *strncpy(char *restrict szDest, const char *restrict szSrc, size_t Count);
+
 #endif // _MINI_STD_STRING_H_
