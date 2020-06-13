@@ -57,6 +57,8 @@ void _logPopInt(void);
 
 void _logWrite(char *szFormat, ...);
 
+void _logWriteVa(char *szFormat, va_list vaArgs);
+
 // Functions - block logging
 
 void _logBlockBegin(char *szBlockName, ...);
@@ -79,6 +81,7 @@ void _logAvgWrite(tAvg *pAvg);
 #define logPushInt() _logPushInt()
 #define logPopInt() _logPopInt()
 #define logWrite(...) _logWrite(__VA_ARGS__)
+#define logWriteVa(szFormat, vaArgs) _logWriteVa(szFormat, vaArgs)
 
 #define logBlockBegin(...) _logBlockBegin(__VA_ARGS__)
 #define logBlockEnd(szBlockName) _logBlockEnd(szBlockName)
@@ -97,6 +100,7 @@ void _logAvgWrite(tAvg *pAvg);
 #define logPushInt()
 #define logPopInt()
 #define logWrite(...)
+#define logWriteVa(szFormat, vaArgs)
 
 #define logBlockBegin(...)
 #define logBlockEnd(szBlockName)

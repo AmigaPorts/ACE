@@ -54,6 +54,13 @@ void _logPopIndent(void) {
 }
 
 void _logWrite(char *szFormat, ...) {
+	va_list vaArgs;
+	va_start(vaArgs, szFormat);
+	logWriteVa(szFormat, vaArgs);
+	va_end(vaArgs);
+}
+
+void _logWriteVa(char *szFormat, va_list vaArgs) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
@@ -71,18 +78,13 @@ void _logWrite(char *szFormat, ...) {
 
 	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
 
-	va_list vaArgs;
-	va_start(vaArgs, szFormat);
-	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
-		// fileVaPrintf(g_sLogManager.pFile, szFormat, vaArgs);
-		fileFlush(g_sLogManager.pFile);
-	}
-
 	char szMsg[1024];
 	vsprintf(szMsg, szFormat, vaArgs);
 	uaeWrite(szMsg);
-
-	va_end(vaArgs);
+	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
+		fileWrite(g_sLogManager.pFile, szMsg, strlen(szMsg));
+		fileFlush(g_sLogManager.pFile);
+	}
 }
 
 void _logClose(void) {
@@ -105,17 +107,16 @@ void _logBlockBegin(char *szBlockName, ...) {
 	systemUse();
 
 	logWrite("Block begin: ");
-	char szStrBfr[1024];
 	va_list vaArgs;
 	va_start(vaArgs, szBlockName);
-	vsprintf(szStrBfr, szBlockName, vaArgs);
+	logWrite(szBlockName, vaArgs);
 	va_end(vaArgs);
-	logWrite(szStrBfr);
 	logWrite("\n");
 
 	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
 	logPushIndent();
 	g_sLogManager.ubBlockEmpty = 1;
+	memCheckIntegrity();
 	systemUnuse();
 }
 
