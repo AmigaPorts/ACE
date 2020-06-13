@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <proto/exec.h> // Bartman's compiler needs this
+#include <proto/dos.h> // Bartman's compiler needs this
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>

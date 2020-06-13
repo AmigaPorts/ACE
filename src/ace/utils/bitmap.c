@@ -10,6 +10,7 @@
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/custom.h>
+#include <proto/graphics.h> // Bartman's compiler needs this
 
 /* Globals */
 

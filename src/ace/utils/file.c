@@ -87,7 +87,7 @@ UBYTE fileIsEof(tFile *pFile) {
 	return ubResult;
 }
 
-#if !defined(BARTMAN_GCC)
+#if !defined(BARTMAN_GCC) // Not implemented in mini_std for now, sorry!
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);

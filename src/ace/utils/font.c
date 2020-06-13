@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <proto/graphics.h> // Bartman's compiler needs this
+#include <ace/managers/system.h>
 #include <ace/utils/font.h>
 #include <ace/utils/file.h>
-#include <ace/managers/system.h>
 
 /* Globals */
 

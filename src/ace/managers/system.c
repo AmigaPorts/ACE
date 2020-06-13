@@ -4,9 +4,6 @@
 
 #include <ace/managers/system.h>
 #include <stdlib.h>
-#if defined(BARTMAN_GCC)
-#include <proto/exec.h>
-#endif
 #include <clib/graphics_protos.h>
 #include <clib/dos_protos.h>
 #include <hardware/intbits.h>
@@ -15,7 +12,9 @@
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
 #include <exec/execbase.h>
-#include <proto/exec.h>
+#include <proto/exec.h> // Bartman's compiler needs this
+#include <proto/dos.h> // Bartman's compiler needs this
+#include <proto/graphics.h> // Bartman's compiler needs this
 
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
