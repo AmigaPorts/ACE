@@ -36,7 +36,7 @@ typedef struct _tLogManager {
 	UBYTE wasLastInline;
 	ULONG pTimeStack[256];
 	char szTimeBfr[255];
-	UBYTE ubBlockEmpty;
+	UBYTE isBlockEmpty;
 	UBYTE ubShutUp;
 } tLogManager;
 

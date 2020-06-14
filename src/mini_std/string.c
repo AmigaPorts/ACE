@@ -29,7 +29,8 @@ char *strchr(const char *szHaystack, int cNeedle) {
 }
 
 char *strcpy(char *restrict szDest, const char *restrict szSrc) {
-	memcpy(szDest, szSrc, strlen(szSrc));
+	// Also copy null terminator
+	memcpy(szDest, szSrc, strlen(szSrc) + 1);
 	return szDest;
 }
 

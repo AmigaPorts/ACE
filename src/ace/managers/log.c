@@ -41,7 +41,7 @@ void _logOpen(const char *szFilePath) {
 	g_sLogManager.pFile = szFilePath ? fileOpen(szFilePath, "w") : 0;
 	g_sLogManager.ubIndent = 0;
 	g_sLogManager.wasLastInline = 0;
-	g_sLogManager.ubBlockEmpty = 1;
+	g_sLogManager.isBlockEmpty = 1;
 	g_sLogManager.ubShutUp = 0;
 }
 
@@ -65,21 +65,21 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 		return;
 	}
 
-	g_sLogManager.ubBlockEmpty = 0;
+	// Bartman's UAE logger appends newline to each print, so the message must
+	// be emitted in one print with indentation.
+	char szMsg[1024];
+	UWORD uwOffs = 0;
+	g_sLogManager.isBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
 		while (ubLogIndent--) {
-			if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
-				fileWrite(g_sLogManager.pFile, "\t", 1);
-			}
-			uaeWrite("\t");
+			szMsg[uwOffs++] = '\t';
 		}
 	}
 
 	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
 
-	char szMsg[1024];
-	vsprintf(szMsg, szFormat, vaArgs);
+	vsprintf(&szMsg[uwOffs], szFormat, vaArgs);
 	uaeWrite(szMsg);
 	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
 		fileWrite(g_sLogManager.pFile, szMsg, strlen(szMsg));
@@ -115,7 +115,7 @@ void _logBlockBegin(char *szBlockName, ...) {
 
 	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
 	logPushIndent();
-	g_sLogManager.ubBlockEmpty = 1;
+	g_sLogManager.isBlockEmpty = 1;
 	memCheckIntegrity();
 	systemUnuse();
 }
@@ -133,7 +133,7 @@ void _logBlockEnd(char *szBlockName) {
 			timerGetPrec()
 		)
 	);
-	if(g_sLogManager.ubBlockEmpty) {
+	if(g_sLogManager.isBlockEmpty) {
 		// empty block - collapse to single line
 		g_sLogManager.wasLastInline = 1;
 		if(g_sLogManager.pFile) {
@@ -144,7 +144,7 @@ void _logBlockEnd(char *szBlockName) {
 	else {
 		logWrite("Block end: %s, time: %s\n", szBlockName, g_sLogManager.szTimeBfr);
 	}
-	g_sLogManager.ubBlockEmpty = 0;
+	g_sLogManager.isBlockEmpty = 0;
 	systemUnuse();
 }
 
