@@ -119,7 +119,7 @@ function(convertBitmaps)
 
 		set(extraFlagsPerFile ${extraFlags})
 		if(NOT "${convertBitmaps_MASK_COLOR} " STREQUAL " ")
-			list(APPEND extraFlagsPerFile -mc ${convertBitmaps_MASK_COLOR})
+			list(APPEND extraFlagsPerFile -mc "\"${convertBitmaps_MASK_COLOR}\"")
 			if("${maskPath} " STREQUAL " ")
 				list(APPEND extraFlagsPerFile -nmo)
 			else()
