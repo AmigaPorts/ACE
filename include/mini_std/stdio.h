@@ -12,6 +12,7 @@ typedef int FILE; // Whatever, it's using pointer anyway
 #define SEEK_END 2
 
 #define EOF -1
+#define FILENAME_MAX 1024
 
 FILE *fopen(const char *restrict filename, const char *restrict mode);
 

@@ -23,6 +23,7 @@ tBitMap *bitmapCreate(
 	tBitMap *pBitMap;
 	UBYTE i;
 
+	systemUse();
 	logBlockBegin(
 		"bitmapCreate(uwWidth: %hu, uwHeight: %hu, ubDepth: %hhu, ubFlags: %hhu)",
 		uwWidth, uwHeight, ubDepth, ubFlags
@@ -45,6 +46,7 @@ tBitMap *bitmapCreate(
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
 			memFree(pBitMap, sizeof(tBitMap));
 			logBlockEnd("bitmapCreate()");
+			systemUnuse();
 			return 0;
 		}
 		for(i = 1; i != ubDepth; ++i) {
@@ -65,6 +67,7 @@ tBitMap *bitmapCreate(
 				}
 				memFree(pBitMap, sizeof(tBitMap));
 				logBlockEnd("bitmapCreate()");
+				systemUnuse();
 				return 0;
 			}
 			if (ubFlags & BMF_CLEAR) {
@@ -78,6 +81,7 @@ tBitMap *bitmapCreate(
 	}
 
 	logBlockEnd("bitmapCreate()");
+	systemUnuse();
 	return pBitMap;
 #else
 	return 0;
