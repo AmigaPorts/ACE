@@ -11,8 +11,6 @@ extern "C" {
 
 #include <ace/types.h> // Amiga typedefs
 
-#include <ace/types.h>
-
 #include <ace/managers/timer.h>
 #include <ace/managers/key.h>
 
@@ -26,40 +24,60 @@ typedef struct _tGameState {
 	tGameCb cbCreate;
 	tGameCb cbLoop;
 	tGameCb cbDestroy;
-	struct _tGameState *pPrev;
+	tGameCb cbSuspend;
+	tGameCb cbResume;
+	struct _tGameState *pStatePrev;
 } tGameState;
 
 typedef struct _tGameManager {
-	UBYTE ubStateCount;
-	UBYTE isRunning;
-	tGameState *pStateFirst;
+	tGameState *pState;
 } tGameManager;
-
-/* Globals */
-
-extern tGameManager g_sGameManager;
 
 /* Functions */
 
-void gameCreate(void); /* First gameState needs to be added by gamePushState after calling this function */
-
-void gameDestroy(void);
+void gameExit();
 
 UBYTE gameIsRunning(void);
 
-void gamePushState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy);
+tGameManager *gameManagerCreate(void);
 
-void gamePopState(void);
+void gameManagerDestroy(
+	tGameManager *pGameManager
+);
 
-void gameChangeState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy);
+tGameState *gameStateCreate(
+	tGameCb cbCreate,
+	tGameCb cbLoop,
+	tGameCb cbDestroy,
+	tGameCb cbSuspend,
+	tGameCb cbResume
+);
 
-void gameChangeLoop(tGameCb cbLoop);
+void gameStateDestroy(
+	tGameState *pGameState
+);
 
-void gameProcess(void);
+void gameStatePush(
+	tGameManager *pGameManager,
+	tGameState *pGameState
+);
 
-void gameClose(void);
+void gameStatePop(
+	tGameManager *pGameManager
+);
 
-void gameKill(char *szError);
+void gameStatePopAll(
+	tGameManager *pGameManager
+);
+
+void gameStateChange(
+	tGameManager *pGameManager,
+	tGameState *pGameState
+);
+
+void gameStateProcess(
+	tGameManager *pGameManager
+);
 
 #ifdef __cplusplus
 }

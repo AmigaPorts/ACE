@@ -50,14 +50,12 @@ int main(void) {
 	blitManagerCreate();
 	copCreate();
 
-	gameCreate();
 	genericCreate();
 	while (gameIsRunning()) {
 		timerProcess();
 		genericProcess();
 	}
 	genericDestroy();
-	gameDestroy();
 
 	copDestroy();
 	blitManagerDestroy();

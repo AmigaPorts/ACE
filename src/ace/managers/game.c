@@ -5,108 +5,128 @@
 #include <ace/managers/game.h>
 #include <ace/managers/system.h> // systemKill
 
-/* Globals */
-tGameManager g_sGameManager;
+UBYTE s_isGameRunning = 1;
 
 /* Functions */
-void gameCreate(void) {
-	logBlockBegin("gameCreate()");
-	g_sGameManager.ubStateCount = 0;
-	g_sGameManager.pStateFirst = 0;
-	// Here or in push or else game will quit instantly.
-	// I guess it should stay here, makes each push a bit faster
-	g_sGameManager.isRunning = 1;
-	logBlockEnd("gameCreate()");
+void gameExit(void) {
+	s_isGameRunning = 0;
 }
 
 UBYTE gameIsRunning(void) {
-	return g_sGameManager.isRunning;
+	return s_isGameRunning;
 }
 
-void gamePushState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy) {
-	logBlockBegin(
-		"gamePushState(cbCreate: %p, cbLoop: %p, cbDestroy: %p)",
-		cbCreate, cbLoop, cbDestroy
-	);
+tGameManager *gameManagerCreate() {
+	logBlockBegin("gameManagerCreate()");
+
+	tGameManager *pGameManager = memAllocFastClear(sizeof(tGameManager));
+
+	logBlockEnd("gameManagerCreate()");
+
+	return pGameManager;
+}
+
+void gameManagerDestroy(tGameManager *pGameManager) {
+	logBlockBegin("gameManagerDestroy(pGameManager: %p)", pGameManager);
+
+	gameStatePopAll(pGameManager);
+
+	memFree(pGameManager, sizeof(tGameManager));
+
+	logBlockEnd("gameManagerDestroy()");
+}
+
+tGameState *gameStateCreate(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy, tGameCb cbSuspend, tGameCb cbResume) {
+	logBlockBegin("gameStateCreate(cbCreate: %p, cbLoop: %p, cbDestroy: %p, cbSuspend: %p, cbResume: %p)", cbCreate, cbLoop, cbDestroy, cbSuspend, cbResume);
+
 	tGameState *pGameState = memAllocFast(sizeof(tGameState));
+
 	pGameState->cbCreate = cbCreate;
 	pGameState->cbLoop = cbLoop;
 	pGameState->cbDestroy = cbDestroy;
-	pGameState->pPrev = g_sGameManager.pStateFirst;
+	pGameState->cbSuspend = cbSuspend;
+	pGameState->cbResume = cbResume;
+	pGameState->pStatePrev = 0;  // Setting single zero value looks cheaper that allocating structure with cleared chunk of memory
 
-	g_sGameManager.ubStateCount += 1;
-	g_sGameManager.pStateFirst = pGameState;
-	logBlockEnd("gamePushState()\n");
+	logBlockEnd("gameStateCreate()");
 
-	if (pGameState->cbCreate) {
-		pGameState->cbCreate();
-	}
+	return pGameState;
 }
 
-void gamePopState(void) {
-	if (!g_sGameManager.ubStateCount) {
-		gameClose();
-	}
-
-	tGameState *pGameState = g_sGameManager.pStateFirst;
-	if (pGameState->cbDestroy) {
-		pGameState->cbDestroy();
-	}
-
-	g_sGameManager.ubStateCount -= 1;
-	g_sGameManager.pStateFirst = pGameState->pPrev;
-
+void gameStateDestroy(tGameState *pGameState) {
+	logBlockBegin("gameStateDestroy(pGameState: %p)", pGameState);
+	
 	memFree(pGameState, sizeof(tGameState));
+
+	logBlockEnd("gameStateDestroy()");
 }
 
-void gameChangeState(tGameCb cbCreate, tGameCb cbLoop, tGameCb cbDestroy) {
-	logBlockBegin(
-		"gameChangeState(cbCreate: %p, cbLoop: %p, cbDestroy: %p)",
-		cbCreate, cbLoop, cbDestroy
-	);
-	if (g_sGameManager.pStateFirst->cbDestroy) {
-		g_sGameManager.pStateFirst->cbDestroy();
+void gameStatePush(tGameManager *pGameManager, tGameState *pGameState) {
+	logBlockBegin("gameStatePush(pGameManager: %p, pGameState: %p)", pGameManager, pGameState);
+
+	if (pGameManager->pState && pGameManager->pState->cbSuspend) {
+		pGameManager->pState->cbSuspend();
 	}
-	g_sGameManager.pStateFirst->cbCreate = cbCreate;
-	g_sGameManager.pStateFirst->cbLoop = cbLoop;
-	g_sGameManager.pStateFirst->cbDestroy = cbDestroy;
-	g_sGameManager.isRunning = 1;
 
-	if (g_sGameManager.pStateFirst->cbCreate) {
-		g_sGameManager.pStateFirst->cbCreate();
+	pGameState->pStatePrev = pGameManager->pState;
+	pGameManager->pState = pGameState;
+
+	if (pGameManager->pState && pGameManager->pState->cbCreate) {
+		pGameManager->pState->cbCreate();
 	}
-	logBlockEnd("gameChangeState");
+
+	logBlockEnd("gameStatePush()");
 }
 
-void gameChangeLoop(tGameCb cbLoop) {
-	g_sGameManager.pStateFirst->cbLoop = cbLoop;
-}
+void gameStatePop(tGameManager *pGameManager) {
+	logBlockBegin("gameStatePop(pGameManager: %p)", pGameManager);
 
-void gameProcess(void) {
-	if (g_sGameManager.pStateFirst->cbLoop) {
-		g_sGameManager.pStateFirst->cbLoop();
+	if (pGameManager->pState && pGameManager->pState->cbDestroy) {
+		pGameManager->pState->cbDestroy();
 	}
+
+	tGameState *pGameStateToPop = pGameManager->pState;
+	pGameManager->pState = pGameStateToPop->pStatePrev;
+
+	if (pGameManager->pState && pGameManager->pState->cbResume) {
+		pGameManager->pState->cbResume();
+	}
+
+	logBlockEnd("gameStatePop()");
 }
 
-void gameClose(void) {
-	g_sGameManager.isRunning = 0;
-}
+void gameStatePopAll(tGameManager *pGameManager) {
+	logBlockBegin("gameStatePopAll(pGameManager: %p)", pGameManager);
 
-void gameDestroy(void) {
-	tGameState *pGameState, *pPrev;
-
-	pGameState = g_sGameManager.pStateFirst;
-	while (pGameState) {
-		if (pGameState->cbDestroy) {
-			pGameState->cbDestroy();
+	while (pGameManager->pState) {
+		if (pGameManager->pState->cbDestroy) {
+			pGameManager->pState->cbDestroy();
 		}
-		pPrev = pGameState->pPrev;
-		memFree(pGameState, sizeof(tGameState));
-		pGameState = pPrev;
+
+		pGameManager->pState = pGameManager->pState->pStatePrev;
 	}
+
+	logBlockEnd("gameStatePopAll()");
 }
 
-void gameKill(char *szError) {
-	gameDestroy();
-	systemKill(szError);
+void gameStateChange(tGameManager *pGameManager, tGameState *pGameState) {
+	logBlockBegin("gameStateChange(pGameManager: %p, pGameState: %p)", pGameManager, pGameState);
+
+	if (pGameManager->pState && pGameManager->pState->cbDestroy) {
+		pGameManager->pState->cbDestroy();
+	}
+
+	pGameManager->pState = pGameState;
+
+	if (pGameManager->pState && pGameManager->pState->cbCreate) {
+		pGameManager->pState->cbCreate();
+	}
+
+	logBlockEnd("gameStateChange()");
+}
+
+void gameStateProcess(tGameManager *pGameManager) {
+	if (pGameManager->pState && pGameManager->pState->cbLoop) {
+		pGameManager->pState->cbLoop();
+	}
 }
