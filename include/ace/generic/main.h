@@ -55,7 +55,7 @@ int main(void) {
 	g_pGameStateManager = stateManagerCreate();
 
 	genericCreate();
-	while (g_pGameStateManager->pState) {
+	while (g_pGameStateManager->pCurrent) {
 		timerProcess();
 		genericProcess();
 	}

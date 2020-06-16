@@ -65,15 +65,15 @@ void statePush(tStateManager *pStateManager, tState *pState) {
 		pStateManager, pState
 	);
 
-	if (pStateManager->pState && pStateManager->pState->cbSuspend) {
-		pStateManager->pState->cbSuspend();
+	if (pStateManager->pCurrent && pStateManager->pCurrent->cbSuspend) {
+		pStateManager->pCurrent->cbSuspend();
 	}
 
-	pState->pPrev = pStateManager->pState;
-	pStateManager->pState = pState;
+	pState->pPrev = pStateManager->pCurrent;
+	pStateManager->pCurrent = pState;
 
-	if (pStateManager->pState && pStateManager->pState->cbCreate) {
-		pStateManager->pState->cbCreate();
+	if (pStateManager->pCurrent && pStateManager->pCurrent->cbCreate) {
+		pStateManager->pCurrent->cbCreate();
 	}
 
 	logBlockEnd("statePush()");
@@ -82,15 +82,15 @@ void statePush(tStateManager *pStateManager, tState *pState) {
 void statePop(tStateManager *pStateManager) {
 	logBlockBegin("statePop(pStateManager: %p)", pStateManager);
 
-	if (pStateManager->pState && pStateManager->pState->cbDestroy) {
-		pStateManager->pState->cbDestroy();
+	if (pStateManager->pCurrent && pStateManager->pCurrent->cbDestroy) {
+		pStateManager->pCurrent->cbDestroy();
 	}
 
-	tState *pOldState = pStateManager->pState;
-	pStateManager->pState = pOldState->pPrev;
+	tState *pOldState = pStateManager->pCurrent;
+	pStateManager->pCurrent = pOldState->pPrev;
 
-	if (pStateManager->pState && pStateManager->pState->cbResume) {
-		pStateManager->pState->cbResume();
+	if (pStateManager->pCurrent && pStateManager->pCurrent->cbResume) {
+		pStateManager->pCurrent->cbResume();
 	}
 
 	logBlockEnd("statePop()");
@@ -99,12 +99,12 @@ void statePop(tStateManager *pStateManager) {
 void statePopAll(tStateManager *pStateManager) {
 	logBlockBegin("statePopAll(pStateManager: %p)", pStateManager);
 
-	while (pStateManager->pState) {
-		if (pStateManager->pState->cbDestroy) {
-			pStateManager->pState->cbDestroy();
+	while (pStateManager->pCurrent) {
+		if (pStateManager->pCurrent->cbDestroy) {
+			pStateManager->pCurrent->cbDestroy();
 		}
 
-		pStateManager->pState = pStateManager->pState->pPrev;
+		pStateManager->pCurrent = pStateManager->pCurrent->pPrev;
 	}
 
 	logBlockEnd("statePopAll()");
@@ -116,21 +116,21 @@ void stateChange(tStateManager *pStateManager, tState *pState) {
 		pStateManager, pState
 	);
 
-	if (pStateManager->pState && pStateManager->pState->cbDestroy) {
-		pStateManager->pState->cbDestroy();
+	if (pStateManager->pCurrent && pStateManager->pCurrent->cbDestroy) {
+		pStateManager->pCurrent->cbDestroy();
 	}
 
-	pStateManager->pState = pState;
+	pStateManager->pCurrent = pState;
 
-	if (pStateManager->pState && pStateManager->pState->cbCreate) {
-		pStateManager->pState->cbCreate();
+	if (pStateManager->pCurrent && pStateManager->pCurrent->cbCreate) {
+		pStateManager->pCurrent->cbCreate();
 	}
 
 	logBlockEnd("stateChange()");
 }
 
 void stateProcess(tStateManager *pStateManager) {
-	if (pStateManager->pState && pStateManager->pState->cbLoop) {
-		pStateManager->pState->cbLoop();
+	if (pStateManager->pCurrent && pStateManager->pCurrent->cbLoop) {
+		pStateManager->pCurrent->cbLoop();
 	}
 }

@@ -25,7 +25,7 @@ typedef struct _tState {
 } tState;
 
 typedef struct _tStateManager {
-	tState *pState;
+	tState *pCurrent;
 } tStateManager;
 
 /* Functions */
@@ -95,7 +95,7 @@ void statePop(tStateManager *pStateManager);
 
 /**
  * Pops all states from given state manager. Calls cbDestroy on all states 
- * when sets pState to zero.
+ * when sets pCurrent to zero.
  * @param pStateManager: Pointer to desired state manager where pop will happen.
  * @see statePop()
  * @see statePopAll()
