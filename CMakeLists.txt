@@ -152,9 +152,16 @@ endfunction()
 
 function(transformBitmap)
 	cmake_parse_arguments(args "" "TARGET;SOURCE;DESTINATION" "TRANSFORM" ${ARGN})
+
+	# Make is dumb and randomly has problem with unescaped # or not
+	set(argsEscaped "")
+	foreach(arg IN LISTS args_TRANSFORM)
+		list(APPEND argsEscaped "\"${arg}\"")
+	endforeach()
+
 	add_custom_command(
 		OUTPUT ${args_DESTINATION}
-		COMMAND ${ACE_DIR}/tools/bin/bitmap_transform ${args_SOURCE} ${args_DESTINATION} ${args_TRANSFORM}
+		COMMAND ${ACE_DIR}/tools/bin/bitmap_transform ${args_SOURCE} ${args_DESTINATION} ${argsEscaped}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${args_SOURCE}
 	)
