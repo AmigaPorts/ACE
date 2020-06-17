@@ -17,7 +17,7 @@ extern "C" {
 #include <ace/managers/timer.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/copper.h>
-#include <ace/managers/state.h>
+#include <ace/managers/game.h>
 
 void genericCreate(void);
 void genericProcess(void);
@@ -41,8 +41,6 @@ void __stack_chk_fail(void) {
 }
 #endif
 
-tStateManager *g_pGameStateManager;
-
 int main(void) {
 	systemCreate();
 	memCreate();
@@ -52,16 +50,12 @@ int main(void) {
 	blitManagerCreate();
 	copCreate();
 
-	g_pGameStateManager = stateManagerCreate();
-
 	genericCreate();
-	while (g_pGameStateManager->pCurrent) {
+	while (gameIsRunning()) {
 		timerProcess();
 		genericProcess();
 	}
 	genericDestroy();
-
-	stateManagerDestroy(g_pGameStateManager);
 
 	copDestroy();
 	blitManagerDestroy();

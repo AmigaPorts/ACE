@@ -15,17 +15,34 @@ extern "C" {
 
 typedef void (*tStateCb)(void);
 
+/**
+ * State struct.
+ */
 typedef struct _tState {
-	tStateCb cbCreate;
-	tStateCb cbLoop;
-	tStateCb cbDestroy;
-	tStateCb cbSuspend;
-	tStateCb cbResume;
-	struct _tState *pPrev;
+	tStateCb cbCreate;     ///< Optional callback that fires when state manager
+	                       ///< enters to this state.
+
+	tStateCb cbLoop;       ///< Optional callback that fires at manager process.
+
+	tStateCb cbDestroy;    ///< Optional callback that fires when state manager
+	                       ///< exists from this state.
+
+	tStateCb cbSuspend;    ///< Optional callback that fires when state manager
+	                       ///< pushes new state over this state.
+
+	tStateCb cbResume;     ///< Optional callback that fires when state manager
+	                       ///< pops old state over this state.
+
+	struct _tState *pPrev; ///< Optional pointer to previous state.
+	                       ///< Zero if there is no previous state. Will be
+						   ///< overriden when pushed into state manager.
 } tState;
 
+/**
+ * State manager struct.
+ */
 typedef struct _tStateManager {
-	tState *pCurrent;
+	tState *pCurrent; ///< Pointer to currently handled state.
 } tStateManager;
 
 /* Functions */
@@ -44,11 +61,10 @@ tStateManager *stateManagerCreate(void);
  */
 void stateManagerDestroy(tStateManager *pStateManager);
 
-
 /**
  * Initializes state collbacks collection and chaining.
  * @param cbCreate: Callback that fires when state manager enters to this state.
- * @param cbLoop: Callback that fires 
+ * @param cbLoop: Callback that fires at manager process.
  * @param cbDestroy: Callback that fires when state manager exists from this state.
  * @param cbSuspend: Callback that fires when state manager pushes new state over this state.
  * @param cbResume: Callback that fires when state manager pops old state over this state.
@@ -56,11 +72,8 @@ void stateManagerDestroy(tStateManager *pStateManager);
  * @see stateDestroy()
  */
 tState *stateCreate(
-	tStateCb cbCreate,
-	tStateCb cbLoop,
-	tStateCb cbDestroy,
-	tStateCb cbSuspend,
-	tStateCb cbResume,
+	tStateCb cbCreate, tStateCb cbLoop, tStateCb cbDestroy,
+	tStateCb cbSuspend, tStateCb cbResume,
 	tState *pPrev
 );
 

@@ -3,11 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/state.h>
-
 #include <ace/managers/log.h>
 
 /* Functions */
-tStateManager *stateManagerCreate() {
+
+#ifdef ACE_DEBUG
+void _checkPointers(const char *szPointerName, void *pPointer) {
+	if (!pPointer) {
+		logWrite("ERR: Pointer %s is zero! Crash is eminent!\n", szPointerName)
+	}
+}
+#endif
+
+tStateManager *stateManagerCreate(void) {
 	logBlockBegin("stateManagerCreate()");
 
 	tStateManager *pStateManager = memAllocFastClear(sizeof(tStateManager));
@@ -19,6 +27,10 @@ tStateManager *stateManagerCreate() {
 
 void stateManagerDestroy(tStateManager *pStateManager) {
 	logBlockBegin("stateManagerDestroy(pStateManager: %p)", pStateManager);
+
+#ifdef ACE_DEBUG
+	_checkPointers("pStateManager", pStateManager);
+#endif
 
 	statePopAll(pStateManager);
 
@@ -54,6 +66,10 @@ tState *stateCreate(
 void stateDestroy(tState *pState) {
 	logBlockBegin("stateDestroy(pState: %p)", pState);
 	
+#ifdef ACE_DEBUG
+	_checkPointers("pState", pState);
+#endif
+
 	memFree(pState, sizeof(tState));
 
 	logBlockEnd("stateDestroy()");
@@ -64,6 +80,11 @@ void statePush(tStateManager *pStateManager, tState *pState) {
 		"statePush(pStateManager: %p, pState: %p)",
 		pStateManager, pState
 	);
+
+#ifdef ACE_DEBUG
+	_checkPointers("pStateManager", pStateManager);
+	_checkPointers("pState", pState);
+#endif
 
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbSuspend) {
 		pStateManager->pCurrent->cbSuspend();
@@ -82,6 +103,10 @@ void statePush(tStateManager *pStateManager, tState *pState) {
 void statePop(tStateManager *pStateManager) {
 	logBlockBegin("statePop(pStateManager: %p)", pStateManager);
 
+#ifdef ACE_DEBUG
+	_checkPointers("pStateManager", pStateManager);
+#endif
+
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbDestroy) {
 		pStateManager->pCurrent->cbDestroy();
 	}
@@ -98,6 +123,10 @@ void statePop(tStateManager *pStateManager) {
 
 void statePopAll(tStateManager *pStateManager) {
 	logBlockBegin("statePopAll(pStateManager: %p)", pStateManager);
+
+#ifdef ACE_DEBUG
+	_checkPointers("pStateManager", pStateManager);
+#endif
 
 	while (pStateManager->pCurrent) {
 		if (pStateManager->pCurrent->cbDestroy) {
@@ -116,6 +145,11 @@ void stateChange(tStateManager *pStateManager, tState *pState) {
 		pStateManager, pState
 	);
 
+#ifdef ACE_DEBUG
+	_checkPointers("pStateManager", pStateManager);
+	_checkPointers("pState", pState);
+#endif
+
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbDestroy) {
 		pStateManager->pCurrent->cbDestroy();
 	}
@@ -130,6 +164,10 @@ void stateChange(tStateManager *pStateManager, tState *pState) {
 }
 
 void stateProcess(tStateManager *pStateManager) {
+#ifdef ACE_DEBUG
+	_checkPointers("pStateManager", pStateManager);
+#endif
+
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbLoop) {
 		pStateManager->pCurrent->cbLoop();
 	}
