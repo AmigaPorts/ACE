@@ -30,6 +30,7 @@ ACE is best if you want to:
 - Disables OS for maximum performance, but allows re-enabling it when needed - e.g. for file access, memory allocation, etc.
 - Provides optional framework which helps in organizing games and reducing boilerplate code.
 - Provides code for scrolling large tilemaps in memory-efficient way.
+- Requires only kickstart 1.3, but provides OS2.0+ features, like functions using taglists, interleaved bitplane modes, etc.
 
 ## Things you won't find in ACE
 
