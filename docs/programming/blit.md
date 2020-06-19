@@ -158,7 +158,7 @@ void gameGsCreate(void) {
 void gameGsLoop(void) {
   // This will loop every frame
   if(keyCheck(KEY_ESCAPE)) {
-    gameClose();
+    gameExit();
   }
   else {
 //-------------------------------------------------------------- NEW STUFF START

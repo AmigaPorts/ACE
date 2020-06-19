@@ -14,7 +14,7 @@ void genericCreate(void) {
 void genericProcess(void) {
   // Here goes code done each game frame
   // Nothing here right now
-  gameClose();
+  game();
 }
 
 void genericDestroy(void) {
@@ -93,7 +93,7 @@ keyboard. Let's add first gamestate in `src/game.c`:
 ``` c
 #include "game.h"
 #include <ace/managers/key.h> // We'll use key* fns here
-#include <ace/managers/game.h> // For using gameClose
+#include <ace/managers/game.h> // For using game
 #include <ace/managers/system.h> // For systemUnuse and systemUse
 
 // "Gamestate" is a long word, so let's use shortcut "Gs" when naming fns
@@ -108,7 +108,7 @@ void gameGsLoop(void) {
   // This will loop forever until you "pop" or change gamestate
   // or close the game
   if(keyCheck(KEY_ESCAPE)) {
-    gameClose();
+    gameExit();
   }
   else {
     // Process loop normally
@@ -152,27 +152,37 @@ Now let's add this gamestate along with updating keyboard state to `main.c`:
 
 ``` c
 #include <ace/generic/main.h>
+
 #include <ace/managers/key.h>
+#include <ace/managers/state.h>
 
 // Without it compiler will yell about undeclared gameGsCreate etc
 #include "game.h"
+
+tStateManager *g_pGameStateManager = 0;
+tState *g_pGameState = 0;
 
 void genericCreate(void) {
   // Here goes your startup code
   logWrite("Hello, Amiga!\n");
   keyCreate(); // We'll use keyboard
   // Initialize gamestate
-  gamePushState(gameGsCreate, gameGsLoop, gameGsDestroy);
+  g_pGameStateManager = stateManagerCreate();
+  g_pGameState = stateCreate(gameGsCreate, gameGsLoop, gameGsDestroy, 0, 0, 0);
+
+  statePush(g_pGameStateManager, g_pGameState);
 }
 
 void genericProcess(void) {
   // Here goes code done each game frame
   keyProcess();
-  gameProcess(); // Process current gamestate's loop
+  stateProcess(g_pGameStateManager); // Process current gamestate's loop
 }
 
 void genericDestroy(void) {
   // Here goes your cleanup code
+  stateManagerDestroy(g_pGameStateManager);
+  stateDestroy(g_pGameState);
   keyDestroy(); // We don't need it anymore
   logWrite("Goodbye, Amiga!\n");
 }

@@ -6,15 +6,16 @@
 
 #include <ace/utils/extview.h>
 #include <ace/utils/palette.h>
-#include <ace/managers/game.h>
+
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/system.h>
+
 #include <ace/generic/screen.h>
-#include "main.h"
-#include "menu/menu.h"
+
+#include "game.h"
 
 static tView *s_pTestBlitView;
 static tVPort *s_pTestBlitVPort;
@@ -74,7 +75,7 @@ void gsTestBlitSmallDestLoop(void) {
 	BYTE bUpdate = 0;
 
 	if (keyUse(KEY_ESCAPE)) {
-		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
 		return;
 	}
 	if(keyUse(KEY_RIGHT)) {

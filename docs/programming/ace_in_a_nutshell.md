@@ -42,9 +42,9 @@ heavy lifting - scroll buffer displays background buffer making it fold
 on Y axis, while tile buffer manages drawing of tiles which are about to display
 on such buffer.
 
-## Game states
+## States
 
-Every game can be broken into states. For example:
+Every game can be broken into some kind of states. For example:
 
 - "menu" state may be responsible for displaying menu and navigating through it.
   When player is ready, "menu" should launch proper game and clean up so far
@@ -53,66 +53,70 @@ Every game can be broken into states. For example:
   objects on screen, etc. After player wins or loses the game, it should free
   its resources and move state to menu.
 
-This shows two basic concepts: lifecycle of gamestate and transitions
+This shows two basic concepts: lifecycle of state and transitions
 between them.
 
-### Lifecycle of gamestate
+### Lifecycle of state
 
-Each gamestate's life could be split into three phases:
+Each state's life could be split into three phases:
 
 - **creation** during which needed bitmaps gets allocated, screen is set up, and
   all initializations take place, e.g. initial state of players, game AI, etc.
 - **loop** which is responsible for processing player's key presses, moving
   objects on screen, processing game logic: loss of health, win conditions,
   physics, etc.
-- **destruction** which cleans up resources after gamestate - in practice it
-  does the exact opposite of gamestate's creation code.
+- **destruction** which cleans up resources after state - in practice it
+  does the exact opposite of state's creation code.
 
-All three phases are written as separate functions and passed to gamestate
-manager using gameCreate, gameChangeState or gamePushState.
+In addition transition split into two phases:
 
-### Changing gamestates
+- **suspend** when some child state is about to be pushed
+- **resume** when some child state is about to be popped
+
+All those phases are available in tState and could be tuned to game needs.
+
+### Changing states
 
 Suppose you want to implement the logic above. It can be illustrated as below:
 
 ```
-OS  --gameCreate-->  menu  --gameChangeState-->  game
- ^                   |  ^                         |
- |----gameDestroy----|  |----gameChangeState------|
+OS  --stateChange-->  menu  --stateChange-->  game
+ ^                    |  ^                    |
+ |----stateChange-----|  |----stateChange-----|
 ```
 
-Function `gameChangeState` does the following:
+Function `stateChange` does the following:
 
 - calls current state's destruction function,
 - sets new state as current one,
 - calls new state's create function.
 
-Current state's loop code is called every time game reaches `gameProcess`
+Current state's loop code is called every time game reaches `stateProcess`
 function.
 
-### Pushing and popping gamestates
+### Pushing and popping states
 
 What if you'd like to implement in-game menu which pauses game? You can use
-gamestate pushing and popping:
+state pushing and popping:
 
 ``` plain
-OS  --gameCreate-->  menu  --gameChangeState-->  game  --gamePushState--> pause
- ^                   |  ^                         | ^                      |
- |----gameDestroy----|  |----gameChangeState------| |----gamePopState------|
+OS  --stateChange-->  menu  --stateChange-->  game  --statePush--> pause
+ ^                    |  ^                    |  ^                 |
+ |----stateChange-----|  |----stateChange-----|  |----statePop-----|
 ```
 
 This looks similar to changing state, but there's significant difference:
 
-- when you call `gamePushState`, _game_ gamestate isn't destroyed. Instead,
-  _pause_'s create function is called. From now on `gameProcess` will process
-  _pause_'s loop.
-- when you call `gamePopState`, _pause_'s gamestate is destroyed, making
-  _game_'s loop the current one. After that `gameProcess` will process
-  _game_ loop.
+- when you call `statePush`, _game_ state isn't destroyed. Instead, _game_'s 
+  suspend function and _pause_'s create function is called. From now on
+  `stateProcess` will process _pause_'s loop.
+- when you call `statePop`, _pause_'s state is destroyed, and _game_'s resume
+  function is called, making _game_'s loop the current one. After that
+  `stateProcess` will process _game_ loop.
 
-### Complex gamestate example
+### Complex state example
 
-Suppose your menu gamestate gets bigger and bigger. Suppose you want to allocate
+Suppose your menu state gets bigger and bigger. Suppose you want to allocate
 common things for whole menu (font, background, display) and then process each
 part of menu separately. You can implement this as below:
 
@@ -141,8 +145,8 @@ OS  --CREATE-->  menuCommon  --PUSH-->  menuMain
 - lastly, _menuCommon_ should in its loop examine why its loop got called and
   decide what to do next. It can be done by e.g. examining some global variable.
   If it was because menuMapSelect requested launching game, you change state
-  to _game_, otherwise you call `gameClose` or `gamePopState` which will
-  effectively close the game.
+  to _game_, otherwise you call `gameExit` which will effectively close the
+  game.
 
 ## Main file
 

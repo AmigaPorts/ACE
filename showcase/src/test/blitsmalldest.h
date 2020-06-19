@@ -5,9 +5,6 @@
 #ifndef _SHOWCASE_TEST_BLITSMALLDEST_H_
 #define _SHOWCASE_TEST_BLITSMALLDEST_H_
 
-#include <ace/types.h>
-#include <ace/types.h>
-
 /* ****************************************************************** DEFINES */
 
 /* ******************************************************************** TYPES */

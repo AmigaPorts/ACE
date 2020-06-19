@@ -4,18 +4,18 @@
 
 #include "test/font.h"
 
-#include <ace/managers/game.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/system.h>
 #include <ace/managers/viewport/simplebuffer.h>
+
 #include <ace/utils/extview.h>
 #include <ace/utils/font.h>
+
 #include <ace/generic/screen.h>
 
-#include "main.h"
-#include "menu/menu.h"
+#include "game.h"
 
 static tView *s_pTestFontView;
 static tVPort *s_pTestFontVPort;
@@ -66,13 +66,14 @@ void gsTestFontCreate(void) {
 
 void gsTestFontTableLoop(void) {
 	if (keyUse(KEY_ESCAPE)) {
-		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
 		return;
 	}
 
 	if(keyUse(KEY_F2)) {
 		testFontDrawSentence();
-		gameChangeLoop(gsTestFontSentenceLoop);
+		g_pGameStateManager->pCurrent->cbLoop = gsTestFontSentenceLoop;
+		return;
 	}
 
 	if((keyUse(KEY_RIGHT) || keyUse(KEY_DOWN))) {
@@ -103,13 +104,14 @@ void gsTestFontSentenceLoop(void) {
 	UBYTE ubAllowedCharsCount = strlen(szAllowedChars);
 
 	if (keyUse(KEY_ESCAPE)) {
-		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
 		return;
 	}
 
 	if(keyUse(KEY_F1)) {
 		testFontDrawTable();
-		gameChangeLoop(gsTestFontTableLoop);
+		g_pGameStateManager->pCurrent->cbLoop = gsTestFontTableLoop;
+		return;
 	}
 
 	isRedrawNeeded = 0;

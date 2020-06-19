@@ -60,7 +60,7 @@ The order of passed tags is irrelevant.
 ``` c
 #include "game.h"
 #include <ace/managers/key.h> // Keyboard processing
-#include <ace/managers/game.h> // For using gameClose
+#include <ace/managers/game.h> // For using gameExit
 #include <ace/managers/system.h> // For systemUnuse and systemUse
 #include <ace/managers/viewport/simplebuffer.h> // Simple buffer
 
@@ -125,7 +125,7 @@ void gameGsLoop(void) {
   // This will loop forever until you "pop" or change gamestate
   // or close the game
   if(keyCheck(KEY_ESCAPE)) {
-    gameClose();
+    gameExit();
   }
   else {
     // Process loop normally

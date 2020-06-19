@@ -3,14 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "test/interleaved.h"
+
 #include <ace/utils/extview.h>
 #include <ace/utils/palette.h>
-#include <ace/managers/viewport/simplebuffer.h>
+
 #include <ace/managers/key.h>
-#include <ace/managers/game.h>
 #include <ace/managers/system.h>
-#include "main.h"
-#include "menu/menu.h"
+#include <ace/managers/viewport/simplebuffer.h>
+
+#include "game.h"
 
 static tView *s_pTestInterleavedView;
 static tVPort *s_pTestInterleavedVPort;
@@ -44,7 +45,7 @@ void gsTestInterleavedCreate(void) {
 
 void gsTestInterleavedLoop(void) {
 	if (keyUse(KEY_ESCAPE)) {
-		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
 		return;
 	}
 }

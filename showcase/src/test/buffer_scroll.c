@@ -3,14 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "buffer_scroll.h"
+
+#include <ace/managers/key.h>
+#include <ace/managers/system.h>
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/managers/viewport/simplebuffer.h>
-#include <ace/managers/key.h>
-#include <ace/managers/game.h>
-#include <ace/managers/system.h>
+
 #include <ace/utils/palette.h>
-#include "main.h"
-#include "menu/menu.h"
+
+#include "game.h"
 
 #define TEST_SCROLL_BPP 6
 
@@ -141,7 +142,7 @@ void gsTestBufferScrollCreate(void) {
 
 void gsTestBufferScrollLoop(void) {
 	if (keyUse(KEY_ESCAPE)) {
-		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
 		return;
 	}
 

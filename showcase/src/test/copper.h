@@ -5,11 +5,20 @@
 #ifndef _SHOWCASE_TEST_COPPER_H_
 #define _SHOWCASE_TEST_COPPER_H_
 
-#include <ace/types.h>
-#include <ace/types.h>
+/* ****************************************************************** DEFINES */
+
+/* ******************************************************************** TYPES */
+
+/* ****************************************************************** GLOBALS */
+
+/* **************************************************************** FUNCTIONS */
 
 void gsTestCopperCreate(void);
 void gsTestCopperLoop(void);
 void gsTestCopperDestroy(void);
+
+/* ****************************************************************** INLINES */
+
+/* ******************************************************************* MACROS */
 
 #endif // _SHOWCASE_TEST_COPPER_H_

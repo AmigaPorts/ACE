@@ -10,7 +10,7 @@
 #ifdef ACE_DEBUG
 void _checkPointers(const char *szPointerName, void *pPointer) {
 	if (!pPointer) {
-		logWrite("ERR: Pointer %s is zero! Crash is eminent!\n", szPointerName)
+		logWrite("ERR: Pointer %s is zero! Crash is eminent!\n", szPointerName);
 	}
 }
 #endif
@@ -152,6 +152,13 @@ void stateChange(tStateManager *pStateManager, tState *pState) {
 
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbDestroy) {
 		pStateManager->pCurrent->cbDestroy();
+	}
+
+	if (pStateManager->pCurrent) {
+		pState->pPrev = pStateManager->pCurrent->pPrev;
+	}
+	else {
+		pState->pPrev = 0;
 	}
 
 	pStateManager->pCurrent = pState;

@@ -5,9 +5,6 @@
 #ifndef _SHOWCASE_TEST_BLIT_H_
 #define _SHOWCASE_TEST_BLIT_H_
 
-#include <ace/types.h>
-#include <ace/types.h>
-
 /* ****************************************************************** DEFINES */
 
 #define TYPE_RECT 0

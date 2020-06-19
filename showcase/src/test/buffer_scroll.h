@@ -5,10 +5,20 @@
 #ifndef _SHOWCASE_TEST_BUFFER_SCROLL_H_
 #define _SHOWCASE_TEST_BUFFER_SCROLL_H_
 
-#include <ace/types.h>
+/* ****************************************************************** DEFINES */
+
+/* ******************************************************************** TYPES */
+
+/* ****************************************************************** GLOBALS */
+
+/* **************************************************************** FUNCTIONS */
 
 void gsTestBufferScrollCreate(void);
 void gsTestBufferScrollLoop(void);
 void gsTestBufferScrollDestroy(void);
+
+/* ****************************************************************** INLINES */
+
+/* ******************************************************************* MACROS */
 
 #endif // _SHOWCASE_TEST_BUFFER_SCROLL_H_

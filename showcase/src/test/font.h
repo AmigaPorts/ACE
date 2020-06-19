@@ -5,9 +5,6 @@
 #ifndef _SHOWCASE_TEST_FONT_H_
 #define _SHOWCASE_TEST_FONT_H_
 
-#include <ace/types.h>
-#include <ace/types.h>
-
 /* ****************************************************************** DEFINES */
 
 /* ******************************************************************** TYPES */

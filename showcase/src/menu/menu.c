@@ -8,21 +8,14 @@
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/game.h>
+#include <ace/managers/state.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 #include <ace/utils/extview.h>
 #include <ace/generic/screen.h>
 
-#include "main.h"
+#include "game.h"
 #include "menu/menulist.h"
-
-#include "test/blit.h"
-#include "test/copper.h"
-#include "test/font.h"
-#include "test/blitsmalldest.h"
-#include "test/interleaved.h"
-#include "test/lines.h"
-#include "test/buffer_scroll.h"
 
 static tView *s_pMenuView;
 static tVPort *s_pMenuVPort;
@@ -80,7 +73,7 @@ void gsMenuLoop(void) {
 
 	if (keyUse(KEY_ESCAPE)) {
 		if(s_ubMenuType == MENU_MAIN) {
-			gameClose();
+			gameExit();
 		}
 		else {
 			menuShowMain();
@@ -198,7 +191,7 @@ void menuSelectMain(void) {
 			menuShowExamples();
 			break;
 		case 2:
-			gameClose();
+			gameExit();
 			return;
 	}
 }
@@ -235,38 +228,11 @@ void menuShowTests(void) {
 }
 
 void menuSelectTests(void) {
-	switch(s_pMenuList->ubSelected) {
-		case 0:
-			menuShowMain();
-			break;
-		case 1:
-			gameChangeState(gsTestBlitCreate, gsTestBlitLoop, gsTestBlitDestroy);
-			break;
-		case 2:
-			gameChangeState(gsTestFontCreate, gsTestFontTableLoop, gsTestFontDestroy);
-			break;
-		case 3:
-			gameChangeState(gsTestCopperCreate, gsTestCopperLoop, gsTestCopperDestroy);
-			break;
-		case 4:
-			gameChangeState(gsTestLinesCreate, gsTestLinesLoop, gsTestLinesDestroy);
-			break;
-		case 5:
-			gameChangeState(
-				gsTestBlitSmallDestCreate, gsTestBlitSmallDestLoop,
-				gsTestBlitSmallDestDestroy
-			);
-			break;
-		case 6:
-			gameChangeState(
-				gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy
-			);
-			break;
-		case 7:
-			gameChangeState(
-				gsTestBufferScrollCreate, gsTestBufferScrollLoop, gsTestBufferScrollDestroy
-			);
-			break;
+	if (s_pMenuList->ubSelected) {
+		stateChange(g_pGameStateManager, g_pGameStates[s_pMenuList->ubSelected]);
+	}
+	else {
+		menuShowMain();
 	}
 }
 
