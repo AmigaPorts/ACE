@@ -87,7 +87,7 @@ typedef struct _tTypeName {
 
 - functions should be as short as possible. If needed, split function to multiple ones. There is no hard limit for fn length, but if it doesn't fit entirely on your screen then it's a good sign you're doing something wrong.
 
-# Include guards
+## Include guards
 
 Consider following example:
 
@@ -101,3 +101,24 @@ Consider following example:
 ```
 
 A guard is preceded by project name (ACE) and following parts strictly reflect filesystem location (inc/**managers/blit.h**).
+
+## Includes
+
+- if you're in .c/.cpp file, the first include is one complementing the source file (e.g. foo.h if you're in foo.c)
+- then goes the standard library,
+- then goes ACE - try to put managers first, then utils;
+- then includes of your project files.
+- No newlines between include directives.
+
+Example for main.c:
+
+```c
+#include "main.h"
+#include <stdlib.h>
+#include <ace/managers/memory.h>
+#include <ace/managers/log.h>
+#include <ace/managers/timer.h>
+#include <ace/utils/palette.h>
+#include "menu/menu.h"
+#include "input.h"
+```
