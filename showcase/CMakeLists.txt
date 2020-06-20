@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8.5)
 project(showcase)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Lowercase project name for binaries and packaging
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
@@ -30,6 +29,9 @@ if(ACE_DEBUG)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACE_DEBUG") # For ACE headers with ifdefs
 endif()
 
+set(RES_DIR ${CMAKE_CURRENT_LIST_DIR}/res)
+set(DATA_DIR ${CMAKE_CURRENT_BINARY_DIR}/data)
+
 # ACE
 add_subdirectory(.. ace)
 include_directories(../include)
@@ -38,3 +40,6 @@ include_directories(../include)
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
 add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${TARGET_NAME} ace)
+
+# Copy example maps files as is
+file(COPY "${RES_DIR}/data" DESTINATION ${DATA_DIR})

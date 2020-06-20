@@ -3,14 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "test/lines.h"
-#include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
-#include <ace/managers/game.h>
 #include <ace/managers/system.h>
+#include <ace/managers/viewport/simplebuffer.h>
 #include <ace/utils/custom.h>
 #include <fixmath/fixmath.h>
-#include "menu/menu.h"
+#include "game.h"
 
 static tView *s_pView;
 static tVPort *s_pVPort;
@@ -88,7 +87,8 @@ void gsTestLinesCreate(void) {
 
 void gsTestLinesLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
-		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
+		return;
 	}
 
 	vPortWaitForEnd(s_pVPort);

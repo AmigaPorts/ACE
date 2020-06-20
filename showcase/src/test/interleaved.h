@@ -5,10 +5,20 @@
 #ifndef _SHOWCASE_TEST_INTERLEAVED_H_
 #define _SHOWCASE_TEST_INTERLEAVED_H_
 
-#include <ace/types.h>
+//---------------------------------------------------------------------- DEFINES
+
+//------------------------------------------------------------------------ TYPES
+
+//---------------------------------------------------------------------- GLOBALS
+
+//-------------------------------------------------------------------- FUNCTIONS
 
 void gsTestInterleavedCreate(void);
 void gsTestInterleavedLoop(void);
 void gsTestInterleavedDestroy(void);
+
+//---------------------------------------------------------------------- INLINES
+
+//----------------------------------------------------------------------- MACROS
 
 #endif // _SHOWCASE_TEST_INTERLEAVED_H_

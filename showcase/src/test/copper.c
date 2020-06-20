@@ -3,17 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "test/copper.h"
-
 #include <ace/utils/extview.h>
-#include <ace/managers/game.h>
 #include <ace/managers/copper.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/system.h>
 #include <ace/managers/viewport/simplebuffer.h>
-#include "main.h"
-#include "menu/menu.h"
+#include "game.h"
 
 static tView *s_pTestCopperView;
 static tVPort *s_pTestCopperVPort;
@@ -198,14 +195,14 @@ void gsTestCopperLoop(void) {
 	static BYTE bDir = 1;
 
 	if (keyUse(KEY_ESCAPE)) {
-		gameChangeState(gsMenuCreate, gsMenuLoop, gsMenuDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
 		return;
 	}
 
 	if(keyUse(KEY_M)) {
 		// Change modes and restart
 		s_isRawMode = !s_isRawMode;
-		gameChangeState(gsTestCopperCreate, gsTestCopperLoop, gsTestCopperDestroy);
+		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_COPPER]);
 		return;
 	}
 
