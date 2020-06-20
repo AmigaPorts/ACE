@@ -163,16 +163,16 @@ Instead of writing `main()` function you just `#include` this file and define:
 - `genericLoop()` - called in a loop until game gets closed
 - `genericDestroy()` - for freeing previously created managers
 
-If you preffer exiting your game in other ways than by calling `gameExit`, you
+If you prefer exiting your game in other ways than by calling `gameExit`, you
 can tune game main loop condition by defining `GENERIC_MAIN_LOOP_CONDITION`
-before `#include`. For e.g.:
+before `#include`. For example:
 
 ``` c
 #define GENERIC_MAIN_LOOP_CONDITION g_pGameStateManager->pCurrent
 #include <ace/generic/main.h>
 ```
 
-At this point we changed generic main loop to check if there is any state in 
+This changes generic main loop's behavior to check if there is any state in 
 selected state manager. The only caveat is to put these lines of code after
 manager definition.
 
