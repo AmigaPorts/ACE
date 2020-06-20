@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "game.h"
-#include <ace/generic/main.h>
 #include <ace/managers/joy.h>
 #include <ace/managers/key.h>
+#include <ace/managers/game.h>
 #include "menu/menu.h"
 #include "test/blit.h"
 #include "test/copper.h"
@@ -17,6 +17,9 @@
 
 tStateManager *g_pGameStateManager = 0;
 tState *g_pGameStates[GAME_STATE_COUNT] = {0};
+
+#define GENERIC_MAIN_LOOP_CONDITION gameIsRunning() && g_pGameStateManager->pCurrent
+#include <ace/generic/main.h>
 
 void genericCreate(void) {
 	joyOpen();
