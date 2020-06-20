@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "menu/menu.h"
-
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/key.h>
 #include <ace/managers/joy.h>
@@ -13,7 +12,6 @@
 #include <ace/managers/system.h>
 #include <ace/utils/extview.h>
 #include <ace/generic/screen.h>
-
 #include "game.h"
 #include "menu/menulist.h"
 

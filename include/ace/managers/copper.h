@@ -54,7 +54,7 @@ extern "C" {
 #define STATUS_UPDATE (4|8)   /// Blocks changed content
 #define STATUS_REORDER 16     /// Blocks changed order
 
-/* ******************************************************************** TYPES */
+//------------------------------------------------------------------------ TYPES
 
 typedef struct tCopMoveCmd {
 	// Higher word
@@ -114,11 +114,11 @@ typedef struct _tCopManager {
 	tCopList *pBlankList; /// Empty copperlist - LoadView(0) equivalent
 } tCopManager;
 
-/* ****************************************************************** GLOBALS */
+//---------------------------------------------------------------------- GLOBALS
 
 extern tCopManager g_sCopManager;
 
-/* **************************************************************** FUNCTIONS */
+//-------------------------------------------------------------------- FUNCTIONS
 
 /********************* Copper manager functions *******************************/
 

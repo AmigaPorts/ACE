@@ -35,7 +35,7 @@ typedef struct _tState {
 
 	struct _tState *pPrev; ///< Optional pointer to previous state.
 	                       ///< Zero if there is no previous state. Will be
-						   ///< overriden when pushed into state manager.
+	                       ///< overriden when pushed into state manager.
 } tState;
 
 /**
@@ -62,7 +62,7 @@ tStateManager *stateManagerCreate(void);
 void stateManagerDestroy(tStateManager *pStateManager);
 
 /**
- * Initializes state collbacks collection and chaining.
+ * Initializes state callbacks collection and chaining.
  * @param cbCreate: Callback that fires when state manager enters to this state.
  * @param cbLoop: Callback that fires at manager process.
  * @param cbDestroy: Callback that fires when state manager exists from this state.
@@ -128,7 +128,7 @@ void statePopAll(tStateManager *pStateManager);
 void stateChange(tStateManager *pStateManager, tState *pState);
 
 /**
- * Calls current state's cbLoop on giben state manager,
+ * Calls current state's cbLoop on given state manager,
  * @param pStateManager: Pointer to desired state manager too call cbLoop.
  */
 void stateProcess(tStateManager *pStateManager);

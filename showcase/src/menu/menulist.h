@@ -9,13 +9,13 @@
 #include <ace/types.h>
 #include <ace/utils/font.h>
 
-/* ****************************************************************** DEFINES */
+//---------------------------------------------------------------------- DEFINES
 
 #define MENULIST_HIDDEN 0
 #define MENULIST_DISABLED 1
 #define MENULIST_ENABLED 2
 
-/* ******************************************************************** TYPES */
+//------------------------------------------------------------------------ TYPES
 
 typedef void (*tMenuActivateCb)(void);
 
@@ -43,9 +43,9 @@ typedef struct _tMenuList {
 
 typedef void (*tMenuSelectCb)(struct _tMenuList *pList, UBYTE ubPosIdx);
 
-/* ****************************************************************** GLOBALS */
+//---------------------------------------------------------------------- GLOBALS
 
-/* **************************************************************** FUNCTIONS */
+//-------------------------------------------------------------------- FUNCTIONS
 
 tMenuList *menuListCreate(
 	UWORD uwX, UWORD uwY, UBYTE ubCount, UBYTE ubSpacing,
@@ -68,8 +68,8 @@ void menuListMove(tMenuList *pList, BYTE bMoveDir);
 
 void menuListResetCount(tMenuList *pList, UBYTE ubCount);
 
-/* ****************************************************************** INLINES */
+//---------------------------------------------------------------------- INLINES
 
-/* ******************************************************************* MACROS */
+//----------------------------------------------------------------------- MACROS
 
 #endif // _SHOWCASE_MENU_MENULIST_H_

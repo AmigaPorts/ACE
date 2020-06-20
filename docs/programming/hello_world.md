@@ -14,7 +14,7 @@ void genericCreate(void) {
 void genericProcess(void) {
   // Here goes code done each game frame
   // Nothing here right now
-  game();
+  gameExit();
 }
 
 void genericDestroy(void) {
@@ -93,7 +93,7 @@ keyboard. Let's add first gamestate in `src/game.c`:
 ``` c
 #include "game.h"
 #include <ace/managers/key.h> // We'll use key* fns here
-#include <ace/managers/game.h> // For using game
+#include <ace/managers/game.h> // For using gameExit
 #include <ace/managers/system.h> // For systemUnuse and systemUse
 
 // "Gamestate" is a long word, so let's use shortcut "Gs" when naming fns
@@ -135,9 +135,7 @@ for convenience we'll name it the same way, with different extension -
 // It's best to put here only those functions which are needed in other files.
 
 void gameGsCreate(void);
-
 void gameGsLoop(void);
-
 void gameGsDestroy(void);
 
 #endif // _GAME_H_
@@ -152,10 +150,8 @@ Now let's add this gamestate along with updating keyboard state to `main.c`:
 
 ``` c
 #include <ace/generic/main.h>
-
 #include <ace/managers/key.h>
 #include <ace/managers/state.h>
-
 // Without it compiler will yell about undeclared gameGsCreate etc
 #include "game.h"
 

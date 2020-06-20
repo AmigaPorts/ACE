@@ -8,12 +8,21 @@
 /* Functions */
 
 #ifdef ACE_DEBUG
-void _checkPointers(const char *szPointerName, void *pPointer) {
+#define checkNull(pPointer) _checkNull(pPointer, "##pPointer", __FILE__, __LINE__)
+#else
+#define checkNull(pPointer) 1
+#endif
+
+void _checkNull(
+	void *pPointer, const char *szPointerName, const char *szFile, UWORD uwLine
+) {
 	if (!pPointer) {
-		logWrite("ERR: Pointer %s is zero! Crash is eminent!\n", szPointerName);
+		logWrite(
+			"ERR: Pointer %s is zero at %s:%u! Crash emminent!\n",
+			szPointerName, szFile, uwLine
+		);
 	}
 }
-#endif
 
 tStateManager *stateManagerCreate(void) {
 	logBlockBegin("stateManagerCreate()");
@@ -28,9 +37,7 @@ tStateManager *stateManagerCreate(void) {
 void stateManagerDestroy(tStateManager *pStateManager) {
 	logBlockBegin("stateManagerDestroy(pStateManager: %p)", pStateManager);
 
-#ifdef ACE_DEBUG
-	_checkPointers("pStateManager", pStateManager);
-#endif
+	checkNull(pStateManager);
 
 	statePopAll(pStateManager);
 
@@ -66,9 +73,7 @@ tState *stateCreate(
 void stateDestroy(tState *pState) {
 	logBlockBegin("stateDestroy(pState: %p)", pState);
 	
-#ifdef ACE_DEBUG
-	_checkPointers("pState", pState);
-#endif
+	checkNull(pState);
 
 	memFree(pState, sizeof(tState));
 
@@ -81,10 +86,8 @@ void statePush(tStateManager *pStateManager, tState *pState) {
 		pStateManager, pState
 	);
 
-#ifdef ACE_DEBUG
-	_checkPointers("pStateManager", pStateManager);
-	_checkPointers("pState", pState);
-#endif
+	checkNull(pStateManager);
+	checkNull(pState);
 
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbSuspend) {
 		pStateManager->pCurrent->cbSuspend();
@@ -103,9 +106,7 @@ void statePush(tStateManager *pStateManager, tState *pState) {
 void statePop(tStateManager *pStateManager) {
 	logBlockBegin("statePop(pStateManager: %p)", pStateManager);
 
-#ifdef ACE_DEBUG
-	_checkPointers("pStateManager", pStateManager);
-#endif
+	checkNull(pStateManager);
 
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbDestroy) {
 		pStateManager->pCurrent->cbDestroy();
@@ -124,9 +125,7 @@ void statePop(tStateManager *pStateManager) {
 void statePopAll(tStateManager *pStateManager) {
 	logBlockBegin("statePopAll(pStateManager: %p)", pStateManager);
 
-#ifdef ACE_DEBUG
-	_checkPointers("pStateManager", pStateManager);
-#endif
+	checkNull(pStateManager);
 
 	while (pStateManager->pCurrent) {
 		if (pStateManager->pCurrent->cbDestroy) {
@@ -145,10 +144,8 @@ void stateChange(tStateManager *pStateManager, tState *pState) {
 		pStateManager, pState
 	);
 
-#ifdef ACE_DEBUG
-	_checkPointers("pStateManager", pStateManager);
-	_checkPointers("pState", pState);
-#endif
+	checkNull(pStateManager);
+	checkNull(pState);
 
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbDestroy) {
 		pStateManager->pCurrent->cbDestroy();
@@ -171,9 +168,7 @@ void stateChange(tStateManager *pStateManager, tState *pState) {
 }
 
 void stateProcess(tStateManager *pStateManager) {
-#ifdef ACE_DEBUG
-	_checkPointers("pStateManager", pStateManager);
-#endif
+	checkNull(pStateManager);
 
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbLoop) {
 		pStateManager->pCurrent->cbLoop();

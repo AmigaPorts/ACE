@@ -14,7 +14,7 @@ extern "C" {
 #include <exec/interrupts.h>  // struct Interrupt
 #endif // AMIGA
 
-/* ****************************************************************** DEFINES */
+//---------------------------------------------------------------------- DEFINES
 
 /**
  * Key codes
@@ -141,20 +141,20 @@ extern "C" {
 #define KEY_ACTIVE 2
 
 
-/* ******************************************************************** TYPES */
+//------------------------------------------------------------------------ TYPES
 
 typedef struct _tKeyManager {
 	UBYTE pStates[103];
 	UBYTE ubLastKey;
 } tKeyManager;
 
-/* ****************************************************************** GLOBALS */
+//---------------------------------------------------------------------- GLOBALS
 
 extern tKeyManager g_sKeyManager;
 extern const UBYTE g_pFromAscii[];
 extern const UBYTE g_pToAscii[];
 
-/* **************************************************************** FUNCTIONS */
+//-------------------------------------------------------------------- FUNCTIONS
 
 /**
  * Initializes mouse manager.

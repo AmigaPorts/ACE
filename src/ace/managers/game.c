@@ -4,7 +4,7 @@
 
 #include <ace/managers/game.h>
 
-UBYTE s_isGameRunning = 1;
+static UBYTE s_isGameRunning = 1;
 
 /* Functions */
 

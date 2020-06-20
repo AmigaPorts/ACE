@@ -3,14 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "buffer_scroll.h"
-
 #include <ace/managers/key.h>
 #include <ace/managers/system.h>
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/managers/viewport/simplebuffer.h>
-
 #include <ace/utils/palette.h>
-
 #include "game.h"
 
 #define TEST_SCROLL_BPP 6

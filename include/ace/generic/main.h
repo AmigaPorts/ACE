@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 
+#ifndef GENERIC_MAIN_LOOP_CONDITION
+#define GENERIC_MAIN_LOOP_CONDITION gameIsRunning()
+#endif
+
 #include <stdlib.h>
 #include <ace/types.h>
 #include <ace/managers/system.h>
@@ -51,7 +55,7 @@ int main(void) {
 	copCreate();
 
 	genericCreate();
-	while (gameIsRunning()) {
+	while (GENERIC_MAIN_LOOP_CONDITION) {
 		timerProcess();
 		genericProcess();
 	}

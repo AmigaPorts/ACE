@@ -3,14 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "test/interleaved.h"
-
 #include <ace/utils/extview.h>
 #include <ace/utils/palette.h>
-
 #include <ace/managers/key.h>
 #include <ace/managers/system.h>
 #include <ace/managers/viewport/simplebuffer.h>
-
 #include "game.h"
 
 static tView *s_pTestInterleavedView;

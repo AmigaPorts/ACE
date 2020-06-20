@@ -68,12 +68,16 @@ Each state's life could be split into three phases:
 - **destruction** which cleans up resources after state - in practice it
   does the exact opposite of state's creation code.
 
-In addition transition split into two phases:
+States are managed with stack, so besides swapping current state with another 
+state, states can be pushed and popped on stack. See "Pushing and popping
+states" chapter for more in-depth overview. For fine tunning push/pop 
+transitions between states, ACE provides two additional phases:
 
 - **suspend** when some child state is about to be pushed
-- **resume** when some child state is about to be popped
+- **resume** when some child state just popped
 
-All those phases are available in tState and could be tuned to game needs.
+Both are usefull when you need run some smaller tweaks without touching creation
+or destruction of a state.
 
 ### Changing states
 
@@ -108,7 +112,7 @@ OS  --stateChange-->  menu  --stateChange-->  game  --statePush--> pause
 This looks similar to changing state, but there's significant difference:
 
 - when you call `statePush`, _game_ state isn't destroyed. Instead, _game_'s 
-  suspend function and _pause_'s create function is called. From now on
+  suspend function and then _pause_'s create function are called. From now on
   `stateProcess` will process _pause_'s loop.
 - when you call `statePop`, _pause_'s state is destroyed, and _game_'s resume
   function is called, making _game_'s loop the current one. After that
@@ -158,6 +162,19 @@ Instead of writing `main()` function you just `#include` this file and define:
 - `genericCreate()` - for creation of additional managers
 - `genericLoop()` - called in a loop until game gets closed
 - `genericDestroy()` - for freeing previously created managers
+
+If you preffer exiting your game in other ways than by calling `gameExit`, you
+can tune game main loop condition by defining `GENERIC_MAIN_LOOP_CONDITION`
+before `#include`. For e.g.:
+
+``` c
+#define GENERIC_MAIN_LOOP_CONDITION g_pGameStateManager->pCurrent
+#include <ace/generic/main.h>
+```
+
+At this point we changed generic main loop to check if there is any state in 
+selected state manager. The only caveat is to put these lines of code after
+manager definition.
 
 ## Debug mode
 
