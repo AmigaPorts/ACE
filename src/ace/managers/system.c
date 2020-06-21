@@ -11,6 +11,7 @@
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
+#include <ace/managers/key.h>
 #include <exec/execbase.h>
 #include <proto/exec.h> // Bartman's compiler needs this
 #include <proto/dos.h> // Bartman's compiler needs this
@@ -541,7 +542,7 @@ void systemUse(void) {
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 		g_pCustom->dmacon = s_uwOsMinDma;
-		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while(!(g_pCustom->intreqr & INTF_VERTB)) {}
 
 		// Disable CIA interrupts
 		g_pCia[CIA_A]->icr = 0x7F;
@@ -566,6 +567,10 @@ void systemUse(void) {
 		// All interrupts but only needed DMA
 		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | (s_uwOsDmaCon & s_uwOsMinDma);
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN  | s_uwOsIntEna;
+
+		// Nasty keyboard hack - if any key gets pressed / released while system is
+		// inactive, we won't be able to catch it.
+		keyReset();
 	}
 	++s_wSystemUses;
 }
