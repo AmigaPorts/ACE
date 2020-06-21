@@ -50,6 +50,8 @@ void fileFlush(tFile *pFile);
  */
 LONG fileGetSize(const char *szPath);
 
+void fileWriteStr(tFile *pFile, const char *szLine);
+
 #ifdef __cplusplus
 }
 #endif

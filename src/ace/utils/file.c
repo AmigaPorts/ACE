@@ -125,3 +125,7 @@ void fileFlush(tFile *pFile) {
 	fflush(pFile);
 	systemUnuse();
 }
+
+void fileWriteStr(tFile *pFile, const char *szLine) {
+	fileWrite(pFile, szLine, strlen(szLine));
+}
