@@ -58,7 +58,7 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 	return ulResult;
 }
 
-ULONG fileWrite(tFile *pFile, void *pSrc, ULONG ulSize) {
+ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
 	systemUse();
 	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
 	fflush(pFile);

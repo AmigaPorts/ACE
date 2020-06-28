@@ -24,7 +24,7 @@ void fileClose(tFile *pFile);
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize);
 
-ULONG fileWrite(tFile *pFile, void *pSrc, ULONG ulSize);
+ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize);
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode);
 
