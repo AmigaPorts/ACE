@@ -33,7 +33,7 @@ set(
 
 # Linux/other UNIX get a lower-case binary name
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
-add_library(${TARGET_NAME} ${SOURCES} ${HEADERS})
+add_library(${TARGET_NAME} OBJECT ${SOURCES} ${HEADERS})
 
 set(CMAKE_C_STANDARD 11)
 target_compile_definitions(${TARGET_NAME} PUBLIC AMIGA)
