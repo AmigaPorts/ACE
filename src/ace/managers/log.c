@@ -109,7 +109,7 @@ void _logBlockBegin(char *szBlockName, ...) {
 	logWrite("Block begin: ");
 	va_list vaArgs;
 	va_start(vaArgs, szBlockName);
-	logWrite(szBlockName, vaArgs);
+	logWriteVa(szBlockName, vaArgs);
 	va_end(vaArgs);
 	logWrite("\n");
 
