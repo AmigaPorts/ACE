@@ -22,10 +22,12 @@ static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) 
 	pManager->pBack = pBack;
 }
 
-void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
+static void simpleBufferSetFront(
+	tSimpleBufferManager *pManager, tBitMap *pFront, UBYTE isScrollX
+) {
 	logBlockBegin(
-		"simpleBufferSetFront(pManager: %p, pFront: %p)",
-		pManager, pFront
+		"simpleBufferSetFront(pManager: %p, pFront: %p, isScrollX: %hhu)",
+		pManager, pFront, isScrollX
 	);
 #if defined(ACE_DEBUG)
 	if(pManager->pFront && pManager->pFront->Depth != pFront->Depth) {
@@ -39,7 +41,9 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 	pManager->pFront = pFront;
 	UWORD uwModulo = pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 	UWORD uwDDfStrt;
-	if(pManager->uBfrBounds.uwX <= pManager->sCommon.pVPort->uwWidth) {
+	if(
+		!isScrollX || pManager->uBfrBounds.uwX <= pManager->sCommon.pVPort->uwWidth
+	) {
 		uwDDfStrt = 0x0038;
 		pManager->ubFlags &= ~SIMPLEBUFFER_FLAG_X_SCROLLABLE;
 	}
@@ -191,7 +195,8 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 		logWrite("Copperlist offset: %u\n", pManager->uwCopperOffset);
 	}
 
-	simpleBufferSetFront(pManager, pFront);
+	UBYTE isScrollX = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_USE_X_SCROLLING, 1);
+	simpleBufferSetFront(pManager, pFront, isScrollX);
 	simpleBufferSetBack(pManager, pBack ? pBack : pFront);
 
 	// Add manager to VPort
