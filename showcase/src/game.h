@@ -31,7 +31,7 @@ extern tState *g_pGameStates[];
 //-------------------------------------------------------------------- FUNCTIONS
 
 void genericCreate(void);
-void genericLoop(void);
+void genericProcess(void);
 void genericDestroy(void);
 
 void createGameStates(void);

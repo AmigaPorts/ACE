@@ -68,9 +68,9 @@ Each state's life could be split into three phases:
 - **destruction** which cleans up resources after state - in practice it
   does the exact opposite of state's creation code.
 
-States are managed with stack, so besides swapping current state with another 
+States are managed with stack, so besides swapping current state with another
 state, states can be pushed and popped on stack. See "Pushing and popping
-states" chapter for more in-depth overview. For fine tunning push/pop 
+states" chapter for more in-depth overview. For fine tunning push/pop
 transitions between states, ACE provides two additional phases:
 
 - **suspend** when some child state is about to be pushed
@@ -111,7 +111,7 @@ OS  --stateChange-->  menu  --stateChange-->  game  --statePush--> pause
 
 This looks similar to changing state, but there's significant difference:
 
-- when you call `statePush`, _game_ state isn't destroyed. Instead, _game_'s 
+- when you call `statePush`, _game_ state isn't destroyed. Instead, _game_'s
   suspend function and then _pause_'s create function are called. From now on
   `stateProcess` will process _pause_'s loop.
 - when you call `statePop`, _pause_'s state is destroyed, and _game_'s resume
@@ -160,7 +160,7 @@ has created [ace/generic/main.h](../../include/ace/generic/main.h) file.
 Instead of writing `main()` function you just `#include` this file and define:
 
 - `genericCreate()` - for creation of additional managers
-- `genericLoop()` - called in a loop until game gets closed
+- `genericProcess()` - called in a loop until game gets closed
 - `genericDestroy()` - for freeing previously created managers
 
 If you prefer exiting your game in other ways than by calling `gameExit`, you
@@ -172,7 +172,7 @@ before `#include`. For example:
 #include <ace/generic/main.h>
 ```
 
-This changes generic main loop's behavior to check if there is any state in 
+This changes generic main loop's behavior to check if there is any state in
 selected state manager. The only caveat is to put these lines of code after
 manager definition.
 
@@ -304,4 +304,4 @@ them only appear by default in Debug builds, since most of the time they shouldn
 be needed. In debug build `blitCopy()` function calls `blitSafeCopy()` with
 sanity checks, while in Release build it uses `blitUnsafeCopy()` to squeeze
 as much performance as possible. This way, if your code depends on runtime checks,
-you can use safe variants where appropriate. 
+you can use safe variants where appropriate.
