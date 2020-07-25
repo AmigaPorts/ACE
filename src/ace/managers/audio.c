@@ -96,7 +96,7 @@ tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateHz) {
 	// NOTE: 3546895 is for PAL, for NTSC use 3579545
 	UWORD uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
 	tSample *pSample = sampleCreate(lLength, uwPeriod);
-	FILE *pSampleFile = fileOpen(szPath, "rb");
+	tFile *pSampleFile = fileOpen(szPath, "rb");
 	fileRead(pSampleFile, pSample->pData, lLength);
 	fileClose(pSampleFile);
 	logBlockEnd("sampleCreateFromFile()");

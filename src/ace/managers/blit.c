@@ -482,7 +482,7 @@ UBYTE _blitRect(
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		ubColor >>= 1;
 		++ubPlane;
-	}	while(ubPlane != pDst->Depth);
+	}	while(ubPlane < pDst->Depth);
 
 #endif // AMIGA
 	return 1;

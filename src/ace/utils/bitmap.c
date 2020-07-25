@@ -10,6 +10,7 @@
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/custom.h>
+#include <proto/graphics.h> // Bartman's compiler needs this
 
 /* Globals */
 
@@ -22,8 +23,9 @@ tBitMap *bitmapCreate(
 	tBitMap *pBitMap;
 	UBYTE i;
 
+	systemUse();
 	logBlockBegin(
-		"bitmapCreate(uwWidth: %u, uwHeight: %u, ubDepth: %hu, ubFlags: %hu)",
+		"bitmapCreate(uwWidth: %hu, uwHeight: %hu, ubDepth: %hhu, ubFlags: %hhu)",
 		uwWidth, uwHeight, ubDepth, ubFlags
 	);
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
@@ -44,6 +46,7 @@ tBitMap *bitmapCreate(
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
 			memFree(pBitMap, sizeof(tBitMap));
 			logBlockEnd("bitmapCreate()");
+			systemUnuse();
 			return 0;
 		}
 		for(i = 1; i != ubDepth; ++i) {
@@ -64,6 +67,7 @@ tBitMap *bitmapCreate(
 				}
 				memFree(pBitMap, sizeof(tBitMap));
 				logBlockEnd("bitmapCreate()");
+				systemUnuse();
 				return 0;
 			}
 			if (ubFlags & BMF_CLEAR) {
@@ -77,6 +81,7 @@ tBitMap *bitmapCreate(
 	}
 
 	logBlockEnd("bitmapCreate()");
+	systemUnuse();
 	return pBitMap;
 #else
 	return 0;

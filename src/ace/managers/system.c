@@ -11,8 +11,11 @@
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
+#include <ace/managers/key.h>
 #include <exec/execbase.h>
-#include <proto/exec.h>
+#include <proto/exec.h> // Bartman's compiler needs this
+#include <proto/dos.h> // Bartman's compiler needs this
+#include <proto/graphics.h> // Bartman's compiler needs this
 
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
@@ -41,24 +44,24 @@ typedef struct _tAceInterrupt {
 //---------------------------------------------------------------------- GLOBALS
 
 // Saved regs
-UWORD s_uwOsIntEna;
-UWORD s_uwOsDmaCon;
-UWORD s_uwAceDmaCon = 0;
-UWORD s_uwOsInitialDma;
+static UWORD s_uwOsIntEna;
+static UWORD s_uwOsDmaCon;
+static UWORD s_uwAceDmaCon = 0;
+static UWORD s_uwOsInitialDma;
 
-UWORD s_pOsCiaTimerA[CIA_COUNT];
-UWORD s_pOsCiaTimerB[CIA_COUNT];
-UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
-UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
+static UWORD s_pOsCiaTimerA[CIA_COUNT];
+static UWORD s_pOsCiaTimerB[CIA_COUNT];
+static UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
+static UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
 
 // Interrupts
-void HWINTERRUPT int1Handler(void);
-void HWINTERRUPT int2Handler(void);
-void HWINTERRUPT int3Handler(void);
-void HWINTERRUPT int4Handler(void);
-void HWINTERRUPT int5Handler(void);
-void HWINTERRUPT int6Handler(void);
-void HWINTERRUPT int7Handler(void);
+static void HWINTERRUPT int1Handler(void);
+static void HWINTERRUPT int2Handler(void);
+static void HWINTERRUPT int3Handler(void);
+static void HWINTERRUPT int4Handler(void);
+static void HWINTERRUPT int5Handler(void);
+static void HWINTERRUPT int6Handler(void);
+static void HWINTERRUPT int7Handler(void);
 static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int1Handler, int2Handler, int3Handler, int4Handler,
 	int5Handler, int6Handler, int7Handler
@@ -70,10 +73,15 @@ static volatile tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
 static volatile UWORD s_uwAceInts = 0;
 
 // Manager logic vars
-WORD s_wSystemUses;
+static WORD s_wSystemUses;
 struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
-const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
+static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
+
+#if defined(BARTMAN_GCC)
+struct DosLibrary *DOSBase = 0;
+struct ExecBase *SysBase = 0;
+#endif
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
 
@@ -340,6 +348,9 @@ void systemKill(const char *szMsg) {
 	if(GfxBase) {
 		CloseLibrary((struct Library *) GfxBase);
 	}
+	if(DOSBase) {
+		CloseLibrary((struct Library *) DOSBase);
+	}
 	exit(EXIT_FAILURE);
 }
 
@@ -347,14 +358,34 @@ void systemKill(const char *szMsg) {
  * @brief The startup code to give ACE somewhat initial state.
  */
 void systemCreate(void) {
-	// Disable as much of OS stuff as possible so that it won't trash stuff when
-	// re-enabled periodically.
-	// Save the system copperlists and flush the view
+#if defined(BARTMAN_GCC)
+	// Bartman's startup code doesn't initialize anything
+	SysBase = *((struct ExecBase**)4UL);
+#endif
+
 	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
 	if (!GfxBase) {
 		systemKill("Can't open Gfx Library!\n");
 		return;
 	}
+
+	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
+	if (!DOSBase) {
+		systemKill("Can't open DOS Library!\n");
+		return;
+	}
+
+  // Determine original stack size
+  struct Process *pProcess = (struct Process *)FindTask(NULL);
+  ULONG ulStackSize = (char *)pProcess->pr_Task.tc_SPUpper - (char *)pProcess->pr_Task.tc_SPLower;
+  if (pProcess->pr_CLI) {
+    ulStackSize = *(ULONG *)pProcess->pr_ReturnAddr;
+  }
+	logWrite("Stack size: %lu\n", ulStackSize);
+
+	// Disable as much of OS stuff as possible so that it won't trash stuff when
+	// re-enabled periodically.
+	// Save the system copperlists and flush the view
 
 	// This prevents "copjmp nasty bug"
 	// http://eab.abime.net/showthread.php?t=71190
@@ -433,6 +464,8 @@ void systemDestroy(void) {
 
 	logWrite("Closing graphics.library...\n");
 	CloseLibrary((struct Library *) GfxBase);
+	logWrite("Closing dos.library...\n");
+	CloseLibrary((struct Library *) DOSBase);
 }
 
 void systemUnuse(void) {
@@ -509,7 +542,7 @@ void systemUse(void) {
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 		g_pCustom->dmacon = s_uwOsMinDma;
-		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while(!(g_pCustom->intreqr & INTF_VERTB)) {}
 
 		// Disable CIA interrupts
 		g_pCia[CIA_A]->icr = 0x7F;
@@ -534,6 +567,10 @@ void systemUse(void) {
 		// All interrupts but only needed DMA
 		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | (s_uwOsDmaCon & s_uwOsMinDma);
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN  | s_uwOsIntEna;
+
+		// Nasty keyboard hack - if any key gets pressed / released while system is
+		// inactive, we won't be able to catch it.
+		keyReset();
 	}
 	++s_wSystemUses;
 }

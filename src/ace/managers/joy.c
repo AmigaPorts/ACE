@@ -2,12 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <proto/exec.h> // Bartman's compiler needs this
+#include <proto/misc.h> // Bartman's compiler needs this
+#include <resources/misc.h> // OS-friendly parallel joys: misc.resource
+#include <clib/misc_protos.h> // OS-friendly parallel joys: misc.resource
 #include <ace/managers/joy.h>
 #include <ace/managers/log.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
-#include <resources/misc.h> // OS-friendly parallel joys: misc.resource
-#include <clib/misc_protos.h> // OS-friendly parallel joys: misc.resource
 
 /* Globals */
 tJoyManager g_sJoyManager;

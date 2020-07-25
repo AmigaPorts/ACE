@@ -140,11 +140,12 @@ extern "C" {
 #define KEY_USED 1
 #define KEY_ACTIVE 2
 
+#define KEY_COUNT 104
 
 //------------------------------------------------------------------------ TYPES
 
 typedef struct _tKeyManager {
-	UBYTE pStates[103];
+	UBYTE pStates[KEY_COUNT];
 	UBYTE ubLastKey;
 } tKeyManager;
 
@@ -200,6 +201,12 @@ static inline UBYTE keyUse(UBYTE ubKeyCode) {
 		return 1;
 	}
 	return 0;
+}
+
+static inline void keyReset(void) {
+	for(UBYTE i = 0; i < KEY_COUNT; ++i) {
+		g_sKeyManager.pStates[i] = KEY_NACTIVE;
+	}
 }
 
 #ifdef __cplusplus

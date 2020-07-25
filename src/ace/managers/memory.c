@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <proto/exec.h> // Bartman's compiler needs this
+#include <proto/dos.h> // Bartman's compiler needs this
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
@@ -139,6 +141,14 @@ void _memCheckIntegrity(UWORD uwLine, const char *szFile) {
 	while(pEntry) {
 		memEntryCheckTrash(pEntry, uwLine, szFile);
 		pEntry = pEntry->pNext;
+	}
+
+	register ULONG * a7 __asm("sp");
+
+	struct Process *pProcess = (struct Process *)FindTask(NULL);
+	if((ULONG)a7 < (ULONG)((char *)pProcess->pr_Task.tc_SPLower)) {
+		logWrite("[MEM] out of stack bounds!\n");
+		while(1) {}
 	}
 }
 

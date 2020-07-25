@@ -13,23 +13,23 @@ LONG fileGetSize(const char *szPath) {
 	// One could use std library to seek to end of file and use ftell,
 	// but SEEK_END is not guaranteed to work.
 	// http://www.cplusplus.com/reference/cstdio/fseek/
-	// Also this variant is 14 bytes smaller on Amiga ;)
+	// On the other hand, Lock/UnLock is bugged on KS1.3 and doesn't allow
+	// for doing Open() on same file after using it.
+	// So I ultimately do it using fseek.
+
 	systemUse();
 	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
-	BPTR pLock = Lock((CONST_STRPTR)szPath, ACCESS_READ);
-	if(!pLock) {
-		systemUnuse();
+	FILE *pFile = fopen(szPath, "r");
+	if(!pFile) {
 		return -1;
 	}
-	struct FileInfoBlock sFileBlock;
-	LONG lResult = Examine(pLock, &sFileBlock);
-	UnLock(pLock);
+	fseek(pFile, 0, SEEK_END);
+	LONG lSize = ftell(pFile);
+	fclose(pFile);
+
 	logBlockEnd("fileGetSize()");
 	systemUnuse();
-	if(lResult == DOSFALSE) {
-		return -1;
-	}
-	return sFileBlock.fib_Size;
+	return lSize;
 }
 
 tFile *fileOpen(const char *szPath, const char *szMode) {
@@ -58,7 +58,7 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 	return ulResult;
 }
 
-ULONG fileWrite(tFile *pFile, void *pSrc, ULONG ulSize) {
+ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
 	systemUse();
 	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
 	fflush(pFile);
@@ -87,6 +87,7 @@ UBYTE fileIsEof(tFile *pFile) {
 	return ubResult;
 }
 
+#if !defined(BARTMAN_GCC) // Not implemented in mini_std for now, sorry!
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
@@ -117,9 +118,14 @@ LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
 	va_end(vaArgs);
 	return lResult;
 }
+#endif
 
 void fileFlush(tFile *pFile) {
 	systemUse();
 	fflush(pFile);
 	systemUnuse();
+}
+
+void fileWriteStr(tFile *pFile, const char *szLine) {
+	fileWrite(pFile, szLine, strlen(szLine));
 }

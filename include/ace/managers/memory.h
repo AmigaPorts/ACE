@@ -50,6 +50,8 @@ void _memFreeRls(void *pMem, ULONG ulSize);
 
 void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
 
+void _memCheckIntegrity(UWORD uwLine, const char *szFile);
+
 /**
  * Macros for enabling or disabling logging
  */
@@ -60,12 +62,14 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
 # define memCreate() _memCreate()
 # define memDestroy() _memDestroy()
 # define memCheckTrashAtAddr(pAddr) _memCheckTrashAtAddr(pAddr, __LINE__, __FILE__)
+# define memCheckIntegrity() _memCheckIntegrity(__LINE__, __FILE__)
 #else
 # define memAlloc(ulSize, ulFlags) _memAllocRls(ulSize, ulFlags)
 # define memFree(pMem, ulSize) _memFreeRls(pMem, ulSize)
 # define memCreate()
 # define memDestroy()
 # define memCheckTrashAtAddr(pAddr, ulSize)
+# define memCheckIntegrity()
 #endif // ACE_DEBUG
 
 // Shorthands

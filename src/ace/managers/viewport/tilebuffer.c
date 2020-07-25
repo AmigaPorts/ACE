@@ -6,6 +6,7 @@
 #include <ace/macros.h>
 #include <ace/managers/blit.h>
 #include <ace/utils/tag.h>
+#include <proto/exec.h> // Bartman's compiler needs this
 
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 	UBYTE ubPower = 0;

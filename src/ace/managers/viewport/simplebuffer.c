@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/viewport/simplebuffer.h>
+#include <proto/exec.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/extview.h>
 

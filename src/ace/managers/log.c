@@ -12,9 +12,23 @@
 tLogManager g_sLogManager = {0};
 
 #ifdef ACE_DEBUG_UAE
-volatile ULONG * const s_pUaeFmt = (ULONG *)0xBFFF04;
+
+	#if defined(BARTMAN_GCC)
+long (*bartmanLog)(long mode, const char *string) = (long (*)(long, const char *))0xf0ff60;
+static inline void uaeWrite(const char *szMsg) {
+	if (*((UWORD *)bartmanLog) == 0x4eb9 || *((UWORD *)bartmanLog) == 0xa00e) {
+		bartmanLog(86, szMsg);
+	}
+}
+	#else
+static inline void uaeWrite(const char *szMsg) {
+	volatile ULONG * const s_pUaeFmt = (ULONG *)0xBFFF04;
+	*s_pUaeFmt = (ULONG)((UBYTE*)szMsg);
+}
+	#endif
+
 #else
-volatile ULONG * const s_pUaeFmt = (ULONG *)0;
+#define uaeWrite(x)
 #endif
 
 // Functions
@@ -27,7 +41,7 @@ void _logOpen(const char *szFilePath) {
 	g_sLogManager.pFile = szFilePath ? fileOpen(szFilePath, "w") : 0;
 	g_sLogManager.ubIndent = 0;
 	g_sLogManager.wasLastInline = 0;
-	g_sLogManager.ubBlockEmpty = 1;
+	g_sLogManager.isBlockEmpty = 1;
 	g_sLogManager.ubShutUp = 0;
 }
 
@@ -40,37 +54,37 @@ void _logPopIndent(void) {
 }
 
 void _logWrite(char *szFormat, ...) {
+	va_list vaArgs;
+	va_start(vaArgs, szFormat);
+	logWriteVa(szFormat, vaArgs);
+	va_end(vaArgs);
+}
+
+void _logWriteVa(char *szFormat, va_list vaArgs) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
 
-	g_sLogManager.ubBlockEmpty = 0;
+	// Bartman's UAE logger appends newline to each print, so the message must
+	// be emitted in one print with indentation.
+	char szMsg[1024];
+	UWORD uwOffs = 0;
+	g_sLogManager.isBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
 		while (ubLogIndent--) {
-			if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
-				fileWrite(g_sLogManager.pFile, "\t", 1);
-			}
-			if(s_pUaeFmt) {
-				*s_pUaeFmt = (ULONG)((UBYTE*)"\t");
-			}
+			szMsg[uwOffs++] = '\t';
 		}
 	}
 
 	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
 
-	va_list vaArgs;
-	va_start(vaArgs, szFormat);
+	vsprintf(&szMsg[uwOffs], szFormat, vaArgs);
+	uaeWrite(szMsg);
 	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
-		fileVaPrintf(g_sLogManager.pFile, szFormat, vaArgs);
+		fileWrite(g_sLogManager.pFile, szMsg, strlen(szMsg));
 		fileFlush(g_sLogManager.pFile);
 	}
-	if(s_pUaeFmt) {
-		char szMsg[1024];
-		vsprintf(szMsg, szFormat, vaArgs);
-		*s_pUaeFmt = (ULONG)((UBYTE*)szMsg);
-	}
-	va_end(vaArgs);
 }
 
 void _logClose(void) {
@@ -91,22 +105,18 @@ void _logBlockBegin(char *szBlockName, ...) {
 		return;
 	}
 	systemUse();
-	char szFmtBfr[512];
-	char szStrBfr[1024];
-	// make format string
-	strcpy(szFmtBfr, "Block begin: ");
-	strcat(szFmtBfr, szBlockName);
-	strcat(szFmtBfr, "\n");
 
+	logWrite("Block begin: ");
 	va_list vaArgs;
 	va_start(vaArgs, szBlockName);
-	vsprintf(szStrBfr,szFmtBfr,vaArgs);
+	logWriteVa(szBlockName, vaArgs);
 	va_end(vaArgs);
+	logWrite("\n");
 
-	logWrite(szStrBfr);
 	g_sLogManager.pTimeStack[g_sLogManager.ubIndent] = timerGetPrec();
 	logPushIndent();
-	g_sLogManager.ubBlockEmpty = 1;
+	g_sLogManager.isBlockEmpty = 1;
+	memCheckIntegrity();
 	systemUnuse();
 }
 
@@ -123,7 +133,7 @@ void _logBlockEnd(char *szBlockName) {
 			timerGetPrec()
 		)
 	);
-	if(g_sLogManager.ubBlockEmpty) {
+	if(g_sLogManager.isBlockEmpty) {
 		// empty block - collapse to single line
 		g_sLogManager.wasLastInline = 1;
 		if(g_sLogManager.pFile) {
@@ -134,7 +144,7 @@ void _logBlockEnd(char *szBlockName) {
 	else {
 		logWrite("Block end: %s, time: %s\n", szBlockName, g_sLogManager.szTimeBfr);
 	}
-	g_sLogManager.ubBlockEmpty = 0;
+	g_sLogManager.isBlockEmpty = 0;
 	systemUnuse();
 }
 

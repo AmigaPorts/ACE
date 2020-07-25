@@ -24,7 +24,7 @@ add_executable(tileset_conv ${TILESET_CONV_src} ${COMMON_src} ${COMMON_hdr})
 add_executable(bitmap_conv ${BITMAP_CONV_src} ${COMMON_src} ${COMMON_hdr})
 
 #fmt
-find_package(fmt REQUIRED)
+add_subdirectory(fmt)
 include_directories(${fmt_INCLUDE_DIRS})
 target_link_libraries(font_conv fmt::fmt)
 target_link_libraries(palette_conv fmt::fmt)

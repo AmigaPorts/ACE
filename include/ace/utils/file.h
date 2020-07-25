@@ -24,7 +24,7 @@ void fileClose(tFile *pFile);
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize);
 
-ULONG fileWrite(tFile *pFile, void *pSrc, ULONG ulSize);
+ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize);
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode);
 
@@ -49,6 +49,8 @@ void fileFlush(tFile *pFile);
  * @return LONG On fail -1, otherwise file size in bytes.
  */
 LONG fileGetSize(const char *szPath);
+
+void fileWriteStr(tFile *pFile, const char *szLine);
 
 #ifdef __cplusplus
 }
