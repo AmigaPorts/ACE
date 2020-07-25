@@ -23,8 +23,19 @@ typedef void (*tAceIntHandler)(
 
 //-------------------------------------------------------------------- FUNCTIONS
 
+/**
+ * @brief The startup code to give ACE somewhat initial state.
+ * Prepares OS for enabling / disabling. Disables as much of it as possible,
+ * but leaves it in enabled state.
+ * This is the first thing you should call in your ACE app.
+ */
 void systemCreate(void);
 
+/**
+ * @brief Cleans up after app, restores anything that systemCreate took over.
+ * After running the function, the system to its state before running your app.
+ * This is the last thing you should call in your ACE app.
+ */
 void systemDestroy(void);
 
 void systemKill(const char *szMsg);
