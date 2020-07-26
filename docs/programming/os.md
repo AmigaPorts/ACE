@@ -45,7 +45,7 @@ systemUnuse(); // Disable OS once when we're done with it
 ## Best practices
 
 Try to have OS disabled at the end of gamestate creation, and to re-enable it at the beginning of gamestate destruction.
-This way, the game loop performs with maximum performance, whereas you have OS at your disposal in init/deinit phases.
+This way, the game loop performs with maximum performance, whereas you have OS at your disposal in create/destroy phases.
 
 Be careful when using state pushing/popping.
 If pushed state needs OS, be sure to have it re-enabled at the beginning of gamestate create phase and disabled at the end of gamestate destroy phase.
