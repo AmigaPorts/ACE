@@ -8,7 +8,6 @@ We want to keep those docs as elaborate and easy to understand as possible.
 
 - [Compiler setup](installing/compiler.md)
 - [Building ACE](installing/ace.md)
-- Integration with Visual Studio Code
 
 ## Tutorial
 
