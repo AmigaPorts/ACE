@@ -1067,6 +1067,7 @@ static void mt_checkfx(
 }
 
 static void mt_sfxonly(void);
+static void mt_music(void);
 
 static void intPlay(volatile tCustom *pCustom) {
 	// it was a TA interrupt, do music when enabled
@@ -1213,11 +1214,12 @@ void mt_sfxonly(void) {
 	}
 }
 
-// The replayer routine. Is called automatically after ptplayerStartPlayback().
-// Called from interrupt.
-// Play next position when Counter equals Speed.
-// Effects are always handled.
-void mt_music(void) {
+/**
+ * @brief The replayer routine.
+ * Is called automatically from interrupt after ptplayerCreate().
+ * Plays next position when Counter equals Speed. Effects are always handled.
+ */
+static void mt_music(void) {
 	mt_dmaon = 0;
 	if(++mt_Counter < mt_Speed) {
 		// no new note, just check effects, don't step to next position
@@ -1320,7 +1322,7 @@ void ptplayerEnd(void) {
 	systemSetDmaMask(DMAF_AUDIO, 0);
 }
 
-void mt_reset(void) {
+static void mt_reset(void) {
 	// reset speed and counters
 	mt_Speed = 6;
 	mt_Counter = 0;
@@ -1373,15 +1375,19 @@ static void INTERRUPT onAudio(
 	s_uwAudioInterrupts |= ulIntFlag;
 };
 
-void ptplayerStopPlayback(void) {
+void ptplayerDestroy(void) {
 	ptplayerEnd();
 	// Disable handling of music
 	ptplayerEnableMusic(0);
 	systemSetCiaInt(CIA_B, 0, 0, 0);
 	systemSetCiaInt(CIA_B, 1, 0, 0);
+	systemSetInt(INTB_AUD0, 0, 0);
+	systemSetInt(INTB_AUD1, 0, 0);
+	systemSetInt(INTB_AUD2, 0, 0);
+	systemSetInt(INTB_AUD3, 0, 0);
 }
 
-void ptplayerStartPlayback(UBYTE isPal) {
+void ptplayerCreate(UBYTE isPal) {
 	ptplayerEnableMusic(0);
 	s_uwAudioInterrupts = 0;
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
@@ -1427,7 +1433,9 @@ void ptplayerStartPlayback(UBYTE isPal) {
 	mt_reset();
 }
 
-void ptplayerInit(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos) {
+void ptplayerLoadMod(
+	UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos
+) {
 	logBlockBegin(
 		"ptplayerInit(pTrackerModule: %p, pSampleData: %p, uwInitialSongPos: %hu)",
 		pTrackerModule, pSampleData, uwInitialSongPos
@@ -1493,7 +1501,7 @@ void ptplayerInit(UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSong
 }
 
 // activate the sound effect on this channel
-static void ptSetSfx(tSfxStructure *pSfx, tChannelStatus *pChannel) {
+static void ptSetSfx(tPtPlayerSfx *pSfx, tChannelStatus *pChannel) {
 	pChannel->n_sfxptr = pSfx->sfx_ptr;
 	pChannel->n_sfxlen = pSfx->sfx_len;
 	pChannel->n_sfxper = pSfx->sfx_per;
@@ -1501,25 +1509,16 @@ static void ptSetSfx(tSfxStructure *pSfx, tChannelStatus *pChannel) {
 	pChannel->n_sfxpri = pSfx->sfx_pri;
 }
 
-// Request playing of a prioritized external sound effect, either on a
-// fixed channel or on the most unused one.
-// A negative channel specification means to use the best one.
-// The priority is unsigned and should be greater than zero.
-// When multiple samples are assigned to the same channel the lower
-// priority sample will be replaced. When priorities are the same, then
-// the older sample is replaced.
-// The chosen channel is blocked for music until the effect has
-// completely been replayed.
-void mt_playfx(tSfxStructure *SfxStructurePointer) {
-	if(SfxStructurePointer->sfx_cha > 0) {
+void ptplayerPlaySfx(tPtPlayerSfx *pSfx) {
+	if(pSfx->sfx_cha > 0) {
 		// use fixed channel for effect
 		tChannelStatus *pChannels[] = {&mt_chan[0], &mt_chan[1], &mt_chan[2], &mt_chan[3]};
-		tChannelStatus *pChannel = pChannels[SfxStructurePointer->sfx_cha];
+		tChannelStatus *pChannel = pChannels[pSfx->sfx_cha];
 
 		// Priority high enough to replace a present effect on this channel?
 		g_pCustom->intena = INTF_INTEN;
-		if(SfxStructurePointer->sfx_pri >= pChannel->n_sfxpri) {
-			ptSetSfx(SfxStructurePointer, pChannel);
+		if(pSfx->sfx_pri >= pChannel->n_sfxpri) {
+			ptSetSfx(pSfx, pChannel);
 		}
 		return;
 	}
@@ -1664,7 +1663,7 @@ void mt_playfx(tSfxStructure *SfxStructurePointer) {
 		UBYTE ubBestFreeCnt = 0;
 		if(
 			mt_chan[0].n_sfxpri > 0 &&
-			mt_chan[0].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[0].n_sfxpri < pSfx->sfx_pri &&
 			mt_chan[0].n_freecnt > ubBestFreeCnt
 		) {
 			ubBestFreeCnt = mt_chan[0].n_freecnt;
@@ -1672,7 +1671,7 @@ void mt_playfx(tSfxStructure *SfxStructurePointer) {
 		}
 		else if(
 			mt_chan[1].n_sfxpri > 0 &&
-			mt_chan[1].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[1].n_sfxpri < pSfx->sfx_pri &&
 			mt_chan[1].n_freecnt > ubBestFreeCnt
 		) {
 			ubBestFreeCnt = mt_chan[1].n_freecnt;
@@ -1680,7 +1679,7 @@ void mt_playfx(tSfxStructure *SfxStructurePointer) {
 		}
 		else if(
 			mt_chan[2].n_sfxpri > 0 &&
-			mt_chan[2].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[2].n_sfxpri < pSfx->sfx_pri &&
 			mt_chan[2].n_freecnt > ubBestFreeCnt
 		) {
 			ubBestFreeCnt = mt_chan[2].n_freecnt;
@@ -1688,7 +1687,7 @@ void mt_playfx(tSfxStructure *SfxStructurePointer) {
 		}
 		else if(
 			mt_chan[3].n_sfxpri > 0 &&
-			mt_chan[3].n_sfxpri < SfxStructurePointer->sfx_pri &&
+			mt_chan[3].n_sfxpri < pSfx->sfx_pri &&
 			mt_chan[3].n_freecnt > ubBestFreeCnt
 		) {
 			ubBestFreeCnt = mt_chan[3].n_freecnt;
@@ -1698,32 +1697,10 @@ void mt_playfx(tSfxStructure *SfxStructurePointer) {
 	if(!pBestChannel) {
 		return;
 	}
-	ptSetSfx(SfxStructurePointer, pBestChannel);
+	ptSetSfx(pSfx, pBestChannel);
 }
 
-// Request playing of an external sound effect on the most unused channel.
-// This function is for compatibility with the old API only!
-// You should call mt_playfx instead.
-void mt_soundfx(
-	APTR SamplePointer, UWORD SampleLength, UWORD SamplePeriod, UWORD SampleVolume
-) {
-	tSfxStructure sSfx;
-	sSfx.sfx_ptr = SamplePointer;
-	sSfx.sfx_len = SampleLength;
-	sSfx.sfx_per = SamplePeriod;
-	sSfx.sfx_vol = SampleVolume;
-	// any channel, priority = 1
-	sSfx.sfx_cha = -1;
-	sSfx.sfx_pri = 1;
-	mt_playfx(&sSfx);
-}
-
-// Set bits in the mask define which specific channels are reserved
-// for music only. Set bit 0 for channel 0, ..., bit 3 for channel 3.
-// When calling _mt_soundfx or _mt_playfx with automatic channel selection
-// (sfx_cha=-1) then these masked channels will never be picked.
-// The mask defaults to 0.
-void mt_musicmask(UBYTE ChannelMask) {
+void ptplayerSetMusicChannelMask(UBYTE ChannelMask) {
 	g_pCustom->intena = INTF_INTEN;
 	mt_chan[0].n_musiconly = BTST(ChannelMask, 0);
 	mt_chan[1].n_musiconly = BTST(ChannelMask, 1);

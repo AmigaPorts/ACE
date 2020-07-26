@@ -15,6 +15,15 @@ extern "C" {
 
 #include <ace/types.h>
 
+typedef struct _tPtPlayerSfx {
+	void *sfx_ptr;  /* pointer to sample start in Chip RAM, even address */
+	UWORD sfx_len; /* sample length in words */
+	UWORD sfx_per; /* hardware replay period for sample */
+	UWORD sfx_vol; /* volume 0..64, is unaffected by the song's master volume */
+	BYTE sfx_cha;  /* 0..3 selected replay channel, -1 selects best channel */
+	UBYTE sfx_pri; /* unsigned priority, must be non-zero */
+} tPtPlayerSfx;
+
 /**
  * @brief Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
  * The music module is replayed via _mt_music when _mt_Enable is non-zero.
@@ -22,9 +31,11 @@ extern "C" {
  *
  * @param isPal In CIA mode, Set to 1 on PAL configs, zero on NTSC.
  */
-void ptplayerStartPlayback(UBYTE isPal);
+void ptplayerCreate(UBYTE isPal);
 
-void ptplayerStopPlayback(void);
+void ptplayerDestroy(void);
+
+void ptplayerProcess(void);
 
 /**
  * @brief Initialize a new module.
@@ -36,66 +47,41 @@ void ptplayerStopPlayback(void);
  * @param Samples
  * @param InitialSongPos
  */
-void ptplayerInit(UBYTE *TrackerModule, UWORD *Samples, UWORD InitialSongPos);
+void ptplayerLoadMod(UBYTE *TrackerModule, UWORD *Samples, UWORD InitialSongPos);
 
 /**
  * @brief Stop playing current module.
  */
 void ptplayerEnd(void);
 
-/*
-  _mt_soundfx(a6=CUSTOM, a0=SamplePointer,
-             d0=SampleLength.w, d1=SamplePeriod.w, d2=SampleVolume.w)
-    Request playing of an external sound effect on the most unused channel.
-    This function is for compatibility with the old API only!
-    You should call _mt_playfx instead.
-*/
+/**
+ * @brief Request playing of a prioritized external sound effect, either on a
+ *        fixed channel or on the most unused one.
+ * When multiple samples are assigned to the same channel the lower priority
+ * sample will be replaced. When priorities are the same, then the older sample
+ * is replaced.
+ * The chosen channel is blocked for music until the effect has completely
+ * been replayed.
+ *
+ * @param pSfx Sfx sample to be played.
+ *
+ * @see ptplayerSetMusicChannelMask
+ */
+void ptplayerPlaySfx(tPtPlayerSfx *pSfx);
 
-void mt_soundfx(
-	APTR SamplePointer, UWORD SampleLength,
-	UWORD SamplePeriod, UWORD SampleVolume
-);
-
-/*
-  _mt_playfx(a6=CUSTOM, a0=SfxStructurePointer)
-    Request playing of a prioritized external sound effect, either on a
-    fixed channel or on the most unused one.
-    Structure layout of SfxStructure:
-      APTR sfx_ptr (pointer to sample start in Chip RAM, even address)
-      WORD sfx_len (sample length in words)
-      WORD sfx_per (hardware replay period for sample)
-      WORD sfx_vol (volume 0..64, is unaffected by the song's master volume)
-      BYTE sfx_cha (0..3 selected replay channel, -1 selects best channel)
-      UBYTE sfx_pri (unsigned priority, must be non-zero)
-    When multiple samples are assigned to the same channel the lower
-    priority sample will be replaced. When priorities are the same, then
-    the older sample is replaced.
-    The chosen channel is blocked for music until the effect has
-    completely been replayed.
-*/
-
-typedef struct _tSfxStructure
-{
-	APTR sfx_ptr;  /* pointer to sample start in Chip RAM, even address */
-	UWORD sfx_len; /* sample length in words */
-	UWORD sfx_per; /* hardware replay period for sample */
-	UWORD sfx_vol; /* volume 0..64, is unaffected by the song's master volume */
-	BYTE sfx_cha;  /* 0..3 selected replay channel, -1 selects best channel */
-	UBYTE sfx_pri; /* unsigned priority, must be non-zero */
-} tSfxStructure;
-
-void mt_playfx(tSfxStructure *SfxStructurePointer);
-
-/*
-  _mt_musicmask(a6=CUSTOM, d0=ChannelMask.b)
-    Set bits in the mask define which specific channels are reserved
-    for music only. Set bit 0 for channel 0, ..., bit 3 for channel 3.
-    When calling _mt_soundfx or _mt_playfx with automatic channel selection
-    (sfx_cha=-1) then these masked channels will never be picked.
-    The mask defaults to 0.
-*/
-
-void mt_musicmask(UBYTE ChannelMask);
+/**
+ * @brief Set bits in the mask define which specific channels are reserved
+ *        for music only.
+ *
+ * When calling ptplayerPlaySfx with automatic channel selection
+ * (sfx_cha=-1) then these masked channels will never be picked.
+ * The mask defaults to 0.
+ *
+ * @param ubChannelMask Mask of channels reserved for playing music. Set bit 0
+ *                      for channel 0, bit 1 for channel 1, etc.
+ * @see ptplayerPlaySfx()
+ */
+void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
 
 /*
   _mt_mastervol(a6=CUSTOM, d0=MasterVolume.w)
@@ -106,16 +92,8 @@ void mt_musicmask(UBYTE ChannelMask);
 
 void mt_mastervol(UWORD MasterVolume);
 
-/*
-  _mt_music(a6=CUSTOM)
-    The replayer routine. Is called automatically after ptplayerStartPlayback().
-*/
-void mt_music(void);
-
-void ptplayerProcess(void);
-
 /**
- * @brief Enables or disabls music playback.
+ * @brief Enables or disables music playback.
  * You can still play sound effects, while music is stopped.
  * Music is by default disabled after ptplayerInit().
  *
