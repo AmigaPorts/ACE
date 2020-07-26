@@ -47,13 +47,12 @@ systemUnuse(); // Disable OS once when we're done with it
 Try to have OS disabled at the end of gamestate creation, and to re-enable it at the beginning of gamestate destruction.
 This way, the game loop performs with maximum performance, whereas you have OS at your disposal in create/destroy phases.
 
-Be careful when using state pushing/popping.
-If pushed state needs OS, be sure to have it re-enabled at the beginning of gamestate create phase and disabled at the end of gamestate destroy phase.
-You can use onSuspend and onResume callbacks for that.
-
 You can assume that every `create()` and `destroy()` function use OS.
 Thus, try to not use them in game loop.
 Instead, call them close to each other in state's create/destroy phases and put `systemUse()` / `systemUnuse()` calls around them.
+
+Be careful when using state pushing/popping.
+If pushed state needs OS and previous state disabled OS by that point, be sure to have it re-enabled at the beginning of gamestate create phase and disabled at the end of gamestate destroy phase.
 
 ## Things that doesn't work when OS is enabled
 
