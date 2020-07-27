@@ -1313,7 +1313,7 @@ static void mt_music(void) {
 }
 
 // Stop playing current module.
-void ptplayerEnd(void) {
+void ptplayerStop(void) {
 	ptplayerEnableMusic(0);
 	g_pCustom->aud[0].ac_vol = 0;
 	g_pCustom->aud[1].ac_vol = 0;
@@ -1358,7 +1358,7 @@ static void mt_reset(void) {
 
 	mt_SilCntValid = 0;
 	mt_E8Trigger = 0;
-	ptplayerEnd();
+	ptplayerStop();
 }
 
 static inline void setTempo(UWORD uwTempo) {
@@ -1376,7 +1376,7 @@ static void INTERRUPT onAudio(
 };
 
 void ptplayerDestroy(void) {
-	ptplayerEnd();
+	ptplayerStop();
 	// Disable handling of music
 	ptplayerEnableMusic(0);
 	systemSetCiaInt(CIA_B, 0, 0, 0);
@@ -2091,7 +2091,7 @@ static void mt_setspeed(
 	if(ubArgs < 0x20) {
 		mt_Speed = ubArgs;
 		if(!ubArgs) {
-			ptplayerEnd();
+			ptplayerStop();
 		}
 	}
 	else {

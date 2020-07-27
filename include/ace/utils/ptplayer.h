@@ -16,12 +16,12 @@ extern "C" {
 #include <ace/types.h>
 
 typedef struct _tPtPlayerSfx {
-	void *sfx_ptr;  /* pointer to sample start in Chip RAM, even address */
-	UWORD sfx_len; /* sample length in words */
-	UWORD sfx_per; /* hardware replay period for sample */
-	UWORD sfx_vol; /* volume 0..64, is unaffected by the song's master volume */
-	BYTE sfx_cha;  /* 0..3 selected replay channel, -1 selects best channel */
-	UBYTE sfx_pri; /* unsigned priority, must be non-zero */
+	void *sfx_ptr; ///< Pointer to sample start in Chip RAM, even address.
+	UWORD sfx_len; ///< Sample length in words.
+	UWORD sfx_per; ///< Hardware replay period for sample.
+	UWORD sfx_vol; ///< Volume 0..64, is unaffected by the song's master volume.
+	BYTE sfx_cha;  ///< 0..3 selected replay channel, -1 selects best channel.
+	UBYTE sfx_pri; ///< Unsigned priority, must be non-zero.
 } tPtPlayerSfx;
 
 /**
@@ -38,21 +38,27 @@ void ptplayerDestroy(void);
 void ptplayerProcess(void);
 
 /**
- * @brief Initialize a new module.
+ * @brief Initialize a new module but doesn't automatically play it.
+ * You still need to call ptplayerEnableMusic().
  * Reset speed to 6, tempo to 125 and start at the given position.
  * Master volume is at 64 (maximum).
- * When a1 is NULL the samples are assumed to be stored after the patterns.
  *
- * @param TrackerModule
- * @param Samples
- * @param InitialSongPos
+ * @param pTrackerModule
+ * @param pSamples When set to 0, the samples are assumed to be stored inside
+ *                 the MOD, after the patterns.
+ * @param uwInitialSongPos
+ *
+ * @see ptplayerEnableMusic()
+ * @see ptplayerStop()
  */
-void ptplayerLoadMod(UBYTE *TrackerModule, UWORD *Samples, UWORD InitialSongPos);
+void ptplayerLoadMod(
+	UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos
+);
 
 /**
  * @brief Stop playing current module.
  */
-void ptplayerEnd(void);
+void ptplayerStop(void);
 
 /**
  * @brief Request playing of a prioritized external sound effect, either on a
