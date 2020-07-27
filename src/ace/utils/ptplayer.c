@@ -841,22 +841,23 @@ static volatile UBYTE mt_MusicChannels = 0;
 static volatile UBYTE mt_E8Trigger = 0;
 static volatile UBYTE mt_Enable = 0;
 
-tChannelStatus mt_chan[4];
-UWORD *mt_SampleStarts[31]; ///< Start address of each sample
-tModFileHeader *mt_mod;
-ULONG mt_timerval; ///< Base nterrupt frequency of CIA-B timer A used to advance the song. Equals 125*50Hz.
-UBYTE *mt_MasterVolTab;
-UWORD mt_PatternPos;
-UWORD mt_PBreakPos; ///< Pattern break pos
-UBYTE mt_PosJumpFlag;
-UBYTE mt_PBreakFlag;
-UBYTE mt_Speed; ///< Number of times the main loop gets called per note step.
-UBYTE mt_Counter; ///< Number of main loop iterations in current note step so far.
-UBYTE mt_SongPos; ///< Position in arrangement.
-UBYTE mt_PattDelTime;
-UBYTE mt_PattDelTime2;
-UBYTE mt_SilCntValid;
-UWORD mt_dmaon = 0; ///< Set by DMAF_AUD# when
+static tChannelStatus mt_chan[4];
+static UWORD *mt_SampleStarts[31]; ///< Start address of each sample
+static tModFileHeader *mt_mod;
+static ULONG mt_timerval; ///< Base nterrupt frequency of CIA-B timer A used to advance the song. Equals 125*50Hz.
+static UBYTE *mt_MasterVolTab;
+static UWORD mt_PatternPos;
+static UWORD mt_PBreakPos; ///< Pattern break pos
+static UBYTE mt_PosJumpFlag;
+static UBYTE mt_PBreakFlag;
+static UBYTE mt_Speed; ///< Number of times the main loop gets called per note step.
+static UBYTE mt_Counter; ///< Number of main loop iterations in current note step so far.
+static UBYTE mt_SongPos; ///< Position in arrangement.
+static UBYTE mt_PattDelTime;
+static UBYTE mt_PattDelTime2;
+static UBYTE mt_SilCntValid;
+static UWORD mt_dmaon = 0; ///< Set by DMAF_AUD# when
+static tPtplayerMod *s_pModCurr;
 
 static void ptSongStep(void) {
 	mt_PatternPos = mt_PBreakPos;
@@ -1320,6 +1321,7 @@ void ptplayerStop(void) {
 	g_pCustom->aud[2].ac_vol = 0;
 	g_pCustom->aud[3].ac_vol = 0;
 	systemSetDmaMask(DMAF_AUDIO, 0);
+	s_pModCurr = 0;
 }
 
 static void mt_reset(void) {
@@ -1388,6 +1390,7 @@ void ptplayerDestroy(void) {
 }
 
 void ptplayerCreate(UBYTE isPal) {
+	s_pModCurr = 0;
 	ptplayerEnableMusic(0);
 	s_uwAudioInterrupts = 0;
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
@@ -1434,7 +1437,7 @@ void ptplayerCreate(UBYTE isPal) {
 }
 
 void ptplayerLoadMod(
-	UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos
+	tPtplayerMod *pMod, UWORD *pSampleData, UWORD uwInitialSongPos
 ) {
 	logBlockBegin(
 		"ptplayerInit(pTrackerModule: %p, pSampleData: %p, uwInitialSongPos: %hu)",
@@ -1444,7 +1447,7 @@ void ptplayerLoadMod(
 	// Initialize new module.
 	// Reset speed to 6, tempo to 125 and start at given song position.
 	// Master volume is at 64 (maximum).
-	mt_mod = (tModFileHeader*)pTrackerModule;
+	mt_mod = (tModFileHeader*)pMod->pData;
 	logWrite(
 		"Song name: '%s', arrangement length: %hhu, end pos: %hhu\n",
 		mt_mod->szSongName, mt_mod->ubArrangementLength, mt_mod->ubSongEndPos
@@ -1472,7 +1475,7 @@ void ptplayerLoadMod(
 		ULONG ulSampleOffs = (
 			sizeof(tModFileHeader) + ubPatternCount * MOD_PATTERN_LENGTH
 		);
-		pSampleData = (UWORD*)&pTrackerModule[ulSampleOffs];
+		pSampleData = (UWORD*)&pMod->pData[ulSampleOffs];
 		// FIXME: use as pointer for empty samples
 	}
 
@@ -1497,11 +1500,12 @@ void ptplayerLoadMod(
 	};
 
 	mt_reset();
+	s_pModCurr = pMod;
 	logBlockEnd("ptplayerInit()");
 }
 
 // activate the sound effect on this channel
-static void ptSetSfx(tPtPlayerSfx *pSfx, tChannelStatus *pChannel) {
+static void ptSetSfx(tPtplayerSfx *pSfx, tChannelStatus *pChannel) {
 	pChannel->n_sfxptr = pSfx->sfx_ptr;
 	pChannel->n_sfxlen = pSfx->sfx_len;
 	pChannel->n_sfxper = pSfx->sfx_per;
@@ -1509,7 +1513,7 @@ static void ptSetSfx(tPtPlayerSfx *pSfx, tChannelStatus *pChannel) {
 	pChannel->n_sfxpri = pSfx->sfx_pri;
 }
 
-void ptplayerPlaySfx(tPtPlayerSfx *pSfx) {
+void ptplayerPlaySfx(tPtplayerSfx *pSfx) {
 	if(pSfx->sfx_cha > 0) {
 		// use fixed channel for effect
 		tChannelStatus *pChannels[] = {&mt_chan[0], &mt_chan[1], &mt_chan[2], &mt_chan[3]};
@@ -2557,4 +2561,36 @@ UBYTE ptplayerGetE8(void) {
 
 void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount) {
 	mt_MusicChannels = ubChannelCount;
+}
+
+tPtplayerMod *ptplayerModCreate(const char *szPath) {
+	logBlockBegin("ptplayerModCreate(szPath: '%s')", szPath);
+	tPtplayerMod *pMod = memAllocFast(sizeof(*pMod));
+	if(pMod) {
+		pMod->ulSize = fileGetSize(szPath);
+		pMod->pData = memAllocChip(pMod->ulSize);
+		if(pMod->pData) {
+			tFile *pFileMod = fileOpen(szPath, "rb");
+			fileRead(pFileMod, pMod->pData, pMod->ulSize);
+			fileClose(pFileMod);
+		}
+		else {
+			logWrite("ERR: Couldn't allocate memory!");
+			memFree(pMod, sizeof(*pMod));
+			pMod = 0;
+		}
+	}
+
+	// TODO: move some stuff from ptplayerLoadMod
+
+	logBlockEnd("ptplayerModCreate()");
+	return pMod;
+}
+
+void ptplayerModDestroy(tPtplayerMod *pMod) {
+	if(s_pModCurr == pMod) {
+		ptplayerStop();
+	}
+	memFree(pMod->pData, pMod->ulSize);
+	memFree(pMod, sizeof(*pMod));
 }

@@ -15,14 +15,20 @@ extern "C" {
 
 #include <ace/types.h>
 
-typedef struct _tPtPlayerSfx {
+typedef struct _tPtplayerSfx {
 	void *sfx_ptr; ///< Pointer to sample start in Chip RAM, even address.
 	UWORD sfx_len; ///< Sample length in words.
 	UWORD sfx_per; ///< Hardware replay period for sample.
 	UWORD sfx_vol; ///< Volume 0..64, is unaffected by the song's master volume.
 	BYTE sfx_cha;  ///< 0..3 selected replay channel, -1 selects best channel.
 	UBYTE sfx_pri; ///< Unsigned priority, must be non-zero.
-} tPtPlayerSfx;
+} tPtplayerSfx;
+
+typedef struct _tPtplayerMod {
+	UBYTE *pData;
+	ULONG ulSize;
+	// TODO: move some vars from ptplayer here
+} tPtplayerMod;
 
 /**
  * @brief Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
@@ -38,12 +44,27 @@ void ptplayerDestroy(void);
 void ptplayerProcess(void);
 
 /**
+ * @brief Loads new MOD from file.
+ *
+ * @param szPath Path to .mod file.
+ * @return Pointer to new MOD structure, initialized with file contents.
+ */
+tPtplayerMod *ptplayerModCreate(const char *szPath);
+
+/**
+ * @brief Frees given MOD structure from memory.
+ *
+ * @param pMod MOD struct to be destroyed.
+ */
+void ptplayerModDestroy(tPtplayerMod *pMod);
+
+/**
  * @brief Initialize a new module but doesn't automatically play it.
  * You still need to call ptplayerEnableMusic().
  * Reset speed to 6, tempo to 125 and start at the given position.
  * Master volume is at 64 (maximum).
  *
- * @param pTrackerModule
+ * @param pMod Pointer to MOD struct.
  * @param pSamples When set to 0, the samples are assumed to be stored inside
  *                 the MOD, after the patterns.
  * @param uwInitialSongPos
@@ -52,11 +73,14 @@ void ptplayerProcess(void);
  * @see ptplayerStop()
  */
 void ptplayerLoadMod(
-	UBYTE *pTrackerModule, UWORD *pSampleData, UWORD uwInitialSongPos
+	tPtplayerMod *pMod, UWORD *pSampleData, UWORD uwInitialSongPos
 );
 
 /**
  * @brief Stop playing current module.
+ * After calling this function, you need to call ptplayerLoadMod() again.
+ *
+ * @see ptplayerLoadMod()
  */
 void ptplayerStop(void);
 
@@ -73,7 +97,7 @@ void ptplayerStop(void);
  *
  * @see ptplayerSetMusicChannelMask
  */
-void ptplayerPlaySfx(tPtPlayerSfx *pSfx);
+void ptplayerPlaySfx(tPtplayerSfx *pSfx);
 
 /**
  * @brief Set bits in the mask define which specific channels are reserved
