@@ -196,6 +196,14 @@ void viewLoad(tView *pView);
 void vPortDestroy(tVPort *pVPort);
 
 /**
+ * @brief Waits for display beam to pass given Y-position on VPort.
+ *
+ * @param pVPort VPort which has given Y-position.
+ * @param uwPosY Y-position on viewport.
+ */
+void vPortWaitForPos(tVPort *pVPort, UWORD uwPosY);
+
+/**
  *  @brief Waits for display beam to pass given VPort.
  *
  *  @param pVPort VPort to be passed.
