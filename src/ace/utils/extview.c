@@ -290,7 +290,7 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 	}
 }
 
-void vPortWaitForPos(tVPort *pVPort, UWORD uwPosY) {
+void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY) {
 #ifdef AMIGA
 	// Determine VPort end position
 	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
@@ -309,7 +309,7 @@ void vPortWaitForPos(tVPort *pVPort, UWORD uwPosY) {
 #endif // AMIGA
 }
 
-void vPortWaitForEnd(tVPort *pVPort) {
+void vPortWaitForEnd(const tVPort *pVPort) {
 	vPortWaitForPos(pVPort, pVPort->uwHeight);
 }
 

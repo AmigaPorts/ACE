@@ -201,7 +201,7 @@ void vPortDestroy(tVPort *pVPort);
  * @param pVPort VPort which has given Y-position.
  * @param uwPosY Y-position on viewport.
  */
-void vPortWaitForPos(tVPort *pVPort, UWORD uwPosY);
+void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY);
 
 /**
  *  @brief Waits for display beam to pass given VPort.
@@ -210,7 +210,7 @@ void vPortWaitForPos(tVPort *pVPort, UWORD uwPosY);
  *
  *  @todo Make view offset dependent on DiWStrt.
  */
-void vPortWaitForEnd(tVPort *pVPort);
+void vPortWaitForEnd(const tVPort *pVPort);
 
 /**
  * @brief Processes all managers of given VPort.
