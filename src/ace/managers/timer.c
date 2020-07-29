@@ -37,7 +37,7 @@ ULONG timerGetPrec(void) {
 	// So if pRay took place at low Y pos, it must be on frame B so use uwFr2,
 	// Otherwise, pRay took place on A, so use uwFr1
 	UWORD uwFr1 = g_sTimerManager.uwFrameCounter;
-	tRayPos sRay = *g_pRayPos;
+	tRayPos sRay = getRayPos();
 	UWORD uwFr2 = g_sTimerManager.uwFrameCounter;
 	if(sRay.bfPosY < 100) {
 		return (uwFr2 * 160 * 313 + sRay.bfPosY * 160 + sRay.bfPosX);

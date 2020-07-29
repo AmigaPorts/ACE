@@ -11,10 +11,6 @@
 
 tCustom FAR REGPTR g_pCustom = (tCustom REGPTR)CUSTOM_BASE;
 
-tRayPos FAR REGPTR g_pRayPos = (tRayPos REGPTR)(
-	CUSTOM_BASE + offsetof(tCustom, vposr)
-);
-
 tCopperUlong FAR REGPTR g_pBplFetch = (tCopperUlong REGPTR)(
 	CUSTOM_BASE + offsetof(tCustom, bplpt)
 );
@@ -61,6 +57,20 @@ void ciaSetTimerB(tCia REGPTR pCia, UWORD uwTicks) {
 	// the latch value is transferred to the timers regardless of the timer state
 	pCia->tblo = uwTicks & 0xFF;
 	pCia->tbhi = uwTicks >> 8;
+}
+
+tRayPos getRayPos(void) {
+	// Even the 32-bit read via mov.l is split into 16-bit reads, so whe need
+	// to read it as 2 16-bit vals and check for consistency.
+	UWORD uwHiY, uwLoY, uwHiY2;
+	do {
+		uwHiY = g_pCustom->vposr;
+		uwLoY = g_pCustom->vhposr;
+		uwHiY2 = g_pCustom->vposr;
+	} while(uwHiY2 != uwHiY);
+
+	tRayPos sPos = {.ulValue = (uwHiY2 << 16) | uwLoY};
+	return sPos;
 }
 
 #endif // AMIGA

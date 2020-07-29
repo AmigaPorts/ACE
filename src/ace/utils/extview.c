@@ -107,7 +107,7 @@ void viewUpdateCLUT(tView *pView) {
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 #if defined(AMIGA)
-	while(g_pRayPos->bfPosY < 300) {}
+	while(getRayPos().bfPosY < 300) {}
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
@@ -131,7 +131,7 @@ void viewLoad(tView *pView) {
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
 	systemSetDmaBit(DMAB_RASTER, pView != 0);
-	while(g_pRayPos->bfPosY < 300) {}
+	while(getRayPos().bfPosY < 300) {}
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
 }
@@ -302,10 +302,10 @@ void vPortWaitForPos(tVPort *pVPort, UWORD uwPosY) {
 	}
 #endif
 
-	// If current beam pos is past end pos, wait for start of next frame
-	while(g_pRayPos->bfPosY >= uwEndPos) {}
+	// If current beam pos is on or past end pos, wait for start of next frame
+	while (getRayPos().bfPosY >= uwEndPos) {}
 	// If current beam pos is before end pos, wait for it
-	while(g_pRayPos->bfPosY < uwEndPos) {}
+	while (getRayPos().bfPosY < uwEndPos) {}
 #endif // AMIGA
 }
 

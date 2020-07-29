@@ -26,12 +26,16 @@ typedef struct Custom tCustom;
  * to volatile struct was insufficient.
  */
 typedef struct _tRayPos {
-	volatile unsigned bfLaced:1;   ///< 1 for interlaced screens
-	volatile unsigned bfUnused:14;
-	volatile unsigned bfPosY:9;    ///< PAL: 0..312, NTSC: 0..?
-	volatile unsigned bfPosX:8;    ///< 0..159?
+	union {
+		struct {
+			volatile unsigned bfLaced:1;   ///< 1 for interlaced screens
+			volatile unsigned bfUnused:14;
+			volatile unsigned bfPosY:9;    ///< PAL: 0..312, NTSC: 0..?
+			volatile unsigned bfPosX:8;    ///< 0..159?
+		};
+		ULONG ulValue;
+	};
 } tRayPos;
-
 
 typedef struct _tCopperUlong {
 	UWORD uwHi; ///< upper WORD
@@ -153,9 +157,16 @@ UWORD ciaGetTimerB(tCia REGPTR pCia);
 
 void ciaSetTimerB(tCia REGPTR pCia, UWORD uwTicks);
 
-extern tCustom FAR REGPTR g_pCustom;
+/**
+ * @brief Returns the consistence-checked current position of display ray.
+ * This function reads custom.vposr and custom.vhposr registers and combines
+ * their values into a convenient struct.
+ *
+ * @return Current position of display ray.
+ */
+tRayPos getRayPos(void);
 
-extern tRayPos FAR REGPTR g_pRayPos;
+extern tCustom FAR REGPTR g_pCustom;
 
 /**
  * Bitplane display regs with 16-bit access.
