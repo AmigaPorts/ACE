@@ -303,7 +303,7 @@ void vPortWaitForPos(tVPort *pVPort, UWORD uwPosY) {
 #endif
 
 	// If current beam pos is past end pos, wait for start of next frame
-	while(g_pRayPos->bfPosY > uwEndPos) {}
+	while(g_pRayPos->bfPosY >= uwEndPos) {}
 	// If current beam pos is before end pos, wait for it
 	while(g_pRayPos->bfPosY < uwEndPos) {}
 #endif // AMIGA
