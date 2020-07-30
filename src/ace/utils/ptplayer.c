@@ -2422,7 +2422,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 		if(!pSfx->pData) {
 			goto fail;
 		}
-		fileRead(pFileSfx, &pSfx->pData[1], ulByteSize);
+		fileRead(pFileSfx, pSfx->pData, ulByteSize);
 	}
 	else {
 		logWrite("ERR: Unknown sample format version: %s", ubVersion);
