@@ -16,12 +16,9 @@ extern "C" {
 #include <ace/types.h>
 
 typedef struct _tPtplayerSfx {
-	void *sfx_ptr; ///< Pointer to sample start in Chip RAM, even address.
-	UWORD sfx_len; ///< Sample length in words.
-	UWORD sfx_per; ///< Hardware replay period for sample.
-	UWORD sfx_vol; ///< Volume 0..64, is unaffected by the song's master volume.
-	BYTE sfx_cha;  ///< 0..3 selected replay channel, -1 selects best channel.
-	UBYTE sfx_pri; ///< Unsigned priority, must be non-zero.
+	UWORD *pData;       ///< Sample start in Chip RAM, even address.
+	UWORD uwWordLength; ///< Sample length in words.
+	UWORD uwPeriod;     ///< Hardware replay period for sample.
 } tPtplayerSfx;
 
 typedef struct _tPtplayerMod {
@@ -85,31 +82,16 @@ void ptplayerLoadMod(
 void ptplayerStop(void);
 
 /**
- * @brief Request playing of a prioritized external sound effect, either on a
- *        fixed channel or on the most unused one.
- * When multiple samples are assigned to the same channel the lower priority
- * sample will be replaced. When priorities are the same, then the older sample
- * is replaced.
- * The chosen channel is blocked for music until the effect has completely
- * been replayed.
- *
- * @param pSfx Sfx sample to be played.
- *
- * @see ptplayerSetMusicChannelMask
- */
-void ptplayerPlaySfx(tPtplayerSfx *pSfx);
-
-/**
  * @brief Set bits in the mask define which specific channels are reserved
  *        for music only.
  *
- * When calling ptplayerPlaySfx with automatic channel selection
+ * When calling ptplayerSfxPlay with automatic channel selection
  * (sfx_cha=-1) then these masked channels will never be picked.
  * The mask defaults to 0.
  *
  * @param ubChannelMask Mask of channels reserved for playing music. Set bit 0
  *                      for channel 0, bit 1 for channel 1, etc.
- * @see ptplayerPlaySfx()
+ * @see ptplayerSfxPlay()
  */
 void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
 
@@ -149,6 +131,34 @@ UBYTE ptplayerGetE8(void);
  * @param ubChannelCount Number of channels to be used only for playing music.
  */
 void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount);
+
+//-------------------------------------------------------------------------- SFX
+
+tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath);
+
+void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
+
+/**
+ * @brief Request playing of a prioritized external sound effect, either on a
+ *        fixed channel or on the most unused one.
+ *
+ * When multiple samples are assigned to the same channel the lower priority
+ * sample will be replaced. When priorities are the same, then the older sample
+ * is replaced.
+ * The chosen channel is blocked for music until the effect has completely
+ * been replayed.
+ *
+ * @param pSfx Sfx sample to be played.
+ * @param bChannel Selected replay channel (0..3), -1 selects best channel.
+ * @param ubVolume Playback volume 0..64, unaffected by the song's master volume.
+ * @param ubPriority Playback priority. The bigger the value, the higher
+ *                   the priority. Must be non-zero.
+ *
+ * @see ptplayerSetMusicChannelMask
+ */
+void ptplayerSfxPlay(
+	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
+);
 
 #ifdef __cplusplus
 }

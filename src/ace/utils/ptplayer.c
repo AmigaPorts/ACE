@@ -880,7 +880,7 @@ static void startSfx(
 	UWORD uwLen, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
-	// logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
+	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
 	// play new sound effect on this channel
 	systemSetDmaMask(pChannelData->n_dmabit, 0);
 	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
@@ -888,7 +888,12 @@ static void startSfx(
 	pChannelReg->ac_per = pChannelData->n_sfxper;
 	pChannelReg->ac_vol = pChannelData->n_sfxvol;
 
-	// save repeat and period for TimerB interrupt
+	// Save repeat and period for TimerB interrupt.
+	// After the sample has fully played back and there is no repeat, the channel
+	// pointer gets set to first word of sample and plays back the first word
+	// continuously.
+	// FIXME: this repeatedly causes ACE to handle audio interrupts and slows
+	// it down!
 	pChannelData->n_loopstart = pChannelData->n_sfxptr;
 	pChannelData->n_replen = 1;
 	pChannelData->n_period = pChannelData->n_period;
@@ -1122,14 +1127,6 @@ static void intSetRep(volatile tCustom *pCustom) {
 	// KaiN's note: Audio DMAs are 0..3 whereas INTs are (0..3) << 7
 	s_uwAudioInterrupts = 0;
 
-	// logWrite(
-	// 	"set replen: %p %hu, %p %hu, %p %hu, %p %hu\n",
-	// 	mt_chan[0].n_loopstart, mt_chan[0].n_replen,
-	// 	mt_chan[1].n_loopstart, mt_chan[1].n_replen,
-	// 	mt_chan[2].n_loopstart, mt_chan[2].n_replen,
-	// 	mt_chan[3].n_loopstart, mt_chan[3].n_replen
-	// );
-
 	// Set repeat sample pointers and lengths
 	pCustom->aud[0].ac_ptr = mt_chan[0].n_loopstart;
 	pCustom->aud[0].ac_len = mt_chan[0].n_replen;
@@ -1185,14 +1182,15 @@ static void mt_TimerBdmaon(
 static void chan_sfx_only(
 	volatile tChannelRegs *pChannelReg, tChannelStatus *pChannelData
 ) {
-	if(pChannelData->n_sfxpri <= 0) {
+	if(pChannelData->n_sfxpri == 0) {
 		return;
 	}
-	startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
-
-	if(
+	else if(pChannelData->n_sfxlen) {
+		startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
+	}
+	else if(
 		(pChannelData->n_intbit & s_uwAudioInterrupts) &&
-		(pChannelData->n_dmabit & mt_dmaon)
+		((pChannelData->n_dmabit & mt_dmaon) == 0)
 	) {
 		// Last sound effect sample has played, so unblock this channel again
 		pChannelData->n_sfxpri = 0;
@@ -1440,8 +1438,8 @@ void ptplayerLoadMod(
 	tPtplayerMod *pMod, UWORD *pSampleData, UWORD uwInitialSongPos
 ) {
 	logBlockBegin(
-		"ptplayerInit(pTrackerModule: %p, pSampleData: %p, uwInitialSongPos: %hu)",
-		pTrackerModule, pSampleData, uwInitialSongPos
+		"ptplayerInit(pMod: %p, pSampleData: %p, uwInitialSongPos: %hu)",
+		pMod, pSampleData, uwInitialSongPos
 	);
 
 	// Initialize new module.
@@ -1502,206 +1500,6 @@ void ptplayerLoadMod(
 	mt_reset();
 	s_pModCurr = pMod;
 	logBlockEnd("ptplayerInit()");
-}
-
-// activate the sound effect on this channel
-static void ptSetSfx(tPtplayerSfx *pSfx, tChannelStatus *pChannel) {
-	pChannel->n_sfxptr = pSfx->sfx_ptr;
-	pChannel->n_sfxlen = pSfx->sfx_len;
-	pChannel->n_sfxper = pSfx->sfx_per;
-	pChannel->n_sfxvol = pSfx->sfx_vol;
-	pChannel->n_sfxpri = pSfx->sfx_pri;
-}
-
-void ptplayerPlaySfx(tPtplayerSfx *pSfx) {
-	if(pSfx->sfx_cha > 0) {
-		// use fixed channel for effect
-		tChannelStatus *pChannels[] = {&mt_chan[0], &mt_chan[1], &mt_chan[2], &mt_chan[3]};
-		tChannelStatus *pChannel = pChannels[pSfx->sfx_cha];
-
-		// Priority high enough to replace a present effect on this channel?
-		g_pCustom->intena = INTF_INTEN;
-		if(pSfx->sfx_pri >= pChannel->n_sfxpri) {
-			ptSetSfx(pSfx, pChannel);
-		}
-		return;
-	}
-	// Did we already calculate the n_freecnt values for all channels?
-	if(!mt_SilCntValid) {
-		// Look at the next 8 pattern steps to find the longest sequence
-		// of silence (no new note or instrument).
-		UBYTE i = 8;
-
-		// remember which channels are not available for sound effects
-		UBYTE pMusicOnly[4];
-		for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
-			pMusicOnly[ubChannel] = mt_chan[ubChannel].n_musiconly;
-		}
-
-		// reset freecnts for all channels
-		mt_chan[0].n_freecnt = 0;
-		mt_chan[1].n_freecnt = 0;
-		mt_chan[2].n_freecnt = 0;
-		mt_chan[3].n_freecnt = 0;
-
-		// get pattern pointer
-		UBYTE *pPatterns = (UBYTE*)mt_mod + sizeof(tModFileHeader);
-
-		UBYTE ubSongPos = mt_SongPos;
-		UWORD uwPatternPos = mt_PatternPos;
-		UBYTE isEnd = 0;
-		UBYTE *pPatternStart = &pPatterns[
-			mt_mod->pArrangement[ubSongPos] * MOD_PATTERN_LENGTH
-		];
-		tModVoice *pPatternEnd = (tModVoice*)(pPatternStart + MOD_PATTERN_LENGTH);
-		tModVoice *pPatternPos = (tModVoice*)(pPatternStart + uwPatternPos);
-		do {
-			UBYTE d0 = 4;
-
-			for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
-				if(!pMusicOnly[ubChannel]) {
-					++mt_chan[0].n_freecnt;
-					if(pPatternPos->uwNote) {
-						pMusicOnly[ubChannel] = 1;
-					}
-				}
-				++pPatternPos;
-				d0 -= pMusicOnly[ubChannel];
-			}
-
-			// break the loop when no channel has any more free pattern steps
-			// otherwise break after 8 pattern steps
-			isEnd = (d0 != 0 && --i != 0);
-			// End of pattern reached? Then load next pattern pointer
-			if(!isEnd && pPatternPos >= pPatternEnd) {
-				uwPatternPos = 0;
-				ubSongPos = (mt_SongPos + 1) & 127;
-				if(ubSongPos >= mt_mod->ubArrangementLength) {
-					ubSongPos = 0;
-				}
-				pPatternStart = &pPatterns[
-					mt_mod->pArrangement[ubSongPos] * MOD_PATTERN_LENGTH
-				];
-				pPatternEnd = (tModVoice*)(pPatternStart + MOD_PATTERN_LENGTH);
-				pPatternPos = (tModVoice*)pPatternStart;
-			}
-		} while(!isEnd);
-		mt_SilCntValid = 1;
-	}
-
-	g_pCustom->intena = INTF_INTEN;
-	tChannelStatus *pBestChannel = 0;
-
-	// Determine which channels are already allocated for sound
-	// effects and check if the limit was reached. In this case only
-	// replace sound effect channels by higher priority.
-	BYTE bFreeChannels = 3 - mt_MusicChannels;
-	if(mt_chan[0].n_sfxpri) {
-		bFreeChannels += 1;
-	}
-	if(mt_chan[1].n_sfxpri) {
-		bFreeChannels += 1;
-	}
-	if(mt_chan[2].n_sfxpri) {
-		bFreeChannels += 1;
-	}
-	if(mt_chan[3].n_sfxpri) {
-		bFreeChannels += 1;
-	}
-	if(bFreeChannels >= 0) {
-
-		// Exclude channels which have set a repeat loop.
-		// Try not to break them!
-		UWORD uwChannels = 0;
-		if(!mt_chan[0].n_looped) {
-			uwChannels |= INTF_AUD0;
-		}
-		else if(!mt_chan[1].n_looped) {
-			uwChannels |= INTF_AUD1;
-		}
-		else if(!mt_chan[2].n_looped) {
-			uwChannels |= INTF_AUD2;
-		}
-		else if(!mt_chan[3].n_looped) {
-			uwChannels |= INTF_AUD3;
-		}
-
-		// We will prefer a music channel which had an audio interrupt bit set,
-		// because that means the last instrument sample has been played
-		// completely, and the channel is now in an idle loop.
-		uwChannels &= s_uwAudioInterrupts;
-		if(!uwChannels) {
-			// All channels are busy, then it doesn't matter which one we break...
-			uwChannels = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
-		}
-
-		// First look for the best unused channel
-		UBYTE ubBestFreeCnt = 0;
-		if(!(uwChannels & INTF_AUD0) && !mt_chan[0].n_sfxpri) {
-			if(mt_chan[0].n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan[0].n_freecnt;
-				pBestChannel = &mt_chan[0];
-			}
-		}
-		if(!(uwChannels & INTF_AUD1) && !mt_chan[1].n_sfxpri) {
-			if(mt_chan[1].n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan[1].n_freecnt;
-				pBestChannel = &mt_chan[1];
-			}
-		}
-		if(!(uwChannels & INTF_AUD2) && !mt_chan[2].n_sfxpri) {
-			if(mt_chan[2].n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan[2].n_freecnt;
-				pBestChannel = &mt_chan[2];
-			}
-		}
-		if(!(uwChannels & INTF_AUD3) && !mt_chan[3].n_sfxpri) {
-			if(mt_chan[3].n_freecnt > ubBestFreeCnt) {
-				ubBestFreeCnt = mt_chan[3].n_freecnt;
-				pBestChannel = &mt_chan[3];
-			}
-		}
-	}
-	else {
-		// Finally try to overwrite a sound effect with lower/equal priority
-		UBYTE ubBestFreeCnt = 0;
-		if(
-			mt_chan[0].n_sfxpri > 0 &&
-			mt_chan[0].n_sfxpri < pSfx->sfx_pri &&
-			mt_chan[0].n_freecnt > ubBestFreeCnt
-		) {
-			ubBestFreeCnt = mt_chan[0].n_freecnt;
-			pBestChannel = &mt_chan[0];
-		}
-		else if(
-			mt_chan[1].n_sfxpri > 0 &&
-			mt_chan[1].n_sfxpri < pSfx->sfx_pri &&
-			mt_chan[1].n_freecnt > ubBestFreeCnt
-		) {
-			ubBestFreeCnt = mt_chan[1].n_freecnt;
-			pBestChannel = &mt_chan[1];
-		}
-		else if(
-			mt_chan[2].n_sfxpri > 0 &&
-			mt_chan[2].n_sfxpri < pSfx->sfx_pri &&
-			mt_chan[2].n_freecnt > ubBestFreeCnt
-		) {
-			ubBestFreeCnt = mt_chan[2].n_freecnt;
-			pBestChannel = &mt_chan[2];
-		}
-		else if(
-			mt_chan[3].n_sfxpri > 0 &&
-			mt_chan[3].n_sfxpri < pSfx->sfx_pri &&
-			mt_chan[3].n_freecnt > ubBestFreeCnt
-		) {
-			ubBestFreeCnt = mt_chan[3].n_freecnt;
-			pBestChannel = &mt_chan[3];
-		}
-	}
-	if(!pBestChannel) {
-		return;
-	}
-	ptSetSfx(pSfx, pBestChannel);
 }
 
 void ptplayerSetMusicChannelMask(UBYTE ChannelMask) {
@@ -2593,4 +2391,276 @@ void ptplayerModDestroy(tPtplayerMod *pMod) {
 	}
 	memFree(pMod->pData, pMod->ulSize);
 	memFree(pMod, sizeof(*pMod));
+}
+
+//-------------------------------------------------------------------------- SFX
+
+tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
+	logBlockBegin("ptplayerSfxCreateFromFile(szPath: '%s')", szPath);
+	tFile *pFileSfx = fileOpen(szPath, "rb");
+	tPtplayerSfx *pSfx = 0;
+	if(!pFileSfx) {
+		logWrite("ERR: File doesn't exist: '%s'\r\n", szPath);
+		goto fail;
+	}
+
+	pSfx = memAllocFastClear(sizeof(*pSfx));
+	if(!pSfx) {
+		goto fail;
+	}
+	UBYTE ubVersion;
+	fileRead(pFileSfx, &ubVersion, sizeof(ubVersion));
+	if(ubVersion == 1) {
+		fileRead(pFileSfx, &pSfx->uwWordLength, sizeof(pSfx->uwWordLength));
+		ULONG ulByteSize = pSfx->uwWordLength * sizeof(UWORD);
+
+		UWORD uwSampleRateHz;
+		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
+		// NOTE: 3546895 is for PAL, for NTSC use 3579545
+		pSfx->uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
+
+		pSfx->pData = memAllocChip(ulByteSize);
+		if(!pSfx->pData) {
+			goto fail;
+		}
+		fileRead(pFileSfx, &pSfx->pData[1], ulByteSize);
+	}
+	else {
+		logWrite("ERR: Unknown sample format version: %s", ubVersion);
+		ptplayerSfxDestroy(pSfx);
+		return 0;
+	}
+
+	fileClose(pFileSfx);
+	logBlockEnd("ptplayerSfxCreateFromFile()");
+	return pSfx;
+
+fail:
+	if(pFileSfx) {
+		fileClose(pFileSfx);
+	}
+	ptplayerSfxDestroy(pSfx);
+	logBlockEnd("ptplayerSfxCreateFromFile()");
+	return 0;
+}
+
+void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
+	if(pSfx) {
+		if(pSfx->pData) {
+			memFree(pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
+		}
+		memFree(pSfx, sizeof(*pSfx));
+	}
+}
+
+/**
+ * @brief Activates the sound effect on this channel.
+ *
+ * @param pChannel Channel to be used.
+ * @param pSfx Sound effect to be played.
+ * @param ubVolume Sound volume (0..63) - ignores mod master volume
+ * @param ubPriority Playback priority, must be non-zero. The bigger the
+ *                   more important.
+ */
+static void channelSetSfx(
+	tChannelStatus *pChannel, const tPtplayerSfx *pSfx, UBYTE ubVolume,
+	UBYTE ubPriority
+) {
+	pChannel->n_sfxptr = pSfx->pData;
+	pChannel->n_sfxlen = pSfx->uwWordLength;
+	pChannel->n_sfxper = pSfx->uwPeriod;
+	pChannel->n_sfxvol = ubVolume;
+	pChannel->n_sfxpri = ubPriority;
+}
+
+void ptplayerSfxPlay(
+	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
+) {
+	if(bChannel > 0) {
+		// use fixed channel for effect
+		static tChannelStatus *pChannels[] = {
+			&mt_chan[0], &mt_chan[1], &mt_chan[2], &mt_chan[3]
+		};
+		tChannelStatus *pChannel = pChannels[bChannel];
+
+		// Priority high enough to replace a present effect on this channel?
+		g_pCustom->intena = INTF_INTEN;
+		if(ubPriority >= pChannel->n_sfxpri) {
+			channelSetSfx(pChannel, pSfx, ubVolume, ubPriority);
+		}
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
+		return;
+	}
+	// Did we already calculate the n_freecnt values for all channels?
+	if(!mt_SilCntValid) {
+		// Look at the next 8 pattern steps to find the longest sequence
+		// of silence (no new note or instrument).
+		UBYTE i = 8;
+
+		// remember which channels are not available for sound effects
+		UBYTE pMusicOnly[4];
+		for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
+			pMusicOnly[ubChannel] = mt_chan[ubChannel].n_musiconly;
+		}
+
+		// reset freecnts for all channels
+		mt_chan[0].n_freecnt = 0;
+		mt_chan[1].n_freecnt = 0;
+		mt_chan[2].n_freecnt = 0;
+		mt_chan[3].n_freecnt = 0;
+
+		// get pattern pointer
+		UBYTE *pPatterns = (UBYTE*)mt_mod + sizeof(tModFileHeader);
+
+		UBYTE ubSongPos = mt_SongPos;
+		UWORD uwPatternPos = mt_PatternPos;
+		UBYTE isEnd = 0;
+		UBYTE *pPatternStart = &pPatterns[
+			mt_mod->pArrangement[ubSongPos] * MOD_PATTERN_LENGTH
+		];
+		tModVoice *pPatternEnd = (tModVoice*)(pPatternStart + MOD_PATTERN_LENGTH);
+		tModVoice *pPatternPos = (tModVoice*)(pPatternStart + uwPatternPos);
+		do {
+			UBYTE d0 = 4;
+
+			for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
+				if(!pMusicOnly[ubChannel]) {
+					++mt_chan[0].n_freecnt;
+					if(pPatternPos->uwNote) {
+						pMusicOnly[ubChannel] = 1;
+					}
+				}
+				++pPatternPos;
+				d0 -= pMusicOnly[ubChannel];
+			}
+
+			// break the loop when no channel has any more free pattern steps
+			// otherwise break after 8 pattern steps
+			isEnd = (d0 != 0 && --i != 0);
+			// End of pattern reached? Then load next pattern pointer
+			if(!isEnd && pPatternPos >= pPatternEnd) {
+				uwPatternPos = 0;
+				ubSongPos = (mt_SongPos + 1) & 127;
+				if(ubSongPos >= mt_mod->ubArrangementLength) {
+					ubSongPos = 0;
+				}
+				pPatternStart = &pPatterns[
+					mt_mod->pArrangement[ubSongPos] * MOD_PATTERN_LENGTH
+				];
+				pPatternEnd = (tModVoice*)(pPatternStart + MOD_PATTERN_LENGTH);
+				pPatternPos = (tModVoice*)pPatternStart;
+			}
+		} while(!isEnd);
+		mt_SilCntValid = 1;
+	}
+
+	g_pCustom->intena = INTF_INTEN;
+	tChannelStatus *pBestChannel = 0;
+
+	// Determine which channels are already allocated for sound
+	// effects and check if the limit was reached. In this case only
+	// replace sound effect channels by higher priority.
+	BYTE bFreeChannels = 3 - mt_MusicChannels;
+	if(mt_chan[0].n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(mt_chan[1].n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(mt_chan[2].n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(mt_chan[3].n_sfxpri) {
+		bFreeChannels += 1;
+	}
+	if(bFreeChannels >= 0) {
+
+		// Exclude channels which have set a repeat loop.
+		// Try not to break them!
+		UWORD uwChannels = 0;
+		if(!mt_chan[0].n_looped) {
+			uwChannels |= INTF_AUD0;
+		}
+		else if(!mt_chan[1].n_looped) {
+			uwChannels |= INTF_AUD1;
+		}
+		else if(!mt_chan[2].n_looped) {
+			uwChannels |= INTF_AUD2;
+		}
+		else if(!mt_chan[3].n_looped) {
+			uwChannels |= INTF_AUD3;
+		}
+
+		// We will prefer a music channel which had an audio interrupt bit set,
+		// because that means the last instrument sample has been played
+		// completely, and the channel is now in an idle loop.
+		uwChannels &= s_uwAudioInterrupts;
+		if(!uwChannels) {
+			// All channels are busy, then it doesn't matter which one we break...
+			uwChannels = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
+		}
+
+		// First look for the best unused channel
+		UBYTE ubBestFreeCnt = 0;
+		if(!(uwChannels & INTF_AUD0) && !mt_chan[0].n_sfxpri) {
+			if(mt_chan[0].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[0].n_freecnt;
+				pBestChannel = &mt_chan[0];
+			}
+		}
+		if(!(uwChannels & INTF_AUD1) && !mt_chan[1].n_sfxpri) {
+			if(mt_chan[1].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[1].n_freecnt;
+				pBestChannel = &mt_chan[1];
+			}
+		}
+		if(!(uwChannels & INTF_AUD2) && !mt_chan[2].n_sfxpri) {
+			if(mt_chan[2].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[2].n_freecnt;
+				pBestChannel = &mt_chan[2];
+			}
+		}
+		if(!(uwChannels & INTF_AUD3) && !mt_chan[3].n_sfxpri) {
+			if(mt_chan[3].n_freecnt > ubBestFreeCnt) {
+				ubBestFreeCnt = mt_chan[3].n_freecnt;
+				pBestChannel = &mt_chan[3];
+			}
+		}
+	}
+	else {
+		// Finally try to overwrite a sound effect with lower/equal priority
+		UBYTE ubBestFreeCnt = 0;
+		if(
+			0 < mt_chan[0].n_sfxpri && mt_chan[0].n_sfxpri < ubPriority &&
+			mt_chan[0].n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan[0].n_freecnt;
+			pBestChannel = &mt_chan[0];
+		}
+		else if(
+			0 < mt_chan[1].n_sfxpri && mt_chan[1].n_sfxpri < ubPriority &&
+			mt_chan[1].n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan[1].n_freecnt;
+			pBestChannel = &mt_chan[1];
+		}
+		else if(
+			0 < mt_chan[2].n_sfxpri && mt_chan[2].n_sfxpri < ubPriority &&
+			mt_chan[2].n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan[2].n_freecnt;
+			pBestChannel = &mt_chan[2];
+		}
+		else if(
+			0 < mt_chan[3].n_sfxpri && mt_chan[3].n_sfxpri < ubPriority &&
+			mt_chan[3].n_freecnt > ubBestFreeCnt
+		) {
+			ubBestFreeCnt = mt_chan[3].n_freecnt;
+			pBestChannel = &mt_chan[3];
+		}
+	}
+	if(pBestChannel) {
+		channelSetSfx(pBestChannel, pSfx, ubVolume, ubPriority);
+	}
+	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
