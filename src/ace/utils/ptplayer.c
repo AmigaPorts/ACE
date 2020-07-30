@@ -877,8 +877,7 @@ static void ptSongStep(void) {
 }
 
 static void startSfx(
-	UWORD uwLen, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
+	UWORD uwLen, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
 	// play new sound effect on this channel
