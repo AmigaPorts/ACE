@@ -2566,72 +2566,70 @@ void ptplayerSfxPlay(
 	// replace sound effect channels by higher priority.
 	BYTE bFreeChannels = 3 - mt_MusicChannels;
 	if(mt_chan[0].n_sfxpri) {
-		bFreeChannels += 1;
+		bFreeChannels -= 1;
 	}
 	if(mt_chan[1].n_sfxpri) {
-		bFreeChannels += 1;
+		bFreeChannels -= 1;
 	}
 	if(mt_chan[2].n_sfxpri) {
-		bFreeChannels += 1;
+		bFreeChannels -= 1;
 	}
 	if(mt_chan[3].n_sfxpri) {
-		bFreeChannels += 1;
+		bFreeChannels -= 1;
 	}
+	UBYTE ubBestFreeCnt = 0;
 	if(bFreeChannels >= 0) {
-
-		// Exclude channels which have set a repeat loop.
-		// Try not to break them!
-		UWORD uwChannels = 0;
+		// Exclude channels which have set a repeat loop. Try not to break them!
+		UWORD uwChannelsToCheck = 0;
 		if(!mt_chan[0].n_looped) {
-			uwChannels |= INTF_AUD0;
+			uwChannelsToCheck |= INTF_AUD0;
 		}
-		else if(!mt_chan[1].n_looped) {
-			uwChannels |= INTF_AUD1;
+		if(!mt_chan[1].n_looped) {
+			uwChannelsToCheck |= INTF_AUD1;
 		}
-		else if(!mt_chan[2].n_looped) {
-			uwChannels |= INTF_AUD2;
+		if(!mt_chan[2].n_looped) {
+			uwChannelsToCheck |= INTF_AUD2;
 		}
-		else if(!mt_chan[3].n_looped) {
-			uwChannels |= INTF_AUD3;
+		if(!mt_chan[3].n_looped) {
+			uwChannelsToCheck |= INTF_AUD3;
 		}
 
 		// We will prefer a music channel which had an audio interrupt bit set,
 		// because that means the last instrument sample has been played
 		// completely, and the channel is now in an idle loop.
-		uwChannels &= s_uwAudioInterrupts;
-		if(!uwChannels) {
+		uwChannelsToCheck &= s_uwAudioInterrupts;
+		if(!uwChannelsToCheck) {
 			// All channels are busy, then it doesn't matter which one we break...
-			uwChannels = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
+			uwChannelsToCheck = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
 		}
 
 		// First look for the best unused channel
-		UBYTE ubBestFreeCnt = 0;
-		if(!(uwChannels & INTF_AUD0) && !mt_chan[0].n_sfxpri) {
+		if((uwChannelsToCheck & INTF_AUD0) && !mt_chan[0].n_sfxpri) {
 			if(mt_chan[0].n_freecnt > ubBestFreeCnt) {
 				ubBestFreeCnt = mt_chan[0].n_freecnt;
 				pBestChannel = &mt_chan[0];
 			}
 		}
-		if(!(uwChannels & INTF_AUD1) && !mt_chan[1].n_sfxpri) {
+		if((uwChannelsToCheck & INTF_AUD1) && !mt_chan[1].n_sfxpri) {
 			if(mt_chan[1].n_freecnt > ubBestFreeCnt) {
 				ubBestFreeCnt = mt_chan[1].n_freecnt;
 				pBestChannel = &mt_chan[1];
 			}
 		}
-		if(!(uwChannels & INTF_AUD2) && !mt_chan[2].n_sfxpri) {
+		if((uwChannelsToCheck & INTF_AUD2) && !mt_chan[2].n_sfxpri) {
 			if(mt_chan[2].n_freecnt > ubBestFreeCnt) {
 				ubBestFreeCnt = mt_chan[2].n_freecnt;
 				pBestChannel = &mt_chan[2];
 			}
 		}
-		if(!(uwChannels & INTF_AUD3) && !mt_chan[3].n_sfxpri) {
+		if((uwChannelsToCheck & INTF_AUD3) && !mt_chan[3].n_sfxpri) {
 			if(mt_chan[3].n_freecnt > ubBestFreeCnt) {
 				ubBestFreeCnt = mt_chan[3].n_freecnt;
 				pBestChannel = &mt_chan[3];
 			}
 		}
 	}
-	else {
+	if(!ubBestFreeCnt) {
 		// Finally try to overwrite a sound effect with lower/equal priority
 		UBYTE ubBestFreeCnt = 0;
 		if(
