@@ -226,3 +226,21 @@ function(convertTileset)
 	)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
+
+function(convertAudio)
+	cmake_parse_arguments(args "STRICT" "TARGET;SOURCE;DESTINATION" "" ${ARGN})
+
+	if(${args_STRICT})
+		SET(argsOptional -strict)
+	endif()
+
+	toAbsolute(args_SOURCE)
+	toAbsolute(args_DESTINATION)
+
+	add_custom_command(
+		OUTPUT ${args_DESTINATION}
+		COMMAND ${ACE_DIR}/tools/bin/audio_conv ${args_SOURCE} -o ${args_DESTINATION} ${argsOptional}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	)
+	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
+endfunction()
