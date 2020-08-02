@@ -2395,6 +2395,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod) {
 //-------------------------------------------------------------------------- SFX
 
 tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
+	systemUse();
 	logBlockBegin("ptplayerSfxCreateFromFile(szPath: '%s')", szPath);
 	tFile *pFileSfx = fileOpen(szPath, "rb");
 	tPtplayerSfx *pSfx = 0;
@@ -2432,6 +2433,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 
 	fileClose(pFileSfx);
 	logBlockEnd("ptplayerSfxCreateFromFile()");
+	systemUnuse();
 	return pSfx;
 
 fail:
@@ -2440,15 +2442,18 @@ fail:
 	}
 	ptplayerSfxDestroy(pSfx);
 	logBlockEnd("ptplayerSfxCreateFromFile()");
+	systemUnuse();
 	return 0;
 }
 
 void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
 	if(pSfx) {
+		systemUse();
 		if(pSfx->pData) {
 			memFree(pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
 		}
 		memFree(pSfx, sizeof(*pSfx));
+		systemUnuse();
 	}
 }
 
