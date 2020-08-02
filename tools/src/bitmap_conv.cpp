@@ -75,11 +75,11 @@ int main(int lArgCount, const char *pArgs[])
 
 	std::string szInExt = nFs::getExt(szInput);
 	if(szInExt != "png" && szInExt != "bm") {
-		nLog::error("Unsupported input extension: {}", szInExt);
+		nLog::error("Input file type not supported: {}", szInExt);
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
 	}
-	if(szOutput == "") {
+	if(szOutput.empty()) {
 		szOutput = nFs::trimExt(szInput);
 		if(szInExt == "png") {
 			szOutput += ".bm";
