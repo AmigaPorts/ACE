@@ -25,6 +25,10 @@ tWav::tWav(const std::string &szPath)
 	// Read header - chunk
 	std::string szRiffId(4, '\0');
 	std::ifstream StreamFile(szPath.c_str(), std::ios::binary);
+	if(!StreamFile.is_open()) {
+		nLog::error("Couldn't open: '{}'", szPath);
+		return;
+	}
 	tryRead(StreamFile, szRiffId.data(), szRiffId.length());
 	if(szRiffId != "RIFF") {
 		nLog::error("Couldn't find RIFF header, got: '{}'", szRiffId);
