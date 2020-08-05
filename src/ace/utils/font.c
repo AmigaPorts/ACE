@@ -224,9 +224,12 @@ void fontDrawTextBitMap(
 	tBitMap *pDest, tTextBitMap *pTextBitMap,
 	UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags
 ) {
+#if defined(ACE_DEBUG)
 	if(!pTextBitMap->uwActualWidth) {
+		logWrite("ERR: pTextBitMap %p has zero width!\n", pTextBitMap);
 		return;
 	}
+#endif
 
 	// Alignment flags
 	if (ubFlags & FONT_RIGHT) {
