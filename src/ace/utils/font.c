@@ -224,6 +224,10 @@ void fontDrawTextBitMap(
 	tBitMap *pDest, tTextBitMap *pTextBitMap,
 	UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags
 ) {
+	if(!pTextBitMap->uwActualWidth) {
+		return;
+	}
+
 	// Alignment flags
 	if (ubFlags & FONT_RIGHT) {
 		uwX -= pTextBitMap->uwActualWidth;
