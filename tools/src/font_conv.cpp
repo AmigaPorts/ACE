@@ -17,19 +17,24 @@ enum class tOutType: uint8_t {
 	DIR,
 	PNG,
 	FNT,
+	PMNG,
 };
 
 std::map<std::string, tOutType> s_mOutType = {
 	{"ttf", tOutType::TTF},
 	{"dir", tOutType::DIR},
 	{"png", tOutType::PNG},
-	{"fnt", tOutType::FNT}
+	{"fnt", tOutType::FNT},
+	{"pmng", tOutType::PMNG},
 };
 
 void printUsage(const std::string &szAppName) {
 	using fmt::print;
 	print("Usage:\n\t{} inPath outType [extraOpts]\n\n", szAppName);
-	print("inPath\t- path to TTF file or directory with PNG glyphs\n");
+	print("inPath\t- path to input. Supported types:\n");
+	print("\tTTF file.\n");
+	print("\tDirectory with PNG glyphs. All have to be of same height and named with ASCII indices of chars.\n");
+	print("\tProMotion NG's PNG font.\n");
 	print("outType\t- one of following:\n");
 	print("\tdir\tDirectory with each glyph as separate PNG\n");
 	print("\tpng\tSingle PNG file with whole font\n");
@@ -42,6 +47,8 @@ void printUsage(const std::string &szAppName) {
 	// -out
 	print("\t-out outPath\tSpecify output path, including file name.\n");
 	print("\t\t\tDefault is same name as input with changed extension\n");
+	// -fc
+	print("\t-fc firstchar\tSpecify first ASCII character idx in ProMotion NG font. Default: 33.");
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -60,6 +67,7 @@ int main(int lArgCount, const char *pArgs[])
 	// Optional args' default values
 	std::string szCharset = s_szDefaultCharset;
 	std::string szOutPath = "";
+	uint8_t ubFirstChar = 33;
 
 	// Search for optional args
 	for(auto i = ubMandatoryArgCnt+1; i < lArgCount; ++i) {
@@ -70,6 +78,18 @@ int main(int lArgCount, const char *pArgs[])
 		else if(pArgs[i] == std::string("-out") && i < lArgCount - 1) {
 			++i;
 			szOutPath = pArgs[i];
+		}
+		else if(pArgs[i] == std::string("-fc") && i < lArgCount - 1) {
+			++i;
+			try {
+				ubFirstChar = std::stoul(pArgs[i]);
+			}
+			catch(std::exception Ex) {
+				nLog::error(
+					"Couldn't parse 'first char' param: '{}', expected number", pArgs[i]
+				);
+				return EXIT_FAILURE;
+			}
 		}
 		else {
 			nLog::error("Unknown arg or missing value: '{}'", pArgs[i]);
@@ -92,6 +112,11 @@ int main(int lArgCount, const char *pArgs[])
 			return 1;
 		}
 		eInType = tOutType::DIR;
+	}
+	else if(szFontPath.find(".png") != std::string::npos) {
+		// TODO param for determining whether png is pmng-format or ace format
+		mGlyphs = tGlyphSet::fromPmng(szFontPath, ubFirstChar);
+		eInType = tOutType::PMNG;
 	}
 	else {
 		nLog::error("Unsupported font source: '{}'", pArgs[1]);

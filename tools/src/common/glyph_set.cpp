@@ -10,6 +10,48 @@
 #include "../common/endian.h"
 #include "../common/rgb.h"
 #include "../common/fs.h"
+#include "../common/bitmap.h"
+#include "../common/logging.h"
+
+tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, uint8_t ubStartIdx)
+{
+	tGlyphSet GlyphSet;
+
+	auto Bitmap = tChunkyBitmap::fromPng(szPngPath);
+	if(!Bitmap.m_uwHeight) {
+		nLog::error("Couldn't open image '{}'", szPngPath);
+		return GlyphSet;
+	}
+
+	const auto &Delimiter = Bitmap.pixelAt(0, 0);
+	uint16_t uwStart = 0;
+	uint8_t ubCurrChar = ubStartIdx;
+	const tRgb Bg(0, 0, 0);
+
+	for(uint16_t i = 1; i < Bitmap.m_uwWidth; ++i) {
+		if(Bitmap.pixelAt(i, 0) == Delimiter) {
+			uint16_t uwStop = i;
+
+			tGlyphSet::tBitmapGlyph Glyph;
+			Glyph.ubWidth = (uwStop - uwStart) - 1;
+			Glyph.ubHeight = Bitmap.m_uwHeight;
+			Glyph.ubBearing = 0;
+			Glyph.vData.reserve(Glyph.ubWidth * Glyph.ubHeight);
+
+			for(uint16_t y = 0; y < Bitmap.m_uwHeight; ++y) {
+				for(uint16_t x = uwStart + 1; x < uwStop; ++x) {
+					const auto &Pixel = Bitmap.pixelAt(x, y);
+					Glyph.vData.push_back((Pixel == Bg ? 0xFF : 0x00));
+				}
+			}
+			GlyphSet.m_mGlyphs[ubCurrChar] = Glyph;
+			++ubCurrChar;
+
+			uwStart = uwStop;
+		}
+	}
+	return GlyphSet;
+}
 
 tGlyphSet tGlyphSet::fromTtf(
 	const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet,

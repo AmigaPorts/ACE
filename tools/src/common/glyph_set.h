@@ -17,6 +17,15 @@ public:
 		uint8_t ubThreshold
 	);
 
+	/**
+	 * @brief Creates glyph set based on ProMotion NG's PNG font file.
+	 *
+	 * @param szPngPath Path to png file saved in PMNG's way of saving fonts.
+	 * @param ubStartIdx ASCII index of first glyph in PMNG file.
+	 * @return Glyph set filled with characters from file.
+	 */
+	static tGlyphSet fromPmng(const std::string &szPngPath, uint8_t ubStartIdx = 33);
+
 	static tGlyphSet fromDir(const std::string &szDirPath);
 
 	bool toDir(const std::string &szDirPath);
