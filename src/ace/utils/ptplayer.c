@@ -1511,12 +1511,9 @@ void ptplayerSetMusicChannelMask(UBYTE ChannelMask) {
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
 
-// Set a master volume from 0 to 64 for all music channels.
-// Note that the master volume does not affect the volume of external
-// sound effects (which is desired).
-void mt_mastervol(UWORD MasterVolume) {
+void ptplayerSetMasterVolume(UBYTE ubMasterVolume) {
 	g_pCustom->intena = INTF_INTEN;
-	mt_MasterVolTab = MasterVolTab[MasterVolume];
+	mt_MasterVolTab = MasterVolTab[ubMasterVolume];
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
 

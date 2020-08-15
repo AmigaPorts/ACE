@@ -95,14 +95,14 @@ void ptplayerStop(void);
  */
 void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
 
-/*
-  _mt_mastervol(a6=CUSTOM, d0=MasterVolume.w)
-    Set a master volume from 0 to 64 for all music channels.
-    Note that the master volume does not affect the volume of external
-    sound effects (which is desired).
-*/
-
-void mt_mastervol(UWORD MasterVolume);
+/**
+ * @brief Set a master volume for all music channels.
+ * Note that the master volume does not affect the volume of external
+ * sound effects (which is desired).
+ *
+ * @param ubMasterVolume Value between 0 and 64. Bigger is louder.
+ */
+void ptplayerSetMasterVolume(UBYTE ubMasterVolume);
 
 /**
  * @brief Enables or disables music playback.
