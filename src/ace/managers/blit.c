@@ -316,12 +316,13 @@ UBYTE blitSafeCopyAligned(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UWORD uwLine, const char *szFile
 ) {
-	if(!blitCheck(
-		pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile
-	))
-		return 0;
 	if((wSrcX | wDstX | wWidth) & 0x000F) {
 		logWrite("Dimensions are not divisible by 16!\n");
+		return 0;
+	}
+	if(!blitCheck(
+		pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile
+	)) {
 		return 0;
 	}
 	return blitUnsafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight);
