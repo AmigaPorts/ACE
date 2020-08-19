@@ -149,18 +149,24 @@ function(convertBitmaps)
 	endforeach()
 endfunction()
 
-function(convertFont TARGET FONT_IN FONT_OUT)
-	toAbsolute(FONT_IN)
-	toAbsolute(FONT_OUT)
-	get_filename_component(ext ${FONT_OUT} EXT)
+function(convertFont)
+	cmake_parse_arguments(args "" "TARGET;SOURCE;DESTINATION;FIRST_CHAR" "" ${ARGN})
+	toAbsolute(args_SOURCE)
+	toAbsolute(args_DESTINATION)
+	get_filename_component(ext ${args_DESTINATION} EXT)
 	string(SUBSTRING ${ext} 1 -1 ext)
+
+	if(DEFINED args_FIRST_CHAR)
+		SET(argsOptional ${argsOptional} -fc ${args_FIRST_CHAR})
+	endif()
+
 	add_custom_command(
-		OUTPUT ${FONT_OUT}
-		COMMAND ${ACE_DIR}/tools/bin/font_conv ${FONT_IN} ${ext} -out ${FONT_OUT}
+		OUTPUT ${args_DESTINATION}
+		COMMAND ${ACE_DIR}/tools/bin/font_conv ${args_SOURCE} ${ext} -out ${args_DESTINATION} ${argsOptional}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		DEPENDS ${FONT_IN}
+		DEPENDS ${args_SOURCE}
 	)
-	target_sources(${TARGET} PUBLIC ${FONT_OUT})
+	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
 
 function(transformBitmap)
