@@ -24,9 +24,9 @@ tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, uint8_t ubStartIdx)
 	}
 
 	const auto &Delimiter = Bitmap.pixelAt(0, 0);
+	const auto &Bg = Bitmap.pixelAt(0, 1);
 	uint16_t uwStart = 0;
 	uint8_t ubCurrChar = ubStartIdx;
-	const tRgb Bg(0, 0, 0);
 
 	for(uint16_t i = 1; i < Bitmap.m_uwWidth; ++i) {
 		if(Bitmap.pixelAt(i, 0) == Delimiter) {
