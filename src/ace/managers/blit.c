@@ -143,7 +143,7 @@ UBYTE blitIsIdle(void) {
 UBYTE blitUnsafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubMinterm, UBYTE ubMask
+	UBYTE ubMinterm
 ) {
 #ifdef AMIGA
 	// Helper vars
@@ -196,8 +196,7 @@ UBYTE blitUnsafeCopy(
 	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 
-	ubMask &= 0xFF >> (8- (pSrc->Depth < pDst->Depth? pSrc->Depth: pDst->Depth));
-	ubPlane = 0;
+	ubPlane = MIN(pSrc->Depth, pDst->Depth);
 	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltcon0 = uwBltCon0;
 	g_pCustom->bltcon1 = uwBltCon1;
@@ -207,18 +206,14 @@ UBYTE blitUnsafeCopy(
 	g_pCustom->bltcmod = wDstModulo;
 	g_pCustom->bltdmod = wDstModulo;
 	g_pCustom->bltadat = 0xFFFF;
-	while(ubMask) {
-		if(ubMask & 1) {
-			blitWait();
-			// This hell of a casting must stay here or else large offsets get bugged!
-			g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-			g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-			g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+	while(ubPlane--) {
+		blitWait();
+		// This hell of a casting must stay here or else large offsets get bugged!
+		g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+		g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
-			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
-		}
-		ubMask >>= 1;
-		++ubPlane;
+		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
 #endif // AMIGA
 	return 1;
@@ -227,12 +222,12 @@ UBYTE blitUnsafeCopy(
 UBYTE blitSafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubMinterm, UBYTE ubMask, UWORD uwLine, const char *szFile
+	UBYTE ubMinterm, UWORD uwLine, const char *szFile
 ) {
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
 	}
-	return blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask);
+	return blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm);
 }
 
 /**

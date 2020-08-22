@@ -89,7 +89,7 @@ void gsTestBlitSmallDestLoop(void) {
 			s_pTestBlitBfr->uBfrBounds.uwY,
 			0
 		);
-		blitCopy(s_pRefBitmap, ubFrameIdx, ubFrameIdx*32, s_pDstBitmap, 0, 0, 32, 32, 0xCA, 0xFF);
+		blitCopy(s_pRefBitmap, ubFrameIdx, ubFrameIdx*32, s_pDstBitmap, 0, 0, 32, 32, 0xCA);
 		blitCopyAligned(s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBack, 16, 16, 32, 32);
 	}
 

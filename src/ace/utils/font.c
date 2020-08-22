@@ -203,8 +203,7 @@ void fontFillTextBitMap(
 			blitCopy(
 				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0,
 				pTextBitMap->pBitMap, uwX, uwY,
-				ubGlyphWidth,
-				pFont->uwHeight, MINTERM_COOKIE, 0x01
+				ubGlyphWidth, pFont->uwHeight, MINTERM_COOKIE
 			);
 			uwX += ubGlyphWidth + 1;
 			pTextBitMap->uwActualWidth = MAX(pTextBitMap->uwActualWidth, uwX);
@@ -282,8 +281,7 @@ void fontDrawTextBitMap(
 		sTmpDest.Planes[0] = pDest->Planes[i];
 		blitCopy(
 			pTextBitMap->pBitMap, 0, 0, &sTmpDest, uwX, uwY,
-			pTextBitMap->uwActualWidth, pTextBitMap->uwActualHeight,
-			ubMinterm, 0x01
+			pTextBitMap->uwActualWidth, pTextBitMap->uwActualHeight, ubMinterm
 		);
 		ubColor >>= 1;
 	}
