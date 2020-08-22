@@ -314,14 +314,26 @@ void vPortWaitForEnd(const tVPort *pVPort) {
 }
 
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
-	// podpiecie
+	// Check if we have any other manager - if not, attach as head
 	if(!pVPort->pFirstManager) {
 		pVPort->pFirstManager = pVpManager;
 		logWrite("Manager %p attached to head of VP %p\n", pVpManager, pVPort);
 		return;
 	}
+
+	// Check if current manager has lesser priority number than head
+	if(pVPort->pFirstManager->ubId > pVpManager->ubId) {
+		logWrite(
+			"Manager %p attached as head of VP %p before %p\n",
+			pVpManager, pVPort, pVPort->pFirstManager
+		);
+		pVpManager->pNext = pVPort->pFirstManager;
+		pVPort->pFirstManager = pVpManager;
+		return;
+	}
+
+	// Insert before manager of bigger priority number
 	tVpManager *pVpCurr = pVPort->pFirstManager;
-	// przewin przed menedzer o wyzszym numerze niz wstawiany
 	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
 		if(pVpCurr->ubId <= pVpManager->ubId) {
 			pVpCurr = pVpCurr->pNext;
@@ -329,7 +341,10 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	}
 	pVpManager->pNext = pVpCurr->pNext;
 	pVpCurr->pNext = pVpManager;
-	logWrite("Manager %p attached after manager %p of VP %p\n", pVpManager, pVpCurr, pVPort);
+	logWrite(
+		"Manager %p attached after manager %p of VP %p\n",
+		pVpManager, pVpCurr, pVPort
+	);
 }
 
 void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
