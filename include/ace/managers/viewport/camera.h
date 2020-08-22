@@ -24,7 +24,7 @@ typedef struct _tCameraManager {
 	tUwCoordYX uPos;        ///< Current camera pos
 	tUwCoordYX uLastPos[2]; ///< Previous camera pos
 	tUwCoordYX uMaxPos;     ///< Max camera pos: world W&H - camera W&H
-	UBYTE ubBfr;
+	UBYTE ubBfr;            ///< Currently used buffer for double buffering
 	UBYTE isDblBfr;
 } tCameraManager;
 
@@ -47,15 +47,15 @@ void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy);
 
 void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY);
 
-UBYTE cameraIsMoved(tCameraManager *pManager);
+UBYTE cameraIsMoved(const tCameraManager *pManager);
 
-UWORD cameraGetXDiff(tCameraManager *pManager);
+UWORD cameraGetXDiff(const tCameraManager *pManager);
 
-UWORD cameraGetYDiff(tCameraManager *pManager);
+UWORD cameraGetYDiff(const tCameraManager *pManager);
 
-WORD cameraGetDeltaX(tCameraManager *pManager);
+WORD cameraGetDeltaX(const tCameraManager *pManager);
 
-WORD cameraGetDeltaY(tCameraManager *pManager);
+WORD cameraGetDeltaY(const tCameraManager *pManager);
 
 #ifdef __cplusplus
 }
