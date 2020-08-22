@@ -4,7 +4,9 @@
 	extern "C" {
 #endif
 
+#if !defined(offsetof)
 #define offsetof(st, m) __builtin_offsetof(st, m)
+#endif
 
 void *memcpy (void *, const void *, unsigned long);
 void *memset (void *, int, unsigned long);
