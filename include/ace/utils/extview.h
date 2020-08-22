@@ -200,17 +200,31 @@ void vPortDestroy(tVPort *pVPort);
  *
  * @param pVPort VPort which has given Y-position.
  * @param uwPosY Y-position on viewport.
+ * @param isExact If set to 1, it will wait for exact position.
+ * If set to 0, it will return immediately if current position is greater
+ * or equal than end position.
  */
-void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY);
+void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact);
 
 /**
- *  @brief Waits for display beam to pass given VPort.
+ * @brief Waits for display beam to exactly reach end of given VPort.
+ * It can be called multiple times to skip given amount of frames.
+ * Even if it's called exactly right at the end pos, it will wait for whole next frame.
  *
- *  @param pVPort VPort to be passed.
+ * @param pVPort VPort to be passed.
  *
- *  @todo Make view offset dependent on DiWStrt.
+ * @todo Make view offset dependent on DiWStrt.
  */
 void vPortWaitForEnd(const tVPort *pVPort);
+
+/**
+ * @brief Waits for display beam to pass end of given VPort.
+ * This will NOT work when calling multiple times to skip given amount of frames.
+ * If beam position is past given point, it will return immediately.
+ *
+ * @param pVPort
+ */
+void vPortWaitUntilEnd(const tVPort *pVPort);
 
 /**
  * @brief Processes all managers of given VPort.

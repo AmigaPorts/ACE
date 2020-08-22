@@ -290,7 +290,7 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 	}
 }
 
-void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY) {
+void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 #ifdef AMIGA
 	// Determine VPort end position
 	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
@@ -302,15 +302,21 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY) {
 	}
 #endif
 
-	// If current beam pos is on or past end pos, wait for start of next frame
-	while (getRayPos().bfPosY >= uwEndPos) {}
+	if(!isExact) {
+		// If current beam pos is on or past end pos, wait for start of next frame
+		while (getRayPos().bfPosY >= uwEndPos) {}
+	}
 	// If current beam pos is before end pos, wait for it
 	while (getRayPos().bfPosY < uwEndPos) {}
 #endif // AMIGA
 }
 
+void vPortWaitUntilEnd(const tVPort *pVPort) {
+	vPortWaitForPos(pVPort, pVPort->uwHeight, 0);
+}
+
 void vPortWaitForEnd(const tVPort *pVPort) {
-	vPortWaitForPos(pVPort, pVPort->uwHeight);
+	vPortWaitForPos(pVPort, pVPort->uwHeight, 1);
 }
 
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
