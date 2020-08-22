@@ -105,9 +105,7 @@ UBYTE _blitCheck(
 }
 
 void blitWait(void) {
-	systemSetDmaBit(DMAB_BLITHOG, 1);
 	while(!blitIsIdle()) {}
-	systemSetDmaBit(DMAB_BLITHOG, 0);
 }
 
 /**

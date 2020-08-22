@@ -2191,6 +2191,7 @@ static void set_period(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// Find nearest period for a note value, then apply finetuning
+	// OPTIMIZE: Profiler tells me this is VERY slow - do a binary search
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
 	UBYTE ubPeriodPos;
 	for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
