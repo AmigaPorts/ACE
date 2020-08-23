@@ -859,6 +859,27 @@ static UBYTE mt_SilCntValid;
 static UWORD mt_dmaon = 0; ///< Set by DMAF_AUD# when
 static tPtplayerMod *s_pModCurr;
 
+static inline UBYTE findPeriod(const UWORD *pPeriods, UWORD uwNote) {
+	// Find nearest period for a note value
+	// https://stackoverflow.com/questions/6553970/
+	UBYTE ubLow = 0, ubHigh = MOD_PERIOD_TABLE_LENGTH;
+	while (ubLow != ubHigh) {
+		UBYTE ubMid = (ubLow + ubHigh) / 2;
+		if (uwNote < pPeriods[ubMid]) {
+			// This index, and everything below it, is not the first element
+			// greater/equal than what we're looking for because
+			// this element is no greater/equal than the element.
+			ubLow = ubMid + 1;
+		}
+		else {
+			// This element is at least as large as the element, so anything after it can't
+			// be the first element that's at least as large.
+			ubHigh = ubMid;
+		}
+	}
+	return ubLow;
+}
+
 static void ptSongStep(void) {
 	mt_PatternPos = mt_PBreakPos;
 	mt_PBreakPos = 0;
@@ -1545,15 +1566,8 @@ static void mt_toneporta_nc(
 			// glissando: find nearest note for new period
 			const UWORD *pPeriodTable = pChannelData->n_pertab;
 			UWORD uwNoteOffs = 0;
-			UBYTE ubPeriodPos;
-			for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
-				if (uwNoteOffs >= pPeriodTable[ubPeriodPos]) {
-					break;
-				}
-				uwNoteOffs += 2;
-			}
-
-			pChannelData->n_noteoff = uwNoteOffs;
+			UBYTE ubPeriodPos = findPeriod(pChannelData->n_pertab, uwNoteOffs);
+			pChannelData->n_noteoff = ubPeriodPos * 2;
 			uwNew = pPeriodTable[ubPeriodPos];
 		}
 		pChannelReg->ac_per = uwNew;
@@ -2190,15 +2204,8 @@ static void set_period(
 	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	// Find nearest period for a note value, then apply finetuning
-	// OPTIMIZE: Profiler tells me this is VERY slow - do a binary search
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
-	UBYTE ubPeriodPos;
-	for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
-		if(uwNote >= mt_PeriodTables[0][ubPeriodPos]) {
-			break;
-		}
-	}
+	UBYTE ubPeriodPos = findPeriod(mt_PeriodTables[0], uwNote);
 
 	// Apply finetuning, set period and note-offset
 	UWORD uwPeriod = pChannelData->n_pertab[ubPeriodPos];
@@ -2274,25 +2281,21 @@ static void set_toneporta(
 ) {
 	// Find first period which is less or equal the note in d6
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
-	UBYTE ubPeriodPos;
-	UWORD uwNoteOffs = 0;
-	for(ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
-		if (uwNote >= mt_PeriodTables[0][ubPeriodPos]) {
-			break;
-		}
-		uwNoteOffs += 2;
+	UBYTE ubPeriodPos = findPeriod(mt_PeriodTables[0], uwNote);
+	if(ubPeriodPos) {
+		// One before for less/equal
+		--ubPeriodPos;
 	}
 
 	if(pChannelData->n_minusft && ubPeriodPos) {
 		// Negative fine tune? Then take the previous period.
 		--ubPeriodPos;
-		uwNoteOffs -= 2;
 	}
 
 	// Note offset in period table
-	pChannelData->n_noteoff = uwNoteOffs;
+	pChannelData->n_noteoff = ubPeriodPos * 2;
 	UWORD uwPeriod = pChannelData->n_period;
-	UWORD uwNewPeriod = pChannelData->n_pertab[--ubPeriodPos];
+	UWORD uwNewPeriod = pChannelData->n_pertab[ubPeriodPos];
 	if(uwNewPeriod == uwPeriod) {
 		uwNewPeriod = 0;
 	}
