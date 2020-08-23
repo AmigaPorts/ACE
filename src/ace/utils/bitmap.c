@@ -29,9 +29,13 @@ tBitMap *bitmapCreate(
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
 	logWrite("addr: %p\n", pBitMap);
 
-	InitBitMap(pBitMap, ubDepth, uwWidth, uwHeight);
+	pBitMap->BytesPerRow = (uwWidth + 7) / 8;
+	pBitMap->Rows = uwHeight;
+	pBitMap->Flags = 0;
+	pBitMap->Depth = ubDepth;
 
 	if(ubFlags & BMF_INTERLEAVED) {
+		pBitMap->Flags |= BMF_INTERLEAVED;
 		UWORD uwRealWidth;
 		uwRealWidth = pBitMap->BytesPerRow;
 		pBitMap->BytesPerRow *= ubDepth;
@@ -360,11 +364,7 @@ void bitmapDestroy(tBitMap *pBitMap) {
 }
 
 UBYTE bitmapIsInterleaved(const tBitMap *pBitMap) {
-	return (
-		pBitMap->Depth > 1 &&
-		pBitMap->Depth * ((ULONG)pBitMap->Planes[1] - (ULONG)pBitMap->Planes[0])
-			== pBitMap->BytesPerRow
-	);
+	return (pBitMap->Depth > 1) && (pBitMap->Flags & BMF_INTERLEAVED);
 }
 
 UBYTE bitmapIsChip(const tBitMap *pBitMap) {
