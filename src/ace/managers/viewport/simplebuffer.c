@@ -13,32 +13,18 @@
 #define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1
 #define SIMPLEBUFFER_FLAG_COPLIST_RAW  2
 
-static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) {
-#if defined(ACE_DEBUG)
-	if(pManager->pBack && pManager->pBack->Depth != pBack->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
-		return;
+static void setBitplanePtrs(tCopCmd *pCmds, const tBitMap *pBitmap) {
+	for(UBYTE i = 0; i < pBitmap->Depth; ++i) {
+		ULONG ulPlaneAddr = (ULONG)pBitmap->Planes[i];
+		copSetMove(&(pCmds++)->sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
+		copSetMove(&(pCmds++)->sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 	}
-#endif
-	pManager->pBack = pBack;
 }
 
-void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
-	logBlockBegin(
-		"simpleBufferSetFront(pManager: %p, pFront: %p)",
-		pManager, pFront
-	);
-#if defined(ACE_DEBUG)
-	if(pManager->pFront && pManager->pFront->Depth != pFront->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
-		return;
-	}
-#endif
-
-	pManager->uBfrBounds.uwX = bitmapGetByteWidth(pFront) << 3;
-	pManager->uBfrBounds.uwY = pFront->Rows;
-	pManager->pFront = pFront;
-	UWORD uwModulo = pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
+static void simpleBufferInitializeCopperList(tSimpleBufferManager *pManager) {
+	pManager->uBfrBounds.uwX = bitmapGetByteWidth(pManager->pFront) << 3;
+	pManager->uBfrBounds.uwY = pManager->pFront->Rows;
+	UWORD uwModulo = pManager->pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 	UWORD uwDDfStrt;
 	if(pManager->uBfrBounds.uwX <= pManager->sCommon.pVPort->uwWidth) {
 		uwDDfStrt = 0x0038;
@@ -69,19 +55,17 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 		copSetMove(&pCmdList[3].sMove, &g_pCustom->bpl1mod, uwModulo);  // Bitplane modulo
 		copSetMove(&pCmdList[4].sMove, &g_pCustom->bpl2mod, uwModulo);
 		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, 0);         // Shift: 0
-		UBYTE i;
-		ULONG ulPlaneAddr;
-		for (i = 0; i < pManager->sCommon.pVPort->ubBPP; ++i) {
-			ulPlaneAddr = (ULONG)pManager->pFront->Planes[i];
-			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
-			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
-		}
 		// Copy to front buffer since it needs initialization there too
 		CopyMem(
 			&pCopList->pBackBfr->pList[pManager->uwCopperOffset],
 			&pCopList->pFrontBfr->pList[pManager->uwCopperOffset],
-			(6+2*pManager->sCommon.pVPort->ubBPP)*sizeof(tCopCmd)
+			6 * sizeof(tCopCmd)
 		);
+		// Proper back buffer pointers
+		setBitplanePtrs(&pCmdList[6], pManager->pFront);
+		// Proper front buffer pointers
+		pCmdList = &pCopList->pFrontBfr->pList[pManager->uwCopperOffset];
+		setBitplanePtrs(&pCmdList[6], pManager->pBack);
 	}
 	else {
 		tCopBlock *pBlock = pManager->pCopBlock;
@@ -92,11 +76,35 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, uwModulo);
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, 0);          // Shift: 0
 		for (UBYTE i = 0; i < pManager->sCommon.pVPort->ubBPP; ++i) {
-			ULONG ulPlaneAddr = (ULONG)pManager->pFront->Planes[i];
+			ULONG ulPlaneAddr = (ULONG)pManager->pBack->Planes[i];
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
+}
+
+static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) {
+#if defined(ACE_DEBUG)
+	if(pManager->pBack && pManager->pBack->Depth != pBack->Depth) {
+		logWrite("ERR: buffer bitmaps differ in BPP!\n");
+		return;
+	}
+#endif
+	pManager->pBack = pBack;
+}
+
+void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
+	logBlockBegin(
+		"simpleBufferSetFront(pManager: %p, pFront: %p)",
+		pManager, pFront
+	);
+#if defined(ACE_DEBUG)
+	if(pManager->pFront && pManager->pFront->Depth != pFront->Depth) {
+		logWrite("ERR: buffer bitmaps differ in BPP!\n");
+		return;
+	}
+#endif
+	pManager->pFront = pFront;
 	logBlockEnd("simplebufferSetFront()");
 }
 
@@ -194,6 +202,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 
 	simpleBufferSetFront(pManager, pFront);
 	simpleBufferSetBack(pManager, pBack ? pBack : pFront);
+	simpleBufferInitializeCopperList(pManager);
 
 	// Add manager to VPort
 	vPortAddManager(pVPort, (tVpManager*)pManager);
@@ -235,14 +244,12 @@ void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 }
 
 void simpleBufferProcess(tSimpleBufferManager *pManager) {
-	UWORD uwShift;
-	ULONG ulBplOffs;
-	ULONG ulPlaneAddr;
-
 	const tCameraManager *pCamera = pManager->pCamera;
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
 	// Calculate X movement: bitplane shift, starting word to fetch
+	UWORD uwShift;
+	ULONG ulBplOffs;
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
 		uwShift = (16 - (pCamera->uPos.uwX & 0xF)) & 0xF;  // Bitplane shift - single
 		uwShift = (uwShift << 4) | uwShift;                // Bitplane shift - PF1 | PF2
@@ -258,20 +265,21 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 
 	// Copperlist - regen bitplane ptrs, update shift
 	// TODO could be unified by using copSetMove in copBlock
-	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW) {
-		tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
-		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
-		for(UBYTE i = 0; i < pManager->sCommon.pVPort->ubBPP; ++i) {
-			ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
-			copSetMove(&pCmdList[6 + i*2 + 0].sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
-			copSetMove(&pCmdList[6 + i*2 + 1].sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
+	if((pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW)) {
+		if(cameraIsMoved(pCamera)) {
+			tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
+			copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
+			setBitplanePtrs(&pCmdList[6], pManager->pBack);
 		}
 	}
 	else {
+		// We can't really check if camera has moved since in double buffering
+		// copBlock changes its bitplane pointers value each frame and copperlist
+		// needs refreshing
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
 		for(UBYTE i = 0; i < pManager->pBack->Depth; ++i) {
-			ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
+			ULONG ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pManager->pCopBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
