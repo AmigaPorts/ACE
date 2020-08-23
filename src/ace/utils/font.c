@@ -9,6 +9,8 @@
 
 /* Globals */
 
+static tBitMap s_sTmpDest; // Temp bitmap for drawing text on single bitplane
+
 /* Functions */
 
 UBYTE fontGlyphWidth(const tFont *pFont, char c) {
@@ -249,9 +251,10 @@ void fontDrawTextBitMap(
 	}
 
 	// Helper destination bitmap
-	tBitMap sTmpDest;
 #if defined(AMIGA)
-	InitBitMap(&sTmpDest, 1, pDest->BytesPerRow<<3, pDest->Rows);
+	s_sTmpDest.BytesPerRow = pDest->BytesPerRow;
+	s_sTmpDest.Rows = pDest->Rows;
+	s_sTmpDest.Depth = 1;
 #else
 #error "Something is missing here!"
 #endif
@@ -267,7 +270,7 @@ void fontDrawTextBitMap(
 		}
 		else {
 			if(ubColor & 1) {
-				ubMinterm = 0xC0;
+				ubMinterm = MINTERM_COPY;
 			}
 			else {
 				if(isLazy) {
@@ -277,10 +280,13 @@ void fontDrawTextBitMap(
 				ubMinterm = 0x00;
 			}
 		}
+
 		// Blit on given bitplane
-		sTmpDest.Planes[0] = pDest->Planes[i];
+		// OPTIMIZE: blitCopy does lots of calculations which are essentially the
+		// same for all bitplanes since they share dimensions. Get rid of it.
+		s_sTmpDest.Planes[0] = pDest->Planes[i];
 		blitCopy(
-			pTextBitMap->pBitMap, 0, 0, &sTmpDest, uwX, uwY,
+			pTextBitMap->pBitMap, 0, 0, &s_sTmpDest, uwX, uwY,
 			pTextBitMap->uwActualWidth, pTextBitMap->uwActualHeight, ubMinterm
 		);
 		ubColor >>= 1;
