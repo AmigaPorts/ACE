@@ -861,23 +861,12 @@ static tPtplayerMod *s_pModCurr;
 
 static inline UBYTE findPeriod(const UWORD *pPeriods, UWORD uwNote) {
 	// Find nearest period for a note value
-	// https://stackoverflow.com/questions/6553970/
-	UBYTE ubLow = 0, ubHigh = MOD_PERIOD_TABLE_LENGTH;
-	while (ubLow != ubHigh) {
-		UBYTE ubMid = (ubLow + ubHigh) / 2;
-		if (uwNote < pPeriods[ubMid]) {
-			// This index, and everything below it, is not the first element
-			// greater/equal than what we're looking for because
-			// this element is no greater/equal than the element.
-			ubLow = ubMid + 1;
-		}
-		else {
-			// This element is at least as large as the element, so anything after it can't
-			// be the first element that's at least as large.
-			ubHigh = ubMid;
+	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
+		if (uwNote >= pPeriods[ubPeriodPos]) {
+			return ubPeriodPos;
 		}
 	}
-	return ubLow;
+	return 0;
 }
 
 static void ptSongStep(void) {
@@ -2666,4 +2655,11 @@ void ptplayerSfxPlay(
 		channelSetSfx(pBestChannel, pSfx, ubVolume, ubPriority);
 	}
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
+}
+
+void testPeriod(void) {
+	for(UWORD i = 0; i != 36; ++i) {
+		volatile UWORD uwNote = i;
+		findPeriod(mt_PeriodTables[0], uwNote);
+	}
 }
