@@ -108,7 +108,7 @@ void bitmapLoadFromFile(
 	// Open source bitmap
 	tFile *pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
-		logWrite("ERR: File does not exist\n", szFilePath);
+		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapLoadFromFile()");
 		systemUnuse();
 		return;

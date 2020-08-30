@@ -28,7 +28,7 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 		}
 	}
 	else if(BitsPerSample == 16) {
-		nLog::warn("Expected 16bps, expected 8bps. Resample your .wav in proper audio program!");
+		nLog::warn("Got 16bps, expected 8bps. Resample your .wav in proper audio program!");
 		if(isStrict) {
 			nLog::error("Strict mode - aborting...");
 			return;

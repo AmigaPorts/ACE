@@ -35,6 +35,16 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#if defined(PRINTF_USE_SUFFIX)
+#define PRINTF_FN(x) x ## _
+#define   sprintf   sprintf_
+#define    printf    printf_
+#define  snprintf  snprintf_
+#define vsnprintf vsnprintf_
+#define   vprintf   vprintf_
+#else
+#define PRINTF_FN(x) x
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,8 +67,7 @@ void _putchar(char character);
  * \param format A string that specifies the format of the output
  * \return The number of characters that are written into the array, not counting the terminating null character
  */
-#define printf printf_
-int printf_(const char* format, ...);
+int PRINTF_FN(printf)(const char* format, ...) __attribute__((format(printf, 1, 2)));
 
 
 /**
@@ -68,9 +77,7 @@ int printf_(const char* format, ...);
  * \param format A string that specifies the format of the output
  * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
  */
-#define sprintf sprintf_
-int sprintf_(char* buffer, const char* format, ...);
-
+int PRINTF_FN(sprintf)(char* buffer, const char* format, ...) __attribute__ ((format (printf, 2, 3)));
 
 /**
  * Tiny snprintf/vsnprintf implementation
@@ -82,10 +89,8 @@ int sprintf_(char* buffer, const char* format, ...);
  *         null character. A value equal or larger than count indicates truncation. Only when the returned value
  *         is non-negative and less than count, the string has been completely written.
  */
-#define snprintf  snprintf_
-#define vsnprintf vsnprintf_
-int  snprintf_(char* buffer, size_t count, const char* format, ...);
-int vsnprintf_(char* buffer, size_t count, const char* format, va_list va);
+int PRINTF_FN( snprintf)(char* buffer, size_t count, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
+int PRINTF_FN(vsnprintf)(char* buffer, size_t count, const char* format, va_list va);
 
 
 /**
@@ -94,9 +99,7 @@ int vsnprintf_(char* buffer, size_t count, const char* format, va_list va);
  * \param va A value identifying a variable arguments list
  * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
  */
-#define vprintf vprintf_
-int vprintf_(const char* format, va_list va);
-
+int PRINTF_FN(vprintf)(const char* format, va_list va);
 
 /**
  * printf with output function
@@ -106,8 +109,9 @@ int vprintf_(const char* format, va_list va);
  * \param format A string that specifies the format of the output
  * \return The number of characters that are sent to the output function, not counting the terminating null character
  */
-int fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...);
-
+int PRINTF_FN(fctprintf)(
+	void (*out)(char character, void* arg), void* arg, const char* format, ...
+) __attribute__ ((format (printf, 3, 4)));
 
 #ifdef __cplusplus
 }

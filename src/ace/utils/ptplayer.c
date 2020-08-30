@@ -2416,7 +2416,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 		fileRead(pFileSfx, pSfx->pData, ulByteSize);
 	}
 	else {
-		logWrite("ERR: Unknown sample format version: %s", ubVersion);
+		logWrite("ERR: Unknown sample format version: %hhu", ubVersion);
 		ptplayerSfxDestroy(pSfx);
 		return 0;
 	}
@@ -2655,11 +2655,4 @@ void ptplayerSfxPlay(
 		channelSetSfx(pBestChannel, pSfx, ubVolume, ubPriority);
 	}
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
-}
-
-void testPeriod(void) {
-	for(UWORD i = 0; i != 36; ++i) {
-		volatile UWORD uwNote = i;
-		findPeriod(mt_PeriodTables[0], uwNote);
-	}
 }
