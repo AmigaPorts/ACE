@@ -45,7 +45,7 @@ void _memDestroy(void);
 
 void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile);
 void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile);
-void *_memAllocRls(ULONG ulSize, ULONG ulFlags);
+void *_memAllocRls(ULONG ulSize, ULONG ulFlags) __attribute__((malloc));
 void _memFreeRls(void *pMem, ULONG ulSize);
 
 void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
