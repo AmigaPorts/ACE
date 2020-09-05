@@ -21,6 +21,14 @@ static void setBitplanePtrs(tCopCmd *pCmds, const tBitMap *pBitmap) {
 	}
 }
 
+static void updateBitplanePtrs(tCopCmd *pCmds, const tBitMap *pBitmap) {
+	for(UBYTE i = 0; i < pBitmap->Depth; ++i) {
+		ULONG ulPlaneAddr = (ULONG)pBitmap->Planes[i];
+		copSetMoveVal(&(pCmds++)->sMove, ulPlaneAddr >> 16);
+		copSetMoveVal(&(pCmds++)->sMove, ulPlaneAddr & 0xFFFF);
+	}
+}
+
 static void simpleBufferInitializeCopperList(tSimpleBufferManager *pManager) {
 	pManager->uBfrBounds.uwX = bitmapGetByteWidth(pManager->pFront) << 3;
 	pManager->uBfrBounds.uwY = pManager->pFront->Rows;
@@ -268,8 +276,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	if((pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW)) {
 		if(cameraIsMoved(pCamera)) {
 			tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
-			copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, uwShift);
-			setBitplanePtrs(&pCmdList[6], pManager->pBack);
+			copSetMoveVal(&pCmdList[5].sMove, uwShift);
+			updateBitplanePtrs(&pCmdList[6], pManager->pBack);
 		}
 	}
 	else {

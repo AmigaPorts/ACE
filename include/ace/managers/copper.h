@@ -237,8 +237,24 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY);
  *  @param pMoveCmd Pointer to copper command to be modified.
  *  @param pReg     Custom chip register address to be set
  *  @param uwValue  New register's value.
+ *
+ * @see copSetMoveVal()
  */
 void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pReg, UWORD uwValue);
+
+/**
+ * @brief Sets the MOVE command target value to a new one.
+ * This is way faster than calling copSetMove() repeatedly if you're just
+ * changing the value.
+ *
+ * @param pMoveCmd Pointer to copper command to be modified.
+ * @param uwValue  New register's value. The target register doesn't change.
+ *
+ * @see copSetMoveVal()
+ */
+static inline void copSetMoveVal(tCopMoveCmd *pMoveCmd, UWORD uwValue) {
+	pMoveCmd->bfValue = uwValue;
+}
 
 /**
  * Disables given sprites on supplied copperlist at given cmd offset.

@@ -521,7 +521,7 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
 	pMoveCmd->bfUnused = 0;
 	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)g_pCustom);
-	pMoveCmd->bfValue = uwValue;
+	copSetMoveVal(pMoveCmd, uwValue);
 }
 
 static UWORD CHIP s_pBlankSprite[2];
