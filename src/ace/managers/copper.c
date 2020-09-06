@@ -58,19 +58,19 @@ void copSwapBuffers(void) {
 }
 
 void copDumpCmd(tCopCmd *pCmd) {
-		if(pCmd->sWait.bfIsWait) {
-			logWrite(
-				"@%p: %08lX - WAIT: %hu,%hu%s\n",
-				pCmd, pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY,
-				!pCmd->sWait.bfBlitterIgnore ? " & blit done" : ""
-			);
-		}
-		else {
-			logWrite(
-				"@%p: %08lX - MOVE: %03X := %04X\n",
-				pCmd, pCmd->ulCode,  pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue
-			);
-		}
+	if(pCmd->sWait.bfIsWait) {
+		logWrite(
+			"@%p: %08lX - WAIT: %hu,%hu%s\n",
+			pCmd, pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY,
+			!pCmd->sWait.bfBlitterIgnore ? " & blit done" : ""
+		);
+	}
+	else {
+		logWrite(
+			"@%p: %08lX - MOVE: %03X := %04X\n",
+			pCmd, pCmd->ulCode,  pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue
+		);
+	}
 }
 
 void copDumpBlocks(void) {
