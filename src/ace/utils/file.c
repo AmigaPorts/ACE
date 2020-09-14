@@ -129,3 +129,15 @@ void fileFlush(tFile *pFile) {
 void fileWriteStr(tFile *pFile, const char *szLine) {
 	fileWrite(pFile, szLine, strlen(szLine));
 }
+
+UBYTE fileExists(const char *szPath) {
+	systemUse();
+	UBYTE isExisting = 0;
+	tFile *pFile = fileOpen(szPath, "r");
+	if(pFile) {
+		isExisting = 1;
+		fileClose(pFile);
+	}
+	systemUnuse();
+	return isExisting;
+}

@@ -52,6 +52,8 @@ LONG fileGetSize(const char *szPath);
 
 void fileWriteStr(tFile *pFile, const char *szLine);
 
+UBYTE fileExists(const char *szPath);
+
 #ifdef __cplusplus
 }
 #endif
