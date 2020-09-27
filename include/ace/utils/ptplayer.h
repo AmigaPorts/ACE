@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define PTPLAYER_VOLUME_MAX 64
+
 #include <ace/types.h>
 
 typedef struct _tPtplayerSfx {
