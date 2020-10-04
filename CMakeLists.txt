@@ -1,5 +1,9 @@
-cmake_minimum_required(VERSION 2.8.5)
-project(ACE LANGUAGES C ASM)
+cmake_minimum_required(VERSION 3.14.0)
+project(ACE
+	LANGUAGES C ASM
+	DESCRIPTION "Amiga C Engine"
+	HOMEPAGE_URL "https://github.com/AmigaPorts/ACE"
+)
 set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE) # needed for helper fns
 
 # Adhere to GNU filesystem layout conventions
@@ -78,10 +82,23 @@ function(toAbsolute PATH_IN)
 	endif()
 endfunction()
 
+function(getToolPath TOOL_NAME TOOL_VAR)
+	# This should be called from other fns - `ACE_DIR` gets usually populated in parent scope
+	set(${TOOL_VAR} ${ACE_DIR}/tools/bin/${TOOL_NAME})
+	if(CMAKE_HOST_WIN32)
+		set(${TOOL_VAR} "${${TOOL_VAR}}.exe")
+	endif()
+
+	if(NOT EXISTS "${${TOOL_VAR}}")
+		message(FATAL_ERROR "Couldn't find ${TOOL_NAME} in ${${TOOL_VAR}} - have you built tools?")
+	endif()
+endfunction()
+
 function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
+	getToolPath(palette_conv TOOL_PALETTE_CONV)
 	add_custom_command(
 		OUTPUT ${PALETTE_OUT}
-		COMMAND ${ACE_DIR}/tools/bin/palette_conv ${PALETTE_IN} ${PALETTE_OUT}
+		COMMAND ${TOOL_PALETTE_CONV} ${PALETTE_IN} ${PALETTE_OUT}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${PALETTE_IN}
 	)
@@ -89,6 +106,7 @@ function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
 endfunction()
 
 function(convertBitmaps)
+	getToolPath(bitmap_conv TOOL_BITMAP_CONV)
 	set(options INTERLEAVED)
 	set(oneValArgs TARGET PALETTE MASK_COLOR)
 	set(multiValArgs SOURCES DESTINATIONS MASKS)
@@ -141,7 +159,7 @@ function(convertBitmaps)
 		endif()
 		add_custom_command(
 			OUTPUT ${outPath} ${maskPath}
-			COMMAND ${ACE_DIR}/tools/bin/bitmap_conv ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlagsPerFile}
+			COMMAND ${TOOL_BITMAP_CONV} ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlagsPerFile}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			DEPENDS ${convertBitmaps_PALETTE} ${bitmapPath}
 		)
@@ -150,6 +168,7 @@ function(convertBitmaps)
 endfunction()
 
 function(convertFont)
+	getToolPath(font_conv TOOL_FONT_CONV)
 	cmake_parse_arguments(args "" "TARGET;SOURCE;DESTINATION;FIRST_CHAR" "" ${ARGN})
 	toAbsolute(args_SOURCE)
 	toAbsolute(args_DESTINATION)
@@ -162,7 +181,7 @@ function(convertFont)
 
 	add_custom_command(
 		OUTPUT ${args_DESTINATION}
-		COMMAND ${ACE_DIR}/tools/bin/font_conv ${args_SOURCE} ${ext} -out ${args_DESTINATION} ${argsOptional}
+		COMMAND ${TOOL_FONT_CONV} ${args_SOURCE} ${ext} -out ${args_DESTINATION} ${argsOptional}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${args_SOURCE}
 	)
@@ -170,6 +189,7 @@ function(convertFont)
 endfunction()
 
 function(transformBitmap)
+	getToolPath(bitmap_transform TOOL_BITMAP_TRANSFORM)
 	cmake_parse_arguments(args "" "TARGET;SOURCE;DESTINATION" "TRANSFORM" ${ARGN})
 
 	# Make is dumb and randomly has problem with unescaped # or not
@@ -180,7 +200,7 @@ function(transformBitmap)
 
 	add_custom_command(
 		OUTPUT ${args_DESTINATION}
-		COMMAND ${ACE_DIR}/tools/bin/bitmap_transform ${args_SOURCE} ${args_DESTINATION} ${argsEscaped}
+		COMMAND ${TOOL_BITMAP_TRANSFORM} ${args_SOURCE} ${args_DESTINATION} ${argsEscaped}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${args_SOURCE}
 	)
@@ -211,6 +231,7 @@ function(extractBitmaps)
 endfunction()
 
 function(convertTileset)
+	getToolPath(tileset_conv TOOL_TILESET_CONV)
 	cmake_parse_arguments(
 		args "" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT" "TILES" ${ARGN}
 	)
@@ -226,7 +247,7 @@ function(convertTileset)
 
 	add_custom_command(
 		OUTPUT ${args_DESTINATION}
-		COMMAND ${ACE_DIR}/tools/bin/tileset_conv ${args_SOURCE} ${args_SIZE} ${args_DESTINATION} ${argsOptional}
+		COMMAND ${TOOL_TILESET_CONV} ${args_SOURCE} ${args_SIZE} ${args_DESTINATION} ${argsOptional}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${convDepends}
 	)
@@ -234,6 +255,7 @@ function(convertTileset)
 endfunction()
 
 function(convertAudio)
+	getToolPath(audio_conv TOOL_AUDIO_CONV)
 	cmake_parse_arguments(args "STRICT" "TARGET;SOURCE;DESTINATION" "" ${ARGN})
 
 	if(${args_STRICT})
@@ -245,7 +267,7 @@ function(convertAudio)
 
 	add_custom_command(
 		OUTPUT ${args_DESTINATION}
-		COMMAND ${ACE_DIR}/tools/bin/audio_conv ${args_SOURCE} -o ${args_DESTINATION} ${argsOptional}
+		COMMAND ${TOOL_AUDIO_CONV} ${args_SOURCE} -o ${args_DESTINATION} ${argsOptional}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
