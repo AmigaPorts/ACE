@@ -63,14 +63,15 @@ static void simpleBufferInitializeCopperList(tSimpleBufferManager *pManager) {
 		copSetMove(&pCmdList[3].sMove, &g_pCustom->bpl1mod, uwModulo);  // Bitplane modulo
 		copSetMove(&pCmdList[4].sMove, &g_pCustom->bpl2mod, uwModulo);
 		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, 0);         // Shift: 0
+
 		// Copy to front buffer since it needs initialization there too
-		CopyMem(
-			&pCopList->pBackBfr->pList[pManager->uwCopperOffset],
-			&pCopList->pFrontBfr->pList[pManager->uwCopperOffset],
-			6 * sizeof(tCopCmd)
-		);
+		for(UWORD i = pManager->uwCopperOffset; i < pManager->uwCopperOffset + 6; ++i) {
+			pCopList->pFrontBfr->pList[i].ulCode = pCopList->pBackBfr->pList[i].ulCode;
+		}
+
 		// Proper back buffer pointers
 		setBitplanePtrs(&pCmdList[6], pManager->pFront);
+
 		// Proper front buffer pointers
 		pCmdList = &pCopList->pFrontBfr->pList[pManager->uwCopperOffset];
 		setBitplanePtrs(&pCmdList[6], pManager->pBack);

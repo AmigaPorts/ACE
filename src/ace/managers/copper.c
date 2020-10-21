@@ -449,7 +449,9 @@ UBYTE copUpdateFromBlocks(void) {
 		}
 
 		// Copy MOVEs
-		CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
+		for(UWORD i = pBlock->uwCurrCount; i--;) {
+			pBackBfr->pList[uwListPos + i].ulCode = pBlock->pCmds[i].ulCode;
+		}
 		uwListPos += pBlock->uwCurrCount;
 	}
 
@@ -552,29 +554,27 @@ tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
 	return pBlock;
 }
 
-FUBYTE copRawDisableSprites(tCopList *pList, FUBYTE fubSpriteMask, FUWORD fuwCmdOffs) {
-	FUBYTE fubCmdCnt = 0;
+UBYTE copRawDisableSprites(tCopList *pList, UBYTE ubSpriteMask, UWORD uwCmdOffs) {
+	UBYTE ubCmdCnt = 0;
 	ULONG ulBlank = (ULONG)s_pBlankSprite;
 
 	// No WAIT - could be done earlier by other stuff
-	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[fuwCmdOffs].sMove;
-	for(FUBYTE i = 0; i != 8; ++i) {
-		if(fubSpriteMask & 1) {
+	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[uwCmdOffs].sMove;
+	for(UBYTE i = 0; i != 8; ++i) {
+		if(ubSpriteMask & 1) {
 			copSetMove(pCmd++, &g_pSprFetch[i].uwHi, ulBlank >> 16);
 			copSetMove(pCmd++, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
-			fubCmdCnt += 2;
+			ubCmdCnt += 2;
 		}
-		fubSpriteMask >>= 1;
+		ubSpriteMask >>= 1;
 	}
 
 	// Copy to front buffer
-	CopyMemQuick(
-		&pList->pBackBfr->pList[fuwCmdOffs],
-		&pList->pFrontBfr->pList[fuwCmdOffs],
-		fubCmdCnt * sizeof(tCopCmd)
-	);
+	for(UWORD i = uwCmdOffs; i < uwCmdOffs + ubCmdCnt; ++i) {
+		pList->pFrontBfr->pList[i].ulCode = pList->pBackBfr->pList[i].ulCode;
+	}
 
-	return fubCmdCnt;
+	return ubCmdCnt;
 }
 
 #endif // AMIGA

@@ -261,13 +261,14 @@ static inline void copSetMoveVal(tCopMoveCmd *pMoveCmd, UWORD uwValue) {
  * This function doesn't add any WAIT cmd, be sure to put those cmds in VBlank.
  * Number of MOVE instructions added equals two times number of sprites disabled.
  *
- * @param pList         Copperlist to be edited.
- * @param fubSpriteMask Determines sprites to be disabled.
- *                       Setting bit0 to 1 disables sprite 0, etc.
+ * @param pList        Copperlist to be edited.
+ * @param ubSpriteMask Determines sprites to be disabled.
+ *                     Setting bit0 to 1 disables sprite 0, etc.
+ * @param uwCmdOffs    Start position on raw copperlist.
  * @return Number of MOVE instructions added.
  */
-FUBYTE copRawDisableSprites(
-	tCopList *pList, FUBYTE fubSpriteMask, FUWORD fuwCmdOffs
+UBYTE copRawDisableSprites(
+	tCopList *pList, UBYTE ubSpriteMask, UWORD uwCmdOffs
 );
 
 #endif // AMIGA
