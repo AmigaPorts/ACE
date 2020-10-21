@@ -294,17 +294,9 @@ void fontDrawTextBitMap(
 }
 
 void fontDrawStr(
-	tBitMap *pDest, const tFont *pFont, UWORD uwX, UWORD uwY,
-	const char *szText, UBYTE ubColor, UBYTE ubFlags
+	const tFont *pFont, tBitMap *pDest, UWORD uwX, UWORD uwY,
+	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 ) {
-	logBlockBegin(
-		"fontDrawStr(pDest: %p, pFont: %p, uwX: %hu, uwY: %hu, szText: '%s', "
-		"ubColor: %hhu, ubFlags: %hhu)",
-		pDest, pFont, uwX, uwY, szText, ubColor, ubFlags
-	);
-	tTextBitMap *pTextBitMap = fontCreateTextBitMapFromStr(pFont, szText);
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
-	fontDestroyTextBitMap(pTextBitMap);
-	logBlockEnd("fontDrawStr()");
 }

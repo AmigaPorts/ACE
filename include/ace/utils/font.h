@@ -179,19 +179,20 @@ void fontDrawTextBitMap(
  *  time-consuming. If same text is going to be redrawn in game loop, its bitmap
  *  buffer should be stored and used for redraw.
  *
+ *  @param pFont Font to be used for text assembly.
  *  @param pDest Destination bitmap.
- *  @param pFont   Font to be used for text assembly.
- *  @param uwX     X position on destination bitmap.
- *  @param uwY     Y position on destination bitmap.
- *  @param szText  String to be printed on destination bitmap.
+ *  @param uwX X position on destination bitmap.
+ *  @param uwY Y position on destination bitmap.
+ *  @param szText String to be printed on destination bitmap.
  *  @param ubColor Desired text color.
  *  @param ubFlags Text draw flags (FONT_*).
+ *  @param pTextBitMap Bitmap buffer to be used when composing text.
  *
  *  @see fontDrawTextBitMap()
  */
 void fontDrawStr(
-	tBitMap *pDest, const tFont *pFont,
-	UWORD uwX, UWORD uwY, const char *szText, UBYTE ubColor, UBYTE ubFlags
+	const tFont *pFont, tBitMap *pDest, UWORD uwX, UWORD uwY,
+	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 );
 
 #ifdef __cplusplus
