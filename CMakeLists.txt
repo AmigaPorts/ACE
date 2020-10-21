@@ -92,6 +92,9 @@ function(getToolPath TOOL_NAME TOOL_VAR)
 	if(NOT EXISTS "${${TOOL_VAR}}")
 		message(FATAL_ERROR "Couldn't find ${TOOL_NAME} in ${${TOOL_VAR}} - have you built tools?")
 	endif()
+
+	# Return value
+	set(${TOOL_VAR} ${${TOOL_VAR}} PARENT_SCOPE)
 endfunction()
 
 function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
