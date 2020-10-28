@@ -39,6 +39,11 @@ public:
 		uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
 	) const;
 
+	bool fillRect(
+		uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight,
+		const tRgb &Color
+	);
+
 	bool mergeWithMask(const tChunkyBitmap &Mask);
 
 	tChunkyBitmap filterColors(const tPalette &Palette, const tRgb &ColorDefault);

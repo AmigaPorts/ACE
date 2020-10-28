@@ -5,6 +5,7 @@
 #include "common/logging.h"
 #include "common/fs.h"
 #include "common/palette.h"
+#include "common/bitmap.h"
 
 void printUsage(const std::string &szAppName) {
 	using fmt::print;
@@ -16,6 +17,7 @@ void printUsage(const std::string &szAppName) {
 	print("\tact\tAdobe Color Table\n");
 	print("\tpal\tProMotion palette\n");
 	print("\tplt\tACE palette (default)\n");
+	print("\tpng\tPalette preview\n");
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -64,6 +66,15 @@ int main(int lArgCount, const char *pArgs[])
 	}
 	else if(szExtOut == "plt") {
 		isOk = Palette.toPlt(szPathOut);
+	}
+	else if(szExtOut == "png") {
+		auto ColorCount = Palette.m_vColors.size();
+		tChunkyBitmap PltPreview(ColorCount * 32, 16);
+		for(uint8_t i = 0; i < ColorCount; ++i) {
+			const auto &Color = Palette.m_vColors[i];
+			PltPreview.fillRect(i * 32, 0, 32, 16, Color);
+			isOk = PltPreview.toPng(szPathOut);
+		}
 	}
 	else {
 		nLog::error("unsupported output extension: '{}'", szExtOut);

@@ -325,6 +325,24 @@ bool tChunkyBitmap::copyRect(
 	return true;
 }
 
+bool tChunkyBitmap::fillRect(
+	uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight,
+	const tRgb &Color
+) {
+	if(uwDstX + uwWidth > m_uwWidth || uwDstY + uwHeight > m_uwHeight) {
+		// Source out of range
+		return false;
+	}
+
+	for(uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
+		for(uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
+			pixelAt(uwDstX + uwX, uwDstY + uwY) = Color;
+		}
+	}
+
+	return true;
+}
+
 bool tChunkyBitmap::mergeWithMask(const tChunkyBitmap &Mask)
 {
 	if(Mask.m_uwHeight != m_uwHeight || Mask.m_uwWidth != m_uwWidth) {
