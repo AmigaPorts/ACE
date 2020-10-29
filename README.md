@@ -71,4 +71,4 @@ Unless otherwise stated, the code is licensed under [Mozilla Public License 2.0]
   - [mpaland/printf](https://github.com/mpaland/printf) (MIT)
   - [strtoul](https://github.com/diegocr/libnix/blob/master/stdlib/strtoul.c) from Libnix (Public Domain)
   - [DeidaraC/ctype](https://github.com/DeidaraC/ctype.h/blob/master/ctype.c) (MIT)
-  - `qsort()` replacement: [swenson/sort](https://github.com/swenson/sort) (MIT)
+  - `qsort()` replacement: [noporpoise/sort_r](https://github.com/noporpoise/sort_r) (Public Domain)
