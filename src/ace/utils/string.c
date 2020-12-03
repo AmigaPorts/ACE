@@ -43,3 +43,8 @@ void strToUpper(const char *szSrc, char *szDst) {
 	}
 	*szDst = '\0';
 }
+
+UBYTE stringIsEmpty(const char *szStr) {
+	UBYTE isEmpty = (szStr[0] == '\0');
+	return isEmpty;
+}
