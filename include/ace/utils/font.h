@@ -93,6 +93,26 @@ tFont *fontCreateFromMem(const UBYTE* pData);
  */
 void fontDestroy(tFont *pFont);
 
+/**
+ * @brief Draws given string using passed font on specified 1BPP bitmap.
+ * This function draws text as fast as possible.
+ * Background beneath bitmap is not cleared because you may want to remember
+ * length of previous text and erase only relevant portion of bitmap.
+ *
+ * @param pFont Font to be used.
+ * @param pBitMap Destination bitmap.
+ * @param uwStartX X position of the text.
+ * @param uwStartY Y position of the text.
+ * @param szText Text to be written.
+ * @return Bitmap coord for bottom-right corner of the text
+ *
+ * @see fontDrawStr
+ */
+tUwCoordYX fontDrawStr1bpp(
+	const tFont *pFont, tBitMap *pBitMap, UWORD uwStartX, UWORD uwStartY,
+	const char *szText
+);
+
 tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight);
 
 /**

@@ -126,7 +126,7 @@ tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight) {
 	);
 	// Init text bitmap struct - also setting uwActualWidth and height to zero.
 	tTextBitMap *pTextBitMap = memAllocFast(sizeof(tTextBitMap));
-	pTextBitMap->pBitMap = bitmapCreate(uwWidth, uwHeight, 1, 0);
+	pTextBitMap->pBitMap = bitmapCreate(uwWidth, uwHeight, 1, BMF_CLEAR);
 	pTextBitMap->uwActualWidth = 0;
 	pTextBitMap->uwActualHeight = 0;
 	logBlockEnd("fontCreateTextBitmap()");
@@ -177,13 +177,44 @@ tTextBitMap *fontCreateTextBitMapFromStr(const tFont *pFont, const char *szText)
 	return pTextBitMap;
 }
 
+tUwCoordYX fontDrawStr1bpp(
+	const tFont *pFont, tBitMap *pBitMap, UWORD uwStartX, UWORD uwStartY,
+	const char *szText
+) {
+	UWORD uwX = uwStartX;
+	UWORD uwY = uwStartY;
+	UWORD uwBoundX = 0;
+	for(const char *p = szText; *p; ++p) {
+		if(*p == '\n') {
+			uwX = uwStartX;
+			uwY += pFont->uwHeight;
+			uwBoundX = MAX(uwBoundX, uwX);
+		}
+		else {
+			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
+			blitCopy(
+				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0, pBitMap, uwX, uwY,
+				ubGlyphWidth, pFont->uwHeight, MINTERM_COOKIE
+			);
+			uwX += ubGlyphWidth + 1;
+		}
+	}
+	tUwCoordYX sBounds = {.uwX = MAX(uwBoundX, uwX), .uwY = uwY + pFont->uwHeight};
+	return sBounds;
+}
+
 void fontFillTextBitMap(
 	const tFont *pFont, tTextBitMap *pTextBitMap, const char *szText
 ) {
-	blitRect(
-		pTextBitMap->pBitMap, 0, 0,
-		pTextBitMap->pBitMap->BytesPerRow*8, pTextBitMap->pBitMap->Rows, 0
-	);
+	if(pTextBitMap->uwActualWidth) {
+		// Clear old contents
+		// TODO: we could remove this clear if letter spacing would be
+		// part of glyphs, but it may cause some problems when drawing last letter.
+		blitRect(
+			pTextBitMap->pBitMap, 0, 0,
+			pTextBitMap->uwActualWidth, pTextBitMap->pBitMap->Rows, 0
+		);
+	}
 
 #if defined(ACE_DEBUG)
 	if(!fontTextFitsInTextBitmap(pFont, pTextBitMap, szText)) {
@@ -191,27 +222,10 @@ void fontFillTextBitMap(
 		return;
 	}
 #endif
-	// Draw text on bitmap buffer
-	UWORD uwX = 0;
-	UWORD uwY = 0;
-	pTextBitMap->uwActualWidth = 0;
-	for(const char *p = szText; *p; ++p) {
-		if(*p == '\n') {
-			uwX = 0;
-			uwY += pFont->uwHeight;
-		}
-		else {
-			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
-			blitCopy(
-				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0,
-				pTextBitMap->pBitMap, uwX, uwY,
-				ubGlyphWidth, pFont->uwHeight, MINTERM_COOKIE
-			);
-			uwX += ubGlyphWidth + 1;
-			pTextBitMap->uwActualWidth = MAX(pTextBitMap->uwActualWidth, uwX);
-		}
-	}
-	pTextBitMap->uwActualHeight = uwY + pFont->uwHeight;
+
+	tUwCoordYX sBounds = fontDrawStr1bpp(pFont, pTextBitMap->pBitMap, 0, 0, szText);
+	pTextBitMap->uwActualWidth = sBounds.uwX;
+	pTextBitMap->uwActualHeight = sBounds.uwY;
 }
 
 void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
