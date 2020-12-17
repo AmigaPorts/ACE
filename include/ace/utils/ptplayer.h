@@ -17,6 +17,10 @@ extern "C" {
 
 #include <ace/types.h>
 
+#if defined(ACE_DEBUG_ALL) && !defined(ACE_DEBUG_PTPLAYER)
+#define ACE_DEBUG_PTPLAYER
+#endif
+
 typedef struct _tPtplayerSfx {
 	UWORD *pData;       ///< Sample start in Chip RAM, even address.
 	UWORD uwWordLength; ///< Sample length in words.

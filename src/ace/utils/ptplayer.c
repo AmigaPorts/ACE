@@ -23,9 +23,9 @@
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes
 // Length of single pattern.
 #define MOD_ROWS_IN_PATTERN 64
-#define MOD_NOTES_IN_ROW 4
+#define MOD_NOTES_PER_ROW 4
 #define MOD_BYTES_PER_NOTE 4
-#define MOD_PATTERN_LENGTH (MOD_ROWS_IN_PATTERN * MOD_NOTES_IN_ROW * MOD_BYTES_PER_NOTE)
+#define MOD_PATTERN_LENGTH (MOD_ROWS_IN_PATTERN * MOD_NOTES_PER_ROW * MOD_BYTES_PER_NOTE)
 #define MOD_PERIOD_TABLE_LENGTH 36
 
 /**
@@ -861,6 +861,74 @@ static UBYTE mt_SilCntValid;
 static UWORD mt_dmaon = 0; ///< Set by DMAF_AUD# when
 static tPtplayerMod *s_pModCurr;
 
+static void printVoices(const tModVoice *pVoices) {
+#if defined(ACE_DEBUG_PTPLAYER)
+	typedef struct _tPeriodNote {
+		UWORD uwPeriod;
+		const char *szNote;
+	} tPeriodNote;
+
+	// Taken from https://www.fileformat.info/format/mod/corion.htm, table 5
+	static const tPeriodNote pPeriod2Note[] = {
+		{1712, "C-0"}, {1616, "C#0"}, {1524, "D-0"}, {1440, "D#0"},
+		{1356, "E-0"}, {1280, "F-0"}, {1208, "F#0"}, {1140, "G-0"},
+		{1076, "G#0"}, {1016, "A-0"}, { 960, "A#0"}, { 906, "B-0"},
+
+		{ 856, "C-1"}, { 808, "C#1"}, { 762, "D-1"}, { 720, "D#1"},
+		{ 678, "E-1"}, { 640, "F-1"}, { 604, "F#1"}, { 570, "G-1"},
+		{ 538, "G#1"}, { 508, "A-1"}, { 480, "A#1"}, { 453, "B-1"},
+
+		{ 428, "C-2"}, { 404, "C#2"}, { 381, "D-2"}, { 360, "D#2"},
+		{ 339, "E-2"}, { 320, "F-2"}, { 302, "F#2"}, { 285, "G-2"},
+		{ 269, "G#2"}, { 254, "A-2"}, { 240, "A#2"}, { 226, "B-2"},
+
+		{ 214, "C-3"}, { 202, "C#3"}, { 190, "D-3"}, { 180, "D#3"},
+		{ 170, "E-3"}, { 160, "F-3"}, { 151, "F#3"}, { 143, "G-3"},
+		{ 135, "G#3"}, { 127, "A-3"}, { 120, "A#3"}, { 113, "B-3I"},
+
+		{ 107, "C-4"}, { 101, "C#4"}, {  95, "D-4"}, {  90, "D#4"},
+		{  85, "E-4"}, {  80, "F-4"}, {  75, "F#4"}, {  71, "G-4"},
+		{  67, "G#4"}, {  63, "A-4"}, {  60, "A#4"}, {  56, "B-4"},
+		{   0, "   "}
+	};
+
+	// logWrite(
+	// 	"Row (cmd.note): %04X.%04X, %04X.%04X, %04X.%04X, %04X.%04X\n",
+	// 	pVoices[0].uwCmd, pVoices[0].uwNote,
+	// 	pVoices[1].uwCmd, pVoices[1].uwNote,
+	// 	pVoices[2].uwCmd, pVoices[2].uwNote,
+	// 	pVoices[3].uwCmd, pVoices[3].uwNote
+	// );
+
+	const char *pNotes[MOD_NOTES_PER_ROW];
+	UBYTE pInstruments[MOD_NOTES_PER_ROW], pCmdIdx[MOD_NOTES_PER_ROW], pCmdArg[MOD_NOTES_PER_ROW];
+	for(UBYTE ubVoice = 0; ubVoice < MOD_NOTES_PER_ROW; ++ubVoice) {
+		const tModVoice *pVoice = &pVoices[ubVoice];
+		UWORD uwPeriod = pVoice->uwNote & 0xFFF;
+		pInstruments[ubVoice] = (pVoice->uwNote >> 8) | (pVoice->uwCmd >> 12);
+		pCmdIdx[ubVoice] = (pVoice->uwCmd >> 8) & 0xF;
+		pCmdArg[ubVoice] = pVoice->uwCmd & 0xFF;
+
+		// Decode period -> note
+		const char *szNote = "???";
+		for(UBYTE i = 0; i < 61; ++i) {
+			if(pPeriod2Note[i].uwPeriod == uwPeriod) {
+				szNote = pPeriod2Note[i].szNote;
+				break;
+			}
+		}
+		pNotes[ubVoice] = szNote;
+	}
+	logWrite(
+		"note.instr.cmd.arg %s.%02hhX.%hhX.%02hhX  %s.%02hhX.%hhX.%02hhX  %s.%02hhX.%hhX.%02hhX  %s.%02hhX.%hhX.%02hhX\n",
+		pNotes[0], pInstruments[0], pCmdIdx[0], pCmdArg[0],
+		pNotes[1], pInstruments[1], pCmdIdx[1], pCmdArg[1],
+		pNotes[2], pInstruments[2], pCmdIdx[2], pCmdArg[2],
+		pNotes[3], pInstruments[3], pCmdIdx[3], pCmdArg[3]
+	);
+#endif
+}
+
 static inline UBYTE findPeriod(const UWORD *pPeriods, UWORD uwNote) {
 	// Find nearest period for a note value
 	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
@@ -1261,13 +1329,7 @@ static void mt_music(void) {
 			UBYTE ubPatternIdx = pArrangement[mt_SongPos];
 			UBYTE *pCurrentPattern = &pPatternData[ubPatternIdx * 1024];
 			tModVoice *pLineVoices = (tModVoice*)&pCurrentPattern[mt_PatternPos];
-			// logWrite(
-			// 	"new note (cmd note): %04X %04X, %04X %04X, %04X %04X, %04X %04X\n",
-			// 	pLineVoices[0].uwCmd, pLineVoices[0].uwNote,
-			// 	pLineVoices[1].uwCmd, pLineVoices[1].uwNote,
-			// 	pLineVoices[2].uwCmd, pLineVoices[2].uwNote,
-			// 	pLineVoices[3].uwCmd, pLineVoices[3].uwNote
-			// );
+			printVoices(pLineVoices);
 
 			// play new note for each channel, apply some effects
 			mt_playvoice(&mt_chan[0], &g_pCustom->aud[0], &pLineVoices[0]);

@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 
+#if defined(ACE_DEBUG_ALL) && !defined(ACE_DEBUG)
+#define ACE_DEBUG
+#endif
+
 // Full OS takeover
 #define CONFIG_SYSTEM_OS_TAKEOVER
 // OS-friendly (old) mode
