@@ -26,6 +26,14 @@ public:
 	 */
 	static tGlyphSet fromPmng(const std::string &szPngPath, uint8_t ubStartIdx = 33);
 
+	/**
+	 * @brief Creates glyph set based on ACE font (.fnt) file.
+	 *
+	 * @param szFntPath Path to fnt file.
+	 * @return Glyph set filled with characters from file.
+	 */
+	static tGlyphSet fromAceFont(const std::string &szFntPath);
+
 	static tGlyphSet fromDir(const std::string &szDirPath);
 
 	bool toDir(const std::string &szDirPath);
@@ -40,7 +48,7 @@ private:
 	struct tBitmapGlyph {
 		uint8_t ubBearing;
 		uint8_t ubWidth, ubHeight;
-		std::vector<uint8_t> vData;
+		std::vector<uint8_t> vData; ///< One byte per pixel, 0 for bg, 0xFF otherwise.
 
 		void trimHorz(bool isRight);
 	};

@@ -109,7 +109,7 @@ tPlanarBitmap::tPlanarBitmap(
 	m_ubDepth = ubDepth;
 
 	for(uint8_t i = 0; i < ubDepth; ++i) {
-		m_pPlanes[i].reserve(uwWidth * uwHeight / sizeof(m_pPlanes[0][0]));
+		m_pPlanes[i].resize(uwWidth * uwHeight / sizeof(m_pPlanes[0][0]));
 	}
 }
 

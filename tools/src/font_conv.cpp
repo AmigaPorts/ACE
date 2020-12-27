@@ -11,7 +11,7 @@ static const std::string s_szDefaultCharset = (
 	" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 );
 
-enum class tOutType: uint8_t {
+enum class tFontFormat: uint8_t {
 	INVALID,
 	TTF,
 	DIR,
@@ -20,12 +20,12 @@ enum class tOutType: uint8_t {
 	PMNG,
 };
 
-std::map<std::string, tOutType> s_mOutType = {
-	{"ttf", tOutType::TTF},
-	{"dir", tOutType::DIR},
-	{"png", tOutType::PNG},
-	{"fnt", tOutType::FNT},
-	{"pmng", tOutType::PMNG},
+std::map<std::string, tFontFormat> s_mOutType = {
+	{"ttf", tFontFormat::TTF},
+	{"dir", tFontFormat::DIR},
+	{"png", tFontFormat::PNG},
+	{"fnt", tFontFormat::FNT},
+	{"pmng", tFontFormat::PMNG},
 };
 
 void printUsage(const std::string &szAppName) {
@@ -62,7 +62,7 @@ int main(int lArgCount, const char *pArgs[])
 	}
 
 	std::string szFontPath = pArgs[1];
-	tOutType eOutType = s_mOutType[pArgs[2]];
+	tFontFormat eOutType = s_mOutType[pArgs[2]];
 
 	// Optional args' default values
 	std::string szCharset = s_szDefaultCharset;
@@ -100,10 +100,10 @@ int main(int lArgCount, const char *pArgs[])
 
 	// Load glyphs from input file
 	tGlyphSet mGlyphs;
-	tOutType eInType = tOutType::INVALID;
+	tFontFormat eInType = tFontFormat::INVALID;
 	if(szFontPath.find(".ttf") != std::string::npos) {
 		mGlyphs = tGlyphSet::fromTtf(szFontPath, 20, szCharset, 128);
-		eInType = tOutType::TTF;
+		eInType = tFontFormat::TTF;
 	}
 	else if(nFs::isDir(szFontPath)) {
 		mGlyphs = tGlyphSet::fromDir(szFontPath);
@@ -111,18 +111,22 @@ int main(int lArgCount, const char *pArgs[])
 			nLog::error("Loading glyphs from dir '{}' failed", szFontPath);
 			return 1;
 		}
-		eInType = tOutType::DIR;
+		eInType = tFontFormat::DIR;
 	}
 	else if(szFontPath.find(".png") != std::string::npos) {
 		// TODO param for determining whether png is pmng-format or ace format
 		mGlyphs = tGlyphSet::fromPmng(szFontPath, ubFirstChar);
-		eInType = tOutType::PMNG;
+		eInType = tFontFormat::PMNG;
+	}
+	else if(szFontPath.find(".fnt") != std::string::npos) {
+		mGlyphs = tGlyphSet::fromAceFont(szFontPath);
+		eInType = tFontFormat::FNT;
 	}
 	else {
 		nLog::error("Unsupported font source: '{}'", pArgs[1]);
 		return 1;
 	}
-	if(eInType == tOutType::INVALID || !mGlyphs.isOk()) {
+	if(eInType == tFontFormat::INVALID || !mGlyphs.isOk()) {
 		nLog::error("Couldn't read any font glyphs");
 		return 1;
 	}
@@ -140,7 +144,7 @@ int main(int lArgCount, const char *pArgs[])
 		return 1;
 	}
 
-	if(eOutType == tOutType::DIR) {
+	if(eOutType == tFontFormat::DIR) {
 		if(szOutPath == szFontPath) {
 			szOutPath += ".dir";
 		}
@@ -148,13 +152,13 @@ int main(int lArgCount, const char *pArgs[])
 	}
 	else {
 		tChunkyBitmap FontChunky = mGlyphs.toPackedBitmap();
-		if(eOutType == tOutType::PNG) {
+		if(eOutType == tFontFormat::PNG) {
 			if(szOutPath.substr(szOutPath.length() - 4) != ".png") {
 				szOutPath += ".png";
 			}
 			FontChunky.toPng(szOutPath);
 		}
-		else if(eOutType == tOutType::FNT) {
+		else if(eOutType == tFontFormat::FNT) {
 			tPlanarBitmap FontPlanar(FontChunky, tPalette({
 				tRgb(0xFF), tRgb(0x00)
 			}), tPalette());
