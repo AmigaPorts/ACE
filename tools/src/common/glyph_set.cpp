@@ -26,7 +26,7 @@ tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, uint8_t ubStartIdx)
 	const auto &Delimiter = Bitmap.pixelAt(0, 0);
 	const auto &Bg = Bitmap.pixelAt(0, 1);
 	uint16_t uwStart = 0;
-	uint8_t ubCurrChar = ubStartIdx;
+	uint16_t uwCurrChar = ubStartIdx;
 
 	for(uint16_t i = 1; i < Bitmap.m_uwWidth; ++i) {
 		if(Bitmap.pixelAt(i, 0) == Delimiter) {
@@ -41,11 +41,11 @@ tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, uint8_t ubStartIdx)
 			for(uint16_t y = 0; y < Bitmap.m_uwHeight; ++y) {
 				for(uint16_t x = uwStart + 1; x < uwStop; ++x) {
 					const auto &Pixel = Bitmap.pixelAt(x, y);
-					Glyph.vData.push_back((Pixel == Bg ? 0xFF : 0x00));
+					Glyph.vData.push_back((Pixel == Bg ? 0 : 0xFF));
 				}
 			}
-			GlyphSet.m_mGlyphs[ubCurrChar] = Glyph;
-			++ubCurrChar;
+			GlyphSet.m_mGlyphs.insert(std::make_pair(uwCurrChar, Glyph));
+			++uwCurrChar;
 
 			uwStart = uwStop;
 		}
@@ -105,7 +105,7 @@ tGlyphSet tGlyphSet::fromAceFont(const std::string &szFntPath)
 			for(uint8_t ubY = 0; ubY < uwBitmapHeight; ++ubY) {
 				for(uint8_t ubX = 0; ubX < ubGlyphWidth; ++ubX) {
 					// Since filled in Chunky is (FF,FF,FF), use data from any channel.
-					Glyph.vData[ubY * ubGlyphWidth + ubX] = Chunky.pixelAt(vCharOffsets[c] + ubX, ubY).ubR ? 0 : 0xFF;
+					Glyph.vData[ubY * ubGlyphWidth + ubX] = Chunky.pixelAt(vCharOffsets[c] + ubX, ubY).ubR;
 				}
 			}
 			Glyph.ubWidth =  ubGlyphWidth;
@@ -149,12 +149,12 @@ tGlyphSet tGlyphSet::fromTtf(
 
 		GlyphSet.m_mGlyphs[c] = {
 			static_cast<uint8_t>(Face->glyph->metrics.horiBearingY / 64),
-			ubWidth, ubHeight, std::vector<uint8_t>(ubWidth * ubHeight, 0xFF)
+			ubWidth, ubHeight, std::vector<uint8_t>(ubWidth * ubHeight, 0)
 		};
 
 		// Copy bitmap graphics with threshold
 		for(uint32_t ulPos = 0; ulPos < GlyphSet.m_mGlyphs[c].vData.size(); ++ulPos) {
-			uint8_t ubVal = (Face->glyph->bitmap.buffer[ulPos] >= ubThreshold) ? 0x00 : 0xFF;
+			uint8_t ubVal = (Face->glyph->bitmap.buffer[ulPos] >= ubThreshold) ? 0xFF : 0;
 			GlyphSet.m_mGlyphs[c].vData[ulPos] = ubVal;
 		}
 
@@ -183,7 +183,7 @@ tGlyphSet tGlyphSet::fromTtf(
 	// Normalize Glyph height
 	for(auto &GlyphPair: GlyphSet.m_mGlyphs) {
 		auto &Glyph = GlyphPair.second;
-		std::vector<uint8_t> vNewData(Glyph.ubWidth * ubBmHeight, 0xFF);
+		std::vector<uint8_t> vNewData(Glyph.ubWidth * ubBmHeight, 0);
 		auto Dst = vNewData.begin() + Glyph.ubWidth * (ubMaxBearing - Glyph.ubBearing);
 		for(auto Src = Glyph.vData.begin(); Src != Glyph.vData.end(); ++Src, ++Dst) {
 			*Dst = *Src;
@@ -199,25 +199,18 @@ tGlyphSet tGlyphSet::fromDir(const std::string &szDirPath)
 {
 	tGlyphSet GlyphSet;
 	for(uint16_t c = 0; c <= 255; ++c) {
-		std::string szGlyphPath = fmt::format("{}/{:d}.png", szDirPath, c);
-		size_t ulSize;
-		uint8_t *pBuffer;
-		unsigned int Width, Height;
-		auto LodeError = lodepng_decode24_file(
-			&pBuffer, &Width, &Height, szGlyphPath.c_str()
-		);
-		if(!LodeError) {
+		auto Chunky = tChunkyBitmap::fromPng(fmt::format("{}/{}.png", szDirPath, c));
+		if(Chunky.m_uwHeight) {
 			tGlyphSet::tBitmapGlyph Glyph;
-			Glyph.ubWidth = Width;
-			Glyph.ubHeight = Height;
+			Glyph.ubWidth = Chunky.m_uwWidth;
+			Glyph.ubHeight = Chunky.m_uwHeight;
 			Glyph.ubBearing = 0;
-			Glyph.vData.reserve(Width * Height);
+			Glyph.vData.reserve(Glyph.ubWidth * Glyph.ubHeight);
 			// It's sufficient to base on R channel
-			for(uint32_t ulPixelIdx = 0; ulPixelIdx < Width * Height; ++ulPixelIdx) {
-				Glyph.vData.push_back((pBuffer[ulPixelIdx * 3] ? 0xFF : 0x00));
+			for(const auto &Pixel: Chunky.m_vData) {
+				Glyph.vData.push_back(Pixel.ubR ? 0xFF : 0x00);
 			}
-			GlyphSet.m_mGlyphs[c] = Glyph;
-			free(pBuffer);
+			GlyphSet.m_mGlyphs.emplace(std::make_pair(c, std::move(Glyph)));
 		}
 	}
 	return GlyphSet;
@@ -228,7 +221,7 @@ bool tGlyphSet::toDir(const std::string &szDirPath)
 	nFs::dirCreate(szDirPath);
 	for(const auto &GlyphPair: m_mGlyphs) {
 		auto Glyph = GlyphPair.second;
-		std::vector<tRgb> vImage(Glyph.ubWidth * Glyph.ubHeight, tRgb(0xFF));
+		std::vector<tRgb> vImage(Glyph.ubWidth * Glyph.ubHeight, tRgb(0));
 
 		for(auto y = 0; y < Glyph.ubHeight; ++y) {
 			for(auto x = 0; x < Glyph.ubWidth; ++x) {
@@ -251,35 +244,33 @@ bool tGlyphSet::toDir(const std::string &szDirPath)
 	return true;
 }
 
-tChunkyBitmap tGlyphSet::toPackedBitmap(void)
+tChunkyBitmap tGlyphSet::toPackedBitmap(bool isPmng)
 {
 	uint8_t ubHeight = m_mGlyphs.begin()->second.ubHeight;
 
 	// Calculate total width & round up to multiple of 16
 	uint16_t uwWidth = 0;
 	for(const auto &[Key, Glyph]: m_mGlyphs) {
-		uwWidth += Glyph.ubWidth;
+		uwWidth += Glyph.ubWidth + (isPmng ? 1 : 0);
 	}
 	uwWidth = ((uwWidth + 15) / 16) * 16;
 
-	std::vector<tRgb> vBitmap(uwWidth * ubHeight, tRgb(0xFF));
-
+	tChunkyBitmap Chunky(uwWidth, ubHeight, tRgb(0));
 	uint16_t uwOffsX = 0;
 	for(const auto &[Key, Glyph]: m_mGlyphs) {
+		if(isPmng) {
+			// Add start marker
+			Chunky.pixelAt(uwOffsX, 0) = tRgb(0xFF, 0, 0);
+			uwOffsX += 1;
+		}
 		for(auto y = 0; y < Glyph.ubHeight; ++y) {
 			for(auto x = 0; x < Glyph.ubWidth; ++x) {
 				auto Val = Glyph.vData[y * Glyph.ubWidth + x];
-				uint16_t uwOffs = y * uwWidth + uwOffsX + x;
-				vBitmap[uwOffs] = tRgb(Val);
+				Chunky.pixelAt(uwOffsX + x, y) = tRgb(Val);
 			}
 		}
 		uwOffsX += Glyph.ubWidth;
 	}
-
-	tChunkyBitmap Chunky(
-		uwWidth, ubHeight, reinterpret_cast<uint8_t*>(vBitmap.data())
-	);
-
 	return Chunky;
 }
 
@@ -342,7 +333,7 @@ void tGlyphSet::toAceFont(const std::string &szFontPath)
 	++ubCharCount;
 
 	tPlanarBitmap Planar(
-		this->toPackedBitmap(), tPalette({tRgb(0xFF), tRgb(0x00)}), tPalette()
+		this->toPackedBitmap(false), tPalette({tRgb(0), tRgb(0xFF)}), tPalette()
 	);
 
 	std::ofstream Out(szFontPath, std::ofstream::out | std::ofstream::binary);

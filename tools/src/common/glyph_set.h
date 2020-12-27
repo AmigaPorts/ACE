@@ -40,7 +40,7 @@ public:
 
 	void toAceFont(const std::string &szFontPath);
 
-	tChunkyBitmap toPackedBitmap(void);
+	tChunkyBitmap toPackedBitmap(bool isPmng);
 
 	bool isOk(void);
 

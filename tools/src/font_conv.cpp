@@ -151,17 +151,14 @@ int main(int lArgCount, const char *pArgs[])
 		mGlyphs.toDir(szOutPath);
 	}
 	else {
-		tChunkyBitmap FontChunky = mGlyphs.toPackedBitmap();
 		if(eOutType == tFontFormat::PNG) {
+			tChunkyBitmap FontChunky = mGlyphs.toPackedBitmap(true);
 			if(szOutPath.substr(szOutPath.length() - 4) != ".png") {
 				szOutPath += ".png";
 			}
 			FontChunky.toPng(szOutPath);
 		}
 		else if(eOutType == tFontFormat::FNT) {
-			tPlanarBitmap FontPlanar(FontChunky, tPalette({
-				tRgb(0xFF), tRgb(0x00)
-			}), tPalette());
 			if(szOutPath.substr(szOutPath.length() - 4) != ".fnt") {
 				szOutPath += ".fnt";
 			}
