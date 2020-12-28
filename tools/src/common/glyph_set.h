@@ -53,7 +53,7 @@ private:
 		void trimHorz(bool isRight);
 	};
 
-	std::map<char, tBitmapGlyph> m_mGlyphs;
+	std::map<uint16_t, tBitmapGlyph> m_mGlyphs;
 };
 
 #endif // _ACE_TOOLS_COMMON_GLYPH_SET_H_
