@@ -14,7 +14,10 @@ tDir *dirOpen(const char *szPath) {
 	systemUse();
 	tDir *pDir = memAllocFast(sizeof(tDir));
 	pDir->pLock = Lock((unsigned char*)szPath, ACCESS_READ);
-	if(!pDir->pLock || Examine(pDir->pLock, &pDir->sFileBlock) == DOSFALSE) {
+	if(
+		!pDir->pLock || (Examine(pDir->pLock, &pDir->sFileBlock) == DOSFALSE) ||
+		(pDir->sFileBlock.fib_DirEntryType  <= 0)
+	) {
 		UnLock(pDir->pLock);
 		memFree(pDir, sizeof(tDir));
 		systemUnuse();
