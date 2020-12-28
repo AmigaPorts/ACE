@@ -12,7 +12,9 @@ char *strcpy(char *restrict dest, const char *restrict src);
 
 char *strcat(char *restrict dest, const char *restrict src);
 
-char *strchr(const char *str, int ch);
+char *strchr(const char *szHaystack, int cNeedle);
+
+char *strrchr(const char *szHaystack, int cNeedle);
 
 int memcmp(const void *lhs, const void *rhs, size_t count);
 

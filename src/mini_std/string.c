@@ -28,6 +28,18 @@ char *strchr(const char *szHaystack, int cNeedle) {
 	return 0;
 }
 
+char *strrchr(const char *szHaystack, int cNeedle) {
+	// https://en.cppreference.com/w/c/string/byte/strrchr
+	char *pLast = 0;
+	while(*szHaystack != '\0') {
+		if(*szHaystack == cNeedle) {
+			pLast = (char*)szHaystack;
+		}
+		++szHaystack;
+	}
+	return pLast;
+}
+
 char *strcpy(char *restrict szDest, const char *restrict szSrc) {
 	// Also copy null terminator
 	memcpy(szDest, szSrc, strlen(szSrc) + 1);
