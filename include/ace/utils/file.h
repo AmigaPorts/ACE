@@ -46,12 +46,20 @@ void fileFlush(tFile *pFile);
  * @brief Returns file size of file, in bytes.
  *
  * @param szPath Path to file.
- * @return LONG On fail -1, otherwise file size in bytes.
+ * @return On fail -1, otherwise file size in bytes.
  */
 LONG fileGetSize(const char *szPath);
 
 void fileWriteStr(tFile *pFile, const char *szLine);
 
+/**
+ * @brief Check whether file at given path exists and is not a directory.
+ *
+ * @param szPath Path to file to be checked.
+ * @return Success: 1, otherwise 0.
+ *
+ * @see dirExists()
+ */
 UBYTE fileExists(const char *szPath);
 
 #ifdef __cplusplus
