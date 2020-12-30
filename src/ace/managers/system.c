@@ -31,6 +31,7 @@
 #define SYSTEM_INT_VECTOR_FIRST (0x64/4)
 #define SYSTEM_INT_VECTOR_COUNT 7
 #define SYSTEM_INT_HANDLER_COUNT 15
+#define SYSTEM_STACK_CANARY '\xBA'
 
 //------------------------------------------------------------------------ TYPES
 
@@ -377,11 +378,13 @@ void systemCreate(void) {
 
   // Determine original stack size
   struct Process *pProcess = (struct Process *)FindTask(NULL);
-  ULONG ulStackSize = (char *)pProcess->pr_Task.tc_SPUpper - (char *)pProcess->pr_Task.tc_SPLower;
+	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
+  ULONG ulStackSize = (char *)pProcess->pr_Task.tc_SPUpper - pStackLower;
   if (pProcess->pr_CLI) {
     ulStackSize = *(ULONG *)pProcess->pr_ReturnAddr;
   }
 	logWrite("Stack size: %lu\n", ulStackSize);
+	*pStackLower = SYSTEM_STACK_CANARY;
 
 	// Disable as much of OS stuff as possible so that it won't trash stuff when
 	// re-enabled periodically.
@@ -461,6 +464,12 @@ void systemDestroy(void) {
 
 	WaitBlit();
 	DisownBlitter();
+
+	struct Process *pProcess = (struct Process *)FindTask(NULL);
+	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
+	if(*pStackLower != SYSTEM_STACK_CANARY) {
+		logWrite("Stack has probably overflown!");
+	}
 
 	logWrite("Closing graphics.library...\n");
 	CloseLibrary((struct Library *) GfxBase);
