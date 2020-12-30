@@ -25,7 +25,7 @@ The setup is a bit troublesome but in the end it allows swapping compiler with B
   Make sure the directory containing the gcc executable is in the system PATH.
 - Download and install [CMake](https://cmake.org) if you haven't already.
   Be sure its executable directory is in your PATH or you'll have to configure vscode extension with it manually.
-- In VSCode, install twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support.
+- In VSCode, install `twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support.
 - If CMake's executable is not in your system's PATH, enter VSCode settings and set full path to cmake.exe.
 - Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo.
   Be sure you have `m68k-bartman.cmake` file there (currently it's not on master branch, so look around in latest branches).
