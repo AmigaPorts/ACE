@@ -297,7 +297,7 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 	uwEndPos += 0x2C; // Addition from DiWStrt
 #if defined(ACE_DEBUG)
 	if(uwEndPos >= 312) {
-		logWrite("ERR: vPortWaitForEnd - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
+		logWrite("ERR: vPortWaitForPos - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
 		logWrite("\tVPort offs: %hu, pos: %hu\n", pVPort->uwOffsY, uwPosY);
 	}
 #endif
