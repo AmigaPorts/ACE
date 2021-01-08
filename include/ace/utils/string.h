@@ -14,6 +14,8 @@ char *stringDecimalFromULong(ULONG ulVal, char *pDst);
 
 void strToUpper(const char *szSrc, char *szDst);
 
+char charToUpper(char c);
+
 UBYTE stringIsEmpty(const char *szStr);
 
 #endif // _ACE_UTILS_STRING_H_

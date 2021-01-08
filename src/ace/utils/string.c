@@ -33,12 +33,17 @@ char *stringDecimalFromULong(ULONG ulVal, char *pDst) {
   return pWriteEnd;
 }
 
+char charToUpper(char c) {
+	if('a' <= c && c <= 'z') {
+		c -= 'a' - 'A';
+	}
+	return c;
+}
+
 void strToUpper(const char *szSrc, char *szDst) {
 	while(*szSrc) {
 		char c = *(szSrc++);
-		if('a' <= c && c <= 'z') {
-			c -= 'a' - 'A';
-		}
+		c = charToUpper(c);
 		*(szDst++) = c;
 	}
 	*szDst = '\0';
