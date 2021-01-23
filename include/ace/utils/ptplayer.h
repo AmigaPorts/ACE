@@ -166,6 +166,11 @@ void ptplayerSfxPlay(
 	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
 );
 
+/**
+ * @brief Waits until all sound effects have been played.
+ */
+void ptplayerWaitForSfx(void);
+
 #ifdef __cplusplus
 }
 #endif
