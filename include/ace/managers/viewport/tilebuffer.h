@@ -25,22 +25,58 @@ extern "C" {
 #include <ace/managers/viewport/camera.h>
 #include <ace/managers/viewport/scrollbuffer.h>
 
-// vPort ptr
+/**
+ * @brief Pointer to parent vPort. Mandatory.
+ */
 #define TAG_TILEBUFFER_VPORT (TAG_USER|1)
-// Scrollable area bounds, in pixels
+
+/**
+ * @brief Scrollable area bounds, in pixels. Mandatory.
+ */
 #define TAG_TILEBUFFER_BOUND_TILE_X     (TAG_USER|2)
 #define TAG_TILEBUFFER_BOUND_TILE_Y     (TAG_USER|3)
+/**
+ * @brief Size of tile, given in bitshift. Set to 4 for 16px, 5 for 32px, etc. Mandatory.
+ */
 #define TAG_TILEBUFFER_TILE_SHIFT (TAG_USER|4)
-// Buffer bitmap creation flags
+
+/**
+ * @brief Buffer bitmap creation flags. Defaults to BMF_CLEAR.
+ */
 #define TAG_TILEBUFFER_BITMAP_FLAGS (TAG_USER|5)
+
+/**
+ * @brief Set this flag to 1 to enable double buffering. Defaults to 0.
+ */
 #define TAG_TILEBUFFER_IS_DBLBUF    (TAG_USER|6)
-// If in raw mode, offset on copperlist for placing required copper
-// instructions, specified in copper instruction count since beginning.
+
+/**
+ * @brief If in raw copper mode, offset on copperlist for placing required
+ * copper instructions, specified in copper instruction count since beginning.
+ */
 #define TAG_TILEBUFFER_COPLIST_OFFSET_START (TAG_USER|7)
 #define TAG_TILEBUFFER_COPLIST_OFFSET_BREAK (TAG_USER|8)
-// Callbacks, tileset
+
+/**
+ * @brief Pointer to tileset bitmap. Expects it to have all tiles in single
+ * column. Mandatory.
+ */
 #define TAG_TILEBUFFER_TILESET             (TAG_USER|9)
+
+/**
+ * @brief Pointer to callback which gets called in case any tile gets drawn.
+ *
+ * Use this to draw extra stuff on top of your tiles.
+ *
+ * @see tTileDrawCallback
+ */
 #define TAG_TILEBUFFER_CALLBACK_TILE_DRAW  (TAG_USER|10)
+
+/**
+ * @brief Max length of tile redraw queue. Mandatory, must be non-zero.
+ *
+ * @see tileBufferQueueProcess()
+ */
 #define TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH (TAG_USER|11)
 
 /* types */
@@ -99,19 +135,38 @@ typedef struct _tTileBufferManager {
 
 /* functions */
 
+/**
+ * @brief Processes tile queue. Typically should be called once per game loop,
+ * but other refreshing strategies can be used for better load balancing.
+ *
+ * @param pManager The tile manager to be processed.
+ * @see tileBufferProcess()
+ */
 void tileBufferQueueProcess(tTileBufferManager *pManager);
 
 /**
- * Tilemap buffer manager create fn
- * Be sure to set camera pos, load tile data & then call tileBufferRedraw()!
+ * Tilemap buffer manager create fn. See TAG_TILEBUFFER_* for available options.
+ *
+ * After calling this function, be sure to do the following:
+ * - set initial pos in camera manager,
+ * - fill tilemap on .pTileData with tile indices,
+ * - call tileBufferRedrawAll()
+ *
+ * @see tileBufferRedrawAll()
+ * @see tileBufferDestroy()
  */
 tTileBufferManager *tileBufferCreate(void *pTags, ...);
 
 void tileBufferDestroy(tTileBufferManager *pManager);
 
 /**
- * Redraws one tile for each margin - X and Y
- * Redraws all remaining margin's tiles when margin is about to be displayed
+ * @brief Processes given tile buffer manager.
+ *
+ * Typically, redraws one tile for X and one for Y margins.
+ * In case of impending display of a margin, redraws all of its remaining tiles.
+ * It doesn't redraw manually invalidated/changed tiles!
+ *
+ * @see tileBufferQueueProcess()
  */
 void tileBufferProcess(tTileBufferManager *pManager);
 
@@ -164,6 +219,15 @@ UBYTE tileBufferIsTileOnBuffer(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 );
 
+/**
+ * @brief Changes tile at given position to another tile and schedules its
+ * redraw using redraw queue.
+ *
+ * @param pManager The tile manager to be used.
+ * @param uwX The X coordinate of tile, in tile-space.
+ * @param uwY The Y coordinate of tile, in tile-space.
+ * @param uwIdx Index of tile to be placed on given position.
+ */
 void tileBufferSetTile(
 	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwIdx
 );
