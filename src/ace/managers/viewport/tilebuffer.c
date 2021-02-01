@@ -255,7 +255,6 @@ FN_HOTSPOT
 void tileBufferProcess(tTileBufferManager *pManager) {
 	WORD wTileIdxX, wTileIdxY;
 	UWORD uwTileOffsX, uwTileOffsY;
-	UBYTE ubAddY;
 	tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
 
 	UBYTE ubTileSize = pManager->ubTileSize;
@@ -282,14 +281,12 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			// Not finished redrawing all column tiles?
 			if(pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
 				uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) & (pManager->uwMarginedHeight-1);
-				ubAddY =      (pState->pMarginX->wTilePos << ubTileShift) / pManager->uwMarginedWidth;
-				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift) & (pManager->uwMarginedWidth-1);
+				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
 				// Redraw remaining tiles
 				while (pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
 					tileBufferDrawTileQuick(
-						pManager,
-						pState->pMarginX->wTilePos, pState->pMarginX->wTileCurr,
-						uwTileOffsX, uwTileOffsY+ubAddY
+						pManager, pState->pMarginX->wTilePos, pState->pMarginX->wTileCurr,
+						uwTileOffsX, uwTileOffsY
 					);
 					++pState->pMarginX->wTileCurr;
 					uwTileOffsY = (uwTileOffsY + ubTileSize);
@@ -355,21 +352,15 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			// Not finished redrawing all row tiles?
 			if(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
 				uwTileOffsY = (pState->pMarginY->wTilePos << ubTileShift) & (pManager->uwMarginedHeight-1);
-				ubAddY =      (pState->pMarginY->wTileCurr << ubTileShift) >> pManager->ubWidthShift;
-				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift) & (pManager->uwMarginedWidth-1);
+				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
 				// Redraw remaining tiles
 				while(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
 					tileBufferDrawTileQuick(
-						pManager,
-						pState->pMarginY->wTileCurr, pState->pMarginY->wTilePos,
-						uwTileOffsX, uwTileOffsY+ubAddY
+						pManager, pState->pMarginY->wTileCurr, pState->pMarginY->wTilePos,
+						uwTileOffsX, uwTileOffsY
 					);
 					++pState->pMarginY->wTileCurr;
 					uwTileOffsX += ubTileSize;
-					if(uwTileOffsX >= pManager->uwMarginedWidth) {
-						uwTileOffsX -= pManager->uwMarginedWidth;
-						++ubAddY;
-					}
 				}
 			}
 			// Prepare new row redraw data
@@ -435,18 +426,13 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 
 	UWORD uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
 	for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
-		UBYTE ubAddY =      (wStartX << ubTileShift) >> pManager->ubWidthShift;
-		UWORD uwTileOffsX = (wStartX << ubTileShift) & (pManager->uwMarginedWidth-1);
+		UWORD uwTileOffsX = (wStartX << ubTileShift);
 
 		for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
 			tileBufferDrawTileQuick(
-				pManager, uwTileX, uwTileY, uwTileOffsX, uwTileOffsY+ubAddY
+				pManager, uwTileX, uwTileY, uwTileOffsX, uwTileOffsY
 			);
 			uwTileOffsX += ubTileSize;
-			if(uwTileOffsX >= pManager->uwMarginedWidth) {
-				++ubAddY;
-				uwTileOffsX -= pManager->uwMarginedWidth;
-			}
 		}
 		uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
 	}
@@ -467,23 +453,21 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 void tileBufferDrawTile(
 	const tTileBufferManager *pManager, UWORD uwTileIdxX, UWORD uwTileIdxY
 ) {
-	UWORD uwBfrX, uwBfrY;
-	UBYTE ubAddY;
+	// Buffer X coord will overflow dimensions but that's fine 'cuz we need to
+	// draw on bitplane 1 as if it is part of bitplane 0.
+	UWORD uwBfrY = (uwTileIdxY << pManager->ubTileShift) & (pManager->uwMarginedHeight - 1);
+	UWORD uwBfrX = (uwTileIdxX << pManager->ubTileShift);
 
-	uwBfrY = (uwTileIdxY << pManager->ubTileShift) & (pManager->uwMarginedHeight - 1);
-	ubAddY = (uwTileIdxX << pManager->ubTileShift) >> pManager->ubWidthShift;
-	uwBfrX = (uwTileIdxX << pManager->ubTileShift) & (pManager->uwMarginedWidth-1);
-
-	tileBufferDrawTileQuick(
-		pManager, uwTileIdxX, uwTileIdxY, uwBfrX, uwBfrY+ubAddY
-	);
+	tileBufferDrawTileQuick(pManager, uwTileIdxX, uwTileIdxY, uwBfrX, uwBfrY);
 }
 
 void tileBufferDrawTileQuick(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
 	UWORD uwBfrX, UWORD uwBfrY
 ) {
-	blitCopyAligned(
+	// This can't use safe blit fn because when scrolling in X direction,
+	// we need to draw on bitplane 1 as if it is part of bitplane 0.
+	blitUnsafeCopyAligned(
 		pManager->pTileSet,
 		0, pManager->pTileData[uwTileX][uwTileY] << pManager->ubTileShift,
 		pManager->pScroll->pBack, uwBfrX, uwBfrY,
