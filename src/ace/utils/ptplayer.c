@@ -774,9 +774,9 @@ typedef struct _tChannelStatus {
 	UWORD n_funk; ///< Funk speed
 	UBYTE *n_wavestart;
 	UWORD n_reallength;
-	UWORD n_intbit; ///< channel's INTF_AUD# value.
+	volatile UBYTE *pDoneBit;
 	UWORD uwChannelIdx;
-	UWORD n_sfxlen;
+	UWORD n_sfxlen; ///< Pending sfx length. Set to 0 after registers are set to play it.
 	UWORD *n_sfxptr;
 	UWORD n_sfxper;
 	UWORD n_sfxvol;
@@ -800,7 +800,7 @@ typedef struct _tChannelStatus {
 	 * Priority of currently played SFX, MOD samples use 0. Cleared after sfx
 	 * has fully played back.
 	 */
-	UBYTE ubSfxPriority;
+	volatile UBYTE ubSfxPriority;
 
 	UBYTE n_freecnt;
 	UBYTE n_musiconly;
@@ -821,6 +821,13 @@ typedef void (*tPreFx)(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 );
 
+typedef union _tChannelDone {
+	struct {
+		UBYTE pChannels[4]; ///< Used for getting/setting each channel separately.
+	};
+	ULONG ulChannelMask; ///< Handy for query if any channel is active or clearing.
+} tChannelDone;
+
 static const tFx fx_tab[16];
 static const tFx morefx_tab[16];
 static const tFx blmorefx_tab[16];
@@ -833,10 +840,10 @@ static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
 
 /**
- * @brief This is cleared for all channels on setRepeat interrupt handler,
- * so I think this is not the true indicator if channel is free. Bug pehaps?
+ * @brief Indicators for each channel being free to use. Channel is set to 1 if
+ * it has done playback.
  */
-static volatile UWORD s_uwChannelDone;
+static volatile tChannelDone s_uChannelDone;
 
 /**
  * @brief Set to 1 for channel after it has been instructed to play back 1-word
@@ -985,9 +992,9 @@ static void startSfx(
 	pChannelReg->ac_vol = pChannelData->n_sfxvol;
 
 	// Save repeat and period for TimerB interrupt.
-	// After the sample has fully played back and there is no repeat, the channel
-	// pointer gets set to first word of sample and plays back the first word
-	// continuously.
+	// After the sample has fully played back and there is no repeat,
+	// the channel's pointer will be set to first word of sample and play back
+	// the first word continuously.
 	pChannelData->n_loopstart = pChannelData->n_sfxptr;
 	pChannelData->n_replen = 1;
 	pChannelData->n_period = pChannelData->n_period;
@@ -1034,22 +1041,22 @@ static void mt_playvoice(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg,
 	const tModVoice *pVoice
 ) {
-	// channel blocked by external sound effect?
 	if(pChannelData->ubSfxPriority) {
+		// Channel blocked by external sound effect
 		if(pChannelData->n_sfxlen) {
+			// There are pending sfx data to be written into channel regs
 			startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
 			return;
 		}
-		// do only some limited commands, while sound effect is in progress
-		if(
-			!(pChannelData->n_intbit & s_uwChannelDone) ||
-			(pChannelData->n_dmabit & mt_dmaon)
-		) {
+		if(!(*pChannelData->pDoneBit) || (mt_dmaon & pChannelData->n_dmabit)) {
+			// Channel interrupt is not triggered or DMA is still active - do only
+			// some limited commands while sound effect is in progress
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
 			return;
 		}
-		// sound effect sample has played, so unblock this channel again
+		// Sound effect sample is already scheduled to be played, so unblock
+		// this channel again.
 		pChannelData->ubSfxPriority = 0;
 	}
 	// n_note/cmd: any note or cmd set?
@@ -1133,8 +1140,8 @@ static void mt_checkfx(
 			startSfx(uwLen, pChannelData, pChannelReg);
 		}
 		if(uwLen || (
-			!(pChannelData->n_intbit & s_uwChannelDone) ||
-			(pChannelData->n_dmabit & g_pCustom->dmaconr)
+			!(*pChannelData->pDoneBit) || (g_pCustom->dmaconr & pChannelData->n_dmabit)
+			// TODO: why not checking mt_dmaon?
 		)) {
 			// Channel is blocked, only check some E-commands
 			UWORD uwCmd = pChannelData->n_cmd & 0x0FFF;
@@ -1216,22 +1223,36 @@ static inline void setChannelRepeat(
 	volatile tChannelRegs *pChannelRegs, const tChannelStatus *pChannelData
 ) {
 	if(pChannelData->n_replen == 1) {
-		// Give the audio interrupt signal that it should disable channel DMA
-		// after playback of this one.
-		s_pAudioChannelPendingDisable[pChannelData->uwChannelIdx] = 1;
+		// Looped single word of sample - channel is to be set to idle mode
+		if(mt_dmaon & pChannelData->n_dmabit) {
+			// Channel is still on - give the audio interrupt signal that it should
+			// disable channel DMA after playback of this one.
+			s_pAudioChannelPendingDisable[pChannelData->uwChannelIdx] = 1;
+		}
+	}
+	if(!(mt_dmaon & pChannelData->n_dmabit)) {
+		// Channel is already turned off - refresh 'done' bit.
+		*pChannelData->pDoneBit = 1;
+		// Skip register setup
+		return;
 	}
 
-	// Paula reads new register values after it finishes audio playback.
+	// Paula reads new register values after it finishes current audio playback.
 	pChannelRegs->ac_ptr = pChannelData->n_loopstart;
 	pChannelRegs->ac_len = pChannelData->n_replen;
 }
 
 static void intSetRep(volatile tCustom *pCustom) {
-	// pCustom->color[0] = 0x0F0;
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
 	// KaiN's note: Audio dmaBits = 0b0000..0b1000, intBits = dmaBits << 7
-	s_uwChannelDone = 0;
+
+	// When channel is idle, original ptplayer loops playback of  the first word
+	// and allows Paula to keep the intbit being set, so clearing here intreq
+	// for all channels didn't permanently affected idle channel bits.
+	// ACE's version disables channel's DMA when sfx played back to prevent
+	// interrupt spamming, so they can't maintain the 'done' intbit.
+	s_uChannelDone.ulChannelMask = 0;
 
 	// Set repeat sample pointers and lengths
 	setChannelRepeat(&pCustom->aud[0], &mt_chan[0]);
@@ -1242,7 +1263,6 @@ static void intSetRep(volatile tCustom *pCustom) {
 	// restore TimerA music interrupt vector
 	ptplayerEnableMainHandler(1);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
-	// pCustom->color[0] = 0x000;
 }
 
 // One-shot TimerB interrupt to set repeat samples after another 576 ticks.
@@ -1284,18 +1304,14 @@ static void mt_TimerBdmaon(
 static void chan_sfx_only(
 	volatile tChannelRegs *pChannelReg, tChannelStatus *pChannelData
 ) {
-	if(pChannelData->ubSfxPriority == 0) {
-		return;
-	}
-	else if(pChannelData->n_sfxlen) {
-		startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
-	}
-	else if(
-		(pChannelData->n_intbit & s_uwChannelDone) &&
-		((pChannelData->n_dmabit & mt_dmaon) == 0)
-	) {
-		// Last sound effect sample has played, so unblock this channel again
-		pChannelData->ubSfxPriority = 0;
+	if(pChannelData->ubSfxPriority) {
+		if(pChannelData->n_sfxlen) {
+			startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
+		}
+		else if(*pChannelData->pDoneBit && !(mt_dmaon & pChannelData->n_dmabit)) {
+			// Last sound effect sample has played, so unblock this channel again
+			pChannelData->ubSfxPriority = 0;
+		}
 	}
 }
 
@@ -1423,6 +1439,7 @@ static void mt_reset(void) {
 	mt_Speed = 6;
 	mt_Counter = 0;
 	mt_PatternPos = 0;
+	s_uChannelDone.ulChannelMask = 0;
 
 	// Disable the filter
 	g_pCia[CIA_A]->pra |= BV(1);
@@ -1433,7 +1450,7 @@ static void mt_reset(void) {
 	// initialise channel DMA, interrupt bits and audio register base
 	for(UBYTE i = 4; i--;) {
 		mt_chan[i].n_dmabit = 1 << (DMAB_AUD0 + i);
-		mt_chan[i].n_intbit = 1 << (INTB_AUD0 + i);
+		mt_chan[i].pDoneBit = &s_uChannelDone.pChannels[i];
 		mt_chan[i].uwChannelIdx = i;
 	}
 
@@ -1465,11 +1482,11 @@ static void INTERRUPT onAudio(
 	REGARG(volatile void *pData, "a1")
 ) {
 	UBYTE ubChannelIdx = (ULONG)pData;
-	s_uwChannelDone |= INTF_AUD0 << ubChannelIdx;
+	s_uChannelDone.pChannels[ubChannelIdx] = 1;
 
 	if(s_pAudioChannelPendingDisable[ubChannelIdx]) {
 		// This is to prevent repeatedly triggering audio interrupt and slowing
-		// Amiga down after sfx playback
+		// Amiga down after sfx playback.
 		s_pAudioChannelPendingDisable[ubChannelIdx] = 0;
 		systemSetDmaMask(DMAF_AUD0 << ubChannelIdx, 0);
 		pCustom->aud[ubChannelIdx].ac_dat = 0;
@@ -1491,7 +1508,6 @@ void ptplayerDestroy(void) {
 void ptplayerCreate(UBYTE isPal) {
 	s_pModCurr = 0;
 	ptplayerEnableMusic(0);
-	s_uwChannelDone = 0;
 	for(UBYTE i = sizeof(s_pAudioChannelPendingDisable); i--;) {
 		s_pAudioChannelPendingDisable[i] = 0;
 	}
@@ -2533,7 +2549,7 @@ fail:
 
 void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
 	if(pSfx) {
-		ptplayerWaitForSfx();
+		// ptplayerWaitForSfx();
 		systemUse();
 		if(pSfx->pData) {
 			memFree(pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
@@ -2666,19 +2682,18 @@ void ptplayerSfxPlay(
 	UBYTE ubBestFreeCnt = 0;
 	if(bFreeChannels >= 0) {
 		// Exclude channels which have set a repeat loop. Try not to break them!
+		// We will prefer a music channel which had pDoneBit set, because that means
+		// the last instrument sample has been played completely, and the channel
+		// is now idle.
 		UWORD uwChannelsToCheck = 0;
 		UWORD uwIntFlag = INTF_AUD0;
 		for(UBYTE i = 0; i < 4; ++i) {
-			if(!mt_chan[i].n_looped) {
+			if(!mt_chan[i].n_looped && *mt_chan[i].pDoneBit) {
 				uwChannelsToCheck |= uwIntFlag;
 			}
 			uwIntFlag <<= 1;
 		}
 
-		// We will prefer a music channel which had an audio interrupt bit set,
-		// because that means the last instrument sample has been played
-		// completely, and the channel is now in an idle loop.
-		uwChannelsToCheck &= s_uwChannelDone;
 		if(!uwChannelsToCheck) {
 			// All channels are busy, then it doesn't matter which one we break...
 			uwChannelsToCheck = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
@@ -2720,9 +2735,10 @@ void ptplayerWaitForSfx(void) {
 	do {
 		isAnyChannelBusy = 0;
 		for(UBYTE i = 0; i < 4; ++i) {
-			if(mt_chan[i].ubSfxPriority) {
+			if(mt_chan[i].ubSfxPriority || !*mt_chan[i].pDoneBit) {
 				// channel is busy by sfx
 				isAnyChannelBusy = 1;
+				// logWrite("channel busy %hhu", i);
 				break;
 			}
 		}

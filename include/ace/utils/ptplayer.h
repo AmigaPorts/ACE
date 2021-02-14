@@ -16,6 +16,8 @@ extern "C" {
 #define PTPLAYER_VOLUME_MAX 64
 
 #include <ace/types.h>
+#include <ace/utils/bitmap.h>
+#include <ace/utils/font.h>
 
 #if defined(ACE_DEBUG_ALL) && !defined(ACE_DEBUG_PTPLAYER)
 #define ACE_DEBUG_PTPLAYER
