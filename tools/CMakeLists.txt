@@ -4,7 +4,7 @@ project(ACE_tools)
 
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 20)
 
 # Common
 file(GLOB COMMON_src src/common/*.cpp src/common/*.c)
