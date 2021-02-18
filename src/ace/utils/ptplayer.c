@@ -1439,7 +1439,10 @@ static void mt_reset(void) {
 	mt_Speed = 6;
 	mt_Counter = 0;
 	mt_PatternPos = 0;
-	s_uChannelDone.ulChannelMask = 0;
+
+	// Set all channels as done in case of waiting for sfx before any have been
+	// actually played.
+	s_uChannelDone.ulChannelMask = 0x01010101;
 
 	// Disable the filter
 	g_pCia[CIA_A]->pra |= BV(1);
