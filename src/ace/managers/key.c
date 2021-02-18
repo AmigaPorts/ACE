@@ -10,6 +10,10 @@
 #include <hardware/intbits.h> // INTB_PORTS
 #define KEY_RELEASED_BIT 1
 
+#if defined ACE_DEBUG
+static UBYTE s_bInitCount = 0;
+#endif
+
 static inline void keyIntSetState(
 	tKeyManager *pManager, UBYTE ubKeyCode, UBYTE ubKeyState
 ) {
@@ -89,12 +93,24 @@ const UBYTE g_pToAscii[] = {
 
 void keyCreate(void) {
 	logBlockBegin("keyCreate()");
+#if defined(ACE_DEBUG)
+	if(s_bInitCount++ != 0) {
+		// You should call keyCreate() only once
+		logWrite("ERR: Keyboard already initialized!\n");
+	}
+#endif
 	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, keyIntServer, &g_sKeyManager);
 	logBlockEnd("keyCreate()");
 }
 
 void keyDestroy(void) {
 	logBlockBegin("keyDestroy()");
+#if defined(ACE_DEBUG)
+	if(s_bInitCount-- != 1) {
+		// You should call keyDestroy() only once for each keyCreate()
+		logWrite("ERR: Keyboard was initialized multiple times!\n");
+	}
+#endif
 	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, 0, 0);
 	logBlockEnd("keyDestroy()");
 }

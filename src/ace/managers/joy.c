@@ -11,6 +11,10 @@
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
 
+#if defined ACE_DEBUG
+static UBYTE s_bInitCount = 0;
+#endif
+
 /* Globals */
 tJoyManager g_sJoyManager;
 
@@ -29,10 +33,21 @@ static inline const char *myAllocMiscResource(
 
 
 void joyOpen(void) {
-
+#if defined(ACE_DEBUG)
+	if(s_bInitCount++ != 0) {
+		// You should call keyCreate() only once
+		logWrite("ERR: Joy already initialized!\n");
+	}
+#endif
 }
 
 void joyClose(void) {
+#if defined(ACE_DEBUG)
+	if(s_bInitCount-- != 1) {
+		// You should call joyClose() only once for each joyCreate()
+		logWrite("ERR: Joy was initialized multiple times!\n");
+	}
+#endif
 	if(s_isParallelEnabled) {
 		joyDisableParallel();
 	}
