@@ -74,15 +74,22 @@ int main(int lArgCount, const char *pArgs[])
 			return EXIT_FAILURE;
 		}
 		if(In.m_uwHeight % lTileHeight != 0) {
-			nLog::error("Input bitmap is not divisible by {}", lTileHeight);
+			nLog::error("Input bitmap height is not divisible by {}", lTileHeight);
 			return EXIT_FAILURE;
 		}
-		uint16_t uwTileCount = In.m_uwHeight / lTileHeight;
-		vTiles.reserve(uwTileCount);
-		for(uint16_t i = 0; i < uwTileCount; ++i) {
-			tChunkyBitmap Tile(lTileSize, lTileHeight);
-			In.copyRect(0, i * lTileHeight, Tile, 0, 0, lTileSize, lTileHeight);
-			vTiles.push_back(std::move(Tile));
+		if(In.m_uwWidth % lTileSize != 0) {
+			nLog::error("Input bitmap width is not divisible by {}", lTileSize);
+			return EXIT_FAILURE;
+		}
+		uint16_t uwTileCountHoriz = In.m_uwWidth / lTileSize;
+		uint16_t uwTileCountVert = In.m_uwHeight / lTileHeight;
+		vTiles.reserve(uwTileCountHoriz * uwTileCountVert);
+		for(uint16_t y = 0; y < uwTileCountVert; ++y) {
+			for(uint16_t x = 0; x < uwTileCountHoriz; ++x) {
+				tChunkyBitmap Tile(lTileSize, lTileHeight);
+				In.copyRect(x * lTileSize, y * lTileHeight, Tile, 0, 0, lTileSize, lTileHeight);
+				vTiles.push_back(std::move(Tile));
+			}
 		}
 	}
 	else if(nFs::isDir(szInPath)) {
