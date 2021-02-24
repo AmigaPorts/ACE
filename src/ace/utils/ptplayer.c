@@ -18,14 +18,16 @@
 
 // Flags which modify ptplayer functionality
 // #define PTPLAYER_USE_VBL // Otherwise use CIA
-// #define PTPLAYER_DEFER_INTERRUPTS
+// #define PTPLAYER_DEFER_INTERRUPTS // Interrupts are as short as possible, rest is done in ptplayerProcess()
 
-// Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes
-// Length of single pattern.
+// Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
 #define MOD_ROWS_IN_PATTERN 64
 #define MOD_NOTES_PER_ROW 4
 #define MOD_BYTES_PER_NOTE 4
+// Length of single pattern.
 #define MOD_PATTERN_LENGTH (MOD_ROWS_IN_PATTERN * MOD_NOTES_PER_ROW * MOD_BYTES_PER_NOTE)
+
+// Size of period table.
 #define MOD_PERIOD_TABLE_LENGTH 36
 
 /**
@@ -780,7 +782,7 @@ typedef struct _tChannelStatus {
 	UWORD *n_sfxptr;
 	UWORD n_sfxper;
 	UWORD n_sfxvol;
-	UBYTE n_looped;  ///< Set to 1 if sample has repeat offset/length which is other value than sample start / sample length
+	UBYTE n_looped;  ///< Set to 1 if sample has repeat offset/length which is other value than sample start / sample length - prevents from using channel for sfx after first sample play.
 	UBYTE n_minusft; ///< Set to 1 on negative finetune value
 	UBYTE n_vibratoamp;
 	UBYTE n_vibratospd;
@@ -1098,8 +1100,10 @@ static void mt_playvoice(
 
 		pChannelData->n_volume = pSampleDef->ubVolume;
 		if(!pSampleDef->uwRepeatOffs) {
+			// No repeat def - reload first empty sample word after playback,
+			// then disable channel.
 			pChannelData->n_looped = 0;
-			pChannelData->n_replen = pSampleDef->uwLength;
+			pChannelData->n_replen = 1;
 		}
 		else {
 			// Set repeat
