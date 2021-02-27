@@ -8,11 +8,13 @@
 #include <clib/dos_protos.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
+#include <devices/audio.h>
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
 #include <ace/managers/key.h>
 #include <exec/execbase.h>
+#include <exec/lists.h>
 #include <proto/exec.h> // Bartman's compiler needs this
 #include <proto/dos.h> // Bartman's compiler needs this
 #include <proto/graphics.h> // Bartman's compiler needs this
@@ -78,6 +80,7 @@ static WORD s_wSystemUses;
 struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
 static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
+static struct IOAudio s_sIoAudio = {0};
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -296,6 +299,109 @@ void HWINTERRUPT int7Handler(void) {
 
 //-------------------------------------------------------------------- FUNCTIONS
 
+// Messageport creation for KS1.3
+// http://amigadev.elowar.com/read/ADCD_2.1/Libraries_Manual_guide/node02EC.html
+static struct MsgPort *msgPortCreate(char *name, LONG pri) {
+	LONG sigBit;
+	struct MsgPort *mp;
+
+	if((sigBit = AllocSignal(-1L)) == -1) {
+		return(NULL);
+	}
+
+	mp = (struct MsgPort *) AllocMem(sizeof(*mp), MEMF_PUBLIC | MEMF_CLEAR);
+	if (!mp) {
+		FreeSignal(sigBit);
+		return(NULL);
+	}
+	mp->mp_Node.ln_Name = name;
+	mp->mp_Node.ln_Pri = pri;
+	mp->mp_Node.ln_Type = NT_MSGPORT;
+	mp->mp_Flags = PA_SIGNAL;
+	mp->mp_SigBit = sigBit;
+	mp->mp_SigTask = (struct Task *)FindTask(0L); // Find THIS task.
+
+	// NewList(&(mp->mp_MsgList)); // Init message list - not in headers
+	mp->mp_MsgList.lh_Head = (struct Node*)&mp->mp_MsgList.lh_Tail;
+	mp->mp_MsgList.lh_Tail = NULL;
+	mp->mp_MsgList.lh_TailPred = (struct Node*)&mp->mp_MsgList.lh_Head;
+	return(mp);
+}
+
+// http://amigadev.elowar.com/read/ADCD_2.1/Libraries_Manual_guide/node02ED.html
+static void msgPortDelete(struct MsgPort *mp) {
+	mp->mp_SigTask = (struct Task *) -1; // Make it difficult to re-use the port
+	mp->mp_MsgList.lh_Head = (struct Node *) -1;
+
+	FreeSignal(mp->mp_SigBit);
+	FreeMem(mp, sizeof(*mp));
+}
+
+static UBYTE audioChannelAlloc(struct IOAudio *pIoAudio) {
+	struct MsgPort *pMsgPort = 0;
+
+	pMsgPort = msgPortCreate("audio alloc", ADALLOC_MAXPREC);
+	if(!pMsgPort) {
+		logWrite("ERR: Couldn't open message port for audio alloc\n");
+		goto fail;
+	}
+
+	// We don't have CreateIORequest on ks1.3, so do what AROS does
+	memset(pIoAudio, 0, sizeof(*pIoAudio));
+	pIoAudio->ioa_Request.io_Message.mn_Node.ln_Type = NT_MESSAGE;
+	pIoAudio->ioa_Request.io_Message.mn_ReplyPort = pMsgPort;
+	pIoAudio->ioa_Request.io_Message.mn_Length = sizeof(*pIoAudio);
+
+	UBYTE isError = OpenDevice(
+		(CONST_STRPTR)"audio.device", 0, (struct IORequest *)pIoAudio, 0
+	);
+	if(isError) {
+		logWrite(
+			"ERR: Couldn't alloc Audio channels, code: %d\n",
+			pIoAudio->ioa_Request.io_Error
+		);
+		goto fail;
+	}
+
+	UBYTE ubChannelMask = 0b1111; // Allocate all 4 channels.
+	pIoAudio->ioa_Data = &ubChannelMask;
+	pIoAudio->ioa_Length = sizeof(ubChannelMask);
+	pIoAudio->ioa_Request.io_Command = ADCMD_ALLOCATE;
+	pIoAudio->ioa_Request.io_Flags = ADIOF_NOWAIT;
+	isError = DoIO((struct IORequest *)pIoAudio);
+
+	if(isError) {
+		logWrite(
+			"ERR: io audio request fail, code: %d\n", pIoAudio->ioa_Request.io_Error
+		);
+		goto fail;
+	}
+	return 1;
+
+fail:
+	if(pMsgPort) {
+		msgPortDelete(pMsgPort);
+	}
+	return 0;
+}
+
+void audioChannelFree(struct IOAudio *pIoAudio) {
+	struct MsgPort *pMsgPort = pIoAudio->ioa_Request.io_Message.mn_ReplyPort;
+
+	pIoAudio->ioa_Request.io_Command = ADCMD_FINISH;
+	pIoAudio->ioa_Request.io_Flags = 0;
+	pIoAudio->ioa_Request.io_Unit = (APTR)1;
+	UBYTE isError = DoIO((struct IORequest *)pIoAudio);
+	if(isError) {
+		logWrite(
+			"ERR: io audio request fail, code: %d\n", pIoAudio->ioa_Request.io_Error
+		);
+	}
+
+	CloseDevice((struct IORequest *)pIoAudio);
+	msgPortDelete(pMsgPort);
+}
+
 /**
  * @brief Flushes FDD disk activity.
  * Originally written by Asman in asm, known as osflush
@@ -386,6 +492,10 @@ void systemCreate(void) {
 	logWrite("Stack size: %lu\n", ulStackSize);
 	*pStackLower = SYSTEM_STACK_CANARY;
 
+	// Reserve all audio channels - apparantly this allows for int flag polling
+	// From https://gist.github.com/johngirvin/8fb0c4bb83b7c80427e2f439bb074e95
+	audioChannelAlloc(&s_sIoAudio);
+
 	// Disable as much of OS stuff as possible so that it won't trash stuff when
 	// re-enabled periodically.
 	// Save the system copperlists and flush the view
@@ -456,6 +566,9 @@ void systemDestroy(void) {
 	s_wSystemUses = 0;
 	systemUse();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
+
+	// Free audio channels
+	audioChannelFree(&s_sIoAudio);
 
 	// restore old view
 	WaitTOF();
@@ -531,10 +644,12 @@ void systemUnuse(void) {
 
 		// Enable needed DMA (and interrupt) channels
 		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
-		// Everything that's supported by ACE to simplify things for now
+		// Everything that's supported by ACE to simplify things for now,
+		// but not audio channels since ptplayer relies on polling them, and I'm not
+		// currently being able to debug audio interrupt handler variant.
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
 			INTF_BLIT | INTF_COPER | INTF_VERTB | INTF_EXTER |
-			INTF_PORTS | INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
+			INTF_PORTS //| INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
 		);
 	}
 #if defined(ACE_DEBUG)

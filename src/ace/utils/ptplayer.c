@@ -19,6 +19,7 @@
 // Flags which modify ptplayer functionality
 // #define PTPLAYER_USE_VBL // Otherwise use CIA
 // #define PTPLAYER_DEFER_INTERRUPTS // Interrupts are as short as possible, rest is done in ptplayerProcess()
+// #define PTPLAYER_USE_AUDIO_INT_HANDLERS // Uses audio interrupt handlers instead of polling intbits for checking if channel is idle. May be better in the long run for os-friendly use, but buggy for now!
 
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
 #define MOD_ROWS_IN_PATTERN 64
@@ -776,7 +777,9 @@ typedef struct _tChannelStatus {
 	UWORD n_funk; ///< Funk speed
 	UBYTE *n_wavestart;
 	UWORD n_reallength;
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	volatile UBYTE *pDoneBit;
+#endif
 	UWORD uwChannelIdx;
 	UWORD n_sfxlen; ///< Pending sfx length. Set to 0 after registers are set to play it.
 	UWORD *n_sfxptr;
@@ -841,11 +844,13 @@ static const tPreFx prefx_tab[16];
 static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
 
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 /**
  * @brief Indicators for each channel being free to use. Channel is set to 1 if
  * it has done playback.
  */
 static volatile tChannelDone s_uChannelDone;
+#endif
 
 /**
  * @brief Set to 1 for channel after it has been instructed to play back 1-word
@@ -885,6 +890,33 @@ static UBYTE mt_PattDelTime2;
 static UBYTE mt_SilCntValid;
 static UWORD mt_dmaon = 0; ///< Set by DMAF_AUD# when
 static tPtplayerMod *s_pModCurr;
+
+static void clearAudioDone(void) {
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+	// When channel is idle, original ptplayer loops playback of  the first word
+	// and allows Paula to keep the intbit being set, so clearing here intreq
+	// for all channels didn't permanently affected idle channel bits.
+	// ACE's version disables channel's DMA when sfx played back to prevent
+	// interrupt spamming, so they can't maintain the 'done' intbit.
+	s_uChannelDone.ulChannelMask = 0;
+#else
+	g_pCustom->intreq = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
+#endif
+}
+
+static void setAudioDone(UBYTE ubChannelIdx) {
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+	*mt_chan[ubChannelIdx].pDoneBit = 1;
+#endif
+}
+
+static UBYTE isChannelDone(tChannelStatus *pChannelData) {
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+	return *pChannelData->pDoneBit;
+#endif
+	// KaiN's note: Audio dmaBits = 0b0000..0b1000, intBits = dmaBits << 7
+	return (g_pCustom->intreqr & (pChannelData->n_dmabit << 7));
+}
 
 static void printVoices(const tModVoice *pVoices) {
 #if defined(ACE_DEBUG_PTPLAYER)
@@ -1051,7 +1083,7 @@ static void mt_playvoice(
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
 			return;
 		}
-		if(!(*pChannelData->pDoneBit) || (mt_dmaon & pChannelData->n_dmabit)) {
+		if(!isChannelDone(pChannelData) || (mt_dmaon & pChannelData->n_dmabit)) {
 			// Channel interrupt is not triggered or DMA is still active - do only
 			// some limited commands while sound effect is in progress
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
@@ -1144,7 +1176,7 @@ static void mt_checkfx(
 			startSfx(uwLen, pChannelData, pChannelReg);
 		}
 		if(uwLen || (
-			!(*pChannelData->pDoneBit) || (g_pCustom->dmaconr & pChannelData->n_dmabit)
+			!isChannelDone(pChannelData) || (g_pCustom->dmaconr & pChannelData->n_dmabit)
 			// TODO: why not checking mt_dmaon?
 		)) {
 			// Channel is blocked, only check some E-commands
@@ -1235,8 +1267,9 @@ static inline void setChannelRepeat(
 		}
 	}
 	if(!(mt_dmaon & pChannelData->n_dmabit)) {
+
 		// Channel is already turned off - refresh 'done' bit.
-		*pChannelData->pDoneBit = 1;
+		setAudioDone(pChannelData->uwChannelIdx);
 		// Skip register setup
 		return;
 	}
@@ -1249,14 +1282,8 @@ static inline void setChannelRepeat(
 static void intSetRep(volatile tCustom *pCustom) {
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
-	// KaiN's note: Audio dmaBits = 0b0000..0b1000, intBits = dmaBits << 7
 
-	// When channel is idle, original ptplayer loops playback of  the first word
-	// and allows Paula to keep the intbit being set, so clearing here intreq
-	// for all channels didn't permanently affected idle channel bits.
-	// ACE's version disables channel's DMA when sfx played back to prevent
-	// interrupt spamming, so they can't maintain the 'done' intbit.
-	s_uChannelDone.ulChannelMask = 0;
+	clearAudioDone();
 
 	// Set repeat sample pointers and lengths
 	setChannelRepeat(&pCustom->aud[0], &mt_chan[0]);
@@ -1312,7 +1339,7 @@ static void chan_sfx_only(
 		if(pChannelData->n_sfxlen) {
 			startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
 		}
-		else if(*pChannelData->pDoneBit && !(mt_dmaon & pChannelData->n_dmabit)) {
+		else if(isChannelDone(pChannelData) && !(mt_dmaon & pChannelData->n_dmabit)) {
 			// Last sound effect sample has played, so unblock this channel again
 			pChannelData->ubSfxPriority = 0;
 		}
@@ -1444,9 +1471,11 @@ static void mt_reset(void) {
 	mt_Counter = 0;
 	mt_PatternPos = 0;
 
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	// Set all channels as done in case of waiting for sfx before any have been
 	// actually played.
 	s_uChannelDone.ulChannelMask = 0x01010101;
+#endif
 
 	// Disable the filter
 	g_pCia[CIA_A]->pra |= BV(1);
@@ -1456,9 +1485,11 @@ static void mt_reset(void) {
 
 	// initialise channel DMA, interrupt bits and audio register base
 	for(UBYTE i = 4; i--;) {
-		mt_chan[i].n_dmabit = 1 << (DMAB_AUD0 + i);
-		mt_chan[i].pDoneBit = &s_uChannelDone.pChannels[i];
 		mt_chan[i].uwChannelIdx = i;
+		mt_chan[i].n_dmabit = 1 << (DMAB_AUD0 + i);
+	#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+		mt_chan[i].pDoneBit = &s_uChannelDone.pChannels[i];
+	#endif
 	}
 
 	// make sure n_period doesn't start as 0
@@ -1484,6 +1515,7 @@ static inline void setTempo(UWORD uwTempo) {
 #endif
 }
 
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 static void INTERRUPT onAudio(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	REGARG(volatile void *pData, "a1")
@@ -1499,6 +1531,7 @@ static void INTERRUPT onAudio(
 		pCustom->aud[ubChannelIdx].ac_dat = 0;
 	}
 };
+#endif
 
 void ptplayerDestroy(void) {
 	ptplayerStop();
@@ -1506,10 +1539,10 @@ void ptplayerDestroy(void) {
 	ptplayerEnableMusic(0);
 	systemSetCiaInt(CIA_B, 0, 0, 0);
 	systemSetCiaInt(CIA_B, 1, 0, 0);
-	systemSetInt(INTB_AUD0, 0, 0);
-	systemSetInt(INTB_AUD1, 0, 0);
-	systemSetInt(INTB_AUD2, 0, 0);
-	systemSetInt(INTB_AUD3, 0, 0);
+	// systemSetInt(INTB_AUD0, 0, 0);
+	// systemSetInt(INTB_AUD1, 0, 0);
+	// systemSetInt(INTB_AUD2, 0, 0);
+	// systemSetInt(INTB_AUD3, 0, 0);
 }
 
 void ptplayerCreate(UBYTE isPal) {
@@ -1528,10 +1561,12 @@ void ptplayerCreate(UBYTE isPal) {
 	g_pCustom->intena = INTF_EXTER;
 	ptplayerEnableMainHandler(1);
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	systemSetInt(INTB_AUD0, onAudio, (void*)0);
 	systemSetInt(INTB_AUD1, onAudio, (void*)1);
 	systemSetInt(INTB_AUD2, onAudio, (void*)2);
 	systemSetInt(INTB_AUD3, onAudio, (void*)3);
+#endif
 
 	// determine if 02 clock for timers is based on PAL or NTSC
 	if(isPal) {
@@ -2695,7 +2730,7 @@ void ptplayerSfxPlay(
 		UWORD uwChannelsToCheck = 0;
 		UWORD uwIntFlag = INTF_AUD0;
 		for(UBYTE i = 0; i < 4; ++i) {
-			if(!mt_chan[i].n_looped && *mt_chan[i].pDoneBit) {
+			if(!mt_chan[i].n_looped && isChannelDone(&mt_chan[i])) {
 				uwChannelsToCheck |= uwIntFlag;
 			}
 			uwIntFlag <<= 1;
@@ -2742,7 +2777,7 @@ void ptplayerWaitForSfx(void) {
 	do {
 		isAnyChannelBusy = 0;
 		for(UBYTE i = 0; i < 4; ++i) {
-			if(mt_chan[i].ubSfxPriority || !*mt_chan[i].pDoneBit) {
+			if(mt_chan[i].ubSfxPriority || !isChannelDone(&mt_chan[i])) {
 				// channel is busy by sfx
 				isAnyChannelBusy = 1;
 				// logWrite("channel busy %hhu", i);
