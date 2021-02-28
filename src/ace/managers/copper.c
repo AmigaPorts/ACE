@@ -402,7 +402,10 @@ UBYTE copUpdateFromBlocks(void) {
 				}
 
 				// Copy MOVEs
-				CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
+				memcpy(
+					&pBackBfr->pList[uwListPos], pBlock->pCmds,
+					pBlock->uwCurrCount * sizeof(tCopCmd)
+				);
 				--pBlock->ubUpdated;
 			}
 			uwListPos += pBlock->uwCurrCount;

@@ -158,11 +158,11 @@ void gsTestCopperCreate(void) {
 		}
 		// Copy the same thing to front buffer, so that copperlist has the same
 		// structure on both buffers and we can just update parts we need
-		CopyMemQuick(
-			s_pTestCopperView->pCopList->pBackBfr->pList,
-			s_pTestCopperView->pCopList->pFrontBfr->pList,
-			s_pTestCopperView->pCopList->pBackBfr->uwAllocSize
-		);
+		for(UWORD i = 0; i < pCopBfr->uwAllocSize; ++i) {
+			s_pTestCopperView->pCopList->pFrontBfr->pList[i].ulCode = (
+				pCopBfr->pList[i].ulCode
+			);
+		}
 	}
 	else {
 		// This is how you do stuff in copperlist's BLOCK mode.

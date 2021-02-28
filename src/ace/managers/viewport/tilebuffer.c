@@ -437,11 +437,17 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
 	}
 
-	// Copy from back buffer to front buffer
-	CopyMemQuick(
-		pManager->pScroll->pBack->Planes[0], pManager->pScroll->pFront->Planes[0],
+	// Copy from back buffer to front buffer.
+	// Width is always a multiple of 16, so use WORD copy.
+	// TODO: this could be done using blitter.
+	UWORD *pSrc = (UWORD*)pManager->pScroll->pBack->Planes[0];
+	UWORD *pDst = (UWORD*)pManager->pScroll->pFront->Planes[0];
+	ULONG ulWordsToCopy = (
 		pManager->pScroll->pFront->BytesPerRow * pManager->pScroll->pFront->Rows
-	);
+	) / 2;
+	while(ulWordsToCopy--) {
+		*(pDst++) = *(pSrc++);
+	}
 
 	// Refresh bitplane pointers in scrollBuffer's copprtlist - 2x for dbl bfr
 	scrollBufferProcess(pManager->pScroll);
