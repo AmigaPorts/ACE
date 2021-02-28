@@ -17,8 +17,10 @@ void printUsage(const std::string &szAppName)
 	print("outPath \t- path to output file/directory\n");
 	print("\nWhen using .bm as output:\n");
 	print("-i              \t- save as interleaved bitmap\n");
+	print("\nWhen using .bm as input or output:\n");
 	print("-plt palettePath\t- use following palette\n");
 	print("\nAdditional options:\n");
+	print("-cols        \t- number of columns to use in output (default: 1)\n");
 	print("-h tileHeight\t- override height for rectangular tiles\n");
 }
 
@@ -40,6 +42,7 @@ int main(int lArgCount, const char *pArgs[])
 	std::string szOutPath = pArgs[3];
 	bool isInterleaved = false;
 	tPalette Palette;
+	int32_t lColumns = 1;
 	for(uint8_t i = 4; i < lArgCount - 1; ++i) {
 		if(pArgs[i] == std::string("-i")) {
 			isInterleaved = true;
@@ -55,6 +58,12 @@ int main(int lArgCount, const char *pArgs[])
 				"Read {} colors from '{}'\n", Palette.m_vColors.size(), pArgs[i]
 			);
 		}
+		else if(pArgs[i] == std::string("-cols") && i + 1 <= lArgCount - 1) {
+			++i;
+			if(!nParse::toInt32(pArgs[i], "-cols", lColumns) || lColumns <= 0) {
+				return EXIT_FAILURE;
+			}
+		}
 		else if(pArgs[i] == std::string("-h") && i + 1 <= lArgCount - 1) {
 			++i;
 			if(!nParse::toInt32(pArgs[i], "-h", lTileHeight) || lTileHeight <= 0) {
@@ -67,22 +76,36 @@ int main(int lArgCount, const char *pArgs[])
 	// Read input
 	std::string szInExt = nFs::getExt(szInPath);
 	std::vector<tChunkyBitmap> vTiles; // NOTE: empty tiles will have zero w/h
-	if(szInExt == "png") {
-		tChunkyBitmap In = tChunkyBitmap::fromPng(szInPath);
+	if(szInExt == "png" || szInExt == "bm") {
+		tChunkyBitmap In;
+		if(szInExt == "png") {
+			In = tChunkyBitmap::fromPng(szInPath);
+		}
+		else if(szInExt == "bm") {
+			auto InPlanar = tPlanarBitmap::fromBm(szInPath);
+			In = tChunkyBitmap(InPlanar, Palette);
+		}
 		if(In.m_uwHeight <= 0) {
 			nLog::error("Couldn't load input file: '{}'", szInPath);
 			return EXIT_FAILURE;
 		}
 		if(In.m_uwHeight % lTileHeight != 0) {
-			nLog::error("Input bitmap is not divisible by {}", lTileHeight);
+			nLog::error("Input bitmap height is not divisible by {}", lTileHeight);
 			return EXIT_FAILURE;
 		}
-		uint16_t uwTileCount = In.m_uwHeight / lTileHeight;
-		vTiles.reserve(uwTileCount);
-		for(uint16_t i = 0; i < uwTileCount; ++i) {
-			tChunkyBitmap Tile(lTileSize, lTileHeight);
-			In.copyRect(0, i * lTileHeight, Tile, 0, 0, lTileSize, lTileHeight);
-			vTiles.push_back(std::move(Tile));
+		if(In.m_uwWidth % lTileSize != 0) {
+			nLog::error("Input bitmap width is not divisible by {}", lTileSize);
+			return EXIT_FAILURE;
+		}
+		uint16_t uwTileCountHoriz = In.m_uwWidth / lTileSize;
+		uint16_t uwTileCountVert = In.m_uwHeight / lTileHeight;
+		vTiles.reserve(uwTileCountHoriz * uwTileCountVert);
+		for(uint16_t y = 0; y < uwTileCountVert; ++y) {
+			for(uint16_t x = 0; x < uwTileCountHoriz; ++x) {
+				tChunkyBitmap Tile(lTileSize, lTileHeight);
+				In.copyRect(x * lTileSize, y * lTileHeight, Tile, 0, 0, lTileSize, lTileHeight);
+				vTiles.push_back(std::move(Tile));
+			}
 		}
 	}
 	else if(nFs::isDir(szInPath)) {
@@ -111,11 +134,11 @@ int main(int lArgCount, const char *pArgs[])
 			Bg = Palette.m_vColors.at(0);
 		}
 		fmt::print("Using color for bg: #{:02X}{:02X}{:02X}\n", Bg.ubR, Bg.ubG, Bg.ubB);
-		tChunkyBitmap Out(lTileSize, uwTileCount * lTileHeight, Bg);
+		tChunkyBitmap Out(lTileSize * lColumns, (uwTileCount / lColumns + (uwTileCount % lColumns != 0)) * lTileHeight, Bg);
 		for(uint16_t i = 0; i < uwTileCount; ++i) {
 			auto &Tile = vTiles.at(i);
 			if(Tile.m_uwHeight != 0) {
-				Tile.copyRect(0, 0, Out, 0, lTileHeight * i, lTileSize, lTileHeight);
+				Tile.copyRect(0, 0, Out, (i % lColumns) * lTileSize, lTileHeight * (i / lColumns), lTileSize, lTileHeight);
 			}
 		}
 		if(szOutExt == "png" && !Out.toPng(szOutPath)) {
