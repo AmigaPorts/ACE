@@ -41,6 +41,154 @@
 // Size of period table.
 #define MOD_PERIOD_TABLE_LENGTH 36
 
+//------------------------------------------------------------------------ TYPES
+
+typedef struct _tModSampleHeader {
+	char szName[22];
+	UWORD uwLength; ///< Sample data length, in words.
+	UBYTE ubFineTune; ///< Finetune. Only lower nibble is used. Values translate to finetune: {0..7, -8..-1}
+	UBYTE ubVolume; ///< Sample volume. 0..64
+	UWORD uwRepeatOffs; ///< In words.
+	UWORD uwRepeatLength; ///< In words.
+} tModSampleHeader;
+
+typedef struct _tModFileHeader {
+	char szSongName[20];
+	tModSampleHeader pSamples[31];
+	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
+	                           /// pattern count in file. Max 128.
+	UBYTE ubSongEndPos;
+	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
+		                       /// These list up to 128 pattern numbers
+													 /// and the order they should be played in.
+	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
+	// MOD pattern/sample data follows
+} tModFileHeader;
+
+typedef struct AudChannel tChannelRegs;
+
+/**
+ * Each pattern line consists of following data for each channel.
+ */
+typedef struct _tModVoice {
+	union {
+		struct {
+			UWORD uwNote; // [instrumentHi:4] [period:12]
+			union {
+				struct {
+					UBYTE ubCmdHi; // [instrumentLo:4] [cmdNo:4]
+					UBYTE ubCmdLo; // [cmdArg:8] - special effects data
+				};
+				UWORD uwCmd; // [instrumentLo:4] [cmdNo:4] [cmdArg:8]
+			};
+		};
+		ULONG ulData; // All voice data for quick copy / comparison
+	};
+} tModVoice;
+
+typedef struct _tChannelStatus {
+	tModVoice sVoice;
+
+	/**
+	 * @brief Pointer to start of sample.
+	 */
+	UWORD *n_start;
+
+	UWORD *n_loopstart;
+	UWORD n_length;
+	UWORD n_replen;
+	UWORD n_period;
+	UWORD n_volume;
+
+	/**
+	 * @brief Currently used period table - for arpeggio / fine-tune.
+	 */
+	const UWORD *pPeriodTable;
+
+	UWORD n_dmabit;
+	UWORD n_noteoff; ///< TODO Later: convert it from byte offs to word offs (div by 2)
+	UWORD n_toneportspeed;
+	UWORD n_wantedperiod;
+	UWORD n_pattpos;
+
+	UWORD uwFunkSpeed;
+
+	UBYTE *n_wavestart;
+	UWORD n_reallength;
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+	volatile UBYTE *pDoneBit;
+	UWORD uwChannelIdx;
+#endif
+
+	/**
+	 * @brief Pending sfx length. Set to 0 after registers are set to play it.
+	 */
+	UWORD n_sfxlen;
+
+	UWORD *n_sfxptr;
+	UWORD n_sfxper;
+	UWORD n_sfxvol;
+
+	/**
+	 * @brief Set to 1 if sample has repeat offset/length which is other value
+	 * than sample start / sample length - prevents from using channel for sfx
+	 * after first sample play.
+	 */
+	UBYTE n_looped;
+
+	/**
+	 * @brief Set to 1 to indicate that finetune value is negative.
+	 */
+	UBYTE n_minusft;
+
+	UBYTE n_vibratoamp;
+	UBYTE n_vibratospd;
+	UBYTE n_vibratopos;
+	UBYTE n_vibratoctrl;
+	UBYTE n_tremoloamp;
+	UBYTE n_tremolospd;
+	UBYTE n_tremolopos;
+	UBYTE n_tremoloctrl;
+	UBYTE n_gliss;
+	UBYTE n_sampleoffset;
+	BYTE n_loopcount;
+	BYTE n_funkoffset;
+	UBYTE n_retrigcount;
+
+	/**
+	 * Priority of currently played SFX, MOD samples use 0. Cleared after sfx
+	 * has fully played back.
+	 */
+	volatile UBYTE ubSfxPriority;
+
+	UBYTE n_freecnt;
+	UBYTE n_musiconly;
+} tChannelStatus;
+
+typedef void (*tVoidFn)(void);
+typedef void (*tFx)(
+	UBYTE ubArgs, tChannelStatus *pChannelData,
+	volatile tChannelRegs *pChannelReg
+);
+typedef void (*tEFn)(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	volatile tChannelRegs *pChannelReg
+);
+
+typedef void (*tPreFx)(
+	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+);
+
+typedef union _tChannelDone {
+	struct {
+		UBYTE pChannels[4]; ///< Used for getting/setting each channel separately.
+	};
+	ULONG ulChannelMask; ///< Handy for query if any channel is active or clearing.
+} tChannelDone;
+
+//----------------------------------------------------------------- PRIVATE VARS
+
 /**
  * @brief Period tables for each finetune value.
  * Each period table consists of periods for notes:
@@ -730,119 +878,6 @@ static const BYTE mt_VibratoRectTable[] = {
 	-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29,-29
 };
 
-typedef struct _tModSampleHeader {
-	char szName[22];
-	UWORD uwLength; ///< Sample data length, in words.
-	UBYTE ubFineTune; ///< Finetune. Only lower nibble is used. Values translate to finetune: {0..7, -8..-1}
-	UBYTE ubVolume; ///< Sample volume. 0..64
-	UWORD uwRepeatOffs; ///< In words.
-	UWORD uwRepeatLength; ///< In words.
-} tModSampleHeader;
-
-typedef struct _tModFileHeader {
-	char szSongName[20];
-	tModSampleHeader pSamples[31];
-	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
-	                           /// pattern count in file. Max 128.
-	UBYTE ubSongEndPos;
-	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
-		                       /// These list up to 128 pattern numbers
-													 /// and the order they should be played in.
-	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
-	// MOD pattern/sample data follows
-} tModFileHeader;
-
-typedef struct AudChannel tChannelRegs;
-
-/**
- * Each pattern line consists of following data for each channel.
- */
-typedef struct _tModVoice {
-	UWORD uwNote; // [instrumentHi:4] [period:12]
-	union {
-		struct {
-			UBYTE ubCmdHi; // [instrumentLo:4] [cmdNo:4]
-			UBYTE ubCmdLo; // [cmdArg:8] - special effects data
-		};
-		UWORD uwCmd; // [instrumentLo:4] [cmdNo:4] [cmdArg:8]
-	};
-} tModVoice;
-
-typedef struct _tChannelStatus {
-	UWORD n_note;
-	UBYTE n_cmd; ///< high byte of command word ([instrumentLo:4] [cmdNo:4])
-	UBYTE n_cmdlo; ///< [cmdArg:8]
-	UWORD *n_start; ///< Pointer to start of sample
-	UWORD *n_loopstart;
-	UWORD n_length;
-	UWORD n_replen;
-	UWORD n_period;
-	UWORD n_volume;
-	const UWORD *n_pertab; ///< Period table, used in arpeggio
-	UWORD n_dmabit;
-	UWORD n_noteoff; ///< TODO Later: convert it from byte offs to word offs (div by 2)
-	UWORD n_toneportspeed;
-	UWORD n_wantedperiod;
-	UWORD n_pattpos;
-	UWORD n_funk; ///< Funk speed
-	UBYTE *n_wavestart;
-	UWORD n_reallength;
-#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
-	volatile UBYTE *pDoneBit;
-#endif
-	UWORD uwChannelIdx;
-	UWORD n_sfxlen; ///< Pending sfx length. Set to 0 after registers are set to play it.
-	UWORD *n_sfxptr;
-	UWORD n_sfxper;
-	UWORD n_sfxvol;
-	UBYTE n_looped;  ///< Set to 1 if sample has repeat offset/length which is other value than sample start / sample length - prevents from using channel for sfx after first sample play.
-	UBYTE n_minusft; ///< Set to 1 on negative finetune value
-	UBYTE n_vibratoamp;
-	UBYTE n_vibratospd;
-	UBYTE n_vibratopos;
-	UBYTE n_vibratoctrl;
-	UBYTE n_tremoloamp;
-	UBYTE n_tremolospd;
-	UBYTE n_tremolopos;
-	UBYTE n_tremoloctrl;
-	UBYTE n_gliss;
-	UBYTE n_sampleoffset;
-	BYTE n_loopcount;
-	BYTE n_funkoffset;
-	UBYTE n_retrigcount;
-
-	/**
-	 * Priority of currently played SFX, MOD samples use 0. Cleared after sfx
-	 * has fully played back.
-	 */
-	volatile UBYTE ubSfxPriority;
-
-	UBYTE n_freecnt;
-	UBYTE n_musiconly;
-} tChannelStatus;
-
-typedef void (*tVoidFn)(void);
-typedef void (*tFx)(
-	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
-);
-typedef void (*tEFn)(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
-);
-
-typedef void (*tPreFx)(
-	UWORD uwCmd, UWORD uwCmdArg, UWORD uwMaskedCmdE, const tModVoice *pVoice,
-	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
-);
-
-typedef union _tChannelDone {
-	struct {
-		UBYTE pChannels[4]; ///< Used for getting/setting each channel separately.
-	};
-	ULONG ulChannelMask; ///< Handy for query if any channel is active or clearing.
-} tChannelDone;
-
 static const tFx fx_tab[16];
 static const tFx morefx_tab[16];
 static const tFx blmorefx_tab[16];
@@ -860,7 +895,6 @@ static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
  * it has done playback.
  */
 static volatile tChannelDone s_uChannelDone;
-#endif
 
 /**
  * @brief Set to 1 for channel after it has been instructed to play back 1-word
@@ -868,6 +902,7 @@ static volatile tChannelDone s_uChannelDone;
  * disabling channel DMA to keep it from retriggering audio interrupt.
  */
 static volatile UBYTE s_pAudioChannelPendingDisable[4];
+#endif
 
 static void blocked_e_cmds(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
@@ -906,7 +941,7 @@ static void clearAudioDone(void) {
 	// When channel is idle, original ptplayer loops playback of  the first word
 	// and allows Paula to keep the intbit being set, so clearing here intreq
 	// for all channels didn't permanently affected idle channel bits.
-	// ACE's version disables channel's DMA when sfx played back to prevent
+	// int-handler version disables channel's DMA when sfx played back to prevent
 	// interrupt spamming, so they can't maintain the 'done' intbit.
 	s_uChannelDone.ulChannelMask = 0;
 #else
@@ -914,18 +949,20 @@ static void clearAudioDone(void) {
 #endif
 }
 
-static void setAudioDone(UBYTE ubChannelIdx) {
+static void setAudioDone(tChannelStatus *pChannelData) {
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
-	*mt_chan[ubChannelIdx].pDoneBit = 1;
+	pChannelData->pDoneBit = 1;
 #endif
 }
 
 static UBYTE isChannelDone(tChannelStatus *pChannelData) {
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	return *pChannelData->pDoneBit;
-#endif
+#else
+	// This doesn't work when nothing has yet played - check dmaconr for that
 	// KaiN's note: Audio dmaBits = 0b0000..0b1000, intBits = dmaBits << 7
 	return (g_pCustom->intreqr & (pChannelData->n_dmabit << 7));
+#endif
 }
 
 static void printVoices(const tModVoice *pVoices) {
@@ -1056,7 +1093,7 @@ void moreBlockedFx(
 }
 
 static void mt_updatefunk(tChannelStatus *pChannelData) {
-	UBYTE ubVal = mt_FunkTable[pChannelData->n_funk];
+	UBYTE ubVal = mt_FunkTable[pChannelData->uwFunkSpeed];
 	pChannelData->n_funkoffset += ubVal;
 	if(pChannelData->n_funkoffset > 0) {
 		return;
@@ -1075,7 +1112,7 @@ static void checkmorefx(
 	UWORD uwCmd, UWORD uwCmdArg,
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
-	if(pChannelData->n_funk) {
+	if(pChannelData->uwFunkSpeed) {
 		mt_updatefunk(pChannelData);
 	}
 	morefx_tab[uwCmd](uwCmdArg, pChannelData, pChannelReg);
@@ -1086,7 +1123,7 @@ static void mt_playvoice(
 	const tModVoice *pVoice
 ) {
 	if(pChannelData->ubSfxPriority) {
-		// Channel blocked by external sound effect
+		// Channel is blocked by external sound effect
 		if(pChannelData->n_sfxlen) {
 			// There are pending sfx data to be written into channel regs
 			startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
@@ -1104,16 +1141,14 @@ static void mt_playvoice(
 		pChannelData->ubSfxPriority = 0;
 	}
 	// n_note/cmd: any note or cmd set?
-	if(!pChannelData->n_note && !pChannelData->n_cmd && !pChannelData->n_cmdlo) {
+	if(!pChannelData->sVoice.ulData) {
 		pChannelReg->ac_per = pChannelData->n_period;
 	}
-	pChannelData->n_note = pVoice->uwNote;
-	pChannelData->n_cmd = pVoice->ubCmdHi;
-	pChannelData->n_cmdlo = pVoice->ubCmdLo;
+	pChannelData->sVoice.ulData = pVoice->ulData;
 
-	UWORD uwCmd = pChannelData->n_cmd & 0x000F;
-	UWORD uwCmdArg = pVoice->ubCmdLo;
-	UWORD uwMaskedCmdE = pVoice->uwCmd & 0x0FF0;
+	UWORD uwCmd = pChannelData->sVoice.ubCmdHi & 0x000F;
+	UWORD uwCmdArg = pChannelData->sVoice.ubCmdLo;
+	UWORD uwMaskedCmdE = pChannelData->sVoice.uwCmd & 0x0FF0;
 
 	// Get sample start address from cmd/note - BA is sample number
 	UWORD uwSampleIdx = ( // A...B... -> ......BA
@@ -1137,7 +1172,7 @@ static void mt_playvoice(
 
 		// Determine period table from fine-tune parameter
 		UBYTE ubFineTune = pSampleDef->ubFineTune; // d3
-		pChannelData->n_pertab = mt_PeriodTables[ubFineTune];
+		pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 		pChannelData->n_minusft = (ubFineTune >= 8);
 
 		pChannelData->n_volume = pSampleDef->ubVolume;
@@ -1190,7 +1225,7 @@ static void mt_checkfx(
 			// TODO: why not checking mt_dmaon?
 		)) {
 			// Channel is blocked, only check some E-commands
-			UWORD uwCmd = pChannelData->n_cmd & 0x0FFF;
+			UWORD uwCmd = pChannelData->sVoice.uwCmd & 0x0FFF;
 			if((uwCmd & 0xF00) == 0xE00) {
 				// NOP command
 			}
@@ -1204,19 +1239,18 @@ static void mt_checkfx(
 			pChannelData->ubSfxPriority = 0;
 		}
 	}
-	// do channel effects between notes
-	if(pChannelData->n_funk) {
+	// Do channel effects between notes
+	if(pChannelData->uwFunkSpeed) {
 		mt_updatefunk(pChannelData);
 	}
-	// TODO later: remove this OR by storing those values in a better way
-	UWORD uwCmd = (pChannelData->n_cmd | pChannelData->n_cmdlo) & 0x0FFF;
+	UWORD uwCmd = (pChannelData->sVoice.uwCmd & 0x0FFF);
 	if(!uwCmd) {
 		// Just set the current period - same as mt_pernop
 		pChannelReg->ac_per = pChannelData->n_period;
 	}
 	else {
-		UBYTE ubCmdIndex = (pChannelData->n_cmd & 0xF);
-		fx_tab[ubCmdIndex](pChannelData->n_cmdlo, pChannelData, pChannelReg);
+		UBYTE ubCmdIndex = (pChannelData->sVoice.ubCmdHi & 0xF);
+		fx_tab[ubCmdIndex](pChannelData->sVoice.ubCmdLo, pChannelData, pChannelReg);
 	}
 }
 
@@ -1266,8 +1300,9 @@ static inline void ptplayerEnableMainHandler(UBYTE isEnabled) {
 }
 
 static inline void setChannelRepeat(
-	volatile tChannelRegs *pChannelRegs, const tChannelStatus *pChannelData
+	volatile tChannelRegs *pChannelRegs, tChannelStatus *pChannelData
 ) {
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	if(pChannelData->n_replen == 1) {
 		// Looped single word of sample - channel is to be set to idle mode
 		if(mt_dmaon & pChannelData->n_dmabit) {
@@ -1276,10 +1311,10 @@ static inline void setChannelRepeat(
 			s_pAudioChannelPendingDisable[pChannelData->uwChannelIdx] = 1;
 		}
 	}
+#endif
 	if(!(mt_dmaon & pChannelData->n_dmabit)) {
-
 		// Channel is already turned off - refresh 'done' bit.
-		setAudioDone(pChannelData->uwChannelIdx);
+		setAudioDone(pChannelData);
 		// Skip register setup
 		return;
 	}
@@ -1495,9 +1530,9 @@ static void mt_reset(void) {
 
 	// initialise channel DMA, interrupt bits and audio register base
 	for(UBYTE i = 4; i--;) {
-		mt_chan[i].uwChannelIdx = i;
 		mt_chan[i].n_dmabit = 1 << (DMAB_AUD0 + i);
 	#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+		mt_chan[i].uwChannelIdx = i;
 		mt_chan[i].pDoneBit = &s_uChannelDone.pChannels[i];
 	#endif
 	}
@@ -1558,9 +1593,11 @@ void ptplayerDestroy(void) {
 void ptplayerCreate(UBYTE isPal) {
 	s_pModCurr = 0;
 	ptplayerEnableMusic(0);
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	for(UBYTE i = sizeof(s_pAudioChannelPendingDisable); i--;) {
 		s_pAudioChannelPendingDisable[i] = 0;
 	}
+#endif
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	s_isPendingDmaOn = 0;
 	s_isPendingPlay = 0;
@@ -1716,9 +1753,9 @@ static void mt_toneporta_nc(
 		pChannelData->n_period = uwNew;
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
-			const UWORD *pPeriodTable = pChannelData->n_pertab;
+			const UWORD *pPeriodTable = pChannelData->pPeriodTable;
 			UWORD uwNoteOffs = 0;
-			UBYTE ubPeriodPos = findPeriod(pChannelData->n_pertab, uwNoteOffs);
+			UBYTE ubPeriodPos = findPeriod(pChannelData->pPeriodTable, uwNoteOffs);
 			pChannelData->n_noteoff = ubPeriodPos * 2;
 			uwNew = pPeriodTable[ubPeriodPos];
 		}
@@ -1790,7 +1827,7 @@ static void mt_arpeggio(
 	uwVal += pChannelData->n_noteoff;
 	if(uwVal < 2 * 36) {
 		// Set period with arpeggio offset from note table
-		pChannelReg->ac_per = pChannelData->n_pertab[uwVal / 2];
+		pChannelReg->ac_per = pChannelData->pPeriodTable[uwVal / 2];
 		// TODO later: noteoff has byte offs from start of array, set it to divided
 		// by 2 since we're using UWORD pointers, not UBYTE
 	}
@@ -1837,7 +1874,7 @@ static void mt_toneporta(
 	// uwCmd: 0x03'XY (xy = tone portamento speed)
 	if(ubArgs) {
 		pChannelData->n_toneportspeed = ubArgs;
-		pChannelData->n_cmdlo = 0;
+		pChannelData->sVoice.ubCmdLo = 0;
 	}
 	mt_toneporta_nc(pChannelData, pChannelReg);
 }
@@ -2156,7 +2193,7 @@ static void mt_finetune(
 	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'5X (x = finetune)
-	pChannelData->n_pertab = mt_PeriodTables[ubArg];
+	pChannelData->pPeriodTable = mt_PeriodTables[ubArg];
 	pChannelData->n_minusft = (ubArg >= 8);
 }
 
@@ -2229,7 +2266,7 @@ static void mt_retrignote(
 	if(!mt_Counter) {
 		pChannelData->n_retrigcount = ubArg;
 		// avoid double retrigger, when Counter=0 and a note was set
-		if(pChannelData->n_note & 0x0FFF) {
+		if(pChannelData->sVoice.uwNote & 0x0FFF) {
 			return;
 		}
 	}
@@ -2284,7 +2321,7 @@ static void mt_notedelay(
 	// cmd 0x0E'DX (x = counter to retrigger at)
 	if(mt_Counter == ubArg) {
 		// Trigger note when given
-		if(pChannelData->n_note) {
+		if(pChannelData->sVoice.uwNote) {
 			ptDoRetrigger(pChannelData, pChannelReg);
 		}
 	}
@@ -2307,7 +2344,7 @@ static void mt_funk(
 ) {
 	// cmd 0x0E'FX (x = delay count)
 	if(!mt_Counter) {
-		pChannelData->n_funk = ubArg;
+		pChannelData->uwFunkSpeed = ubArg;
 		if(ubArg) {
 			mt_updatefunk(pChannelData);
 		}
@@ -2360,7 +2397,7 @@ static void set_period(
 	UBYTE ubPeriodPos = findPeriod(mt_PeriodTables[0], uwNote);
 
 	// Apply finetuning, set period and note-offset
-	UWORD uwPeriod = pChannelData->n_pertab[ubPeriodPos];
+	UWORD uwPeriod = pChannelData->pPeriodTable[ubPeriodPos];
 	pChannelData->n_period = uwPeriod;
 	pChannelData->n_noteoff = ubPeriodPos * 2; // TODO later: convert to word offs (div by 2)
 
@@ -2395,8 +2432,8 @@ static void set_finetune(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// logWrite("Set finetune\n");
-	UBYTE ubFineTune = pChannelData->n_cmdlo & 0xF;
-	pChannelData->n_pertab = mt_PeriodTables[ubFineTune];
+	UBYTE ubFineTune = pChannelData->sVoice.ubCmdLo & 0xF;
+	pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 	pChannelData->n_minusft = ubFineTune >= 8;
 	set_period(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 }
@@ -2447,13 +2484,13 @@ static void set_toneporta(
 	// Note offset in period table
 	pChannelData->n_noteoff = ubPeriodPos * 2;
 	UWORD uwPeriod = pChannelData->n_period;
-	UWORD uwNewPeriod = pChannelData->n_pertab[ubPeriodPos];
+	UWORD uwNewPeriod = pChannelData->pPeriodTable[ubPeriodPos];
 	if(uwNewPeriod == uwPeriod) {
 		uwNewPeriod = 0;
 	}
 	pChannelData->n_wantedperiod = uwNewPeriod;
 
-	if(pChannelData->n_funk) {
+	if(pChannelData->uwFunkSpeed) {
 		mt_updatefunk(pChannelData);
 	}
 
