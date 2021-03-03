@@ -16,10 +16,20 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 
-// Flags which modify ptplayer functionality
-// #define PTPLAYER_USE_VBL // Otherwise use CIA
-// #define PTPLAYER_DEFER_INTERRUPTS // Interrupts are as short as possible, rest is done in ptplayerProcess()
-// #define PTPLAYER_USE_AUDIO_INT_HANDLERS // Uses audio interrupt handlers instead of polling intbits for checking if channel is idle. May be better in the long run for os-friendly use, but buggy for now!
+//----------------------------------------------------------------------- CONFIG
+
+// If set, uses VBL interrupt for processing playback, otherwise uses CIA timer
+// #define PTPLAYER_USE_VBL
+
+// If set, interrupts are as short as possible, rest is done
+// in ptplayerProcess(). Buggy!
+// #define PTPLAYER_DEFER_INTERRUPTS
+
+// If set, uses audio interrupt handlers instead of polling intbits for checking
+// if channel is idle. May be better in the long run for os-friendly use. Buggy!
+// #define PTPLAYER_USE_AUDIO_INT_HANDLERS
+
+//---------------------------------------------------------------------- DEFINES
 
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
 #define MOD_ROWS_IN_PATTERN 64
@@ -2777,7 +2787,8 @@ void ptplayerWaitForSfx(void) {
 	do {
 		isAnyChannelBusy = 0;
 		for(UBYTE i = 0; i < 4; ++i) {
-			if(mt_chan[i].ubSfxPriority || !isChannelDone(&mt_chan[i])) {
+			// Wait only for sfx to end - mod is looping ad infinitum anyway.
+			if(mt_chan[i].ubSfxPriority) {
 				// channel is busy by sfx
 				isAnyChannelBusy = 1;
 				// logWrite("channel busy %hhu", i);
