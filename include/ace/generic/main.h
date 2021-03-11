@@ -50,8 +50,8 @@ void __stack_chk_fail(void) {
 #endif
 
 int main(void) {
-	logOpen(GENERIC_MAIN_LOG_PATH);
 	systemCreate();
+	logOpen(GENERIC_MAIN_LOG_PATH);
 	memCreate();
 	timerCreate();
 
@@ -70,8 +70,8 @@ int main(void) {
 
 	timerDestroy();
 	memDestroy();
-	systemDestroy();
 	logClose();
+	systemDestroy();
 
 	return EXIT_SUCCESS;
 }
