@@ -461,9 +461,6 @@ void systemKill(const char *szMsg) {
 	exit(EXIT_FAILURE);
 }
 
-/**
- * @brief The startup code to give ACE somewhat initial state.
- */
 void systemCreate(void) {
 #if defined(BARTMAN_GCC)
 	// Bartman's startup code doesn't initialize anything
@@ -543,9 +540,6 @@ void systemCreate(void) {
 	systemUse();
 }
 
-/**
- * @brief Cleanup after app, restore anything that systemCreate took over.
- */
 void systemDestroy(void) {
 	// Disable all interrupts
 	g_pCustom->intena = 0x7FFF;

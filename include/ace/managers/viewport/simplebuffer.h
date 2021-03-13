@@ -32,6 +32,7 @@ extern "C" {
 // If in raw mode, offset on copperlist for placing required copper
 // instructions, specified in copper instruction count since beginning.
 #define TAG_SIMPLEBUFFER_COPLIST_OFFSET (TAG_USER|6)
+#define TAG_SIMPLEBUFFER_USE_X_SCROLLING (TAG_USER|7)
 
 typedef struct _tSimpleBufferManager {
 	tVpManager sCommon;

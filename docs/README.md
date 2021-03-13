@@ -23,6 +23,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. Copperlists
 1. Sprites
 1. Audio
+1. [Working with and without OS](programming/os.md)
 1. DMA usage
 
 ## Reference manual

@@ -29,12 +29,16 @@ static void updateBitplanePtrs(tCopCmd *pCmds, const tBitMap *pBitmap) {
 	}
 }
 
-static void simpleBufferInitializeCopperList(tSimpleBufferManager *pManager) {
+static void simpleBufferInitializeCopperList(
+	tSimpleBufferManager *pManager, UBYTE isScrollX
+) {
 	pManager->uBfrBounds.uwX = bitmapGetByteWidth(pManager->pFront) << 3;
 	pManager->uBfrBounds.uwY = pManager->pFront->Rows;
 	UWORD uwModulo = pManager->pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 	UWORD uwDDfStrt;
-	if(pManager->uBfrBounds.uwX <= pManager->sCommon.pVPort->uwWidth) {
+	if(
+		!isScrollX || pManager->uBfrBounds.uwX <= pManager->sCommon.pVPort->uwWidth
+	) {
 		uwDDfStrt = 0x0038;
 		pManager->ubFlags &= ~SIMPLEBUFFER_FLAG_X_SCROLLABLE;
 	}
@@ -209,9 +213,10 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 		logWrite("Copperlist offset: %u\n", pManager->uwCopperOffset);
 	}
 
+	UBYTE isScrollX = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_USE_X_SCROLLING, 1);
 	simpleBufferSetFront(pManager, pFront);
 	simpleBufferSetBack(pManager, pBack ? pBack : pFront);
-	simpleBufferInitializeCopperList(pManager);
+	simpleBufferInitializeCopperList(pManager, isScrollX);
 
 	// Add manager to VPort
 	vPortAddManager(pVPort, (tVpManager*)pManager);

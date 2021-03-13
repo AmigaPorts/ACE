@@ -9,10 +9,6 @@
 extern "C" {
 #endif
 
-#ifndef GENERIC_MAIN_LOOP_CONDITION
-#define GENERIC_MAIN_LOOP_CONDITION gameIsRunning()
-#endif
-
 #include <stdlib.h>
 #include <ace/types.h>
 #include <ace/managers/system.h>
@@ -27,10 +23,50 @@ extern "C" {
 #define GENERIC_MAIN_LOG_PATH 0
 #endif
 
+//--------------------------------------------------------- USER FUNCTIONS BEGIN
+// Those functions must be defined by the user!
+
+/**
+ * @brief User initialization code.
+ * This is called once ACE is mostly set up, before calling genericProcess.
+ * Use it to initialize additional ACE modules or set up your game.
+ *
+ * @see genericProcess()
+ * @see genericDestroy()
+ */
 void genericCreate(void);
+
+/**
+ * @brief Main loop code.
+ * This is called until GENERIC_MAIN_LOOP_CONDITION is true.
+ * Use it to process things every frame, e.g. current game state,
+ * or additional ACE modules.
+ *
+ * @see genericCreate()
+ * @see genericDestroy()
+ */
 void genericProcess(void);
+
+/**
+ * @brief User deinitialization code.
+ * This is called once GENERIC_MAIN_LOOP_CONDITION returns false.
+ * After executing this function, app will deinitialize and return to OS.
+ * Use it to clean up after things you've set up in genericCreate.
+ *
+ * @see genericCreate()
+ * @see genericProcess()
+ */
 void genericDestroy(void);
 
+//----------------------------------------------------------- USER FUNCTIONS END
+
+// You can define this macro before including this file to change app's
+// loop condition
+#ifndef GENERIC_MAIN_LOOP_CONDITION
+#define GENERIC_MAIN_LOOP_CONDITION gameIsRunning()
+#endif
+
+//-------------------------------------------------------- STACK SMASH DETECTION
 #if defined(__GNUC__)
 #include <stdint.h>
 
@@ -49,6 +85,8 @@ void __stack_chk_fail(void) {
 }
 #endif
 
+//-------------------------------------------------------- GENERIC MAIN FUNCTION
+
 int main(void) {
 	systemCreate();
 	logOpen(GENERIC_MAIN_LOG_PATH);
@@ -58,6 +96,7 @@ int main(void) {
 	blitManagerCreate();
 	copCreate();
 
+	// Call user callbacks:
 	genericCreate();
 	while (GENERIC_MAIN_LOOP_CONDITION) {
 		timerProcess();
