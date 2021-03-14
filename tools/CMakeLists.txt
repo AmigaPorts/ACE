@@ -6,11 +6,18 @@ project(ACE_tools)
 include(GNUInstallDirs)
 set (CMAKE_CXX_STANDARD 20)
 
+# MSVC needs a few defines to be GNU compatible
+if(MSVC)
+    add_compile_definitions(_USE_MATH_DEFINES=1 NOMINMAX=1)
+endif()
+
 # Common
 file(GLOB COMMON_src src/common/*.cpp src/common/*.c)
 file(GLOB_RECURSE COMMON_hdr src/common/*.h src/common/*.hpp)
 add_library(common STATIC ${COMMON_src} ${COMMON_hdr})
-target_compile_options(common PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wno-register>)
+if(NOT MSVC)
+    target_compile_options(common PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wno-register>)
+endif()
 
 #fmt
 add_subdirectory(fmt)
