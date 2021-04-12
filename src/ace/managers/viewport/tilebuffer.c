@@ -314,10 +314,10 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			}
 			// Modify margin data on opposite side
 			if(wDeltaX < 0) {
-				--pState->pMarginOppositeX->wTileCurr;
+				--pState->pMarginOppositeX->wTilePos;
 			}
 			else {
-				++pState->pMarginOppositeX->wTileCurr;
+				++pState->pMarginOppositeX->wTilePos;
 			}
 			pState->pMarginOppositeX->wTileCurr = 0;
 			pState->pMarginOppositeX->wTileEnd = 0;
