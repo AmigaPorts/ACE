@@ -1227,9 +1227,6 @@ static void mt_checkfx(
 			// Channel is blocked, only check some E-commands
 			UWORD uwCmd = pChannelData->sVoice.uwCmd & 0x0FFF;
 			if((uwCmd & 0xF00) == 0xE00) {
-				// NOP command
-			}
-			else {
 				blocked_e_cmds(uwCmd, pChannelData, pChannelReg);
 			}
 			return;
@@ -2750,7 +2747,6 @@ void ptplayerSfxPlay(
 	}
 
 	g_pCustom->intena = INTF_INTEN;
-	tChannelStatus *pBestChannel = 0;
 
 	// Determine which channels are already allocated for sound
 	// effects and check if the limit was reached. In this case only
@@ -2768,6 +2764,7 @@ void ptplayerSfxPlay(
 	if(mt_chan[3].ubSfxPriority) {
 		bFreeChannels -= 1;
 	}
+	tChannelStatus *pBestChannel = 0;
 	UBYTE ubBestFreeCnt = 0;
 	if(bFreeChannels >= 0) {
 		// Exclude channels which have set a repeat loop. Try not to break them!
