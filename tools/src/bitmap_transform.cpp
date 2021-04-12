@@ -230,8 +230,8 @@ tOpRotate::tOpRotate(double dDeg, tRgb Bg):
 
 tChunkyBitmap tOpRotate::execute(const tChunkyBitmap &Source) {
 	tChunkyBitmap Dst(Source.m_uwWidth, Source.m_uwHeight);
-	auto CenterX = Source.m_uwWidth / 2.0;
-	auto CenterY = Source.m_uwHeight / 2.0;
+	auto CenterX = (Source.m_uwWidth - 1) / 2.0;
+	auto CenterY = (Source.m_uwHeight - 1) / 2.0;
 
 	auto Rad = (m_dDeg * 2 * M_PI) / 360;
 	auto CalcCos = cos(Rad);
@@ -242,10 +242,11 @@ tChunkyBitmap tOpRotate::execute(const tChunkyBitmap &Source) {
 		auto Dy = Y - CenterY;
 		for(auto X = 0; X < Dst.m_uwWidth; ++X) {
 			auto Dx = X - CenterX;
-			auto U = round(CalcCos * (X - CenterX) + CalcSin * (Y - CenterY) + (CenterX));
-			auto V = round(-CalcSin * (X - CenterX) + CalcCos * (Y - CenterY) + (CenterY));
+			auto U = round(CalcCos * Dx + CalcSin * Dy + (CenterX));
+			auto V = round(-CalcSin * Dx + CalcCos * Dy + (CenterY));
 
 			if(U < 0 || V < 0 || U >= Dst.m_uwWidth || V >= Dst.m_uwHeight) {
+				// fmt::print("can't sample for {:2d},{:2d} from {:.1f},{:.1f}\n", X, Y, U, V);
 				Dst.pixelAt(X, Y) = m_Bg;
 			}
 			else {
