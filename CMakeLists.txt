@@ -275,3 +275,44 @@ function(convertAudio)
 	)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
+
+function(mergeMods)
+	getToolPath(mod_tool TOOL_MOD_TOOL)
+	set(oneValArgs SAMPLE_PACK TARGET)
+	set(multiValArgs SOURCES DESTINATIONS)
+	set(cmdParams "")
+	cmake_parse_arguments(
+		args "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
+	)
+
+	if(NOT ("${args_SAMPLE_PACK} " STREQUAL " "))
+		list(APPEND cmdParams -sp ${args_SAMPLE_PACK})
+	endif()
+
+	list(LENGTH args_SOURCES srcCount)
+	list(LENGTH args_DESTINATIONS dstCount)
+	if(NOT ${srcCount} EQUAL ${dstCount})
+		message(FATAL_ERROR "[mergeMods] SOURCES count doesn't match DESTINATIONS count")
+	endif()
+
+	MATH(EXPR srcCount "${srcCount}-1")
+	foreach(mod_idx RANGE ${srcCount})
+		list(GET args_SOURCES ${mod_idx} inPath)
+		toAbsolute(inPath)
+		list(APPEND sourcesAbsolute ${inPath})
+
+		list(GET args_DESTINATIONS ${mod_idx} outPath)
+		toAbsolute(outPath)
+		list(APPEND destinationsAbsolute ${outPath})
+
+		list(APPEND cmdParams -i ${inPath} -o ${outPath})
+	endforeach()
+
+	add_custom_command(
+		OUTPUT ${destinationsAbsolute}
+		COMMAND ${TOOL_MOD_TOOL} ${cmdParams}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${sourcesAbsolute}
+	)
+	target_sources(${args_TARGET} PUBLIC ${destinationsAbsolute})
+endfunction()
