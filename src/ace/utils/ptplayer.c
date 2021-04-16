@@ -888,6 +888,8 @@ static const tPreFx prefx_tab[16];
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
+static UBYTE s_isRepeat;
+static tPtplayerCbSongEnd s_cbSongEnd;
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 /**
@@ -1055,6 +1057,12 @@ static void ptSongStep(void) {
 	// End of song reached?
 	if(ubNextPos >= mt_mod->ubArrangementLength) {
 		ubNextPos = 0;
+		if(!s_isRepeat) {
+			ptplayerEnableMusic(0);
+		}
+		if(s_cbSongEnd) {
+			s_cbSongEnd();
+		}
 	}
 	mt_SongPos = ubNextPos;
 	// Should be a check of mt_PosJumpFlag here, but unlikely that something will
@@ -1526,25 +1534,17 @@ static void mt_reset(void) {
 	mt_MasterVolTab = MasterVolTab[64];
 
 	// initialise channel DMA, interrupt bits and audio register base
+	// make sure n_period doesn't start as 0
+	// disable sound effects
 	for(UBYTE i = 4; i--;) {
 		mt_chan[i].n_dmabit = 1 << (DMAB_AUD0 + i);
 	#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 		mt_chan[i].uwChannelIdx = i;
 		mt_chan[i].pDoneBit = &s_uChannelDone.pChannels[i];
 	#endif
+		mt_chan[i].n_period = 320;
+		mt_chan[i].n_sfxlen = 0;
 	}
-
-	// make sure n_period doesn't start as 0
-	mt_chan[0].n_period = 320;
-	mt_chan[1].n_period = 320;
-	mt_chan[2].n_period = 320;
-	mt_chan[3].n_period = 320;
-
-	// disable sound effects
-	mt_chan[0].n_sfxlen = 0;
-	mt_chan[1].n_sfxlen = 0;
-	mt_chan[2].n_sfxlen = 0;
-	mt_chan[3].n_sfxlen = 0;
 
 	mt_SilCntValid = 0;
 	mt_E8Trigger = 0;
@@ -1588,6 +1588,8 @@ void ptplayerDestroy(void) {
 }
 
 void ptplayerCreate(UBYTE isPal) {
+	s_isRepeat = 1;
+	s_cbSongEnd = 0;
 	s_pModCurr = 0;
 	ptplayerEnableMusic(0);
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
@@ -2549,24 +2551,31 @@ void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount) {
 
 tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	logBlockBegin("ptplayerModCreate(szPath: '%s')", szPath);
-	tPtplayerMod *pMod = memAllocFast(sizeof(*pMod));
-	if(pMod) {
-		pMod->ulSize = fileGetSize(szPath);
-		pMod->pData = memAllocChip(pMod->ulSize);
-		if(pMod->pData) {
-			tFile *pFileMod = fileOpen(szPath, "rb");
-			fileRead(pFileMod, pMod->pData, pMod->ulSize);
-			fileClose(pFileMod);
-		}
-		else {
-			logWrite("ERR: Couldn't allocate memory!");
-			memFree(pMod, sizeof(*pMod));
-			pMod = 0;
+
+	tPtplayerMod *pMod = 0;
+	LONG lSize = fileGetSize(szPath);
+	if(lSize == -1) {
+		logWrite("ERR: File doesn't exist!\n");
+	}
+	else {
+		pMod = memAllocFast(sizeof(*pMod));
+		if(pMod) {
+			pMod->ulSize = fileGetSize(szPath);
+			pMod->pData = memAllocChip(pMod->ulSize);
+			if(pMod->pData) {
+				tFile *pFileMod = fileOpen(szPath, "rb");
+				fileRead(pFileMod, pMod->pData, pMod->ulSize);
+				fileClose(pFileMod);
+			}
+			else {
+				logWrite("ERR: Couldn't allocate memory!");
+				memFree(pMod, sizeof(*pMod));
+				pMod = 0;
+			}
 		}
 	}
 
 	// TODO: move some stuff from ptplayerLoadMod
-
 	logBlockEnd("ptplayerModCreate()");
 	return pMod;
 }
@@ -2830,4 +2839,9 @@ void ptplayerWaitForSfx(void) {
 			}
 		}
 	} while(isAnyChannelBusy);
+}
+
+void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd) {
+	s_isRepeat = isRepeat;
+	s_cbSongEnd = cbSongEnd;
 }

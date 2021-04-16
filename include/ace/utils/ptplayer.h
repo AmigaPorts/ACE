@@ -35,6 +35,8 @@ typedef struct _tPtplayerMod {
 	// TODO: move some vars from ptplayer here
 } tPtplayerMod;
 
+typedef void (*tPtplayerCbSongEnd)(void);
+
 /**
  * @brief Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
  * The music module is replayed via _mt_music when _mt_Enable is non-zero.
@@ -167,6 +169,18 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
 void ptplayerSfxPlay(
 	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
 );
+
+/**
+ * @brief Configure behavior on song being played to the end.
+ * By default the player loops the song indefinitely.
+ *
+ * If you want to repeat the song given number of times, disable repeats
+ * and put additional logic in cbSongEnd.
+ *
+ * @param isRepeat Set to 1 for endless repeat, 0 makes the song play only once.
+ * @param cbSongEnd Pointer to song end callback - set to zero if not needed.
+ */
+void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd);
 
 /**
  * @brief Waits until all sound effects have been played.
