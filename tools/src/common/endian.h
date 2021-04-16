@@ -47,7 +47,7 @@ namespace nEndian {
 		);
 	}
 
-	constexpr uint16_t fromBig32(uint16_t uwIn)
+	constexpr uint32_t fromBig32(uint32_t uwIn)
 	{
 		return toBig32(uwIn);
 	}
