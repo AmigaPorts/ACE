@@ -8,10 +8,6 @@
 #include <ace/utils/tag.h>
 #include <ace/generic/screen.h>
 
-#define HIBYTE(theword) (theword >> 8)
-#define LOBYTE(theword) (theword & 0xff)
-
-
 tView *viewCreate(void *pTags, ...)
 {
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
@@ -126,13 +122,13 @@ void viewUpdateCLUT(tView *pView)
 					UBYTE g = pView->pFirstVPort->pPalette[(p*32) + i] >> 8;
 					UBYTE b = pView->pFirstVPort->pPalette[(p*32) + i];
 					g_pCustom->bplcon3 = p << 13; // Set palette bank LOW.
-					g_pCustom->color[i] = (0x0F & (r >>2)) << 8 | (0x0F & (g >>2)) << 4 | (0x0F & (b >>2)) << 0;
+					g_pCustom->color[i] = (r >>4) << 8 | (g >>4) << 4 | (b >>4) << 0;
 					 //g_pCustom->color[i] = 0x0F & (pView->pFirstVPort->pPalette[(p*32) + i] >> 12);
 					
 					 
 					 //g_pCustom->color[i] = 0x0F & pView->pFirstVPort->pPalette[(p*32) +i];
 					g_pCustom->bplcon3 = p << 13 | BV(9); // Set palette bank High.
-					g_pCustom->color[i] = (0x0F & r) << 8 | (0x0F & g) << 4 | (0x0F &b) << 0;
+					 g_pCustom->color[i] = (0x0F & r) << 8 | (0x0F & g) << 4 | (0x0F &b) << 0;
 					
 					 
 				}
