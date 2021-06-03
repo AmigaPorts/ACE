@@ -103,7 +103,7 @@ void viewUpdateCLUT(tView *pView)
 		// for(UBYTE i = 0; i < 32; ++i) {
 		// 	g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 		// }
-		if (pView->pFirstVPort->ubBPP <= 6)
+		if (pView->pFirstVPort->ubBPP < 6)
 		{
 			for (UBYTE i = 0; i < 32; ++i)
 			{
@@ -118,17 +118,13 @@ void viewUpdateCLUT(tView *pView)
 				//g_pCustom->bplcon3 = p << 13; // Set palette bank.
 				for (UBYTE i = 0; i < 32; ++i)
 				{
-					UBYTE r = pView->pFirstVPort->pPalette[(p*32) + i] >> 16;
-					UBYTE g = pView->pFirstVPort->pPalette[(p*32) + i] >> 8;
-					UBYTE b = pView->pFirstVPort->pPalette[(p*32) + i];
+					UBYTE r = pView->pFirstVPort->pPaletteAGA[(p*32) + i] >> 16;
+					UBYTE g = pView->pFirstVPort->pPaletteAGA[(p*32) + i] >> 8;
+					UBYTE b = pView->pFirstVPort->pPaletteAGA[(p*32) + i];
 					g_pCustom->bplcon3 = p << 13; // Set palette bank LOW.
 					g_pCustom->color[i] = (r >>4) << 8 | (g >>4) << 4 | (b >>4) << 0;
-					 //g_pCustom->color[i] = 0x0F & (pView->pFirstVPort->pPalette[(p*32) + i] >> 12);
-					
-					 
-					 //g_pCustom->color[i] = 0x0F & pView->pFirstVPort->pPalette[(p*32) +i];
 					g_pCustom->bplcon3 = p << 13 | BV(9); // Set palette bank High.
-					 g_pCustom->color[i] = (0x0F & r) << 8 | (0x0F & g) << 4 | (0x0F &b) << 0;
+					g_pCustom->color[i] = (0x0F & r) << 8 | (0x0F & g) << 4 | (0x0F &b) << 0;
 					
 					 
 				}
@@ -173,7 +169,8 @@ void viewLoad(tView *pView)
 		{
 
 
-			g_pCustom->bplcon0 = BV(4); // BPP + composite output
+			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBPP) << 12) | BV(9) | BV(4); // BPP + composite output
+		//	g_pCustom->bplcon0 = BV(4); // BPP + composite output
 			//g_pCustom->bplcon2 = BV(9);
 		}
 		else
@@ -269,6 +266,20 @@ tVPort *vPortCreate(void *pTagList, ...)
 	}
 
 	// Palette tag
+
+	// Allocate memory for the palette;
+	if (pVPort->ubBPP <5)
+	{
+		// 12 bit palette entries for Non-AGA
+		pVPort->pPalettePtr = memAllocFastClear(sizeof(UWORD) * (1<<pVPort->ubBPP)); 
+	}
+	else
+	{
+		// AGA uses 24 bit palette entries. 
+		pVPort->pPalettePtr = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+	}
+	
+
 	UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
 	if (pSrcPalette)
 	{
@@ -332,7 +343,17 @@ void vPortDestroy(tVPort *pVPort)
 				vPortRmManager(pCurrVPort, pCurrVPort->pFirstManager);
 			}
 			logBlockEnd("Destroying managers");
-
+			if (pVPort->ubBPP <5)
+			{
+				// 12 bit palette entries for Non-AGA
+				memFree(pVPort->pPalettePtr, sizeof(UWORD) * (1 << pVPort->ubBPP)); 
+			}
+			else
+			{
+				// AGA uses 24 bit palette entries. 
+				memFree(pVPort->pPalettePtr, sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+			}
+			
 			// Free stuff
 			memFree(pVPort, sizeof(tVPort));
 			break;
