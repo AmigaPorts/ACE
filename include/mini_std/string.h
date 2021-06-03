@@ -4,6 +4,13 @@
 #include <stddef.h>
 #include <../sys-include/string.h>
 
+#ifdef __cplusplus
+#define restrict 
+extern "C" {
+
+#endif
+
+
 size_t strlen(const char *str);
 
 char *strncpy(char *restrict dest, const char *restrict src, size_t count);
@@ -23,5 +30,8 @@ unsigned long strtoul(const char *restrict str, char **restrict str_end, int bas
 int strcmp(const char *szA, const char *szB);
 
 char *strncpy(char *restrict szDest, const char *restrict szSrc, size_t Count);
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _MINI_STD_STRING_H_

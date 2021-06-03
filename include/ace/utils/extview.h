@@ -119,7 +119,8 @@ typedef struct _tVPort {
 
 	// Color info
 	UBYTE ubBPP;        ///< Bitplane count
-	UWORD pPalette[32]; ///< Destination palette
+	// ACT - Updated palette to 256 colours, and
+	ULONG pPalette[256]; ///< Destination palette
 } tVPort;
 
 /* Globals */
