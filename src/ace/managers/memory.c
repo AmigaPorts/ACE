@@ -32,6 +32,13 @@ static ULONG s_ulChipUsage, s_ulChipPeakUsage, s_ulFastUsage, s_ulFastPeakUsage;
 static void _memEntryAdd(
 	void *pAddr, ULONG ulSize, UWORD uwLine, const char *szFile
 ) {
+	// Ozzyboshi discovered that memory allocation works without re-enabling
+	// the OS. After analyzing what's under the hood, it looks like there are only
+	// Forbid/Permit calls inside OS mem fns and the rest is just plain code.
+	// Still, OS mem fns can be patched by Snoopdos and/or newer OS versions,
+	// so I guess the safest approach is not to assume anything and wake OS up
+	// in case it needs other components on some exotic configs.
+
 	systemUse();
 	tMemEntry *pNext;
 	// Add mem usage entry
