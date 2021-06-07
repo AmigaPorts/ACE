@@ -26,6 +26,8 @@ extern "C" {
 #define TAG_VIEW_COPLIST_RAW_COUNT (TAG_USER|2)
 // If set with non-zero variable, view will use global palette & ignore vPorts'
 #define TAG_VIEW_GLOBAL_CLUT       (TAG_USER|3)
+#define TAG_VIEW_USES_AGA	   	   (TAG_USER|4)
+
 
 // Values for TAG_VIEW_COPLIST_MODE
 #define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
@@ -50,6 +52,8 @@ extern "C" {
 // time.
 #define TAG_VPORT_OFFSET_TOP   (TAG_USER|7)
 
+
+
 /* Types */
 
 /**
@@ -63,6 +67,7 @@ extern "C" {
  */
 #define VIEWPORT_HAS_OWN_CLUT 1
 
+#define VIEWPORT_USES_AGA	  2
 /**
  *  Viewport manager IDs.
  *  Number determines processing order. Camera is last, so rest may see

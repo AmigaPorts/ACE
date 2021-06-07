@@ -43,6 +43,13 @@ tView *viewCreate(void *pTags, ...)
 		logWrite("Global CLUT mode enabled\n");
 	}
 
+// Additional CLUT tags
+	if (tagGet(pTags, vaTags, TAG_VIEW_USES_AGA, 0))
+	{
+		pView->uwFlags |= VIEWPORT_USES_AGA;
+		logWrite("Global AGA mode enabled\n");
+	}
+
 	va_end(vaTags);
 	logBlockEnd("viewCreate()");
 	return pView;
@@ -103,15 +110,8 @@ void viewUpdateCLUT(tView *pView)
 		// for(UBYTE i = 0; i < 32; ++i) {
 		// 	g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 		// }
-		if (pView->pFirstVPort->ubBPP < 6)
-		{
-			for (UBYTE i = 0; i < 32; ++i)
-			{
-				g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
-			}
-		}
-		else
-		{
+		if (pView->uwFlags & VIEWPORT_USES_AGA) {
+
 			WORD colourBanks = (1 << pView->pFirstVPort->ubBPP) /32 ;
 			// oh AGA palette, how convoluted you are.
 			for (UBYTE p = 0; p < colourBanks ; p++)
@@ -129,6 +129,12 @@ void viewUpdateCLUT(tView *pView)
 					
 					 
 				}
+			}
+		}
+		else {
+			for (UBYTE i = 0; i < 32; ++i)
+			{
+				g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 			}
 		}
 	}
@@ -166,19 +172,14 @@ void viewLoad(tView *pView)
 	else
 	{
 		g_sCopManager.pCopList = pView->pCopList;
-		if (pView->pFirstVPort->ubBPP > 5)
-		{
-
-
+		// Seems strange that everything relies on the first viewport flags, and palette etc
+		if (pView->uwFlags & VIEWPORT_USES_AGA) {
 			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBPP) << 12) | BV(9) | BV(4); // BPP + composite output
-		//	g_pCustom->bplcon0 = BV(4); // BPP + composite output
-			//g_pCustom->bplcon2 = BV(9);
 		}
-		else
-		{
+		else {
 			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		}
-		//g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
+
 		
 		g_pCustom->fmode = 0;		 // AGA fix	
 		g_pCustom->bplcon3 = 0;		 // AGA fix
@@ -247,7 +248,7 @@ tVPort *vPortCreate(void *pTagList, ...)
 	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 	logWrite(
 		"Dimensions: %ux%u@%hu\n", pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBPP);
-
+	
 	// Update view - add to vPort list
 	++pView->ubVpCount;
 	if (!pView->pFirstVPort)
@@ -269,15 +270,13 @@ tVPort *vPortCreate(void *pTagList, ...)
 	// Palette tag
 
 	// Allocate memory for the palette;
-	if (pVPort->ubBPP <5)
-	{
-		// 12 bit palette entries for Non-AGA
-		pVPort->pPalette = memAllocFastClear(sizeof(UWORD) * (1<<pVPort->ubBPP)); 
-	}
-	else
-	{
-		// AGA uses 24 bit palette entries. 
+	if (pView->uwFlags & VIEWPORT_USES_AGA){
+		// AGA uses 24 bit palette entries. 		
 		pVPort->pPaletteAGA = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+	} 
+	else {
+		// 12 bit palette entries for Non-AGA
+		pVPort->pPalette = memAllocFastClear(sizeof(UWORD) * 32); 
 	}
 	
 
@@ -344,15 +343,16 @@ void vPortDestroy(tVPort *pVPort)
 				vPortRmManager(pCurrVPort, pCurrVPort->pFirstManager);
 			}
 			logBlockEnd("Destroying managers");
-			if (pVPort->ubBPP <5)
+
+			if (pVPort->uwFlags & VIEWPORT_USES_AGA)
 			{
-				// 12 bit palette entries for Non-AGA
-				memFree(pVPort->pPalette, sizeof(UWORD) * (1 << pVPort->ubBPP)); 
+				// AGA uses 24 bit palette entries. 
+				memFree(pVPort->pPaletteAGA, sizeof(ULONG) * (1 << pVPort->ubBPP));
 			}
 			else
 			{
-				// AGA uses 24 bit palette entries. 
-				memFree(pVPort->pPaletteAGA, sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+				// 12 bit palette entries for Non-AGA
+				memFree(pVPort->pPalette, sizeof(UWORD) * (32)); 
 			}
 			
 			// Free stuff
