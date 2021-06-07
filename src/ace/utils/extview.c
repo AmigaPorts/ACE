@@ -112,8 +112,9 @@ void viewUpdateCLUT(tView *pView)
 		}
 		else
 		{
+			WORD colourBanks = (1 << pView->pFirstVPort->ubBPP) /32 ;
 			// oh AGA palette, how convoluted you are.
-			for (UBYTE p = 0; p < 8; p++)
+			for (UBYTE p = 0; p < colourBanks ; p++)
 			{
 				//g_pCustom->bplcon3 = p << 13; // Set palette bank.
 				for (UBYTE i = 0; i < 32; ++i)
@@ -271,12 +272,12 @@ tVPort *vPortCreate(void *pTagList, ...)
 	if (pVPort->ubBPP <5)
 	{
 		// 12 bit palette entries for Non-AGA
-		pVPort->pPalettePtr = memAllocFastClear(sizeof(UWORD) * (1<<pVPort->ubBPP)); 
+		pVPort->pPalette = memAllocFastClear(sizeof(UWORD) * (1<<pVPort->ubBPP)); 
 	}
 	else
 	{
 		// AGA uses 24 bit palette entries. 
-		pVPort->pPalettePtr = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+		pVPort->pPaletteAGA = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBPP)); 
 	}
 	
 
@@ -346,12 +347,12 @@ void vPortDestroy(tVPort *pVPort)
 			if (pVPort->ubBPP <5)
 			{
 				// 12 bit palette entries for Non-AGA
-				memFree(pVPort->pPalettePtr, sizeof(UWORD) * (1 << pVPort->ubBPP)); 
+				memFree(pVPort->pPalette, sizeof(UWORD) * (1 << pVPort->ubBPP)); 
 			}
 			else
 			{
 				// AGA uses 24 bit palette entries. 
-				memFree(pVPort->pPalettePtr, sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+				memFree(pVPort->pPaletteAGA, sizeof(ULONG) * (1 << pVPort->ubBPP)); 
 			}
 			
 			// Free stuff
