@@ -59,8 +59,8 @@ typedef struct _tModFileHeader {
 	                           /// pattern count in file. Max 128.
 	UBYTE ubSongEndPos;
 	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
-		                       /// These list up to 128 pattern numbers
-													 /// and the order they should be played in.
+	                         /// These list up to 128 pattern numbers
+	                         /// and the order they should be played in.
 	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
 	// MOD pattern/sample data follows
 } tModFileHeader;
@@ -1097,6 +1097,11 @@ void moreBlockedFx(
 	UWORD uwCmd, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(uwCmd >> 8 >= 16) {
+		logWrite("ERR: blmorefx_tab index out of range: cmd %hu -> %hu\n", uwCmd, uwCmd >> 8);
+	}
+#endif
 	blmorefx_tab[uwCmd >> 8](uwCmd, pChannelData, pChannelReg);
 }
 
@@ -1123,6 +1128,11 @@ static void checkmorefx(
 	if(pChannelData->uwFunkSpeed) {
 		mt_updatefunk(pChannelData);
 	}
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(uwCmd >= 16) {
+		logWrite("ERR: morefx_tab index out of range: cmd %hu\n", uwCmd);
+	}
+#endif
 	morefx_tab[uwCmd](uwCmdArg, pChannelData, pChannelReg);
 }
 
@@ -1213,7 +1223,11 @@ static void mt_playvoice(
 		set_finetune(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 	}
 	else {
-		// logWrite("call cmd %hhu from table\n", uwCmd);
+#if defined(ACE_DEBUG_PTPLAYER)
+		if(uwCmd >= 16) {
+			logWrite("ERR: prefx_tab index out of range: cmd %hu\n", uwCmd);
+		}
+#endif
 		prefx_tab[uwCmd](
 			uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg
 		);
@@ -1255,6 +1269,11 @@ static void mt_checkfx(
 	}
 	else {
 		UBYTE ubCmdIndex = (pChannelData->sVoice.ubCmdHi & 0xF);
+#if defined(ACE_DEBUG_PTPLAYER)
+		if(ubCmdIndex >= 16) {
+			logWrite("ERR: fx_tab index out of range: cmd %hhu\n", ubCmdIndex);
+		}
+#endif
 		fx_tab[ubCmdIndex](pChannelData->sVoice.ubCmdLo, pChannelData, pChannelReg);
 	}
 }
@@ -2013,6 +2032,11 @@ static void mt_e_cmds(
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArgE = ubArgs & 0x0F;
 	UBYTE ubCmdE = (ubArgs & 0xF0) >> 4;
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(ubCmdE >= 16) {
+		logWrite("ERR: ecmd_tab index out of range: cmd %hhu\n", ubCmdE);
+	}
+#endif
 	ecmd_tab[ubCmdE](ubArgE, pChannelData, pChannelReg);
 }
 
@@ -2080,6 +2104,11 @@ static void blocked_e_cmds(
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArg = ubArgs & 0x0F;
 	UBYTE ubCmdE = ubArgs & 0xF0 >> 4;
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(ubCmdE >= 16) {
+		logWrite("ERR: blecmd_tab index out of range: cmd %hhu\n", ubCmdE);
+	}
+#endif
 	blecmd_tab[ubCmdE](ubArg, pChannelData, pChannelReg);
 }
 
