@@ -245,8 +245,9 @@ UBYTE blitUnsafeCopyAligned(
 	WORD wDstModulo, wSrcModulo;
 	ULONG ulSrcOffs, ulDstOffs;
 
+	// Use C channel instead of A - same speed, less regs to set up
 	uwBlitWords = wWidth >> 4;
-	uwBltCon0 = USEA|USED | MINTERM_A;
+	uwBltCon0 = USEC|USED | MINTERM_C;
 
 	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
@@ -258,14 +259,12 @@ UBYTE blitUnsafeCopyAligned(
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-		g_pCustom->bltafwm = 0xFFFF;
-		g_pCustom->bltalwm = 0xFFFF;
 
-		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
 
 		// This hell of a casting must stay here or else large offsets get bugged!
-		g_pCustom->bltapt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
+		g_pCustom->bltcpt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
 		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
 
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
@@ -287,15 +286,13 @@ UBYTE blitUnsafeCopyAligned(
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-		g_pCustom->bltafwm = 0xFFFF;
-		g_pCustom->bltalwm = 0xFFFF;
 
-		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			g_pCustom->bltapt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
+			g_pCustom->bltcpt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
 			g_pCustom->bltdpt = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
 			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}

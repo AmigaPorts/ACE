@@ -22,7 +22,7 @@ endif()
 #fmt
 add_subdirectory(fmt)
 target_include_directories(fmt PUBLIC ${fmt_INCLUDE_DIRS})
-target_link_libraries(common fmt::fmt)
+target_link_libraries(common -static fmt::fmt)
 
 # App-related
 file(GLOB FONT_CONV_src src/font_conv.cpp)

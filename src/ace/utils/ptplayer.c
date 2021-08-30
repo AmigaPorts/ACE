@@ -59,8 +59,8 @@ typedef struct _tModFileHeader {
 	                           /// pattern count in file. Max 128.
 	UBYTE ubSongEndPos;
 	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
-		                       /// These list up to 128 pattern numbers
-													 /// and the order they should be played in.
+	                         /// These list up to 128 pattern numbers
+	                         /// and the order they should be played in.
 	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
 	// MOD pattern/sample data follows
 } tModFileHeader;
@@ -1097,6 +1097,11 @@ void moreBlockedFx(
 	UWORD uwCmd, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(uwCmd >> 8 >= 16) {
+		logWrite("ERR: blmorefx_tab index out of range: cmd %hu -> %hu\n", uwCmd, uwCmd >> 8);
+	}
+#endif
 	blmorefx_tab[uwCmd >> 8](uwCmd, pChannelData, pChannelReg);
 }
 
@@ -1123,6 +1128,11 @@ static void checkmorefx(
 	if(pChannelData->uwFunkSpeed) {
 		mt_updatefunk(pChannelData);
 	}
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(uwCmd >= 16) {
+		logWrite("ERR: morefx_tab index out of range: cmd %hu\n", uwCmd);
+	}
+#endif
 	morefx_tab[uwCmd](uwCmdArg, pChannelData, pChannelReg);
 }
 
@@ -1213,7 +1223,11 @@ static void mt_playvoice(
 		set_finetune(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 	}
 	else {
-		// logWrite("call cmd %hhu from table\n", uwCmd);
+#if defined(ACE_DEBUG_PTPLAYER)
+		if(uwCmd >= 16) {
+			logWrite("ERR: prefx_tab index out of range: cmd %hu\n", uwCmd);
+		}
+#endif
 		prefx_tab[uwCmd](
 			uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg
 		);
@@ -1255,6 +1269,11 @@ static void mt_checkfx(
 	}
 	else {
 		UBYTE ubCmdIndex = (pChannelData->sVoice.ubCmdHi & 0xF);
+#if defined(ACE_DEBUG_PTPLAYER)
+		if(ubCmdIndex >= 16) {
+			logWrite("ERR: fx_tab index out of range: cmd %hhu\n", ubCmdIndex);
+		}
+#endif
 		fx_tab[ubCmdIndex](pChannelData->sVoice.ubCmdLo, pChannelData, pChannelReg);
 	}
 }
@@ -1515,7 +1534,26 @@ void ptplayerStop(void) {
 	s_pModCurr = 0;
 }
 
+static inline void setTempo(UWORD uwTempo) {
+#if !defined(PTPLAYER_USE_VBL)
+	systemSetTimer(CIA_B, 0, mt_timerval / uwTempo);
+#endif
+}
+
 static void mt_reset(void) {
+	// Load TimerA in continuous mode for the default tempo of 125.
+	// Note to self: make sure this is called when changing MODs.
+	setTempo(125);
+#if !defined(PTPLAYER_USE_VBL)
+	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
+#endif
+
+	// Load TimerB with 576 ticks for setting DMA and repeat
+	systemSetTimer(CIA_B, 1, 576);
+
+	// Enable CIA B interrupts
+	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
+
 	// reset speed and counters
 	mt_Speed = 6;
 	mt_Counter = 0;
@@ -1549,12 +1587,6 @@ static void mt_reset(void) {
 	mt_SilCntValid = 0;
 	mt_E8Trigger = 0;
 	ptplayerStop();
-}
-
-static inline void setTempo(UWORD uwTempo) {
-#if !defined(PTPLAYER_USE_VBL)
-	systemSetTimer(CIA_B, 0, mt_timerval / uwTempo);
-#endif
 }
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
@@ -1626,18 +1658,6 @@ void ptplayerCreate(UBYTE isPal) {
 	else {
 		mt_timerval = 1789773;
 	}
-
-	//Load TimerA in continuous mode for the default tempo of 125
-	setTempo(125);
-#if !defined(PTPLAYER_USE_VBL)
-	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
-#endif
-
-	// Load TimerB with 576 ticks for setting DMA and repeat
-	systemSetTimer(CIA_B, 1, 576);
-
-	// Enable CIA B interrupts
-	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
 
 	mt_reset();
 }
@@ -2013,6 +2033,11 @@ static void mt_e_cmds(
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArgE = ubArgs & 0x0F;
 	UBYTE ubCmdE = (ubArgs & 0xF0) >> 4;
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(ubCmdE >= 16) {
+		logWrite("ERR: ecmd_tab index out of range: cmd %hhu\n", ubCmdE);
+	}
+#endif
 	ecmd_tab[ubCmdE](ubArgE, pChannelData, pChannelReg);
 }
 
@@ -2080,6 +2105,11 @@ static void blocked_e_cmds(
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArg = ubArgs & 0x0F;
 	UBYTE ubCmdE = ubArgs & 0xF0 >> 4;
+#if defined(ACE_DEBUG_PTPLAYER)
+	if(ubCmdE >= 16) {
+		logWrite("ERR: blecmd_tab index out of range: cmd %hhu\n", ubCmdE);
+	}
+#endif
 	blecmd_tab[ubCmdE](ubArg, pChannelData, pChannelReg);
 }
 
