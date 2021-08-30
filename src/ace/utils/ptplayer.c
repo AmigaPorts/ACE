@@ -1534,7 +1534,26 @@ void ptplayerStop(void) {
 	s_pModCurr = 0;
 }
 
+static inline void setTempo(UWORD uwTempo) {
+#if !defined(PTPLAYER_USE_VBL)
+	systemSetTimer(CIA_B, 0, mt_timerval / uwTempo);
+#endif
+}
+
 static void mt_reset(void) {
+	// Load TimerA in continuous mode for the default tempo of 125.
+	// Note to self: make sure this is called when changing MODs.
+	setTempo(125);
+#if !defined(PTPLAYER_USE_VBL)
+	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
+#endif
+
+	// Load TimerB with 576 ticks for setting DMA and repeat
+	systemSetTimer(CIA_B, 1, 576);
+
+	// Enable CIA B interrupts
+	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
+
 	// reset speed and counters
 	mt_Speed = 6;
 	mt_Counter = 0;
@@ -1568,12 +1587,6 @@ static void mt_reset(void) {
 	mt_SilCntValid = 0;
 	mt_E8Trigger = 0;
 	ptplayerStop();
-}
-
-static inline void setTempo(UWORD uwTempo) {
-#if !defined(PTPLAYER_USE_VBL)
-	systemSetTimer(CIA_B, 0, mt_timerval / uwTempo);
-#endif
 }
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
@@ -1645,18 +1658,6 @@ void ptplayerCreate(UBYTE isPal) {
 	else {
 		mt_timerval = 1789773;
 	}
-
-	//Load TimerA in continuous mode for the default tempo of 125
-	setTempo(125);
-#if !defined(PTPLAYER_USE_VBL)
-	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
-#endif
-
-	// Load TimerB with 576 ticks for setting DMA and repeat
-	systemSetTimer(CIA_B, 1, 576);
-
-	// Enable CIA B interrupts
-	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
 
 	mt_reset();
 }
