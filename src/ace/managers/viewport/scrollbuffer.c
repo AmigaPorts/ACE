@@ -79,7 +79,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 8,
 			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			0xE2-7*4, pVPort->uwOffsY + 0x2C-1
+			0xE2 - 7 * 4, pVPort->uwOffsY + pVPort->pView->ubPosY -1
 		);
 		pManager->pBreakBlock = copBlockCreate(
 			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 2,
@@ -194,7 +194,11 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			if(pBlock->ubDisabled) {
 				copBlockEnable(pCopList, pBlock);
 			}
-			copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY + pManager->uwBmAvailHeight - uwScrollY);
+			copBlockWait(pCopList, pBlock, 0, (
+				pManager->sCommon.pVPort->pView->ubPosY +
+				pManager->sCommon.pVPort->uwOffsY +
+				pManager->uwBmAvailHeight - uwScrollY
+			));
 			for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
 				ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulBplAddX;
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
@@ -268,7 +272,10 @@ void scrollBufferReset(
 	else {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		// Set initial WAIT
-		copBlockWait(pCopList, pBlock, 0, 0x2C + pManager->sCommon.pVPort->uwOffsY);
+		copBlockWait(pCopList, pBlock, 0, (
+			pManager->sCommon.pVPort->pView->ubPosY +
+			pManager->sCommon.pVPort->uwOffsY
+		));
 		// After bitplane ptrs & bplcon
 		pBlock->uwCurrCount = 2 * pManager->sCommon.pVPort->ubBPP + 1;
 		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x0030);             // Fetch start

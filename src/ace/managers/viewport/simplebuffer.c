@@ -61,7 +61,10 @@ static void simpleBufferInitializeCopperList(
 			"Setting copperlist %p at offs %u\n",
 			pCopList->pBackBfr, pManager->uwCopperOffset
 		);
-		copSetWait(&pCmdList[0].sWait, 0xE2-7*4, pManager->sCommon.pVPort->uwOffsY + 0x2C-1);
+		copSetWait(&pCmdList[0].sWait, 0xE2 - 7 * 4, (
+			pManager->sCommon.pVPort->uwOffsY +
+			pManager->sCommon.pVPort->pView->ubPosY -1
+		));
 		copSetMove(&pCmdList[1].sMove, &g_pCustom->ddfstop, 0x00D0);    // Data fetch
 		copSetMove(&pCmdList[2].sMove, &g_pCustom->ddfstrt, uwDDfStrt);
 		copSetMove(&pCmdList[3].sMove, &g_pCustom->bpl1mod, uwModulo);  // Bitplane modulo
@@ -195,7 +198,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 			pCopList, simpleBufferGetRawCopperlistInstructionCount(pVPort->ubBPP) - 1,
 			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			0xE2-7*4, pVPort->uwOffsY + 0x2C-1
+			0xE2-7*4, pVPort->uwOffsY + pVPort->pView->ubPosY - 1
 		);
 	}
 	else {
