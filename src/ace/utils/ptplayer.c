@@ -1097,12 +1097,14 @@ void moreBlockedFx(
 	UWORD uwCmd, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
+	// Get cmd idx. See tModVoice's type definition for details.
+	UBYTE ubCmdIdx = (uwCmd >> 8) & 0x0F;
 #if defined(ACE_DEBUG_PTPLAYER)
-	if(uwCmd >> 8 >= 16) {
+	if(ubCmdIdx >= 16) {
 		logWrite("ERR: blmorefx_tab index out of range: cmd %hu -> %hu\n", uwCmd, uwCmd >> 8);
 	}
 #endif
-	blmorefx_tab[uwCmd >> 8](uwCmd, pChannelData, pChannelReg);
+	blmorefx_tab[ubCmdIdx](uwCmd, pChannelData, pChannelReg);
 }
 
 static void mt_updatefunk(tChannelStatus *pChannelData) {
