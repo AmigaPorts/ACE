@@ -1072,7 +1072,9 @@ static void ptSongStep(void) {
 static void startSfx(
 	UWORD uwLen, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
+#if defined(ACE_DEBUG_PTPLAYER)
 	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
+#endif
 	// play new sound effect on this channel
 	systemSetDmaMask(pChannelData->n_dmabit, 0);
 	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
@@ -2709,12 +2711,9 @@ static void channelSetSfx(
 void ptplayerSfxPlay(
 	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
 ) {
-	if(bChannel > 0) {
-		// use fixed channel for effect
-		static tChannelStatus *pChannels[] = {
-			&mt_chan[0], &mt_chan[1], &mt_chan[2], &mt_chan[3]
-		};
-		tChannelStatus *pChannel = pChannels[bChannel];
+	if(bChannel >= 0) {
+		// Use fixed channel for effect
+		tChannelStatus *pChannel = &mt_chan[bChannel];
 
 		// Priority high enough to replace a present effect on this channel?
 		g_pCustom->intena = INTF_INTEN;
