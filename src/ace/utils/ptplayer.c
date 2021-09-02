@@ -2753,22 +2753,25 @@ void ptplayerSfxPlay(
 		tModVoice *pPatternEnd = (tModVoice*)(pPatternStart + MOD_PATTERN_LENGTH);
 		tModVoice *pPatternPos = (tModVoice*)(pPatternStart + uwPatternPos);
 		do {
-			UBYTE d0 = 4;
+			UBYTE ubFreeChannelCnt = 4;
 
 			for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
 				if(!pMusicOnly[ubChannel]) {
-					++mt_chan[0].n_freecnt;
+					++mt_chan[ubChannel].n_freecnt;
 					if(pPatternPos->uwNote) {
+						// The channel at current pattern pos has new note so it's not free
 						pMusicOnly[ubChannel] = 1;
 					}
 				}
+				// Skip to next channel
 				++pPatternPos;
-				d0 -= pMusicOnly[ubChannel];
+				ubFreeChannelCnt -= pMusicOnly[ubChannel];
 			}
 
 			// break the loop when no channel has any more free pattern steps
 			// otherwise break after 8 pattern steps
-			isEnd = (d0 != 0 && --ubSteps != 0);
+			isEnd = (ubFreeChannelCnt != 0 || --ubSteps == 0);
+
 			// End of pattern reached? Then load next pattern pointer
 			if(!isEnd && pPatternPos >= pPatternEnd) {
 				uwPatternPos = 0;
@@ -2851,6 +2854,9 @@ void ptplayerSfxPlay(
 		}
 	}
 	if(pBestChannel) {
+#if defined(ACE_DEBUG_PTPLAYER)
+	logWrite("Selected channel %ld for sfx playback\n", pBestChannel - mt_chan);
+#endif
 		channelSetSfx(pBestChannel, pSfx, ubVolume, ubPriority);
 	}
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
@@ -2863,6 +2869,7 @@ void ptplayerWaitForSfx(void) {
 		for(UBYTE i = 0; i < 4; ++i) {
 			// Wait only for sfx to end - mod is looping ad infinitum anyway.
 			if(mt_chan[i].ubSfxPriority) {
+				logWrite("sfx ptplayerWaitForSfx\n");
 				// channel is busy by sfx
 				isAnyChannelBusy = 1;
 				// logWrite("channel busy %hhu", i);
