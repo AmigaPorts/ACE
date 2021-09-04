@@ -923,7 +923,7 @@ static volatile UBYTE mt_Enable = 0;
 static tChannelStatus mt_chan[4];
 static UWORD *mt_SampleStarts[31]; ///< Start address of each sample
 static tModFileHeader *mt_mod;
-static ULONG mt_timerval; ///< Base nterrupt frequency of CIA-B timer A used to advance the song. Equals 125*50Hz.
+static ULONG mt_timerval; ///< Base interrupt frequency of CIA-B timer A used to advance the song. Equals 125*50Hz.
 static UBYTE *mt_MasterVolTab;
 static UWORD mt_PatternPos;
 static UWORD mt_PBreakPos; ///< Pattern break pos
@@ -935,7 +935,17 @@ static UBYTE mt_SongPos; ///< Position in arrangement.
 static UBYTE mt_PattDelTime;
 static UBYTE mt_PattDelTime2;
 static UBYTE mt_SilCntValid;
-static UWORD mt_dmaon = 0; ///< Set by DMAF_AUD# when
+
+/**
+ * Each player loop generates this from scratch.
+ *
+ * Set with DMAF_AUD# when sfx is to be played, by retrigger/period cmds.
+ *
+ * Used in following DMA enable interrupt or in same loop pass to see
+ * if channels are blocked.
+ */
+static UWORD mt_dmaon = 0;
+
 static tPtplayerMod *s_pModCurr;
 
 static void clearAudioDone(void) {
@@ -1246,10 +1256,12 @@ static void mt_checkfx(
 		if(uwLen) {
 			startSfx(uwLen, pChannelData, pChannelReg);
 		}
-		if(uwLen || (
-			!isChannelDone(pChannelData) || (g_pCustom->dmaconr & pChannelData->n_dmabit)
-			// TODO: why not checking mt_dmaon?
-		)) {
+		if(
+			// mt_dmaon should be checked here to see if channel will be busy by sfx
+			// but uwLen check is used instead.
+			uwLen || !isChannelDone(pChannelData) ||
+			(g_pCustom->dmaconr & pChannelData->n_dmabit)
+		) {
 			// Channel is blocked, only check some E-commands
 			UWORD uwCmd = pChannelData->sVoice.uwCmd & 0x0FFF;
 			if((uwCmd & 0xF00) == 0xE00) {
@@ -1257,11 +1269,11 @@ static void mt_checkfx(
 			}
 			return;
 		}
-		else {
-			// sound effect sample has played, so unblock this channel again
-			pChannelData->ubSfxPriority = 0;
-		}
+
+		// Sound effect sample has played, so unblock this channel again
+		pChannelData->ubSfxPriority = 0;
 	}
+
 	// Do channel effects between notes
 	if(pChannelData->uwFunkSpeed) {
 		mt_updatefunk(pChannelData);
@@ -2108,7 +2120,7 @@ static void blocked_e_cmds(
 ) {
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArg = ubArgs & 0x0F;
-	UBYTE ubCmdE = ubArgs & 0xF0 >> 4;
+	UBYTE ubCmdE = (ubArgs & 0xF0) >> 4;
 #if defined(ACE_DEBUG_PTPLAYER)
 	if(ubCmdE >= 16) {
 		logWrite("ERR: blecmd_tab index out of range: cmd %hhu\n", ubCmdE);
@@ -2154,20 +2166,21 @@ static void mt_volchange(
 }
 
 static const tFx blmorefx_tab[16] = {
-	[0 ... 10] = mt_nop,
-	[11] = mt_posjump, // 0xB
-	[13] = mt_patternbrk, // 0xD
-	[14] = blocked_e_cmds,
-	[15] = mt_setspeed, // 0xF
+	[0 ... 0x0A] = mt_nop,
+	[0x0B] = mt_posjump,
+	[0x0C] = mt_nop,
+	[0x0D] = mt_patternbrk,
+	[0x0E] = blocked_e_cmds,
+	[0x0F] = mt_setspeed,
 };
 
 static const tFx morefx_tab[16] = {
-	[0 ... 10] = mt_pernop,
-	[11] = mt_posjump,
-	[12] = mt_volchange,
-	[13] = mt_patternbrk,
-	[14] = mt_e_cmds,
-	[15] = mt_setspeed
+	[0 ... 0x0A] = mt_pernop,
+	[0x0B] = mt_posjump,
+	[0x0C] = mt_volchange,
+	[0x0D] = mt_patternbrk,
+	[0x0E] = mt_e_cmds,
+	[0x0F] = mt_setspeed
 };
 
 //----------------------------------------------------------------- E CMDS TABLE
@@ -2384,13 +2397,6 @@ static void mt_funk(
 	}
 }
 
-static void mt_rts(
-	UNUSED_ARG UBYTE ubArg, UNUSED_ARG tChannelStatus *pChannelData,
-	UNUSED_ARG volatile tChannelRegs *pChannelReg
-) {
-	// NOP
-}
-
 static const tEFn ecmd_tab[16] = {
 	mt_filter,
 	mt_fineportaup,
@@ -2412,14 +2418,14 @@ static const tEFn ecmd_tab[16] = {
 
 static const tEFn blecmd_tab[16] = {
 	mt_filter,
-	mt_rts, mt_rts,
+	mt_nop, mt_nop,
 	mt_glissctrl,
 	mt_vibratoctrl,
 	mt_finetune,
 	mt_jumploop,
 	mt_tremoctrl,
 	mt_e8,
-	mt_rts, mt_rts, mt_rts, mt_rts, mt_rts
+	mt_nop, mt_nop, mt_nop, mt_nop, mt_nop
 };
 
 static void set_period(
