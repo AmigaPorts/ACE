@@ -105,7 +105,7 @@ typedef struct _tChannelStatus {
 	 */
 	const UWORD *pPeriodTable;
 
-	UWORD n_dmabit;
+	UWORD uwDmaFlag; ///< Set with DMAF_AUDx
 	UWORD n_noteoff; ///< TODO Later: convert it from byte offs to word offs (div by 2)
 	UWORD n_toneportspeed;
 	UWORD n_wantedperiod;
@@ -942,7 +942,8 @@ static UBYTE mt_SilCntValid;
  * Set with DMAF_AUD# when sfx is to be played, by retrigger/period cmds.
  *
  * Used in following DMA enable interrupt or in same loop pass to see
- * if channels are blocked.
+ * if channels are blocked. Also clears interrupt bits for set up channels
+ * to indicate that they are busy.
  */
 static UWORD mt_dmaon = 0;
 
@@ -958,6 +959,11 @@ static void clearAudioDone(void) {
 	s_uChannelDone.ulChannelMask = 0;
 #else
 	g_pCustom->intreq = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
+	// This originally cleared only the intbits set by mt_dmaon.
+	// KaiN's note: Audio dmaBits = 0b0001..0b1000, intBits = dmaBits << 7
+	g_pCustom->intreq = mt_dmaon << 7;
+	// for some reason I've had the following code here - why?
+	// g_pCustom->intreq = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
 #endif
 }
 
@@ -972,8 +978,13 @@ static UBYTE isChannelDone(tChannelStatus *pChannelData) {
 	return *pChannelData->pDoneBit;
 #else
 	// This doesn't work when nothing has yet played - check dmaconr for that
-	// KaiN's note: Audio dmaBits = 0b0000..0b1000, intBits = dmaBits << 7
-	return (g_pCustom->intreqr & (pChannelData->n_dmabit << 7));
+	// KaiN's note: Audio dmaBits = 0b0001..0b1000, intBits = dmaBits << 7
+	UWORD uwIntReqr = g_pCustom->intreqr;
+
+	// `!= 0` must be here, because downcasting to UBYTE may discard higher intbit
+	// and channel will be busy indefinitely!
+	UBYTE isBusy = (uwIntReqr & (pChannelData->uwDmaFlag << 7)) != 0;
+	return isBusy;
 #endif
 }
 
@@ -1080,15 +1091,15 @@ static void ptSongStep(void) {
 }
 
 static void startSfx(
-	UWORD uwLen, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 #if defined(ACE_DEBUG_PTPLAYER)
-	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, uwLen);
+	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, pChannelData->n_sfxlen);
 #endif
 	// play new sound effect on this channel
-	systemSetDmaMask(pChannelData->n_dmabit, 0);
+	systemSetDmaMask(pChannelData->uwDmaFlag, 0);
 	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
-	pChannelReg->ac_len = uwLen;
+	pChannelReg->ac_len = pChannelData->n_sfxlen;
 	pChannelReg->ac_per = pChannelData->n_sfxper;
 	pChannelReg->ac_vol = pChannelData->n_sfxvol;
 
@@ -1102,7 +1113,7 @@ static void startSfx(
 	pChannelData->n_looped = 0;
 	pChannelData->n_sfxlen = 0;
 
-	mt_dmaon |= pChannelData->n_dmabit;
+	mt_dmaon |= pChannelData->uwDmaFlag;
 }
 
 void moreBlockedFx(
@@ -1158,11 +1169,11 @@ static void mt_playvoice(
 		// Channel is blocked by external sound effect
 		if(pChannelData->n_sfxlen) {
 			// There are pending sfx data to be written into channel regs
-			startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
+			startSfx(pChannelData, pChannelReg);
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
 			return;
 		}
-		if(!isChannelDone(pChannelData) || (mt_dmaon & pChannelData->n_dmabit)) {
+		if(!isChannelDone(pChannelData) || (mt_dmaon & pChannelData->uwDmaFlag)) {
 			// Channel interrupt is not triggered or DMA is still active - do only
 			// some limited commands while sound effect is in progress
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
@@ -1254,13 +1265,13 @@ static void mt_checkfx(
 	if(pChannelData->ubSfxPriority) {
 		UWORD uwLen = pChannelData->n_sfxlen;
 		if(uwLen) {
-			startSfx(uwLen, pChannelData, pChannelReg);
+			startSfx(pChannelData, pChannelReg);
 		}
 		if(
 			// mt_dmaon should be checked here to see if channel will be busy by sfx
 			// but uwLen check is used instead.
 			uwLen || !isChannelDone(pChannelData) ||
-			(g_pCustom->dmaconr & pChannelData->n_dmabit)
+			(g_pCustom->dmaconr & pChannelData->uwDmaFlag)
 		) {
 			// Channel is blocked, only check some E-commands
 			UWORD uwCmd = pChannelData->sVoice.uwCmd & 0x0FFF;
@@ -1345,14 +1356,14 @@ static inline void setChannelRepeat(
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	if(pChannelData->n_replen == 1) {
 		// Looped single word of sample - channel is to be set to idle mode
-		if(mt_dmaon & pChannelData->n_dmabit) {
+		if(mt_dmaon & pChannelData->uwDmaFlag) {
 			// Channel is still on - give the audio interrupt signal that it should
 			// disable channel DMA after playback of this one.
 			s_pAudioChannelPendingDisable[pChannelData->uwChannelIdx] = 1;
 		}
 	}
 #endif
-	if(!(mt_dmaon & pChannelData->n_dmabit)) {
+	if(!(mt_dmaon & pChannelData->uwDmaFlag)) {
 		// Channel is already turned off - refresh 'done' bit.
 		setAudioDone(pChannelData);
 		// Skip register setup
@@ -1367,7 +1378,6 @@ static inline void setChannelRepeat(
 static void intSetRep(volatile tCustom *pCustom) {
 	// check and clear CIAB interrupt flags
 	// clear EXTER and possible audio interrupt flags
-
 	clearAudioDone();
 
 	// Set repeat sample pointers and lengths
@@ -1422,9 +1432,9 @@ static void chan_sfx_only(
 ) {
 	if(pChannelData->ubSfxPriority) {
 		if(pChannelData->n_sfxlen) {
-			startSfx(pChannelData->n_sfxlen, pChannelData, pChannelReg);
+			startSfx(pChannelData, pChannelReg);
 		}
-		else if(isChannelDone(pChannelData) && !(mt_dmaon & pChannelData->n_dmabit)) {
+		else if(isChannelDone(pChannelData) && !(mt_dmaon & pChannelData->uwDmaFlag)) {
 			// Last sound effect sample has played, so unblock this channel again
 			pChannelData->ubSfxPriority = 0;
 		}
@@ -1591,7 +1601,7 @@ static void mt_reset(void) {
 	// make sure n_period doesn't start as 0
 	// disable sound effects
 	for(UBYTE i = 4; i--;) {
-		mt_chan[i].n_dmabit = 1 << (DMAB_AUD0 + i);
+		mt_chan[i].uwDmaFlag = 1 << (DMAB_AUD0 + i);
 	#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 		mt_chan[i].uwChannelIdx = i;
 		mt_chan[i].pDoneBit = &s_uChannelDone.pChannels[i];
@@ -2292,11 +2302,11 @@ static void ptDoRetrigger(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// DMA off, set sample pointer and length
-	systemSetDmaMask(pChannelData->n_dmabit, 0);
+	systemSetDmaMask(pChannelData->uwDmaFlag, 0);
 	// logWrite("retrigger: %p:%hu\n", pChannelData->n_start, pChannelData->n_length);
 	pChannelReg->ac_ptr = pChannelData->n_start;
 	pChannelReg->ac_len = pChannelData->n_length;
-	mt_dmaon |= pChannelData->n_dmabit;
+	mt_dmaon |= pChannelData->uwDmaFlag;
 }
 
 static void mt_retrignote(
@@ -2445,7 +2455,7 @@ static void set_period(
 	// Skip if notedelay
 	if(uwMaskedCmdE != 0x0ED0) {
 		// Disable DMA
-		systemSetDmaMask(pChannelData->n_dmabit, 0);
+		systemSetDmaMask(pChannelData->uwDmaFlag, 0);
 
 		if(!BTST(pChannelData->n_vibratoctrl, 2)) {
 			pChannelData->n_vibratopos = 0;
@@ -2461,7 +2471,7 @@ static void set_period(
 		pChannelReg->ac_ptr = pChannelData->n_start;
 		pChannelReg->ac_len = pChannelData->n_length;
 		pChannelReg->ac_per = uwPeriod;
-		mt_dmaon |= pChannelData->n_dmabit;
+		mt_dmaon |= pChannelData->uwDmaFlag;
 	}
 	checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 }
