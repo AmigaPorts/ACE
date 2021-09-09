@@ -1406,7 +1406,7 @@ static void mt_TimerBsetrep(
 static void intDmaOn(volatile tCustom *pCustom) {
 	// pCustom->color[0] = 0x00F;
 	// Restart timer to set repeat, enable DMA
-	g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START;
+	systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START);
 	systemSetDmaMask(mt_dmaon, 1);
 
 	// set level 6 interrupt to mt_TimerBsetrep
@@ -1453,7 +1453,7 @@ void mt_sfxonly(void) {
 	if(mt_dmaon) {
 		ptplayerEnableMainHandler(0);
 		systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
-		g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START; // load/start timer B, one-shot
+		systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START); // load/start timer B, one-shot
 	}
 }
 
@@ -1475,7 +1475,7 @@ static void mt_music(void) {
 		if(mt_dmaon) {
 			ptplayerEnableMainHandler(0);
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
-			g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START; // load/start timer B, one-shot
+			systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START); // load/start timer B, one-shot
 		}
 	}
 	else {
@@ -1507,7 +1507,7 @@ static void mt_music(void) {
 		if(mt_dmaon) {
 			ptplayerEnableMainHandler(0);
 			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
-			g_pCia[CIA_B]->crb = CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START; // load/start timer B, one-shot
+			systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START); // load/start timer B, one-shot
 		}
 
 		// next pattern line, handle delay and break
@@ -1571,7 +1571,7 @@ static void mt_reset(void) {
 	// Note to self: make sure this is called when changing MODs.
 	setTempo(125);
 #if !defined(PTPLAYER_USE_VBL)
-	g_pCia[CIA_B]->cra = CIACRA_LOAD | CIACRA_START; // load timer, start continuous
+	systemSetCiaCr(CIA_B, 0, CIACRA_LOAD | CIACRA_START); // load timer, start continuous
 #endif
 
 	// Load TimerB with 576 ticks for setting DMA and repeat

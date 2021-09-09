@@ -48,6 +48,8 @@ void systemSetCiaInt(
 	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
 );
 
+void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue);
+
 void systemUse(void);
 
 void systemUnuse(void);
