@@ -845,3 +845,15 @@ void systemDump(void) {
 
 	// logBlockEnd("systemDump()");
 }
+
+void systemIdleBegin(void) {
+#if defined(BARTMAN_GCC)
+	debug_start_idle();
+#endif
+}
+
+void systemIdleEnd(void) {
+#if defined(BARTMAN_GCC)
+	debug_stop_idle();
+#endif
+}

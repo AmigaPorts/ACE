@@ -68,6 +68,10 @@ void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled);
 
 void systemSetTimer(UBYTE ubCia, UBYTE ubTimer, UWORD uwTicks);
 
+void systemIdleBegin(void);
+
+void systemIdleEnd(void);
+
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;
