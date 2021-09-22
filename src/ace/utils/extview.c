@@ -339,7 +339,7 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 	}
 #endif
 
-	if(!isExact) {
+	if(isExact) {
 		// If current beam pos is on or past end pos, wait for start of next frame
 		while (getRayPos().bfPosY >= uwEndPos) {}
 	}
