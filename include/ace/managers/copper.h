@@ -38,8 +38,10 @@ extern "C" {
 
 // Since copperlist is double buffered, status flags must be propagated for 2 passes
 
-#define TAG_COPPER_LIST_MODE (TAG_USER|1)
-#define TAG_COPPER_RAW_COUNT (TAG_USER|2)
+typedef enum tCopListCreateTags {
+	TAG_COPPER_LIST_MODE = (TAG_USER|1),
+	TAG_COPPER_RAW_COUNT = (TAG_USER|2),
+} tCopListCreateTags;
 
 // Values for TAG_COPPER_LIST_TYPE
 #define COPPER_MODE_BLOCK 0

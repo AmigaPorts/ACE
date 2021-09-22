@@ -25,59 +25,62 @@ extern "C" {
 #include <ace/managers/viewport/camera.h>
 #include <ace/managers/viewport/scrollbuffer.h>
 
-/**
- * @brief Pointer to parent vPort. Mandatory.
- */
-#define TAG_TILEBUFFER_VPORT (TAG_USER|1)
+typedef enum tTileBufferCreateTags {
+	/**
+	 * @brief Pointer to parent vPort. Mandatory.
+	 */
+	TAG_TILEBUFFER_VPORT = (TAG_USER | 1),
 
-/**
- * @brief Scrollable area bounds, in pixels. Mandatory.
- */
-#define TAG_TILEBUFFER_BOUND_TILE_X     (TAG_USER|2)
-#define TAG_TILEBUFFER_BOUND_TILE_Y     (TAG_USER|3)
-/**
- * @brief Size of tile, given in bitshift. Set to 4 for 16px, 5 for 32px, etc. Mandatory.
- */
-#define TAG_TILEBUFFER_TILE_SHIFT (TAG_USER|4)
+	/**
+	 * @brief Scrollable area bounds, in tiles. Mandatory.
+	 */
+	TAG_TILEBUFFER_BOUND_TILE_X = (TAG_USER | 2),
+	TAG_TILEBUFFER_BOUND_TILE_Y = (TAG_USER | 3),
 
-/**
- * @brief Buffer bitmap creation flags. Defaults to BMF_CLEAR.
- */
-#define TAG_TILEBUFFER_BITMAP_FLAGS (TAG_USER|5)
+	/**
+	 * @brief Size of tile, given in bitshift. Set to 4 for 16px, 5 for 32px, etc. Mandatory.
+	 */
+	TAG_TILEBUFFER_TILE_SHIFT = (TAG_USER | 4),
 
-/**
- * @brief Set this flag to 1 to enable double buffering. Defaults to 0.
- */
-#define TAG_TILEBUFFER_IS_DBLBUF    (TAG_USER|6)
+	/**
+	 * @brief Buffer bitmap creation flags. Defaults to BMF_CLEAR.
+	 */
+	TAG_TILEBUFFER_BITMAP_FLAGS = (TAG_USER | 5),
 
-/**
- * @brief If in raw copper mode, offset on copperlist for placing required
- * copper instructions, specified in copper instruction count since beginning.
- */
-#define TAG_TILEBUFFER_COPLIST_OFFSET_START (TAG_USER|7)
-#define TAG_TILEBUFFER_COPLIST_OFFSET_BREAK (TAG_USER|8)
+	/**
+	 * @brief Set this flag to 1 to enable double buffering. Defaults to 0.
+	 */
+	TAG_TILEBUFFER_IS_DBLBUF =    (TAG_USER | 6),
 
-/**
- * @brief Pointer to tileset bitmap. Expects it to have all tiles in single
- * column. Mandatory.
- */
-#define TAG_TILEBUFFER_TILESET             (TAG_USER|9)
+	/**
+	 * @brief If in raw copper mode, offset on copperlist for placing required
+	 * copper instructions, specified in copper instruction count since beginning.
+	 */
+	TAG_TILEBUFFER_COPLIST_OFFSET_START = (TAG_USER | 7),
+	TAG_TILEBUFFER_COPLIST_OFFSET_BREAK = (TAG_USER | 8),
 
-/**
- * @brief Pointer to callback which gets called in case any tile gets drawn.
- *
- * Use this to draw extra stuff on top of your tiles.
- *
- * @see tTileDrawCallback
- */
-#define TAG_TILEBUFFER_CALLBACK_TILE_DRAW  (TAG_USER|10)
+	/**
+	 * @brief Pointer to tileset bitmap. Expects it to have all tiles in single
+	 * column. Mandatory.
+	 */
+	TAG_TILEBUFFER_TILESET = (TAG_USER | 9),
 
-/**
- * @brief Max length of tile redraw queue. Mandatory, must be non-zero.
- *
- * @see tileBufferQueueProcess()
- */
-#define TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH (TAG_USER|11)
+	/**
+	 * @brief Pointer to callback which gets called in case any tile gets drawn.
+	 *
+	 * Use this to draw extra stuff on top of your tiles.
+	 *
+	 * @see tTileDrawCallback
+	 */
+	TAG_TILEBUFFER_CALLBACK_TILE_DRAW = (TAG_USER | 10),
+
+	/**
+	 * @brief Max length of tile redraw queue. Mandatory, must be non-zero.
+	 *
+	 * @see tileBufferQueueProcess()
+	 */
+	TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH = (TAG_USER | 11)
+} tTileBufferCreateTags;
 
 /* types */
 
