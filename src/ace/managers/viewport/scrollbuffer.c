@@ -79,7 +79,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 8,
 			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			0xE2 - 7 * 4, pVPort->uwOffsY + pVPort->pView->ubPosY -1
+			0xE2 - 8 * 8, pVPort->uwOffsY + pVPort->pView->ubPosY -1
 		);
 		pManager->pBreakBlock = copBlockCreate(
 			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 2,
