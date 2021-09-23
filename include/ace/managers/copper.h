@@ -35,6 +35,7 @@ extern "C" {
 #include <ace/types.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/tag.h>
 
 // Since copperlist is double buffered, status flags must be propagated for 2 passes
 

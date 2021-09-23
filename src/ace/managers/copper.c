@@ -6,7 +6,6 @@
 #ifdef AMIGA
 #include <stdarg.h>
 #include <ace/managers/system.h>
-#include <ace/utils/tag.h>
 #include <limits.h>
 #include <proto/exec.h>
 
