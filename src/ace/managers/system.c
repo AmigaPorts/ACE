@@ -24,10 +24,6 @@
 #include <bartman/gcc8_c_support.h> // Idle measurement
 #endif
 
-#if defined(BARTMAN_GCC)
-#include <bartman/gcc8_c_support.h>
-#endif
-
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
 // http://eab.abime.net/showthread.php?p=1081007
