@@ -20,6 +20,9 @@
 #include <proto/dos.h> // Bartman's compiler needs this
 #include <proto/graphics.h> // Bartman's compiler needs this
 #include <proto/cia.h>
+#if defined(BARTMAN_GCC)
+#include <bartman/gcc8_c_support.h> // Idle measurement
+#endif
 
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
@@ -619,6 +622,8 @@ void systemUnuse(void) {
 
 		// Save CRA bits
 		s_pOsCiaCra[CIA_A] = g_pCia[CIA_A]->cra;
+		s_pOsCiaCrb[CIA_A] = g_pCia[CIA_A]->crb;
+		s_pOsCiaCra[CIA_B] = g_pCia[CIA_B]->cra;
 		s_pOsCiaCrb[CIA_B] = g_pCia[CIA_B]->crb;
 
 		// Disable timers and trigger reload of value to read preset val
@@ -649,9 +654,9 @@ void systemUnuse(void) {
 
 		// Restore ACE CIA CRA/CRB state
 		g_pCia[CIA_A]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_A];
-		g_pCia[CIA_A]->crb = CIACRA_LOAD |s_pAceCiaCrb[CIA_A];
-		g_pCia[CIA_B]->cra = CIACRA_LOAD |s_pAceCiaCra[CIA_B];
-		g_pCia[CIA_B]->crb = CIACRA_LOAD |s_pAceCiaCrb[CIA_B];
+		g_pCia[CIA_A]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_A];
+		g_pCia[CIA_B]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_B];
+		g_pCia[CIA_B]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_B];
 
 		// Game's bitplanes & copperlists are still used so don't disable them
 		// Wait for vbl before disabling sprite DMA
