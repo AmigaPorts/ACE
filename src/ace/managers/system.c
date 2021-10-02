@@ -81,7 +81,7 @@ static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static volatile tHwIntVector * s_pHwVectors = 0;
 static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static volatile tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static volatile UWORD s_uwAceInts = 0;
+static volatile UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
 
 // Manager logic vars
 static WORD s_wSystemUses;
@@ -173,22 +173,18 @@ void HWINTERRUPT int3Handler(void) {
 	}
 
 	// Copper
-	if(uwIntReq & INTF_COPER) {
-		if(s_pAceInterrupts[INTB_COPER].pHandler) {
-			s_pAceInterrupts[INTB_COPER].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
-			);
-		}
+	if((uwIntReq & INTF_COPER) && s_pAceInterrupts[INTB_COPER].pHandler) {
+		s_pAceInterrupts[INTB_COPER].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
+		);
 		uwReqClr |= INTF_COPER;
 	}
 
 	// Blitter
-	if(uwIntReq & INTF_BLIT) {
-		if(s_pAceInterrupts[INTB_BLIT].pHandler) {
-			s_pAceInterrupts[INTB_BLIT].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
-			);
-		}
+	if((uwIntReq & INTF_BLIT) && s_pAceInterrupts[INTB_BLIT].pHandler) {
+		s_pAceInterrupts[INTB_BLIT].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
+		);
 		uwReqClr |= INTF_BLIT;
 	}
 	logPopInt();
@@ -203,42 +199,34 @@ void HWINTERRUPT int4Handler(void) {
 	UWORD uwReqClr = 0;
 
 	// Audio channel 0
-	if(uwIntReq & INTF_AUD0) {
-		if(s_pAceInterrupts[INTB_AUD0].pHandler) {
-			s_pAceInterrupts[INTB_AUD0].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD0].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD0) && s_pAceInterrupts[INTB_AUD0].pHandler) {
+		s_pAceInterrupts[INTB_AUD0].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD0].pData
+		);
 		uwReqClr |= INTF_AUD0;
 	}
 
 	// Audio channel 1
-	if(uwIntReq & INTF_AUD1) {
-		if(s_pAceInterrupts[INTB_AUD1].pHandler) {
-			s_pAceInterrupts[INTB_AUD1].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD1].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD1) && s_pAceInterrupts[INTB_AUD1].pHandler) {
+		s_pAceInterrupts[INTB_AUD1].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD1].pData
+		);
 		uwReqClr |= INTF_AUD1;
 	}
 
 	// Audio channel 2
-	if(uwIntReq & INTF_AUD2) {
-		if(s_pAceInterrupts[INTB_AUD2].pHandler) {
-			s_pAceInterrupts[INTB_AUD2].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD2].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD2) && s_pAceInterrupts[INTB_AUD2].pHandler) {
+		s_pAceInterrupts[INTB_AUD2].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD2].pData
+		);
 		uwReqClr |= INTF_AUD2;
 	}
 
 	// Audio channel 3
-	if(uwIntReq & INTF_AUD3) {
-		if(s_pAceInterrupts[INTB_AUD3].pHandler) {
-			s_pAceInterrupts[INTB_AUD3].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD3].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD3) && s_pAceInterrupts[INTB_AUD3].pHandler) {
+		s_pAceInterrupts[INTB_AUD3].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD3].pData
+		);
 		uwReqClr |= INTF_AUD3;
 	}
 	logPopInt();
@@ -675,10 +663,7 @@ void systemUnuse(void) {
 		// Everything that's supported by ACE to simplify things for now,
 		// but not audio channels since ptplayer relies on polling them, and I'm not
 		// currently being able to debug audio interrupt handler variant.
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
-			INTF_BLIT | INTF_COPER | INTF_VERTB | INTF_EXTER |
-			INTF_PORTS //| INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
-		);
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
@@ -749,10 +734,18 @@ void systemSetInt(
 ) {
 	// Disable ACE handler during data swap to ensure atomic op
 	s_pAceInterrupts[ubIntNumber].pHandler = 0;
-	s_pAceInterrupts[ubIntNumber].pData = pIntData;
 
 	// Re-enable handler or disable it if 0 was passed
-	s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
+	if(pHandler == 0) {
+		g_pCustom->dmacon = BV(ubIntNumber);
+		s_uwAceIntEna &= ~BV(ubIntNumber);
+	}
+	else {
+		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
+		s_pAceInterrupts[ubIntNumber].pData = pIntData;
+		s_uwAceIntEna |= BV(ubIntNumber);
+		g_pCustom->intena = DMAF_SETCLR | BV(ubIntNumber);
+	}
 }
 
 void systemSetCiaInt(
