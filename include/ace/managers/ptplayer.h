@@ -6,8 +6,8 @@
 // Written by Frank Wille in 2013, 2016, 2017, 2018.
 // Rewritten to C by KaiN for ACE
 
-#ifndef _ACE_UTILS_PTPLAYER_H_
-#define _ACE_UTILS_PTPLAYER_H_
+#ifndef _ACE_MANAGERS_PTPLAYER_H_
+#define _ACE_MANAGERS_PTPLAYER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -191,4 +191,4 @@ void ptplayerWaitForSfx(void);
 }
 #endif
 
-#endif // _ACE_UTILS_PTPLAYER_H_
+#endif // _ACE_MANAGERS_PTPLAYER_H_

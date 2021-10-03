@@ -175,7 +175,7 @@ void tileBufferProcess(tTileBufferManager *pManager);
 
 void tileBufferReset(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
-	UBYTE ubBitmapFlags, UBYTE isDblBuf
+	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak
 );
 
 /**
@@ -234,6 +234,14 @@ UBYTE tileBufferIsTileOnBuffer(
 void tileBufferSetTile(
 	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwIdx
 );
+
+static inline UBYTE tileBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp) {
+    return scrollBufferGetRawCopperlistInstructionCountStart(ubBpp);
+}
+
+static inline UBYTE tileBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp) {
+    return scrollBufferGetRawCopperlistInstructionCountBreak(ubBpp);
+}
 
 #endif // AMIGA
 
