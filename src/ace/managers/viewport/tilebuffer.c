@@ -54,11 +54,6 @@ void tileBufferQueueProcess(tTileBufferManager *pManager) {
 	}
 }
 
-void tileBufferReset(
-	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
-	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak
-);
-
 tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	va_list vaTags;
 	tTileBufferManager *pManager;

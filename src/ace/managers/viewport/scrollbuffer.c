@@ -75,13 +75,13 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	// Create copperlist entries
 	pCopList = pVPort->pView->pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
-		pManager->copStart.pStartBlock = copBlockCreate(
+		pManager->pStartBlock = copBlockCreate(
 			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 8,
 			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
 			0xE2 - 7 * 4, pVPort->uwOffsY + pVPort->pView->ubPosY -1
 		);
-		pManager->copBreak.pBreakBlock = copBlockCreate(
+		pManager->pBreakBlock = copBlockCreate(
 			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 2,
 			// Dummy position - will be updated
 			0x7F, 0xFF
@@ -90,27 +90,27 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	else {
 		const UWORD uwInvalidCopOffs = -1;
 		pManager->ubFlags |= SCROLLBUFFER_FLAG_COPLIST_RAW;
-		pManager->copStart.uwCopperOffsetStart = tagGet(
+		pManager->uwCopperOffsetStart = tagGet(
 			pTags, vaTags, TAG_SCROLLBUFFER_COPLIST_OFFSET_START, uwInvalidCopOffs
 		);
-		if(pManager->copStart.uwCopperOffsetStart == uwInvalidCopOffs) {
+		if(pManager->uwCopperOffsetStart == uwInvalidCopOffs) {
 			logWrite(
 				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_START) not specified!\n"
 			);
 			goto fail;
 		}
-		pManager->copBreak.uwCopperOffsetBreak = tagGet(
+		pManager->uwCopperOffsetBreak = tagGet(
 			pTags, vaTags, TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK, uwInvalidCopOffs
 		);
-		if(pManager->copBreak.uwCopperOffsetBreak == uwInvalidCopOffs) {
+		if(pManager->uwCopperOffsetBreak == uwInvalidCopOffs) {
 			logWrite(
 				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK) not specified!\n"
 			);
 			goto fail;
 		}
 		logWrite("Copperlist offsets: start: %u, break: %u\n",
-				 pManager->copStart.uwCopperOffsetStart,
-				 pManager->copBreak.uwCopperOffsetBreak);
+				 pManager->uwCopperOffsetStart,
+				 pManager->uwCopperOffsetBreak);
 	}
 
 	scrollBufferReset(
@@ -142,10 +142,10 @@ fail:
 	if(isCameraCreated) {
 		cameraDestroy(pManager->pCamera);
 	}
-	if(pCopList && pCopList->ubMode == COPPER_MODE_BLOCK && pManager->copStart.pStartBlock) {
-		copBlockDestroy(pCopList, pManager->copStart.pStartBlock);
-		if(pManager->copBreak.pBreakBlock) {
-			copBlockDestroy(pCopList, pManager->copBreak.pBreakBlock);
+	if(pCopList && pCopList->ubMode == COPPER_MODE_BLOCK && pManager->pStartBlock) {
+		copBlockDestroy(pCopList, pManager->pStartBlock);
+		if(pManager->pBreakBlock) {
+			copBlockDestroy(pCopList, pManager->pBreakBlock);
 		}
 	}
 
@@ -159,8 +159,8 @@ void scrollBufferDestroy(tScrollBufferManager *pManager) {
 	logBlockBegin("scrollBufferDestroy(pManager: %p)", pManager);
 
 	if(!(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW)) {
-		copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->copStart.pStartBlock);
-		copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->copBreak.pBreakBlock);
+		copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pStartBlock);
+		copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pBreakBlock);
 	}
 
 	if(pManager->pFront && pManager->pFront != pManager->pBack) {
@@ -273,9 +273,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	ULONG ulPlaneOffs = ulBplAddX + (pManager->pBack->BytesPerRow*uwScrollY);
 	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
-		updateStartCopperlist(&pCopList->pBackBfr->pList[pManager->copStart.uwCopperOffsetStart], pManager->pBack, uwShift, ulPlaneOffs);
+		updateStartCopperlist(&pCopList->pBackBfr->pList[pManager->uwCopperOffsetStart], pManager->pBack, uwShift, ulPlaneOffs);
 
-		tCopCmd *pCmdListBreak = &pCopList->pBackBfr->pList[pManager->copBreak.uwCopperOffsetBreak];
+		tCopCmd *pCmdListBreak = &pCopList->pBackBfr->pList[pManager->uwCopperOffsetBreak];
 		if(pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
 			updateBreakCopperlist(
 				pCmdListBreak, pManager->pBack,
@@ -289,7 +289,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 	}
 	else {
 		// Initial copper block
-		tCopBlock *pBlock = pManager->copStart.pStartBlock;
+		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwShift);
 		for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
@@ -302,7 +302,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		pBlock->uwCurrCount += 4; // Add constant part
 
 		// Copper block after Y-break
-		pBlock = pManager->copBreak.pBreakBlock;
+		pBlock = pManager->pBreakBlock;
 
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		if(pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
@@ -384,27 +384,27 @@ void scrollBufferReset(
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
 		resetStartCopperlist(
-				&pCopList->pBackBfr->pList[pManager->copStart.uwCopperOffsetStart],
+				&pCopList->pBackBfr->pList[pManager->uwCopperOffsetStart],
 				pManager->sCommon.pVPort->uwOffsY,
 				pManager->sCommon.pVPort->ubBPP,
 				pManager->uwModulo);
 		resetBreakCopperlist(
-				&pCopList->pBackBfr->pList[pManager->copBreak.uwCopperOffsetBreak],
+				&pCopList->pBackBfr->pList[pManager->uwCopperOffsetBreak],
 				pManager->sCommon.pVPort->uwOffsY,
 				pManager->sCommon.pVPort->ubBPP);
 		// again for double bufferred
 		resetStartCopperlist(
-				&pCopList->pFrontBfr->pList[pManager->copStart.uwCopperOffsetStart],
+				&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetStart],
 				pManager->sCommon.pVPort->uwOffsY,
 				pManager->sCommon.pVPort->ubBPP,
 				pManager->uwModulo);
 		resetBreakCopperlist(
-				&pCopList->pFrontBfr->pList[pManager->copBreak.uwCopperOffsetBreak],
+				&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetBreak],
 				pManager->sCommon.pVPort->uwOffsY,
 				pManager->sCommon.pVPort->ubBPP);
 	}
 	else {
-		tCopBlock *pBlock = pManager->copStart.pStartBlock;
+		tCopBlock *pBlock = pManager->pStartBlock;
 		// Set initial WAIT
 		copBlockWait(pCopList, pBlock, 0, (
 			pManager->sCommon.pVPort->pView->ubPosY +

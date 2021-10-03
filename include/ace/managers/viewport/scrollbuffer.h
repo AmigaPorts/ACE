@@ -58,11 +58,11 @@ typedef struct _tScrollBufferManager {
 	union {
 		tCopBlock *pStartBlock;    ///< Initial data fetch
 		UWORD uwCopperOffsetStart; ///< Start offset on copperlist in COP_RAW mode.
-	} copStart;                    ///< Select which field is valid based on SCROLLBUFFER_FLAG_COPLIST_RAW
+	};                    ///< Select which field is valid based on SCROLLBUFFER_FLAG_COPLIST_RAW
 	union {
 		tCopBlock *pBreakBlock;    ///< Bitplane ptr reset
 		UWORD uwCopperOffsetBreak; ///< Break offset on copperlist in COP_RAW mode.
-	} copBreak;                    ///< Select which field is valid based on SCROLLBUFFER_FLAG_COPLIST_RAW
+	};                    ///< Select which field is valid based on SCROLLBUFFER_FLAG_COPLIST_RAW
 	tUwCoordYX uBfrBounds;         ///< Real bounds of buffer (includes height reserved for x-scroll)
 	UWORD uwBmAvailHeight;         ///< Avail height of buffer to blit (excludes height reserved for x-scroll)
 	UWORD uwVpHeightPrev;          ///< Prev height of related VPort, used to force refresh on change

@@ -170,6 +170,11 @@ void tileBufferDestroy(tTileBufferManager *pManager);
  */
 void tileBufferProcess(tTileBufferManager *pManager);
 
+void tileBufferReset(
+	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
+	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak
+);
+
 /**
  * Redraws tiles on whole screen.
  * Use for init or something like that, as it's slooooooooow.
