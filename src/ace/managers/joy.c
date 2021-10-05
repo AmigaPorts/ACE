@@ -2,12 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <proto/exec.h> // Bartman's compiler needs this
+#include <proto/misc.h> // Bartman's compiler needs this
+#include <resources/misc.h> // OS-friendly parallel joys: misc.resource
+#include <clib/misc_protos.h> // OS-friendly parallel joys: misc.resource
 #include <ace/managers/joy.h>
 #include <ace/managers/log.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
-#include <resources/misc.h> // OS-friendly parallel joys: misc.resource
-#include <clib/misc_protos.h> // OS-friendly parallel joys: misc.resource
+
+#if defined ACE_DEBUG
+static UBYTE s_bInitCount = 0;
+#endif
 
 /* Globals */
 tJoyManager g_sJoyManager;
@@ -27,10 +33,21 @@ static inline const char *myAllocMiscResource(
 
 
 void joyOpen(void) {
-
+#if defined(ACE_DEBUG)
+	if(s_bInitCount++ != 0) {
+		// You should call keyCreate() only once
+		logWrite("ERR: Joy already initialized!\n");
+	}
+#endif
 }
 
 void joyClose(void) {
+#if defined(ACE_DEBUG)
+	if(s_bInitCount-- != 1) {
+		// You should call joyClose() only once for each joyCreate()
+		logWrite("ERR: Joy was initialized multiple times!\n");
+	}
+#endif
 	if(s_isParallelEnabled) {
 		joyDisableParallel();
 	}
@@ -53,11 +70,11 @@ UBYTE joyUse(UBYTE ubJoyCode) {
 }
 
 void joyProcess(void) {
-	UBYTE ubCiaAPra = g_pCiaA->pra;
+	UBYTE ubCiaAPra = g_pCia[CIA_A]->pra;
 	UWORD uwJoyDataPort1 = g_pCustom->joy0dat;
 	UWORD uwJoyDataPort2 = g_pCustom->joy1dat;
 
-	UWORD pJoyLookup[] = {
+	UWORD pJoyLookup[20] = {
 		!BTST(ubCiaAPra, 7),                           // Joy 1 fire  (PORT 2)
 		BTST(uwJoyDataPort2 >> 1 ^ uwJoyDataPort2, 8), // Joy 1 up    (PORT 2)
 		BTST(uwJoyDataPort2 >> 1 ^ uwJoyDataPort2, 0), // Joy 1 down  (PORT 2)
@@ -74,8 +91,8 @@ void joyProcess(void) {
 	UBYTE ubJoyCode;
 	if(s_isParallelEnabled) {
 		ubJoyCode = 20;
-		UBYTE ubParData = g_pCiaA->prb;
-		UBYTE ubParStatus = g_pCiaB->pra;
+		UBYTE ubParData = g_pCia[CIA_A]->prb;
+		UBYTE ubParStatus = g_pCia[CIA_B]->pra;
 
 		pJoyLookup[10] = !BTST(ubParStatus, 2); // Joy 3 fire
 		pJoyLookup[11] = !BTST(ubParData, 0);   // Joy 3 up
@@ -137,19 +154,18 @@ UBYTE joyEnableParallel(void) {
 	}
 
 	// Save old DDR & value regs
-	s_ubOldDataDdr = g_pCiaA->ddrb;
-	s_ubOldStatusDdr = g_pCiaB->ddra;
-	s_ubOldDataVal = g_pCiaA->prb;
-	s_ubOldStatusVal = g_pCiaB->pra;
+	s_ubOldDataDdr = g_pCia[CIA_A]->ddrb;
+	s_ubOldStatusDdr = g_pCia[CIA_B]->ddra;
+	s_ubOldDataVal = g_pCia[CIA_A]->prb;
+	s_ubOldStatusVal = g_pCia[CIA_B]->pra;
 
-	// Set data direction register to input. Status lines are as follows:
-	// bit 0: BUSY
-	// bit 2: SEL
-	g_pCiaB->ddra |= BV(0) | BV(2); // Status lines DDR
-	g_pCiaA->ddrb = 0xFF; // Data lines DDR
+	// Set data direction register to input.
+	g_pCia[CIA_B]->ddra &= 0xFF ^ (BV(0) | BV(2)); // 0: BUSY, 2: SEL
+	g_pCia[CIA_A]->ddrb = 0; // Data
 
-	g_pCiaB->pra &= 0xFF^(BV(0) | BV(2)); // Status lines values
-	g_pCiaA->prb = 0; // Data lines values
+	// Activate pull-ups for BUSY / SEL / data pins
+	g_pCia[CIA_B]->pra |= BV(0) | BV(2); // Status lines values
+	g_pCia[CIA_A]->prb = 0xFF; // Data lines values
 
 	s_isParallelEnabled = 1;
 	systemUnuse();
@@ -162,10 +178,10 @@ void joyDisableParallel(void) {
 	}
 
 	// Restore old status/data DDR/val regs
-	g_pCiaA->prb = s_ubOldDataVal;
-	g_pCiaB->pra = s_ubOldStatusVal;
-	g_pCiaA->ddrb = s_ubOldDataDdr;
-	g_pCiaB->ddra = s_ubOldStatusDdr;
+	g_pCia[CIA_A]->prb = s_ubOldDataVal;
+	g_pCia[CIA_B]->pra = s_ubOldStatusVal;
+	g_pCia[CIA_A]->ddrb = s_ubOldDataDdr;
+	g_pCia[CIA_B]->ddra = s_ubOldStatusDdr;
 
 	// Close misc.resource
 	systemUse();

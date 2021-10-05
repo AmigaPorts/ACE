@@ -39,7 +39,7 @@ typedef ULONG tTag;
  *  @param vaSrcList    va_list containing alternating tags and values.
  *  @param ulTagToFind  Tag name, of which value should be returned.
  *  @param ulOnNotFound Value to be returned if tag was not found on list.
- *  @return Zero if tag was not found, otherwise tag value.
+ *  @return ulOnNotFound if tag was not found, otherwise tag value.
  */
 ULONG tagGet(
 	void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNotFound

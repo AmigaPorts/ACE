@@ -28,11 +28,7 @@ void timerOnInterrupt(void) {
 }
 
 ULONG timerGetPrec(void) {
-	#ifdef AMIGA
-	UWORD uwFr1, uwFr2; // frame counts
-	tRayPos sRay;
-	ULONG *pRay = (ULONG*)&sRay, *pReg = (ULONG*)g_pRayPos;
-
+#ifdef AMIGA
 	// There are 4 cases how measurments may take place:
 	// a) uwFr1, pRay, uwFr2 on frame A
 	// b) uwFr1, pRay on frame A; uwFr2 on frame B
@@ -40,18 +36,18 @@ ULONG timerGetPrec(void) {
 	// d) uwFr2, pRay, uwFr2 on frame B
 	// So if pRay took place at low Y pos, it must be on frame B so use uwFr2,
 	// Otherwise, pRay took place on A, so use uwFr1
-	uwFr1 = g_sTimerManager.uwFrameCounter;
-	*pRay = *pReg;
-	uwFr2 = g_sTimerManager.uwFrameCounter;
+	UWORD uwFr1 = g_sTimerManager.uwFrameCounter;
+	tRayPos sRay = getRayPos();
+	UWORD uwFr2 = g_sTimerManager.uwFrameCounter;
 	if(sRay.bfPosY < 100) {
-		return (uwFr2*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
+		return (uwFr2 * 160 * 313 + sRay.bfPosY * 160 + sRay.bfPosX);
 	}
 	else {
-		return (uwFr1*160*313 + sRay.bfPosY*160 + sRay.bfPosX);
+		return (uwFr1 * 160 * 313 + sRay.bfPosY * 160 + sRay.bfPosX);
 	}
-	#else
+#else
 	return 0;
-	#endif
+#endif
 }
 
 ULONG timerGetDelta(ULONG ulStart, ULONG ulStop) {

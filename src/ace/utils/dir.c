@@ -8,12 +8,16 @@
 #include <ace/managers/system.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/log.h>
+#include <proto/dos.h> // Bartman's compiler needs this
 
 tDir *dirOpen(const char *szPath) {
 	systemUse();
 	tDir *pDir = memAllocFast(sizeof(tDir));
 	pDir->pLock = Lock((unsigned char*)szPath, ACCESS_READ);
-	if(!pDir->pLock || Examine(pDir->pLock, &pDir->sFileBlock) == DOSFALSE) {
+	if(
+		!pDir->pLock || (Examine(pDir->pLock, &pDir->sFileBlock) == DOSFALSE) ||
+		(pDir->sFileBlock.fib_DirEntryType  <= 0)
+	) {
 		UnLock(pDir->pLock);
 		memFree(pDir, sizeof(tDir));
 		systemUnuse();
@@ -57,13 +61,9 @@ UBYTE dirExists(const char *szPath) {
 UBYTE dirCreate(const char *szName) {
 	systemUse();
 	LONG lResult = CreateDir((STRPTR)szName);
-	if(!lResult) {
-		systemUnuse();
-		return 0;
-	}
 	UnLock(lResult);
 	systemUnuse();
-	return 1;
+	return (lResult != 0);
 }
 
 UBYTE dirCreatePath(const char *szPath) {

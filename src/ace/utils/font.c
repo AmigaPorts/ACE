@@ -2,11 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <proto/graphics.h> // Bartman's compiler needs this
+#include <ace/managers/system.h>
 #include <ace/utils/font.h>
 #include <ace/utils/file.h>
-#include <ace/managers/system.h>
 
 /* Globals */
+
+static tBitMap s_sTmpDest; // Temp bitmap for drawing text on single bitplane
 
 /* Functions */
 
@@ -123,7 +126,7 @@ tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight) {
 	);
 	// Init text bitmap struct - also setting uwActualWidth and height to zero.
 	tTextBitMap *pTextBitMap = memAllocFast(sizeof(tTextBitMap));
-	pTextBitMap->pBitMap = bitmapCreate(uwWidth, uwHeight, 1, 0);
+	pTextBitMap->pBitMap = bitmapCreate(uwWidth, uwHeight, 1, BMF_CLEAR);
 	pTextBitMap->uwActualWidth = 0;
 	pTextBitMap->uwActualHeight = 0;
 	logBlockEnd("fontCreateTextBitmap()");
@@ -174,13 +177,44 @@ tTextBitMap *fontCreateTextBitMapFromStr(const tFont *pFont, const char *szText)
 	return pTextBitMap;
 }
 
+tUwCoordYX fontDrawStr1bpp(
+	const tFont *pFont, tBitMap *pBitMap, UWORD uwStartX, UWORD uwStartY,
+	const char *szText
+) {
+	UWORD uwX = uwStartX;
+	UWORD uwY = uwStartY;
+	UWORD uwBoundX = 0;
+	for(const char *p = szText; *p; ++p) {
+		if(*p == '\n') {
+			uwX = uwStartX;
+			uwY += pFont->uwHeight;
+			uwBoundX = MAX(uwBoundX, uwX);
+		}
+		else {
+			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
+			blitCopy(
+				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0, pBitMap, uwX, uwY,
+				ubGlyphWidth, pFont->uwHeight, MINTERM_COOKIE
+			);
+			uwX += ubGlyphWidth + 1;
+		}
+	}
+	tUwCoordYX sBounds = {.uwX = MAX(uwBoundX, uwX), .uwY = uwY + pFont->uwHeight};
+	return sBounds;
+}
+
 void fontFillTextBitMap(
 	const tFont *pFont, tTextBitMap *pTextBitMap, const char *szText
 ) {
-	blitRect(
-		pTextBitMap->pBitMap, 0, 0,
-		pTextBitMap->pBitMap->BytesPerRow*8, pTextBitMap->pBitMap->Rows, 0
-	);
+	if(pTextBitMap->uwActualWidth) {
+		// Clear old contents
+		// TODO: we could remove this clear if letter spacing would be
+		// part of glyphs, but it may cause some problems when drawing last letter.
+		blitRect(
+			pTextBitMap->pBitMap, 0, 0,
+			pTextBitMap->uwActualWidth, pTextBitMap->pBitMap->Rows, 0
+		);
+	}
 
 #if defined(ACE_DEBUG)
 	if(!fontTextFitsInTextBitmap(pFont, pTextBitMap, szText)) {
@@ -188,28 +222,10 @@ void fontFillTextBitMap(
 		return;
 	}
 #endif
-	// Draw text on bitmap buffer
-	UWORD uwX = 0;
-	UWORD uwY = 0;
-	pTextBitMap->uwActualWidth = 0;
-	for(const char *p = szText; *p; ++p) {
-		if(*p == '\n') {
-			uwX = 0;
-			uwY += pFont->uwHeight;
-		}
-		else {
-			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
-			blitCopy(
-				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0,
-				pTextBitMap->pBitMap, uwX, uwY,
-				ubGlyphWidth,
-				pFont->uwHeight, MINTERM_COOKIE, 0x01
-			);
-			uwX += ubGlyphWidth + 1;
-			pTextBitMap->uwActualWidth = MAX(pTextBitMap->uwActualWidth, uwX);
-		}
-	}
-	pTextBitMap->uwActualHeight = uwY + pFont->uwHeight;
+
+	tUwCoordYX sBounds = fontDrawStr1bpp(pFont, pTextBitMap->pBitMap, 0, 0, szText);
+	pTextBitMap->uwActualWidth = sBounds.uwX;
+	pTextBitMap->uwActualHeight = sBounds.uwY;
 }
 
 void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
@@ -223,6 +239,13 @@ void fontDrawTextBitMap(
 	tBitMap *pDest, tTextBitMap *pTextBitMap,
 	UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags
 ) {
+#if defined(ACE_DEBUG)
+	if(!pTextBitMap->uwActualWidth) {
+		logWrite("ERR: pTextBitMap %p has zero width!\n", pTextBitMap);
+		return;
+	}
+#endif
+
 	// Alignment flags
 	if (ubFlags & FONT_RIGHT) {
 		uwX -= pTextBitMap->uwActualWidth;
@@ -242,9 +265,10 @@ void fontDrawTextBitMap(
 	}
 
 	// Helper destination bitmap
-	tBitMap sTmpDest;
 #if defined(AMIGA)
-	InitBitMap(&sTmpDest, 1, pDest->BytesPerRow<<3, pDest->Rows);
+	s_sTmpDest.BytesPerRow = pDest->BytesPerRow;
+	s_sTmpDest.Rows = pDest->Rows;
+	s_sTmpDest.Depth = 1;
 #else
 #error "Something is missing here!"
 #endif
@@ -260,7 +284,7 @@ void fontDrawTextBitMap(
 		}
 		else {
 			if(ubColor & 1) {
-				ubMinterm = 0xC0;
+				ubMinterm = MINTERM_COPY;
 			}
 			else {
 				if(isLazy) {
@@ -270,29 +294,23 @@ void fontDrawTextBitMap(
 				ubMinterm = 0x00;
 			}
 		}
+
 		// Blit on given bitplane
-		sTmpDest.Planes[0] = pDest->Planes[i];
+		// OPTIMIZE: blitCopy does lots of calculations which are essentially the
+		// same for all bitplanes since they share dimensions. Get rid of it.
+		s_sTmpDest.Planes[0] = pDest->Planes[i];
 		blitCopy(
-			pTextBitMap->pBitMap, 0, 0, &sTmpDest, uwX, uwY,
-			pTextBitMap->uwActualWidth, pTextBitMap->uwActualHeight,
-			ubMinterm, 0x01
+			pTextBitMap->pBitMap, 0, 0, &s_sTmpDest, uwX, uwY,
+			pTextBitMap->uwActualWidth, pTextBitMap->uwActualHeight, ubMinterm
 		);
 		ubColor >>= 1;
 	}
 }
 
 void fontDrawStr(
-	tBitMap *pDest, const tFont *pFont, UWORD uwX, UWORD uwY,
-	const char *szText, UBYTE ubColor, UBYTE ubFlags
+	const tFont *pFont, tBitMap *pDest, UWORD uwX, UWORD uwY,
+	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 ) {
-	logBlockBegin(
-		"fontDrawStr(pDest: %p, pFont: %p, uwX: %hu, uwY: %hu, szText: '%s', "
-		"ubColor: %hhu, ubFlags: %hhu)",
-		pDest, pFont, uwX, uwY, szText, ubColor, ubFlags
-	);
-	tTextBitMap *pTextBitMap = fontCreateTextBitMapFromStr(pFont, szText);
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
-	fontDestroyTextBitMap(pTextBitMap);
-	logBlockEnd("fontDrawStr()");
 }

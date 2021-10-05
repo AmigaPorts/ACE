@@ -43,16 +43,32 @@ Still, the list of open source games is increasing, so you can copy and modify m
 
 ## Games created using ACE
 
+In alphabetical order:
+
 - [ami-invaders](https://github.com/approxit/amiga-invaders)
-- [AMIner](https://github.com/tehKaiN/AMIner)
-- [Impsbru](https://github.com/approxit/impsbru)
-- [OpenFire](https://github.com/tehKaiN/openFire)
-- Goblin Villages
+- [AMIner](https://github.com/Last-Minute-Creations/AMIner)
+- [Atarenium Falcon](https://github.com/Last-Minute-Creations/AtareniumFalcon)
 - CastleHack
+- [Impsbru](https://github.com/approxit/impsbru)
+- [OpenFire](https://github.com/Last-Minute-Creations/openFire)
+- [GermZ](https://github.com/Last-Minute-Creations/germz)
+- [Goblin Villages](https://github.com/Last-Minute-Creations/goblin-villages)
 - [Squared](https://github.com/tehKaiN/ld40-squared)
-- [GermZ](https://github.com/tehKaiN/germz)
 
 ## Demos created using ACE
 
+In alphabetical order:
+
 - [Casentino Day 2020 invitation](https://github.com/Ozzyboshi/Casentinoday2020AmigaDemo/)
 - [Starfield](https://github.com/Ozzyboshi/AmigaStarfield)
+
+## License, 3rd party code
+
+Unless otherwise stated, the code is licensed under [Mozilla Public License 2.0](LICENSE). The exceptions are:
+
+- The ptplayer module is based on [ptplayer](http://aminet.net/package/mus/play/ptplayer.lha) by Frank Wille (Public Domain)
+- the mini_std library is based on 3rd party code:
+  - [mpaland/printf](https://github.com/mpaland/printf) (MIT)
+  - [strtoul](https://github.com/diegocr/libnix/blob/master/stdlib/strtoul.c) from Libnix (Public Domain)
+  - [DeidaraC/ctype](https://github.com/DeidaraC/ctype.h/blob/master/ctype.c) (MIT)
+  - `qsort()` replacement: [noporpoise/sort_r](https://github.com/noporpoise/sort_r) (Public Domain)

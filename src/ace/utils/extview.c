@@ -42,6 +42,36 @@ tView *viewCreate(void *pTags, ...) {
 		logWrite("Global CLUT mode enabled\n");
 	}
 
+	// Get the Y pos and height
+	const UWORD uwDefaultHeight = -1;
+	const UBYTE ubDefaultPosY = -1;
+	UWORD uwHeight = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_HEIGHT, uwDefaultHeight);
+	UBYTE ubPosY = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_START_Y, ubDefaultPosY);
+	if(uwHeight != uwDefaultHeight && ubPosY == ubDefaultPosY) {
+		// Only height is passed - calculate Y pos so that display is centered
+		pView->uwHeight = uwHeight;
+		pView->ubPosY = 0x2C + (SCREEN_PAL_HEIGHT - uwHeight) / 2;
+	}
+	else if(uwHeight == uwDefaultHeight && ubPosY != ubDefaultPosY) {
+		// Only Y pos is passed - calculate height as the remaining area of PAL display
+		pView->ubPosY = ubPosY;
+		pView->uwHeight = 0x2C + SCREEN_PAL_HEIGHT - ubPosY;
+	}
+	else if(uwHeight == uwDefaultHeight && ubPosY == ubDefaultPosY) {
+		// All default - use PAL
+		pView->ubPosY = 0x2C;
+		pView->uwHeight = SCREEN_PAL_HEIGHT;
+	}
+	else {
+		// Use passed values
+		pView->ubPosY = ubPosY;
+		pView->uwHeight = uwHeight;
+	}
+	logWrite(
+		"Display pos: %hhu,%hhu, size: %hu,%hu\n",
+		0x81, pView->ubPosY, SCREEN_PAL_WIDTH, pView->uwHeight
+	);
+
 	va_end(vaTags);
 	logBlockEnd("viewCreate()");
 	return pView;
@@ -107,7 +137,7 @@ void viewUpdateCLUT(tView *pView) {
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 #if defined(AMIGA)
-	while(g_pRayPos->bfPosY < 300) {}
+	while(getRayPos().bfPosY < 300) {}
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
@@ -124,14 +154,21 @@ void viewLoad(tView *pView) {
 		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		g_pCustom->fmode = 0;        // AGA fix
 		g_pCustom->bplcon3 = 0;      // AGA fix
-		g_pCustom->diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
-		g_pCustom->diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
+		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
+		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
+		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
+			logWrite(
+				"ERR: DiwStopY (%hu) bit 8 (%hhu) must be different than bit 7 (%hhu)\n",
+				uwDiwStopY, BTST(uwDiwStopY, 8), BTST(uwDiwStopY, 7)
+			);
+		}
+		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | 0xC1; // HSTOP: 0xC1
 		viewUpdateCLUT(pView);
 	}
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
-	systemSetDma(DMAB_RASTER, pView != 0);
-	while(g_pRayPos->bfPosY < 300) {}
+	systemSetDmaBit(DMAB_RASTER, pView != 0);
+	while(getRayPos().bfPosY < 300) {}
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
 }
@@ -145,10 +182,6 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
 
-	const UWORD uwDefaultWidth = SCREEN_PAL_WIDTH;
-	const UWORD uwDefaultHeight = -1;
-	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
-
 	// Determine parent view
 	tView *pView = (tView*)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
 	if(!pView) {
@@ -157,6 +190,10 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	}
 	pVPort->pView = pView;
 	logWrite("Parent view: %p\n", pView);
+
+	const UWORD uwDefaultWidth = SCREEN_PAL_WIDTH;
+	const UWORD uwDefaultHeight = -1;
+	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
 
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
@@ -176,7 +213,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
 	pVPort->uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
 	if(pVPort->uwHeight == uwDefaultHeight) {
-		pVPort->uwHeight = SCREEN_PAL_HEIGHT-pVPort->uwOffsY;
+		pVPort->uwHeight = pView->uwHeight - pVPort->uwOffsY;
 	}
 	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 	logWrite(
@@ -290,34 +327,56 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 	}
 }
 
-void vPortWaitForEnd(tVPort *pVPort) {
+void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 #ifdef AMIGA
 	// Determine VPort end position
-	UWORD uwEndPos = pVPort->uwOffsY + pVPort->uwHeight;
-	uwEndPos += 0x2C; // Addition from DiWStrt
+	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
+	uwEndPos += pVPort->pView->ubPosY; // Addition from DiWStrt
 #if defined(ACE_DEBUG)
 	if(uwEndPos >= 312) {
-		logWrite("ERR: vPortWaitForEnd - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
-		logWrite("\tVPort offs: %hu, height: %hu\n", pVPort->uwOffsY, pVPort->uwHeight);
+		logWrite("ERR: vPortWaitForPos - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
+		logWrite("\tVPort offs: %hu, pos: %hu\n", pVPort->uwOffsY, uwPosY);
 	}
 #endif
 
-	// If current beam pos is past end pos, wait for start of next frame
-	while(g_pRayPos->bfPosY > uwEndPos) {}
+	if(isExact) {
+		// If current beam pos is on or past end pos, wait for start of next frame
+		while (getRayPos().bfPosY >= uwEndPos) {}
+	}
 	// If current beam pos is before end pos, wait for it
-	while(g_pRayPos->bfPosY < uwEndPos) {}
+	while (getRayPos().bfPosY < uwEndPos) {}
 #endif // AMIGA
 }
 
+void vPortWaitUntilEnd(const tVPort *pVPort) {
+	vPortWaitForPos(pVPort, pVPort->uwHeight, 0);
+}
+
+void vPortWaitForEnd(const tVPort *pVPort) {
+	vPortWaitForPos(pVPort, pVPort->uwHeight, 1);
+}
+
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
-	// podpiecie
+	// Check if we have any other manager - if not, attach as head
 	if(!pVPort->pFirstManager) {
 		pVPort->pFirstManager = pVpManager;
 		logWrite("Manager %p attached to head of VP %p\n", pVpManager, pVPort);
 		return;
 	}
+
+	// Check if current manager has lesser priority number than head
+	if(pVPort->pFirstManager->ubId > pVpManager->ubId) {
+		logWrite(
+			"Manager %p attached as head of VP %p before %p\n",
+			pVpManager, pVPort, pVPort->pFirstManager
+		);
+		pVpManager->pNext = pVPort->pFirstManager;
+		pVPort->pFirstManager = pVpManager;
+		return;
+	}
+
+	// Insert before manager of bigger priority number
 	tVpManager *pVpCurr = pVPort->pFirstManager;
-	// przewin przed menedzer o wyzszym numerze niz wstawiany
 	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
 		if(pVpCurr->ubId <= pVpManager->ubId) {
 			pVpCurr = pVpCurr->pNext;
@@ -325,7 +384,10 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	}
 	pVpManager->pNext = pVpCurr->pNext;
 	pVpCurr->pNext = pVpManager;
-	logWrite("Manager %p attached after manager %p of VP %p\n", pVpManager, pVpCurr, pVPort);
+	logWrite(
+		"Manager %p attached after manager %p of VP %p\n",
+		pVpManager, pVpCurr, pVPort
+	);
 }
 
 void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {

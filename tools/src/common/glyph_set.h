@@ -17,13 +17,30 @@ public:
 		uint8_t ubThreshold
 	);
 
+	/**
+	 * @brief Creates glyph set based on ProMotion NG's PNG font file.
+	 *
+	 * @param szPngPath Path to png file saved in PMNG's way of saving fonts.
+	 * @param ubStartIdx ASCII index of first glyph in PMNG file.
+	 * @return Glyph set filled with characters from file.
+	 */
+	static tGlyphSet fromPmng(const std::string &szPngPath, uint8_t ubStartIdx = 33);
+
+	/**
+	 * @brief Creates glyph set based on ACE font (.fnt) file.
+	 *
+	 * @param szFntPath Path to fnt file.
+	 * @return Glyph set filled with characters from file.
+	 */
+	static tGlyphSet fromAceFont(const std::string &szFntPath);
+
 	static tGlyphSet fromDir(const std::string &szDirPath);
 
 	bool toDir(const std::string &szDirPath);
 
 	void toAceFont(const std::string &szFontPath);
 
-	tChunkyBitmap toPackedBitmap(void);
+	tChunkyBitmap toPackedBitmap(bool isPmng);
 
 	bool isOk(void);
 
@@ -31,12 +48,12 @@ private:
 	struct tBitmapGlyph {
 		uint8_t ubBearing;
 		uint8_t ubWidth, ubHeight;
-		std::vector<uint8_t> vData;
+		std::vector<uint8_t> vData; ///< One byte per pixel, 0 for bg, 0xFF otherwise.
 
 		void trimHorz(bool isRight);
 	};
 
-	std::map<char, tBitmapGlyph> m_mGlyphs;
+	std::map<uint16_t, tBitmapGlyph> m_mGlyphs;
 };
 
 #endif // _ACE_TOOLS_COMMON_GLYPH_SET_H_

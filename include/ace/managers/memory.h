@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 #ifdef AMIGA
-#include <exec/memory.h>      // MEMF_CLEAR etc
+#include <exec/memory.h> // MEMF_CLEAR etc
 #else
 #define MEMF_CHIP    0
 #define MEMF_FAST    1
@@ -45,10 +45,12 @@ void _memDestroy(void);
 
 void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile);
 void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile);
-void *_memAllocRls(ULONG ulSize, ULONG ulFlags);
+void *_memAllocRls(ULONG ulSize, ULONG ulFlags) __attribute__((malloc));
 void _memFreeRls(void *pMem, ULONG ulSize);
 
 void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
+
+void _memCheckIntegrity(UWORD uwLine, const char *szFile);
 
 /**
  * Macros for enabling or disabling logging
@@ -60,12 +62,14 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
 # define memCreate() _memCreate()
 # define memDestroy() _memDestroy()
 # define memCheckTrashAtAddr(pAddr) _memCheckTrashAtAddr(pAddr, __LINE__, __FILE__)
+# define memCheckIntegrity() _memCheckIntegrity(__LINE__, __FILE__)
 #else
 # define memAlloc(ulSize, ulFlags) _memAllocRls(ulSize, ulFlags)
 # define memFree(pMem, ulSize) _memFreeRls(pMem, ulSize)
 # define memCreate()
 # define memDestroy()
 # define memCheckTrashAtAddr(pAddr, ulSize)
+# define memCheckIntegrity()
 #endif // ACE_DEBUG
 
 // Shorthands

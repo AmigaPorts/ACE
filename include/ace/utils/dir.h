@@ -58,7 +58,7 @@ void dirClose(tDir *pDir);
 
 
 /**
- * @brief Checks if given directory exists.
+ * @brief Checks if given directory exists and is a directory.
  *
  * @param szPath Directory to be checked.
  * @return Success: 1, otherwise 0.

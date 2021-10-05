@@ -89,22 +89,22 @@ void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY) {
 	pManager->uPos.uwY = CLAMP(uwAvgY - (pVPort->uwHeight>>1), 0, pManager->uMaxPos.uwY);
 }
 
-UBYTE cameraIsMoved(tCameraManager *pManager) {
+UBYTE cameraIsMoved(const tCameraManager *pManager) {
 	return pManager->uPos.ulYX != pManager->uLastPos[pManager->ubBfr].ulYX;
 }
 
-UWORD cameraGetXDiff(tCameraManager *pManager) {
+UWORD cameraGetXDiff(const tCameraManager *pManager) {
 	return ABS(cameraGetDeltaX(pManager));
 }
 
-UWORD cameraGetYDiff(tCameraManager *pManager) {
+UWORD cameraGetYDiff(const tCameraManager *pManager) {
 	return ABS(cameraGetDeltaX(pManager));
 }
 
-WORD cameraGetDeltaX(tCameraManager *pManager) {
+WORD cameraGetDeltaX(const tCameraManager *pManager) {
 	return (pManager->uPos.uwX - pManager->uLastPos[pManager->ubBfr].uwX);
 }
 
-WORD cameraGetDeltaY(tCameraManager *pManager) {
+WORD cameraGetDeltaY(const tCameraManager *pManager) {
 	return (pManager->uPos.uwY - pManager->uLastPos[pManager->ubBfr].uwY);
 }

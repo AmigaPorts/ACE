@@ -93,6 +93,26 @@ tFont *fontCreateFromMem(const UBYTE* pData);
  */
 void fontDestroy(tFont *pFont);
 
+/**
+ * @brief Draws given string using passed font on specified 1BPP bitmap.
+ * This function draws text as fast as possible.
+ * Background beneath bitmap is not cleared because you may want to remember
+ * length of previous text and erase only relevant portion of bitmap.
+ *
+ * @param pFont Font to be used.
+ * @param pBitMap Destination bitmap.
+ * @param uwStartX X position of the text.
+ * @param uwStartY Y position of the text.
+ * @param szText Text to be written.
+ * @return Bitmap coord for bottom-right corner of the text
+ *
+ * @see fontDrawStr
+ */
+tUwCoordYX fontDrawStr1bpp(
+	const tFont *pFont, tBitMap *pBitMap, UWORD uwStartX, UWORD uwStartY,
+	const char *szText
+);
+
 tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight);
 
 /**
@@ -179,19 +199,20 @@ void fontDrawTextBitMap(
  *  time-consuming. If same text is going to be redrawn in game loop, its bitmap
  *  buffer should be stored and used for redraw.
  *
+ *  @param pFont Font to be used for text assembly.
  *  @param pDest Destination bitmap.
- *  @param pFont   Font to be used for text assembly.
- *  @param uwX     X position on destination bitmap.
- *  @param uwY     Y position on destination bitmap.
- *  @param szText  String to be printed on destination bitmap.
+ *  @param uwX X position on destination bitmap.
+ *  @param uwY Y position on destination bitmap.
+ *  @param szText String to be printed on destination bitmap.
  *  @param ubColor Desired text color.
  *  @param ubFlags Text draw flags (FONT_*).
+ *  @param pTextBitMap Bitmap buffer to be used when composing text.
  *
  *  @see fontDrawTextBitMap()
  */
 void fontDrawStr(
-	tBitMap *pDest, const tFont *pFont,
-	UWORD uwX, UWORD uwY, const char *szText, UBYTE ubColor, UBYTE ubFlags
+	const tFont *pFont, tBitMap *pDest, UWORD uwX, UWORD uwY,
+	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 );
 
 #ifdef __cplusplus

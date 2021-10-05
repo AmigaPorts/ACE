@@ -109,7 +109,7 @@ tPlanarBitmap::tPlanarBitmap(
 	m_ubDepth = ubDepth;
 
 	for(uint8_t i = 0; i < ubDepth; ++i) {
-		m_pPlanes[i].reserve(uwWidth * uwHeight / sizeof(m_pPlanes[0][0]));
+		m_pPlanes[i].resize(uwWidth * uwHeight / sizeof(m_pPlanes[0][0]));
 	}
 }
 
@@ -147,7 +147,7 @@ tPlanarBitmap::tPlanarBitmap(
 				if(wIdx == -1) {
 					if(PaletteIgnore.getColorIdx(Color) == -1) {
 						nLog::error(
-							"Unexpected color: {}, {}, {} @{},{}",
+							"Unexpected color: {0}, {1}, {2} (#{0:02X}{1:02X}{2:02X}) @{3},{4}",
 							Color.ubR, Color.ubG,	Color.ubB, x, y
 						);
 						return;
@@ -319,6 +319,24 @@ bool tChunkyBitmap::copyRect(
 	for(uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
 		for(uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
 			Dst.pixelAt(uwDstX + uwX, uwDstY + uwY) = pixelAt(uwSrcX + uwX, uwSrcY + uwY);
+		}
+	}
+
+	return true;
+}
+
+bool tChunkyBitmap::fillRect(
+	uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight,
+	const tRgb &Color
+) {
+	if(uwDstX + uwWidth > m_uwWidth || uwDstY + uwHeight > m_uwHeight) {
+		// Source out of range
+		return false;
+	}
+
+	for(uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
+		for(uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
+			pixelAt(uwDstX + uwX, uwDstY + uwY) = Color;
 		}
 	}
 

@@ -14,7 +14,7 @@ tBlitManager g_sBlitManager = {0};
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 #if defined(AMIGA)
-	systemSetDma(DMAB_BLITTER, 1);
+	systemSetDmaBit(DMAB_BLITTER, 1);
 #endif
 	logBlockEnd("blitManagerCreate");
 }
@@ -22,7 +22,7 @@ void blitManagerCreate(void) {
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
 #if defined(AMIGA)
-	systemSetDma(DMAB_BLITTER, 0);
+	systemSetDmaBit(DMAB_BLITTER, 0);
 #endif
 	logBlockEnd("blitManagerDestroy");
 }
@@ -105,9 +105,7 @@ UBYTE _blitCheck(
 }
 
 void blitWait(void) {
-	systemSetDma(DMAB_BLITHOG, 1);
 	while(!blitIsIdle()) {}
-	systemSetDma(DMAB_BLITHOG, 0);
 }
 
 /**
@@ -145,7 +143,7 @@ UBYTE blitIsIdle(void) {
 UBYTE blitUnsafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubMinterm, UBYTE ubMask
+	UBYTE ubMinterm
 ) {
 #ifdef AMIGA
 	// Helper vars
@@ -198,8 +196,7 @@ UBYTE blitUnsafeCopy(
 	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 
-	ubMask &= 0xFF >> (8- (pSrc->Depth < pDst->Depth? pSrc->Depth: pDst->Depth));
-	ubPlane = 0;
+	ubPlane = MIN(pSrc->Depth, pDst->Depth);
 	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltcon0 = uwBltCon0;
 	g_pCustom->bltcon1 = uwBltCon1;
@@ -209,18 +206,14 @@ UBYTE blitUnsafeCopy(
 	g_pCustom->bltcmod = wDstModulo;
 	g_pCustom->bltdmod = wDstModulo;
 	g_pCustom->bltadat = 0xFFFF;
-	while(ubMask) {
-		if(ubMask & 1) {
-			blitWait();
-			// This hell of a casting must stay here or else large offsets get bugged!
-			g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-			g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-			g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+	while(ubPlane--) {
+		blitWait();
+		// This hell of a casting must stay here or else large offsets get bugged!
+		g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
+		g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
 
-			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
-		}
-		ubMask >>= 1;
-		++ubPlane;
+		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
 #endif // AMIGA
 	return 1;
@@ -229,12 +222,12 @@ UBYTE blitUnsafeCopy(
 UBYTE blitSafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubMinterm, UBYTE ubMask, UWORD uwLine, const char *szFile
+	UBYTE ubMinterm, UWORD uwLine, const char *szFile
 ) {
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
 	}
-	return blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, ubMask);
+	return blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm);
 }
 
 /**
@@ -252,8 +245,9 @@ UBYTE blitUnsafeCopyAligned(
 	WORD wDstModulo, wSrcModulo;
 	ULONG ulSrcOffs, ulDstOffs;
 
+	// Use C channel instead of A - same speed, less regs to set up
 	uwBlitWords = wWidth >> 4;
-	uwBltCon0 = USEA|USED | MINTERM_A;
+	uwBltCon0 = USEC|USED | MINTERM_C;
 
 	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
@@ -265,14 +259,12 @@ UBYTE blitUnsafeCopyAligned(
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-		g_pCustom->bltafwm = 0xFFFF;
-		g_pCustom->bltalwm = 0xFFFF;
 
-		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
 
 		// This hell of a casting must stay here or else large offsets get bugged!
-		g_pCustom->bltapt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
+		g_pCustom->bltcpt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
 		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
 
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
@@ -294,15 +286,13 @@ UBYTE blitUnsafeCopyAligned(
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-		g_pCustom->bltafwm = 0xFFFF;
-		g_pCustom->bltalwm = 0xFFFF;
 
-		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			g_pCustom->bltapt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
+			g_pCustom->bltcpt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
 			g_pCustom->bltdpt = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
 			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}
@@ -483,7 +473,7 @@ UBYTE _blitRect(
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		ubColor >>= 1;
 		++ubPlane;
-	}	while(ubPlane != pDst->Depth);
+	}	while(ubPlane < pDst->Depth);
 
 #endif // AMIGA
 	return 1;

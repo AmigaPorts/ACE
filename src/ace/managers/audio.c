@@ -29,20 +29,20 @@ void INTERRUPT audioIntHandler(
 void audioCreate(void) {
 	logBlockBegin("audioCreate()");
 	for(UBYTE i = 0; i < 4; ++i) {
-		systemSetDma(DMAB_AUD0+i, 0);
+		systemSetDmaBit(DMAB_AUD0+i, 0);
 		s_pControls[i].bPlayCount = 0;
 		s_pControls[i].ubChannel = i;
 		systemSetInt(INTB_AUD0+i, audioIntHandler, &s_pControls[i]);
 	}
 	// Disable audio filter
-	g_pCiaA->pra ^= BV(1);
+	g_pCia[CIA_A]->pra ^= BV(1);
 	logBlockEnd("audioCreate()");
 }
 
 void audioDestroy(void) {
 	logBlockBegin("audioDestroy()");
 	for(UBYTE i = 0; i < 4; ++i) {
-		systemSetDma(DMAB_AUD0+i, 0);
+		systemSetDmaBit(DMAB_AUD0+i, 0);
 		systemSetInt(INTB_AUD0+i, 0, 0);
 	}
 	logBlockEnd("audioDestroy()");
@@ -52,7 +52,7 @@ void audioPlay(
 	UBYTE ubChannel, tSample *pSample, UBYTE ubVolume, BYTE bPlayCount
 ) {
 	// Stop playback on given channel
-	systemSetDma(ubChannel, 0);
+	systemSetDmaBit(ubChannel, 0);
 
 	s_pControls[ubChannel].bPlayCount = bPlayCount;
 	volatile struct AudChannel *pChannel = &g_pCustom->aud[ubChannel];
@@ -62,11 +62,11 @@ void audioPlay(
 	pChannel->ac_per = pSample->uwPeriod;
 
 	// Now that channel regs are set, start playing
-	systemSetDma(ubChannel, 1);
+	systemSetDmaBit(ubChannel, 1);
 }
 
 void audioStop(UBYTE ubChannel) {
-	systemSetDma(ubChannel, 0);
+	systemSetDmaBit(ubChannel, 0);
 	// Volume to zero for given channel
 	g_pCustom->aud[ubChannel].ac_vol = 0;
 }
@@ -96,7 +96,7 @@ tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateHz) {
 	// NOTE: 3546895 is for PAL, for NTSC use 3579545
 	UWORD uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
 	tSample *pSample = sampleCreate(lLength, uwPeriod);
-	FILE *pSampleFile = fileOpen(szPath, "rb");
+	tFile *pSampleFile = fileOpen(szPath, "rb");
 	fileRead(pSampleFile, pSample->pData, lLength);
 	fileClose(pSampleFile);
 	logBlockEnd("sampleCreateFromFile()");

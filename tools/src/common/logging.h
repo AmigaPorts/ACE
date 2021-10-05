@@ -16,6 +16,13 @@ void error(const std::string &szFmt, const t_tArgs &... Args) {
 	fmt::print("\n");
 }
 
+template<typename... t_tArgs>
+void warn(const std::string &szFmt, const t_tArgs &... Args) {
+	fmt::print("WARN: ");
+	fmt::print(szFmt, Args...);
+	fmt::print("\n");
+}
+
 } // namespace nLog
 
 #endif // _ACE_TOOLS_COMMON_LOGGING_H_

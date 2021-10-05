@@ -19,6 +19,10 @@ extern "C" {
 #include <ace/managers/copper.h>
 #include <ace/managers/game.h>
 
+#ifndef GENERIC_MAIN_LOG_PATH
+#define GENERIC_MAIN_LOG_PATH 0
+#endif
+
 //--------------------------------------------------------- USER FUNCTIONS BEGIN
 // Those functions must be defined by the user!
 
@@ -85,8 +89,8 @@ void __stack_chk_fail(void) {
 
 int main(void) {
 	systemCreate();
+	logOpen(GENERIC_MAIN_LOG_PATH);
 	memCreate();
-	logOpen();
 	timerCreate();
 
 	blitManagerCreate();
@@ -104,8 +108,8 @@ int main(void) {
 	blitManagerDestroy();
 
 	timerDestroy();
-	logClose();
 	memDestroy();
+	logClose();
 	systemDestroy();
 
 	return EXIT_SUCCESS;

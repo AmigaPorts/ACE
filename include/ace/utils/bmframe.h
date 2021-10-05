@@ -12,8 +12,19 @@ extern "C" {
 #include <ace/utils/bitmap.h>
 #include <ace/managers/blit.h>
 
+/**
+ * @brief Draws the border from passed tileset.
+ *
+ * @param pFrameSet Tileset. Must consist of 9 tiles: NW, N, NE, W, MID, E, SW, S, SE.
+ * @param pDest Destination bitmap.
+ * @param uwX
+ * @param uwY
+ * @param ubCols
+ * @param ubRows
+ * @param ubTileSize
+ */
 void bmFrameDraw(
-	tBitMap *pFrameSet, tBitMap *pDest,
+	const tBitMap *pFrameSet, tBitMap *pDest,
 	UWORD uwX, UWORD uwY, UBYTE ubCols, UBYTE ubRows, UBYTE ubTileSize
 );
 

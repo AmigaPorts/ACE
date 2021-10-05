@@ -10,6 +10,10 @@
 #include <hardware/intbits.h> // INTB_PORTS
 #define KEY_RELEASED_BIT 1
 
+#if defined ACE_DEBUG
+static UBYTE s_bInitCount = 0;
+#endif
+
 static inline void keyIntSetState(
 	tKeyManager *pManager, UBYTE ubKeyCode, UBYTE ubKeyState
 ) {
@@ -44,9 +48,9 @@ void INTERRUPT keyIntServer(
 	tKeyManager *pKeyManager = (tKeyManager*)pData;
 	volatile tRayPos *pRayPos = (tRayPos*)&pCustom->vposr;
 
-	// Get key code and start handshake
-	UBYTE ubKeyCode = ~g_pCiaA->sdr;
-	g_pCiaA->cra |= CIACRA_SPMODE;
+	// Get the key code and start handshake
+	UBYTE ubKeyCode = ~g_pCia[CIA_A]->sdr;
+	g_pCia[CIA_A]->cra |= CIACRA_SPMODE;
 	UWORD uwStart = pRayPos->bfPosY;
 
 	// Get keypress flag and shift key code
@@ -67,7 +71,7 @@ void INTERRUPT keyIntServer(
 			uwDelta = 0xFFFF - uwStart + uwEnd;
 		}
 	} while(uwDelta < 3);
-	g_pCiaA->cra &= ~CIACRA_SPMODE;
+	g_pCia[CIA_A]->cra &= ~CIACRA_SPMODE;
 	INTERRUPT_END;
 }
 
@@ -84,17 +88,30 @@ const UBYTE g_pToAscii[] = {
 	'\0', 'z', 'x', 'c', 'v', 'b', 'n' ,'m', ',', '.', '/', '\b', '.', '7', '8', '9',
 	' ', '\0', '\t', '\r', '\r', '\x1B', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
 	'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '(', ')', '/', '*', '+', '-',
+	'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
 };
 
 void keyCreate(void) {
 	logBlockBegin("keyCreate()");
-	systemSetInt(INTB_PORTS, keyIntServer, &g_sKeyManager);
+#if defined(ACE_DEBUG)
+	if(s_bInitCount++ != 0) {
+		// You should call keyCreate() only once
+		logWrite("ERR: Keyboard already initialized!\n");
+	}
+#endif
+	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, keyIntServer, &g_sKeyManager);
 	logBlockEnd("keyCreate()");
 }
 
 void keyDestroy(void) {
 	logBlockBegin("keyDestroy()");
-	systemSetInt(INTB_PORTS, 0, 0);
+#if defined(ACE_DEBUG)
+	if(s_bInitCount-- != 1) {
+		// You should call keyDestroy() only once for each keyCreate()
+		logWrite("ERR: Keyboard was initialized multiple times!\n");
+	}
+#endif
+	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, 0, 0);
 	logBlockEnd("keyDestroy()");
 }
 

@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 
+#if defined(ACE_DEBUG_ALL) && !defined(ACE_DEBUG)
+#define ACE_DEBUG
+#endif
+
 // Full OS takeover
 #define CONFIG_SYSTEM_OS_TAKEOVER
 // OS-friendly (old) mode
@@ -35,7 +39,7 @@ typedef int32_t LONG;
 #define INTERRUPT_END do {} while(0)
 #define HWINTERRUPT
 #define UNUSED_ARG __attribute__((unused))
-#define REGARG(arg, x) arg
+#define REGARG(arg, reg) arg
 #define CHIP
 #define FAR
 #define FN_HOTSPOT
@@ -57,7 +61,17 @@ typedef int32_t LONG;
 #define INTERRUPT_END do {} while(0)
 #define FN_HOTSPOT
 #define FN_COLDSPOT
-#elif defined(__GNUC__)
+#elif defined(BARTMAN_GCC)
+#define INTERRUPT
+#define INTERRUPT_END do {} while(0)
+#define HWINTERRUPT __attribute__((interrupt))
+#define UNUSED_ARG __attribute__((unused))
+#define REGARG(arg, reg) arg
+#define CHIP __attribute__((section(".MEMF_CHIP")))
+#define FAR
+#define FN_HOTSPOT __attribute__((hot))
+#define FN_COLDSPOT __attribute__((cold))
+#elif defined(__GNUC__) // Bebbo
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 // Interrupt macros for OS interrupts (handlers)
 #define INTERRUPT

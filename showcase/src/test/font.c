@@ -180,21 +180,17 @@ void testFontDrawTable(void) {
 			ubCharIdx < pFont->ubChars
 		) {
 			sprintf(szCodeBfr, "%c", ubCharIdx);
-			fontFillTextBitMap(pFont, s_pGlyph, szCodeBfr);
-			fontDrawTextBitMap(
-				s_pTestFontBfr->pBack, s_pGlyph,
-				(i/8)*40+40/2, (i%8)*32+(32/2),
-				3, FONT_CENTER|FONT_COOKIE
+			fontDrawStr(
+				pFont, s_pTestFontBfr->pBack, (i/8)*40+40/2, (i%8)*32+(32/2),
+				szCodeBuffer, 3, FONT_CENTER|FONT_COOKIE, s_pGlyph
 			);
 		}
 
 		// Char code
 		sprintf(szCodeBfr, "%02X", ubCharIdx);
-		fontFillTextBitMap(s_pFontUI, s_pGlyphCode, szCodeBfr);
-		fontDrawTextBitMap(
-			s_pTestFontBfr->pBack, s_pGlyphCode,
-			(i/8)*40+40/2, (i%8)*32+32-2,
-			0, FONT_HCENTER|FONT_BOTTOM|FONT_COOKIE
+		fontDrawStr(
+			s_pFontUI, s_pTestFontBfr->pBack, (i/8)*40+40/2, (i%8)*32+32-2,
+			szCodeBfr, 0, FONT_HCENTER|FONT_BOTTOM|FONT_COOKIE, s_pGlyphCode
 		);
 	}
 }

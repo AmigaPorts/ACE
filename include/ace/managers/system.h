@@ -18,7 +18,7 @@ extern "C" {
 //------------------------------------------------------------------------ TYPES
 
 typedef void (*tAceIntHandler)(
-	REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *tData, "a1")
+	REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *pData, "a1")
 );
 
 //-------------------------------------------------------------------- FUNCTIONS
@@ -44,6 +44,12 @@ void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
+void systemSetCiaInt(
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
+);
+
+void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue);
+
 void systemUse(void);
 
 void systemUnuse(void);
@@ -56,7 +62,15 @@ void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 );
 
-void systemSetDma(UBYTE ubDmaBit, UBYTE isEnabled);
+void systemSetDmaBit(UBYTE ubDmaBit, UBYTE isEnabled);
+
+void systemSetDmaMask(UWORD uwDmaMask, UBYTE isEnabled);
+
+void systemSetTimer(UBYTE ubCia, UBYTE ubTimer, UWORD uwTicks);
+
+void systemIdleBegin(void);
+
+void systemIdleEnd(void);
 
 //---------------------------------------------------------------------- GLOBALS
 

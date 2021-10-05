@@ -22,8 +22,9 @@ tBitMap *bitmapCreate(
 	tBitMap *pBitMap;
 	UBYTE i;
 
+	systemUse();
 	logBlockBegin(
-		"bitmapCreate(uwWidth: %u, uwHeight: %u, ubDepth: %hu, ubFlags: %hu)",
+		"bitmapCreate(uwWidth: %hu, uwHeight: %hu, ubDepth: %hhu, ubFlags: %hhu)",
 		uwWidth, uwHeight, ubDepth, ubFlags
 	);
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
@@ -48,6 +49,7 @@ tBitMap *bitmapCreate(
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
 			memFree(pBitMap, sizeof(tBitMap));
 			logBlockEnd("bitmapCreate()");
+			systemUnuse();
 			return 0;
 		}
 		for(i = 1; i != ubDepth; ++i) {
@@ -68,6 +70,7 @@ tBitMap *bitmapCreate(
 				}
 				memFree(pBitMap, sizeof(tBitMap));
 				logBlockEnd("bitmapCreate()");
+				systemUnuse();
 				return 0;
 			}
 			if (ubFlags & BMF_CLEAR) {
@@ -81,6 +84,7 @@ tBitMap *bitmapCreate(
 	}
 
 	logBlockEnd("bitmapCreate()");
+	systemUnuse();
 	return pBitMap;
 #else
 	return 0;
@@ -104,7 +108,7 @@ void bitmapLoadFromFile(
 	// Open source bitmap
 	tFile *pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
-		logWrite("ERR: File does not exist\n", szFilePath);
+		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapLoadFromFile()");
 		systemUnuse();
 		return;

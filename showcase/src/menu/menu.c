@@ -20,6 +20,7 @@ static tVPort *s_pMenuVPort;
 static tSimpleBufferManager *s_pMenuBfr;
 
 static tFont *s_pMenuFont;
+static tTextBitMap *s_pTextBitMap;
 static tMenuList *s_pMenuList; /// Menu list
 static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 
@@ -50,6 +51,7 @@ void gsMenuCreate(void) {
 
 	// Load font
 	s_pMenuFont = fontCreate("data/fonts/silkscreen.fnt");
+	s_pTextBitMap = fontCreateTextBitMap(320, s_pMenuFont->uwHeight);
 
 	// Prepare menu lists
 	s_pMenuList = menuListCreate(
@@ -122,6 +124,7 @@ void gsMenuDestroy(void) {
 	logBlockBegin("gsMenuDestroy()");
 
 	menuListDestroy(s_pMenuList);
+	fontDestroyTextBitMap(s_pTextBitMap);
 	fontDestroy(s_pMenuFont);
 	viewDestroy(s_pMenuView);
 
@@ -161,9 +164,8 @@ void menuShowMain(void) {
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
-		s_pMenuBfr->pBack, s_pMenuFont,
-		s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
-		"ACE Showcase", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
+		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
+		"ACE Showcase", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW, s_pTextBitMap
 	);
 
 	// Prepare new list
@@ -201,9 +203,8 @@ void menuShowTests(void) {
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
-		s_pMenuBfr->pBack, s_pMenuFont,
-		s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
-		"Tests", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
+		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
+		"Tests", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW, s_pTextBitMap
 	);
 
 	// Prepare new list
@@ -241,9 +242,8 @@ void menuShowExamples(void) {
 	// Draw BG
 	menuDrawBg();
 	fontDrawStr(
-		s_pMenuBfr->pBack, s_pMenuFont,
-		s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
-		"Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW
+		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
+		"Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW, s_pTextBitMap
 	);
 
 	// Prepare new list

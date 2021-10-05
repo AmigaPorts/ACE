@@ -8,6 +8,7 @@
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
 #include <limits.h>
+#include <proto/exec.h>
 
 tCopManager g_sCopManager;
 
@@ -25,7 +26,7 @@ void copCreate(void) {
 	copProcessBlocks();
 	// Update copper-related regs
 	g_pCustom->copjmp1 = 1;
-	systemSetDma(DMAB_COPPER, 1);
+	systemSetDmaBit(DMAB_COPPER, 1);
 
 	logBlockEnd("copCreate()");
 }
@@ -34,7 +35,7 @@ void copDestroy(void) {
 	logBlockBegin("copDestroy()");
 
 	// Load system copperlist
-	systemSetDma(DMAB_COPPER, 0);
+	systemSetDmaBit(DMAB_COPPER, 0);
 	g_pCustom->cop1lc = (ULONG)GfxBase->copinit;
 	g_pCustom->copjmp1 = 1;
 
@@ -57,19 +58,77 @@ void copSwapBuffers(void) {
 }
 
 void copDumpCmd(tCopCmd *pCmd) {
-		if(pCmd->sWait.bfIsWait) {
+	if(pCmd->sWait.bfIsWait) {
+#ifdef ACE_DEBUG
+		const char* szCmd = pCmd->sWait.bfIsSkip ? "SKIP" : "WAIT";
+		logWrite(
+			"@%p: %08lX - %s: %hu,%hu%s\n",
+			pCmd, pCmd->ulCode, szCmd, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY,
+			!pCmd->sWait.bfBlitterIgnore ? " & blit done" : ""
+		);
+#endif
+	}
+	else {
+#ifdef ACE_DEBUG
+		static const char* pCustomRegNames[256] = {
+			"BLTDDAT", "DMACONR", "VPOSR", "VHPOSR", "DSKDATR", "JOY0DAT",
+			"JOY1DAT", "CLXDAT", "ADKCONR", "POT0DAT", "POT1DAT", "POTGOR",
+			"SERDATR", "DSKBYTR", "INTENAR", "INTREQR", "DSKPTH", "DSKPTL",
+			"DSKLEN", "DSKDAT", "REFPTR", "VPOSW", "VHPOSW", "COPCON",
+			"SERDAT", "SERPER", "POTGO", "JOYTEST", "STREQU", "STRVBL",
+			"STRHOR", "STRLONG", "BLTCON0", "BLTCON1", "BLTAFWM", "BLTALWM",
+			"BLTCPTH", "BLTCPTL", "BLTBPTH", "BLTBPTL", "BLTAPTH", "BLTAPTL",
+			"BLTDPTH", "BLTDPTL", "BLTSIZE", "BLTCON0L", "BLTSIZV", "BLTSIZH",
+			"BLTCMOD", "BLTBMOD", "BLTAMOD", "BLTDMOD", NULL, NULL,
+			NULL, NULL, "BLTCDAT", "BLTBDAT", "BLTADAT", NULL,
+			"SPRHDAT", NULL, "DENISEID", "DSKSYNC", "COP1LCH", "COP1LCL",
+			"COP2LCH", "COP2LCL", "COPJMP1", "COPJMP2", "COPINS", "DIWSTRT",
+			"DIWSTOP", "DDFSTRT", "DDFSTOP", "DMACON", "CLXCON", "INTENA",
+			"INTREQ", "ADKCON", "AUD0LCH", "AUD0LCL", "AUD0LEN", "AUD0PER",
+			"AUD0VOL", "AUD0DAT", NULL, NULL, "AUD1LCH", "AUD1LCL",
+			"AUD1LEN", "AUD1PER", "AUD1VOL", "AUD1DAT", NULL, NULL,
+			"AUD2LCH", "AUD2LCL", "AUD2LEN", "AUD2PER", "AUD2VOL", "AUD2DAT",
+			NULL, NULL, "AUD3LCH", "AUD3LCL", "AUD3LEN", "AUD3PER",
+			"AUD3VOL", "AUD3DAT", NULL, NULL, "BPL1PTH", "BPL1PTL",
+			"BPL2PTH", "BPL2PTL", "BPL3PTH", "BPL3PTL", "BPL4PTH", "BPL4PTL",
+			"BPL5PTH", "BPL5PTL", "BPL6PTH", "BPL6PTL",
+			NULL, NULL, NULL, NULL, "BPLCON0", "BPLCON1",
+			"BPLCON2", "BPLCON3", "BPL1MOD", "BPL2MOD", NULL, NULL,
+			"BPL1DAT", "BPL2DAT", "BPL3DAT", "BPL4DAT", "BPL5DAT", "BPL6DAT",
+			NULL, NULL, "SPR0PTH", "SPR0PTL", "SPR1PTH", "SPR1PTL", "SPR2PTH",
+			"SPR2PTL", "SPR3PTH", "SPR3PTL", "SPR4PTH", "SPR4PTL", "SPR5PTH",
+			"SPR5PTL", "SPR6PTH", "SPR6PTL", "SPR7PTH", "SPR7PTL", "SPR0POS",
+			"SPR0CTL", "SPR0DATA", "SPR0DATB", "SPR1POS", "SPR1CTL", "SPR1DATA",
+			"SPR1DATB", "SPR2POS", "SPR2CTL", "SPR2DATA", "SPR2DATB", "SPR3POS",
+			"SPR3CTL", "SPR3DATA", "SPR3DATB", "SPR4POS", "SPR4CTL", "SPR4DATA",
+			"SPR4DATB", "SPR5POS", "SPR5CTL", "SPR5DATA", "SPR5DATB", "SPR6POS",
+			"SPR6CTL", "SPR6DATA", "SPR6DATB", "SPR7POS", "SPR7CTL", "SPR7DATA",
+			"SPR7DATB", "COLOR00", "COLOR01", "COLOR02", "COLOR03", "COLOR04",
+			"COLOR05", "COLOR06", "COLOR07", "COLOR08", "COLOR09", "COLOR10",
+			"COLOR11", "COLOR12", "COLOR13", "COLOR14", "COLOR15", "COLOR16",
+			"COLOR17", "COLOR18", "COLOR19", "COLOR20", "COLOR21", "COLOR22",
+			"COLOR23", "COLOR24", "COLOR25", "COLOR26", "COLOR27", "COLOR28",
+			"COLOR29", "COLOR30", "COLOR31", "HTOTAL", "HSSTOP", "HBSTRT",
+			"HBSTOP", "VTOTAL", "VSSTOP", "VBSTRT", "VBSTOP", NULL,
+			NULL, NULL, NULL, NULL, NULL, "BEAMCON0",
+			"HSSTRT", "VSSTRT", "HCENTER", "DIWHIGH", NULL
+		};
+
+		const char* szRegName = pCustomRegNames[pCmd->sMove.bfDestAddr >> 1];
+		if (szRegName) {
 			logWrite(
-				"@%p: %08X - WAIT: %hu,%hu%s\n",
-				pCmd, pCmd->ulCode, pCmd->sWait.bfWaitX << 1, pCmd->sWait.bfWaitY,
-				!pCmd->sWait.bfBlitterIgnore ? " & blit done" : ""
+				"@%p: %08lX - MOVE: %8s := %04X\n",
+				pCmd, pCmd->ulCode, szRegName, pCmd->sMove.bfValue
 			);
 		}
 		else {
 			logWrite(
-				"@%p: %08X - MOVE: %03X := %04X\n",
-				pCmd, pCmd->ulCode,  pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue
+				"@%p: %08lX - MOVE:      %03X := %04X\n",
+				pCmd, pCmd->ulCode, pCmd->sMove.bfDestAddr, pCmd->sMove.bfValue
 			);
 		}
+#endif
+	}
 }
 
 void copDumpBlocks(void) {
@@ -401,7 +460,10 @@ UBYTE copUpdateFromBlocks(void) {
 				}
 
 				// Copy MOVEs
-				CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
+				memcpy(
+					&pBackBfr->pList[uwListPos], pBlock->pCmds,
+					pBlock->uwCurrCount * sizeof(tCopCmd)
+				);
 				--pBlock->ubUpdated;
 			}
 			uwListPos += pBlock->uwCurrCount;
@@ -448,7 +510,9 @@ UBYTE copUpdateFromBlocks(void) {
 		}
 
 		// Copy MOVEs
-		CopyMem(pBlock->pCmds, &pBackBfr->pList[uwListPos], pBlock->uwCurrCount*sizeof(tCopCmd));
+		for(UWORD i = pBlock->uwCurrCount; i--;) {
+			pBackBfr->pList[uwListPos + i].ulCode = pBlock->pCmds[i].ulCode;
+		}
 		uwListPos += pBlock->uwCurrCount;
 	}
 
@@ -520,7 +584,7 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
 	pMoveCmd->bfUnused = 0;
 	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)g_pCustom);
-	pMoveCmd->bfValue = uwValue;
+	copSetMoveVal(pMoveCmd, uwValue);
 }
 
 static UWORD CHIP s_pBlankSprite[2];
@@ -551,29 +615,27 @@ tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
 	return pBlock;
 }
 
-FUBYTE copRawDisableSprites(tCopList *pList, FUBYTE fubSpriteMask, FUWORD fuwCmdOffs) {
-	FUBYTE fubCmdCnt = 0;
+UBYTE copRawDisableSprites(tCopList *pList, UBYTE ubSpriteMask, UWORD uwCmdOffs) {
+	UBYTE ubCmdCnt = 0;
 	ULONG ulBlank = (ULONG)s_pBlankSprite;
 
 	// No WAIT - could be done earlier by other stuff
-	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[fuwCmdOffs].sMove;
-	for(FUBYTE i = 0; i != 8; ++i) {
-		if(fubSpriteMask & 1) {
+	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[uwCmdOffs].sMove;
+	for(UBYTE i = 0; i != 8; ++i) {
+		if(ubSpriteMask & 1) {
 			copSetMove(pCmd++, &g_pSprFetch[i].uwHi, ulBlank >> 16);
 			copSetMove(pCmd++, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
-			fubCmdCnt += 2;
+			ubCmdCnt += 2;
 		}
-		fubSpriteMask >>= 1;
+		ubSpriteMask >>= 1;
 	}
 
 	// Copy to front buffer
-	CopyMemQuick(
-		&pList->pBackBfr->pList[fuwCmdOffs],
-		&pList->pFrontBfr->pList[fuwCmdOffs],
-		fubCmdCnt * sizeof(tCopCmd)
-	);
+	for(UWORD i = uwCmdOffs; i < uwCmdOffs + ubCmdCnt; ++i) {
+		pList->pFrontBfr->pList[i].ulCode = pList->pBackBfr->pList[i].ulCode;
+	}
 
-	return fubCmdCnt;
+	return ubCmdCnt;
 }
 
 #endif // AMIGA
