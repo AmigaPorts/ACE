@@ -84,13 +84,24 @@ endfunction()
 
 function(getToolPath TOOL_NAME TOOL_VAR)
 	# This should be called from other fns - `ACE_DIR` gets usually populated in parent scope
-	set(${TOOL_VAR} ${ACE_DIR}/tools/bin/${TOOL_NAME})
+	set(TOOLS_BIN ${ACE_DIR}/tools/bin/)
+
 	if(CMAKE_HOST_WIN32)
-		set(${TOOL_VAR} "${${TOOL_VAR}}.exe")
+		set(TOOL_PATHS "${TOOL_NAME}.exe" "Debug/${TOOL_NAME}.exe" "Release/${TOOL_NAME}.exe")
+	else()
+		set(TOOL_PATHS ${TOOL_NAME})
 	endif()
 
-	if(NOT EXISTS "${${TOOL_VAR}}")
-		message(FATAL_ERROR "Couldn't find ${TOOL_NAME} in ${${TOOL_VAR}} - have you built tools?")
+	foreach(TOOL_CANDIDATE IN LISTS TOOL_PATHS)
+		set(${TOOL_VAR} ${TOOLS_BIN}${TOOL_CANDIDATE})
+		if(EXISTS "${${TOOL_VAR}}")
+			break()
+		endif()
+		unset(${TOOL_VAR})
+	endforeach()
+
+	if(NOT DEFINED ${TOOL_VAR})
+		message(FATAL_ERROR "Couldn't find ${TOOL_NAME} in ${TOOLS_BIN}${TOOL_PATHS} - have you built tools?")
 	endif()
 
 	# Return value
