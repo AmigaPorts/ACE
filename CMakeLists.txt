@@ -236,7 +236,7 @@ endfunction()
 function(convertTileset)
 	getToolPath(tileset_conv TOOL_TILESET_CONV)
 	cmake_parse_arguments(
-		args "" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT" "TILES" ${ARGN}
+		args "" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE" "TILES" ${ARGN}
 	)
 
 	list(LENGTH args_TILES tilesCount)
@@ -246,6 +246,10 @@ function(convertTileset)
 
 	if(DEFINED args_HEIGHT)
 		SET(argsOptional ${argsOptional} -h ${args_HEIGHT})
+	endif()
+
+	if(DEFINED args_PALETTE)
+		SET(argsOptional ${argsOptional} -plt ${args_PALETTE})
 	endif()
 
 	add_custom_command(
