@@ -247,13 +247,17 @@ endfunction()
 function(convertTileset)
 	getToolPath(tileset_conv TOOL_TILESET_CONV)
 	cmake_parse_arguments(
-		args "" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE" "TILES" ${ARGN}
+		args "INTERLEAVED" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE" "TILES" ${ARGN}
 	)
 
 	list(LENGTH args_TILES tilesCount)
 	foreach(tileNumber ${args_TILES})
 		set(convDepends "${convDepends};${args_SOURCE}/${tileNumber}")
 	endforeach()
+
+	if(${args_INTERLEAVED})
+		SET(argsOptional ${argsOptional} -i)
+	endif()
 
 	if(DEFINED args_HEIGHT)
 		SET(argsOptional ${argsOptional} -h ${args_HEIGHT})
