@@ -7,15 +7,7 @@
 #include <sys/stat.h>
 
 #if defined(_WIN32)
-#  if !defined(NOMINMAX) || !defined(WIN32_LEAN_AND_MEAN)
-#    define NOMINMAX
-#    define WIN32_LEAN_AND_MEAN
-#    include <windows.h>
-#    undef WIN32_LEAN_AND_MEAN
-#    undef NOMINMAX
-#  else
-#    include <windows.h>
-#  endif
+#    include <direct.h>
 #endif
 
 namespace nFs {
@@ -23,7 +15,7 @@ namespace nFs {
 bool dirCreate(const std::string &szPath)
 {
 	#if defined(_WIN32)
-		auto Error = CreateDirectoryA(szPath.c_str(), 0);
+		auto Error = _mkdir(szPath.c_str());
 	#else
 		auto Error = mkdir(szPath.c_str(),0733);
 	#endif
