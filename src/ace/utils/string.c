@@ -53,3 +53,11 @@ UBYTE stringIsEmpty(const char *szStr) {
 	UBYTE isEmpty = (szStr[0] == '\0');
 	return isEmpty;
 }
+
+char *stringCopy(const char *szSrc, char *szDest) {
+	while(*szSrc != '\0') {
+		*(szDest++) = *(szSrc++);
+	};
+	*szDest = '\0';
+	return szDest;
+}
