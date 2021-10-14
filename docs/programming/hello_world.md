@@ -74,8 +74,24 @@ include_directories(${ace_INCLUDE_DIRS})
 
 # Linux/other UNIX get a lower-case binary name
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
-add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
-target_link_libraries(${TARGET_NAME} ace)
+
+if(ELF2HUNK)
+  # Add elf2hunk step for Bartman compiler
+  set(GAME_LINKED ${TARGET_NAME}.elf) # Intermediate executable
+  set(GAME_EXE ${TARGET_NAME}.exe) # Use this to launch the game
+  add_executable(${GAME_LINKED} ${SOURCES} ${HEADERS})
+  add_custom_command(
+    TARGET ${GAME_LINKED} POST_BUILD
+    COMMAND ${ELF2HUNK} ${GAME_LINKED} ${GAME_EXE}
+  )
+else()
+  # Just produce the executable with Bebbo compiler
+  SET(GAME_LINKED ${TARGET_NAME})
+  SET(GAME_EXE ${TARGET_NAME})
+  add_executable(${GAME_LINKED} ${SOURCES} ${HEADERS})
+endif()
+
+target_link_libraries(${GAME_LINKED} ace)
 ```
 
 Once you have that done, compile it. Put your executable in UAE or real hardware

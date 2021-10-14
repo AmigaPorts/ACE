@@ -4,11 +4,31 @@ Historically, ACE could be built using make, ace-cli and CMake. Currently, only 
 
 ## Building using CMake
 
-Currently CMake build supports only GCC. You need to use the appropriate
+Currently CMake build supports only GCC (be it Bebbo's or Bartman's version). You need to use the appropriate
 CMake Toolchain File. Start with cloning the
 [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo.
 
-You can also set `M68K_CPU` and `M68K_FPU` variables to your liking.
+This toolchain file allows you to set `M68K_CPU` and `M68K_FPU` variables to your liking.
+
+### Using ACE as submodule dependency in your project
+
+This is the recommended way of building ACE. Since ACE's development often breaks things, it's best to attach ACE as a submodule in your game's repository. This way, your commit history will store the last-known good ACE commit which worked well with your project.
+
+To attach ACE repository as a submodule, do the following in your repo's root directory:
+
+```sh
+mkdir deps
+git submodule add https://github.com/AmigaPorts/ACE deps/ace
+```
+
+And to link it to your main executable:
+
+```cmake
+add_subdirectory(deps/ace)
+target_link_libraries(myGame ace)
+```
+
+### Building standalone library
 
 ``` sh
 mkdir build && cd build
@@ -21,6 +41,8 @@ Some notes:
 - You can pass other `-DM68K_CPU` values. Supported are `68000`, `68010`, `68020`, `68040` and `68060`. See AmigaCMakeCrossToolchains docs or sources for more info.
 - If you're on cygwin, you might need to add `-G"Unix Makefiles"`.
 - If you want to enable debug build (e.g. to have logs and better sanity checks), pass `-DCMAKE_BUILD_TYPE=Debug`.
+- If you really want to depend on standalone-built ACE library, be sure to take note of the commit you've built it from.
+  ACE breaks things very often and it's almost certain that after some time you won't be able to build your game with latest ACE version.
 
 After building, you should have `libace.a` in your build folder.
 Be sure to link it to your game.
