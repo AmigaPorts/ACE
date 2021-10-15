@@ -9,6 +9,9 @@
 
 #ifdef AMIGA
 
+// 0xE0 is sufficient wait pos for EHB to be ready just before bitplane display.
+#define COPPER_WAIT_X 0xE0
+
 // Flags for internal usage.
 #define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1
 #define SIMPLEBUFFER_FLAG_COPLIST_RAW  2
@@ -61,8 +64,7 @@ static void simpleBufferInitializeCopperList(
 			"Setting copperlist %p at offs %u\n",
 			pCopList->pBackBfr, pManager->uwCopperOffset
 		);
-		// 7 * 4 worked for 32-color display, 8 * 8 was needed for EHB on OCS
-		copSetWait(&pCmdList[0].sWait, 0xE2 - 8 * 8, (
+		copSetWait(&pCmdList[0].sWait, COPPER_WAIT_X, (
 			pManager->sCommon.pVPort->uwOffsY +
 			pManager->sCommon.pVPort->pView->ubPosY -1
 		));
@@ -197,9 +199,9 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 		pManager->pCopBlock = copBlockCreate(
 			// WAIT is already in copBlock so 1 instruction less
 			pCopList, simpleBufferGetRawCopperlistInstructionCount(pVPort->ubBPP) - 1,
-			// Vertically addition from DiWStrt, horizontally a bit before last fetch.
+			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			0xE2 - 8 * 8, pVPort->uwOffsY + pVPort->pView->ubPosY - 1
+			COPPER_WAIT_X, pVPort->uwOffsY + pVPort->pView->ubPosY - 1
 		);
 	}
 	else {
