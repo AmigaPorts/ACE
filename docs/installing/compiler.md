@@ -21,17 +21,17 @@ To obtain the newest package:
 This is recommended approach by [Last Minute Creations](https://github.com/Last-Minute-Creations) team members.
 The setup is a bit troublesome but in the end it allows swapping compiler with Bebbo variant easily and makes it more portable.
 
-- Download and install any MinGW GCC compiler (e.g. [7.3.0-i686-posix-dwarf](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/threads-posix/dwarf/i686-7.3.0-release-posix-dwarf-rt_v5-rev0.7z/download)) if you don't have any already in your system.
-  Make sure the directory containing the gcc executable is in the system PATH.
+- Download and install any MinGW GCC compiler (e.g. [7.3.0-i686-posix-dwarf](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/threads-posix/dwarf/i686-7.3.0-release-posix-dwarf-rt_v5-rev0.7z/download)) if you don't have any already in your system (MSVC and others will work too).
+- Make sure the directory containing the GCC executable is in the system PATH.
 - Download and install [CMake](https://cmake.org) if you haven't already.
   Be sure its executable directory is in your PATH or you'll have to configure vscode extension with it manually.
 - In VSCode, install `twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support.
 - If CMake's executable is not in your system's PATH, enter VSCode settings and set full path to cmake.exe.
 - Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo.
-  Be sure you have `m68k-bartman.cmake` file there (currently it's not on master branch, so look around in latest branches).
+  Be sure you have `m68k-bartman.cmake` file there.
 - Confiure VSCode CMake extension:
   - In the IDE, open any directory which will contain your project.
-  - Create empty CMakeLists.txt file and restart the editor so that it can discover that you're inside CMake-based project.
+  - Create empty CMakeLists.txt file **and restart the editor** so that it can discover that you're inside CMake-based project.
   - Enter command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and start typing "CMake Scan for kits" and select it from the options.
   - Enter command palette again and select "CMake Edit User-Local CMake Kits"
   - You will see a .json file which holds the array of configurations of compilers in your system.
@@ -39,6 +39,11 @@ The setup is a bit troublesome but in the end it allows swapping compiler with B
     Simply add a comma after last compiler config in the file and add the following, replacing `YOUR_USER_NAME`, `m68k-bartman.cmake` path and extension name/version so that it matches your filesystem:
 
     ```json
+    [
+      {
+        "name": "Some other compiler which was automatically detected",
+        ...
+      },
       {
         "name": "GCC Bartman m68k",
         "toolchainFile": "C:\\PATH_TO\\AmigaCMakeCrossToolchains\\m68k-bartman.cmake",
@@ -59,6 +64,7 @@ The setup is a bit troublesome but in the end it allows swapping compiler with B
         },
         "keep": true
       }
+    ]
     ```
 
 After this you should be good to go.
@@ -75,6 +81,7 @@ You may want to look at how its made in CMakeLists of some other projects (e.g. 
 
 TBD
 
+The Bartman plugin comes with a command to bootstrap the makefile-based sample project.
 A dirty way is to copy src/inc files from ACE to the base project.
 
 ## Bebbo's toolchain
@@ -125,51 +132,29 @@ I'm using following ruleset:
 
 - use Bartman's GCC as main compiler for development, or Bebbo's if you need standard library.
 - when doing release builds and your code doesn't require latest compiler features, do a Bebbo build and compare size and performance.
-- if anything breaks mysteriously with Bebbo's compiler, disable optimizations in ACE/game CMakeLists (change `-O3` to `-O0` or build with `-DCMAKE_BUILD_TYPE=Debug`) and try adding `-fbbb=-` to disable Bebbo's optimizers
+- if anything breaks mysteriously with Bebbo's compiler, disable optimizations in ACE/game CMakeLists (change `-O3` to `-O0` or build with `-DCMAKE_BUILD_TYPE=Debug`) and try adding `-fbbb=-` in compile options to disable Bebbo's optimizers.
 - if problem still persists, it's probably your bug.
 - if it's not, try to isolate where bug occurs and report it on ACE repo **with code sample**
 
-## Integration with Visual Studio Code
+## Integrating Bebbo's compiler with Visual Studio Code
 
 If you don't know VSCode, give it a try - You won't go back to any other IDE.
 To properly set it up for work with ACE, here are some tips on how to set it up in optimal way:
 
-- install `twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support
-- clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo
-- from Command Palette (<kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>p</kbd>), select `CMake: edit kits` or something.
+- If you've installed Bebbo compiler via WSL, install `ms-vscode-remote.remote-wsl` extension.
+  It will allow you to open projects from WSL point of view.
+- Install `twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support. Note that you may need to reinstall some of the extensions mentioned above when connecting to WSL as they are stored on target system.
+- Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo
+- From Command Palette (<kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>p</kbd>), select `CMake Edit User-Local CMake Kits`.
 
-Add following definitions for Bartman compiler, replacing `path\\to` and `yourUser` with proper contents:
+The CMake kit config is as follows:
 
 ```json
+[
   {
-    "name": "GCC Bartman m68k",
-    "toolchainFile": "C:\\path\\to\\AmigaCMakeCrossToolchains\\m68k-bartman.cmake",
-    "compilers": {
-      "C": "C:\\Users\\yourUser\\.vscode\\extensions\\bartmanabyss.amiga-debug-1.1.0-preview11\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe",
-      "CXX": "C:\\Users\\yourUser\\.vscode\\extensions\\bartmanabyss.amiga-debug-1.1.0-preview11\\bin\\opt\\bin\\m68k-amiga-elf-g++.exe"
-    },
-    "environmentVariables": {
-      "PATH": "C:/Users/yourUser/.vscode/extensions/bartmanabyss.amiga-debug-1.1.0-preview11/bin/opt/bin;C:/Users/yourUser/.vscode/extensionartmanabyss.amiga-debug-1.0.0/bin;${env:PATH}"
-    },
-    "preferredGenerator": {
-      "name": "MinGW Makefiles"
-    },
-    "cmakeSettings": {
-      "M68K_CPU": "68000",
-      "TOOLCHAIN_PREFIX": "m68k-amiga-elf",
-      "TOOLCHAIN_PATH": "C:/Users/yourUser/.vscode/extensions/bartmanabyss.amiga-debug-1.1.0-preview11/bin/opt"
-    },
-    "keep":true
+    "name": "Some other compiler which was automatically detected",
+    ...
   },
-```
-
-For Bebbo compiler, if you've installed it via WSL, install `ms-vscode-remote.remote-wsl` extension.
-As a side note, your Windows drives are auto-mounted there as `/mnt/c/` etc.
-It will allow you to open projects from WSL point of view.
-You may need to install again cmake extensions in that scope.
-The CMake kit config is similar, but simpler:
-
-```json
   {
     "name": "GCC for m68k-amigaos 6.5.0b",
     "compilers": {
@@ -184,5 +169,6 @@ The CMake kit config is similar, but simpler:
       "TOOLCHAIN_PREFIX": "m68k-amigaos",
       "TOOLCHAIN_PATH": "/opt/amiga"
     }
-  },
+  }
+]
 ```
