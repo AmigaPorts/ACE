@@ -38,11 +38,11 @@ The setup is a bit troublesome but in the end it allows swapping compiler with B
     There will be one matching the MinGW compiler, but you need to append the configuration for Bartman suite manually.
     Simply add a comma after last compiler config in the file and add the following, replacing `YOUR_USER_NAME`, `m68k-bartman.cmake` path and extension name/version so that it matches your filesystem:
 
-    ```json
+    ```json5
     [
       {
         "name": "Some other compiler which was automatically detected",
-        ...
+        // Some other fields...
       },
       {
         "name": "GCC Bartman m68k",
@@ -149,11 +149,11 @@ To properly set it up for work with ACE, here are some tips on how to set it up 
 
 The CMake kit config is as follows:
 
-```json
+```json5
 [
   {
     "name": "Some other compiler which was automatically detected",
-    ...
+    // Some other fields...
   },
   {
     "name": "GCC for m68k-amigaos 6.5.0b",
