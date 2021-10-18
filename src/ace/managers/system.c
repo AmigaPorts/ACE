@@ -509,12 +509,6 @@ void systemCreate(void) {
 	// re-enabled periodically.
 	// Save the system copperlists and flush the view
 
-	// This prevents "copjmp nasty bug"
-	// http://eab.abime.net/showthread.php?t=71190
-	// Asman told me that Ross from EAB found out that LoadView may cause such behavior
-	OwnBlitter();
-	WaitBlit();
-
 	s_pOsView = GfxBase->ActiView;
 	WaitTOF();
 	LoadView(0);
@@ -580,9 +574,6 @@ void systemDestroy(void) {
 	WaitTOF();
 	LoadView(s_pOsView);
 	WaitTOF();
-
-	WaitBlit();
-	DisownBlitter();
 
 	struct Process *pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
@@ -679,6 +670,9 @@ void systemUnuse(void) {
 			INTF_BLIT | INTF_COPER | INTF_VERTB | INTF_EXTER |
 			INTF_PORTS //| INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
 		);
+
+		OwnBlitter();
+		WaitBlit();
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
@@ -736,6 +730,9 @@ void systemUse(void) {
 		// Nasty keyboard hack - if any key gets pressed / released while system is
 		// inactive, we won't be able to catch it.
 		keyReset();
+
+		DisownBlitter();
+		WaitBlit();
 	}
 	++s_wSystemUses;
 }
