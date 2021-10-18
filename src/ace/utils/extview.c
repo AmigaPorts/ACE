@@ -150,6 +150,21 @@ void viewLoad(tView *pView) {
 		g_pCustom->bpl2mod = 0;
 	}
 	else {
+#if defined(ACE_DEBUG)
+		{
+			// Check if view size matches size of last vport
+			tVPort *pVp = pView->pFirstVPort;
+			while(pVp->pNext) {
+				pVp = pVp->pNext;
+			}
+			if(pVp->uwOffsY + pVp->uwHeight != pView->uwHeight) {
+				logWrite(
+					"ERR: View height %hu doesn't match the total VPort area: %hu",
+					pView->uwHeight, pVp->uwOffsY + pVp->uwHeight
+				);
+			}
+		}
+#endif
 		g_sCopManager.pCopList = pView->pCopList;
 		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		g_pCustom->fmode = 0;        // AGA fix
