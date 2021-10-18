@@ -13,13 +13,14 @@
 // Positions 0xD0, 0xD8, 0xE0 work, but 0xE2 doesn't - use the last valid copper
 // wait pos so that the regs are ready just before the display - user stuff
 // must go prior this wait pos!
+// 0xE0 didn't work for me in simplebuffer though - use 0xDD for safety.
 // TODO: some ppl might want to have the display set up as soon as possible
 // (probably could be done earlier than 0xD0) and then e.g. start changing
 // palette colors before display + right after bitplanes get displayed.
 // Maybe add the switch for this behavior?
 // TODO: right now wait pos is hardcoded for EHB since it's the toughest one
 // KaiN has needed. Add a calculation on proper wait pos (less BPP - later).
-#define COPPER_WAIT_X 0xE0
+#define COPPER_WAIT_X 0xDD
 
 static UWORD nearestPowerOf2(UWORD uwVal) {
 	// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
