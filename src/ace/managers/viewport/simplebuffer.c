@@ -9,8 +9,8 @@
 
 #ifdef AMIGA
 
-// 0xDD is sufficient wait pos for EHB to be ready just before bitplane display.
-#define COPPER_WAIT_X 0xDD
+// 0xDC is sufficient wait pos for EHB to be ready just before bitplane display.
+#define COPPER_WAIT_X 0xDC
 
 // Flags for internal usage.
 #define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1
