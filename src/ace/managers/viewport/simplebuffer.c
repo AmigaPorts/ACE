@@ -16,17 +16,19 @@
 #define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1
 #define SIMPLEBUFFER_FLAG_COPLIST_RAW  2
 
-static void setBitplanePtrs(tCopCmd *pCmds, const tBitMap *pBitmap) {
+static void setBitplanePtrs(tCopCmd *pCmds, const tBitMap *pBitmap, LONG lBplOffs) {
 	for(UBYTE i = 0; i < pBitmap->Depth; ++i) {
-		ULONG ulPlaneAddr = (ULONG)pBitmap->Planes[i];
+		ULONG ulPlaneAddr = (ULONG)pBitmap->Planes[i] + lBplOffs;
 		copSetMove(&(pCmds++)->sMove, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 		copSetMove(&(pCmds++)->sMove, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 	}
 }
 
-static void updateBitplanePtrs(tCopCmd *pCmds, const tBitMap *pBitmap) {
+static void updateBitplanePtrs(
+	tCopCmd *pCmds, const tBitMap *pBitmap, LONG lBplOffs
+) {
 	for(UBYTE i = 0; i < pBitmap->Depth; ++i) {
-		ULONG ulPlaneAddr = (ULONG)pBitmap->Planes[i];
+		ULONG ulPlaneAddr = ((ULONG)pBitmap->Planes[i]) + lBplOffs;
 		copSetMoveVal(&(pCmds++)->sMove, ulPlaneAddr >> 16);
 		copSetMoveVal(&(pCmds++)->sMove, ulPlaneAddr & 0xFFFF);
 	}
@@ -79,12 +81,18 @@ static void simpleBufferInitializeCopperList(
 			pCopList->pFrontBfr->pList[i].ulCode = pCopList->pBackBfr->pList[i].ulCode;
 		}
 
+		// if X scroll is enabled then it needs to start one word early
+		ULONG ulBplOffs = 0;
+		if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
+			ulBplOffs = -2;
+		}
+
 		// Proper back buffer pointers
-		setBitplanePtrs(&pCmdList[6], pManager->pFront);
+		setBitplanePtrs(&pCmdList[6], pManager->pFront, ulBplOffs);
 
 		// Proper front buffer pointers
 		pCmdList = &pCopList->pFrontBfr->pList[pManager->uwCopperOffset];
-		setBitplanePtrs(&pCmdList[6], pManager->pBack);
+		setBitplanePtrs(&pCmdList[6], pManager->pBack, ulBplOffs);
 	}
 	else {
 		tCopBlock *pBlock = pManager->pCopBlock;
@@ -287,15 +295,21 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	// TODO could be unified by using copSetMove in copBlock
 	if((pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW)) {
 		if(cameraIsMoved(pCamera)) {
+			// At least two updates in the row - double-buffered copperlist
+			// must update two buffers with state of single-buffered vport manager.
+			pManager->ubDirtyCounter = 2;
+		}
+		if(pManager->ubDirtyCounter) {
 			tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
 			copSetMoveVal(&pCmdList[5].sMove, uwShift);
-			updateBitplanePtrs(&pCmdList[6], pManager->pBack);
+			updateBitplanePtrs(&pCmdList[6], pManager->pBack, ulBplOffs);
+			--pManager->ubDirtyCounter;
 		}
 	}
 	else {
-		// We can't really check if camera has moved since in double buffering
-		// copBlock changes its bitplane pointers value each frame and copperlist
-		// needs refreshing
+		// We can't really check for camera being moved, since in double buffering
+		// copBlock needs to change its bitplane pointers value each frame and
+		// copperlist needs refreshing.
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
 		for(UBYTE i = 0; i < pManager->pBack->Depth; ++i) {

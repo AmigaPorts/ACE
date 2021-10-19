@@ -49,6 +49,7 @@ typedef struct _tSimpleBufferManager {
 	tUwCoordYX uBfrBounds; ///< Buffer bounds in pixels
 	UBYTE ubFlags;         ///< Read only. See SIMPLEBUFFER_FLAG_*.
 	UWORD uwCopperOffset;  ///< Offset on copperlist in COP_RAW mode.
+	UBYTE ubDirtyCounter;  ///< Number of pending copperlist updates.
 } tSimpleBufferManager;
 
 /**
