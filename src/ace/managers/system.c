@@ -85,6 +85,8 @@ static volatile UWORD s_uwAceInts = 0;
 
 // Manager logic vars
 static WORD s_wSystemUses;
+static WORD s_wSystemBlitterUses;
+
 struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
 static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
@@ -542,8 +544,11 @@ void systemCreate(void) {
 	// Unuse system so that it gets backed up once and then re-enable
 	// as little as needed
 	s_wSystemUses = 1;
+	s_wSystemBlitterUses = 1;
 	systemUnuse();
 	systemUse();
+
+	systemTakeoverBlitter();
 }
 
 void systemDestroy(void) {
@@ -565,6 +570,7 @@ void systemDestroy(void) {
 	// Restore every single OS DMA & interrupt
 	s_wSystemUses = 0;
 	systemUse();
+	systemReleaseBlitter();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// Free audio channels
@@ -670,9 +676,6 @@ void systemUnuse(void) {
 			INTF_BLIT | INTF_COPER | INTF_VERTB | INTF_EXTER |
 			INTF_PORTS //| INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
 		);
-
-		OwnBlitter();
-		WaitBlit();
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
@@ -731,14 +734,54 @@ void systemUse(void) {
 		// inactive, we won't be able to catch it.
 		keyReset();
 
-		DisownBlitter();
-		WaitBlit();
+	
 	}
 	++s_wSystemUses;
 }
 
 UBYTE systemIsUsed(void) {
 	return s_wSystemUses > 0;
+}
+
+void systemTakeoverBlitter(void)
+{
+	--s_wSystemBlitterUses;
+	if(!s_wSystemBlitterUses) {
+		if(g_pCustom->dmaconr & DMAF_DISK) {
+			// Flush disk activity if it was used
+			// This 'if' is here because otherwise systemUnuse() called
+			// by systemCreate() would indefinitely wait for OS when it's killed.
+			// systemUse() restores disk DMA, so it's an easy check if OS was
+			// actually restored.
+			systemFlushIo();
+		} 
+		OwnBlitter();
+		WaitBlit();
+	}
+
+	#if defined(ACE_DEBUG)
+	if(s_wSystemBlitterUses < 0) {
+		logWrite("ERR: Blitter uses less than 0!\n");
+		s_wSystemUses = 0;
+	}
+#endif
+}
+
+void systemReleaseBlitter(void)
+{
+	if (!s_wSystemBlitterUses)
+	{
+
+		DisownBlitter();
+		WaitBlit();
+	}
+	s_wSystemBlitterUses++;
+
+}
+
+UBYTE systemBlitterIsUsed(void)
+{
+	return s_wSystemBlitterUses > 0;
 }
 
 void systemSetInt(
