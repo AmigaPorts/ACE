@@ -32,18 +32,24 @@ extern "C" {
 #include <ace/managers/viewport/camera.h>
 
 // vPort ptr
-#define TAG_SCROLLBUFFER_VPORT          (TAG_USER|1)
-// Scrollable area bounds, in pixels
-#define TAG_SCROLLBUFFER_BOUND_WIDTH    (TAG_USER|2)
-#define TAG_SCROLLBUFFER_BOUND_HEIGHT   (TAG_USER|3)
-// Buffer bitmap creation flags
-#define TAG_SCROLLBUFFER_BITMAP_FLAGS   (TAG_USER|4)
-#define TAG_SCROLLBUFFER_IS_DBLBUF      (TAG_USER|5)
-// If in raw mode, offset on copperlist for placing required copper
-// instructions, specified in copper instruction count since beginning.
-#define TAG_SCROLLBUFFER_COPLIST_OFFSET_START (TAG_USER|6)
-#define TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK (TAG_USER|7)
-#define TAG_SCROLLBUFFER_MARGIN_WIDTH   (TAG_USER|8)
+typedef enum tScrollBufferCreateTags {
+	TAG_SCROLLBUFFER_VPORT =          (TAG_USER|1),
+
+	// Scrollable area bounds, in pixels
+	TAG_SCROLLBUFFER_BOUND_WIDTH =    (TAG_USER|2),
+	TAG_SCROLLBUFFER_BOUND_HEIGHT =   (TAG_USER|3),
+
+	// Buffer bitmap creation flags
+	TAG_SCROLLBUFFER_BITMAP_FLAGS =   (TAG_USER|4),
+	TAG_SCROLLBUFFER_IS_DBLBUF =      (TAG_USER|5),
+
+	// If in raw mode, offset on copperlist for placing required copper
+	// instructions, specified in copper instruction count since beginning.
+	TAG_SCROLLBUFFER_COPLIST_OFFSET_START = (TAG_USER|6),
+	TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK = (TAG_USER|7),
+
+	TAG_SCROLLBUFFER_MARGIN_WIDTH =   (TAG_USER|8),
+} tScrollBufferCreateTags;
 
 #define SCROLLBUFFER_FLAG_COPLIST_RAW 1
 

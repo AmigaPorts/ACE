@@ -34,10 +34,21 @@ static void tileBufferResetRedrawState(tRedrawState *pState) {
 static void tileBufferQueueAdd(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 ) {
+	// Add two times so that they're drawn properly in double buffering
+#if defined ACE_DEBUG
+	if(
+		pManager->pRedrawStates[0].ubPendingCount > pManager->ubQueueSize - 2 ||
+		pManager->pRedrawStates[1].ubPendingCount > pManager->ubQueueSize - 2
+	) {
+		logWrite("ERR: No more space in redraw queue");
+		return;
+	}
+#endif
 	tRedrawState *pState = &pManager->pRedrawStates[0];
 	pState->pPendingQueue[pState->ubPendingCount].uwX = uwTileX;
 	pState->pPendingQueue[pState->ubPendingCount].uwY = uwTileY;
 	++pState->ubPendingCount;
+
 	pState = &pManager->pRedrawStates[1];
 	pState->pPendingQueue[pState->ubPendingCount].uwX = uwTileX;
 	pState->pPendingQueue[pState->ubPendingCount].uwY = uwTileY;

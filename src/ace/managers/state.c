@@ -13,12 +13,12 @@
 #define checkNull(pPointer) 1
 #endif
 
-void _checkNull(
+static void _checkNull(
 	void *pPointer, const char *szPointerName, const char *szFile, UWORD uwLine
 ) {
 	if (!pPointer) {
 		logWrite(
-			"ERR: Pointer %s is zero at %s:%u! Crash emminent!\n",
+			"ERR: Pointer %s is zero at %s:%u! Crash imminent!\n",
 			szPointerName, szFile, uwLine
 		);
 	}
@@ -72,7 +72,7 @@ tState *stateCreate(
 
 void stateDestroy(tState *pState) {
 	logBlockBegin("stateDestroy(pState: %p)", pState);
-	
+
 	checkNull(pState);
 
 	memFree(pState, sizeof(tState));

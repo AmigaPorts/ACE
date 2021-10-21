@@ -21,18 +21,23 @@ extern "C" {
 #include <ace/utils/bitmap.h>
 #include <ace/utils/tag.h>
 
-// vPort ptr
-#define TAG_SIMPLEBUFFER_VPORT          (TAG_USER|1)
-// Scrollable area bounds, in pixels
-#define TAG_SIMPLEBUFFER_BOUND_WIDTH    (TAG_USER|2)
-#define TAG_SIMPLEBUFFER_BOUND_HEIGHT   (TAG_USER|3)
-// Buffer bitmap creation flags
-#define TAG_SIMPLEBUFFER_BITMAP_FLAGS   (TAG_USER|4)
-#define TAG_SIMPLEBUFFER_IS_DBLBUF      (TAG_USER|5)
-// If in raw mode, offset on copperlist for placing required copper
-// instructions, specified in copper instruction count since beginning.
-#define TAG_SIMPLEBUFFER_COPLIST_OFFSET (TAG_USER|6)
-#define TAG_SIMPLEBUFFER_USE_X_SCROLLING (TAG_USER|7)
+typedef enum tSimpleBufferCreateTags {
+	// vPort ptr
+	TAG_SIMPLEBUFFER_VPORT =          (TAG_USER | 1),
+
+	// Scrollable area bounds, in pixels
+	TAG_SIMPLEBUFFER_BOUND_WIDTH =    (TAG_USER | 2),
+	TAG_SIMPLEBUFFER_BOUND_HEIGHT =   (TAG_USER | 3),
+
+	// Buffer bitmap creation flags
+	TAG_SIMPLEBUFFER_BITMAP_FLAGS =   (TAG_USER | 4),
+	TAG_SIMPLEBUFFER_IS_DBLBUF =      (TAG_USER | 5),
+
+	// If in raw mode, offset on copperlist for placing required copper
+	// instructions, specified in copper instruction count since beginning.
+	TAG_SIMPLEBUFFER_COPLIST_OFFSET = (TAG_USER | 6),
+	TAG_SIMPLEBUFFER_USE_X_SCROLLING = (TAG_USER | 7),
+} tSimpleBufferCreateTags;
 
 typedef struct _tSimpleBufferManager {
 	tVpManager sCommon;
@@ -44,6 +49,7 @@ typedef struct _tSimpleBufferManager {
 	tUwCoordYX uBfrBounds; ///< Buffer bounds in pixels
 	UBYTE ubFlags;         ///< Read only. See SIMPLEBUFFER_FLAG_*.
 	UWORD uwCopperOffset;  ///< Offset on copperlist in COP_RAW mode.
+	UBYTE ubDirtyCounter;  ///< Number of pending copperlist updates.
 } tSimpleBufferManager;
 
 /**
