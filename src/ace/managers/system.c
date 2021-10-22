@@ -548,7 +548,7 @@ void systemCreate(void) {
 	systemUnuse();
 	systemUse();
 
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 }
 
 void systemDestroy(void) {
@@ -570,7 +570,7 @@ void systemDestroy(void) {
 	// Restore every single OS DMA & interrupt
 	s_wSystemUses = 0;
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// Free audio channels
@@ -743,23 +743,15 @@ UBYTE systemIsUsed(void) {
 	return s_wSystemUses > 0;
 }
 
-void systemReleaseBlitter(void)
+void systemGetBlitterFromOs(void)
 {
 	--s_wSystemBlitterUses;
 	if(!s_wSystemBlitterUses) {
-		if(g_pCustom->dmaconr & DMAF_DISK) {
-			// Flush disk activity if it was used
-			// This 'if' is here because otherwise systemUnuse() called
-			// by systemCreate() would indefinitely wait for OS when it's killed.
-			// systemUse() restores disk DMA, so it's an easy check if OS was
-			// actually restored.
-			systemFlushIo();
-		} 
 		OwnBlitter();
 		WaitBlit();
 	}
 
-	#if defined(ACE_DEBUG)
+#if defined(ACE_DEBUG)
 	if(s_wSystemBlitterUses < 0) {
 		logWrite("ERR: System Blitter uses less than 0!\n");
 		s_wSystemUses = 0;
@@ -767,10 +759,9 @@ void systemReleaseBlitter(void)
 #endif
 }
 
-void systemTakeoverBlitter(void)
+void systemReleaseBlitterToOs(void)
 {
-	if (!s_wSystemBlitterUses)
-	{
+	if (!s_wSystemBlitterUses){
 		DisownBlitter();
 		WaitBlit();
 	}

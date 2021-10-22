@@ -18,7 +18,7 @@ LONG fileGetSize(const char *szPath) {
 	// So I ultimately do it using fseek.
 
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
 	FILE *pFile = fopen(szPath, "r");
 	if(!pFile) {
@@ -29,7 +29,7 @@ LONG fileGetSize(const char *szPath) {
 	fclose(pFile);
 
 	logBlockEnd("fileGetSize()");
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return lSize;
@@ -38,9 +38,9 @@ LONG fileGetSize(const char *szPath) {
 tFile *fileOpen(const char *szPath, const char *szMode) {
 	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	FILE *pFile = fopen(szPath, szMode);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return pFile;
@@ -48,9 +48,9 @@ tFile *fileOpen(const char *szPath, const char *szMode) {
 
 void fileClose(tFile *pFile) {
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	fclose(pFile);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 }
@@ -62,9 +62,9 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 	}
 #endif
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = fread(pDest, ulSize, 1, pFile);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return ulResult;
@@ -72,10 +72,10 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
 	fflush(pFile);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return ulResult;
@@ -83,9 +83,9 @@ ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = fseek(pFile, ulPos, wMode);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return ulResult;
@@ -93,9 +93,9 @@ ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
 
 ULONG fileGetPos(tFile *pFile) {
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = ftell(pFile);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return ulResult;
@@ -103,9 +103,9 @@ ULONG fileGetPos(tFile *pFile) {
 
 UBYTE fileIsEof(tFile *pFile) {
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	UBYTE ubResult = feof(pFile);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return ubResult;
@@ -150,9 +150,9 @@ LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
 
 void fileFlush(tFile *pFile) {
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	fflush(pFile);
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 }
@@ -163,14 +163,14 @@ void fileWriteStr(tFile *pFile, const char *szLine) {
 
 UBYTE fileExists(const char *szPath) {
 	systemUse();
-	systemTakeoverBlitter();
+	systemReleaseBlitterToOs();
 	UBYTE isExisting = 0;
 	tFile *pFile = fileOpen(szPath, "r");
 	if(pFile) {
 		isExisting = 1;
 		fileClose(pFile);
 	}
-	systemReleaseBlitter();
+	systemGetBlitterFromOs();
 	systemUnuse();
 
 	return isExisting;

@@ -56,9 +56,9 @@ void systemUnuse(void);
 
 UBYTE systemIsUsed(void);
 
-void systemReleaseBlitter(void);
+void systemGetBlitterFromOs(void);
 
-void systemTakeoverBlitter(void);
+void systemReleaseBlitterToOs(void);
 
 UBYTE systemBlitterIsUsed(void);
 
