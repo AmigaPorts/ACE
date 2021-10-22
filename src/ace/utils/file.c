@@ -114,11 +114,11 @@ UBYTE fileIsEof(tFile *pFile) {
 #if !defined(BARTMAN_GCC) // Not implemented in mini_std for now, sorry!
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
-	systemDisownBlitter();
+	systemReleaseBlitterToOs();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
 	fflush(pFile);
 	systemUnuse();
-	systemOwnBlitter();
+	systemGetBlitterFromOs();
 	return lResult;
 }
 
@@ -132,10 +132,10 @@ LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
 
 LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
-	systemDisownBlitter();
+	systemReleaseBlitterToOs();
 	LONG lResult = vfscanf(pFile, szFmt, vaArgs);
 	systemUnuse();
-	systemOwnBlitter();
+	systemGetBlitterFromOs();
 	return lResult;
 }
 
