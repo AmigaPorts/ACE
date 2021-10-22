@@ -548,7 +548,7 @@ void systemCreate(void) {
 	systemUnuse();
 	systemUse();
 
-	systemTakeoverBlitter();
+	systemReleaseBlitter();
 }
 
 void systemDestroy(void) {
@@ -570,7 +570,7 @@ void systemDestroy(void) {
 	// Restore every single OS DMA & interrupt
 	s_wSystemUses = 0;
 	systemUse();
-	systemReleaseBlitter();
+	systemTakeoverBlitter();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// Free audio channels
@@ -743,7 +743,7 @@ UBYTE systemIsUsed(void) {
 	return s_wSystemUses > 0;
 }
 
-void systemTakeoverBlitter(void)
+void systemReleaseBlitter(void)
 {
 	--s_wSystemBlitterUses;
 	if(!s_wSystemBlitterUses) {
@@ -761,21 +761,20 @@ void systemTakeoverBlitter(void)
 
 	#if defined(ACE_DEBUG)
 	if(s_wSystemBlitterUses < 0) {
-		logWrite("ERR: Blitter uses less than 0!\n");
+		logWrite("ERR: System Blitter uses less than 0!\n");
 		s_wSystemUses = 0;
 	}
 #endif
 }
 
-void systemReleaseBlitter(void)
+void systemTakeoverBlitter(void)
 {
 	if (!s_wSystemBlitterUses)
 	{
-
 		DisownBlitter();
 		WaitBlit();
 	}
-	s_wSystemBlitterUses++;
+	++s_wSystemBlitterUses;
 
 }
 
