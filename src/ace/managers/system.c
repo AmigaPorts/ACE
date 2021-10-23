@@ -718,8 +718,6 @@ void systemUse(void) {
 		// Nasty keyboard hack - if any key gets pressed / released while system is
 		// inactive, we won't be able to catch it.
 		keyReset();
-
-	
 	}
 	++s_wSystemUses;
 }
@@ -728,8 +726,7 @@ UBYTE systemIsUsed(void) {
 	return s_wSystemUses > 0;
 }
 
-void systemGetBlitterFromOs(void)
-{
+void systemGetBlitterFromOs(void) {
 	--s_wSystemBlitterUses;
 	if(!s_wSystemBlitterUses) {
 		OwnBlitter();
@@ -744,18 +741,15 @@ void systemGetBlitterFromOs(void)
 #endif
 }
 
-void systemReleaseBlitterToOs(void)
-{
+void systemReleaseBlitterToOs(void) {
 	if (!s_wSystemBlitterUses){
 		DisownBlitter();
 		WaitBlit();
 	}
 	++s_wSystemBlitterUses;
-
 }
 
-UBYTE systemBlitterIsUsed(void)
-{
+UBYTE systemBlitterIsUsed(void) {
 	return s_wSystemBlitterUses > 0;
 }
 

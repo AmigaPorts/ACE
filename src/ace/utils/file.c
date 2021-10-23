@@ -117,8 +117,8 @@ LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemReleaseBlitterToOs();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
 	fflush(pFile);
-	systemUnuse();
 	systemGetBlitterFromOs();
+	systemUnuse();
 	return lResult;
 }
 
@@ -134,8 +134,8 @@ LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
 	systemReleaseBlitterToOs();
 	LONG lResult = vfscanf(pFile, szFmt, vaArgs);
-	systemUnuse();
 	systemGetBlitterFromOs();
+	systemUnuse();
 	return lResult;
 }
 
@@ -154,7 +154,6 @@ void fileFlush(tFile *pFile) {
 	fflush(pFile);
 	systemGetBlitterFromOs();
 	systemUnuse();
-
 }
 
 void fileWriteStr(tFile *pFile, const char *szLine) {
