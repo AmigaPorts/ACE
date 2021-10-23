@@ -56,6 +56,12 @@ void systemUnuse(void);
 
 UBYTE systemIsUsed(void);
 
+void systemGetBlitterFromOs(void);
+
+void systemReleaseBlitterToOs(void);
+
+UBYTE systemBlitterIsUsed(void);
+
 void systemDump(void);
 
 void systemSetInt(

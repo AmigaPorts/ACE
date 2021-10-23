@@ -85,6 +85,8 @@ static volatile UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
 
 // Manager logic vars
 static WORD s_wSystemUses;
+static WORD s_wSystemBlitterUses;
+
 struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
 static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
@@ -497,12 +499,6 @@ void systemCreate(void) {
 	// re-enabled periodically.
 	// Save the system copperlists and flush the view
 
-	// This prevents "copjmp nasty bug"
-	// http://eab.abime.net/showthread.php?t=71190
-	// Asman told me that Ross from EAB found out that LoadView may cause such behavior
-	OwnBlitter();
-	WaitBlit();
-
 	s_pOsView = GfxBase->ActiView;
 	WaitTOF();
 	LoadView(0);
@@ -536,8 +532,11 @@ void systemCreate(void) {
 	// Unuse system so that it gets backed up once and then re-enable
 	// as little as needed
 	s_wSystemUses = 1;
+	s_wSystemBlitterUses = 1;
 	systemUnuse();
 	systemUse();
+
+	systemGetBlitterFromOs();
 }
 
 void systemDestroy(void) {
@@ -559,6 +558,7 @@ void systemDestroy(void) {
 	// Restore every single OS DMA & interrupt
 	s_wSystemUses = 0;
 	systemUse();
+	systemReleaseBlitterToOs();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// Free audio channels
@@ -568,9 +568,6 @@ void systemDestroy(void) {
 	WaitTOF();
 	LoadView(s_pOsView);
 	WaitTOF();
-
-	WaitBlit();
-	DisownBlitter();
 
 	struct Process *pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
@@ -721,12 +718,45 @@ void systemUse(void) {
 		// Nasty keyboard hack - if any key gets pressed / released while system is
 		// inactive, we won't be able to catch it.
 		keyReset();
+
+	
 	}
 	++s_wSystemUses;
 }
 
 UBYTE systemIsUsed(void) {
 	return s_wSystemUses > 0;
+}
+
+void systemGetBlitterFromOs(void)
+{
+	--s_wSystemBlitterUses;
+	if(!s_wSystemBlitterUses) {
+		OwnBlitter();
+		WaitBlit();
+	}
+
+#if defined(ACE_DEBUG)
+	if(s_wSystemBlitterUses < 0) {
+		logWrite("ERR: System Blitter uses less than 0!\n");
+		s_wSystemUses = 0;
+	}
+#endif
+}
+
+void systemReleaseBlitterToOs(void)
+{
+	if (!s_wSystemBlitterUses){
+		DisownBlitter();
+		WaitBlit();
+	}
+	++s_wSystemBlitterUses;
+
+}
+
+UBYTE systemBlitterIsUsed(void)
+{
+	return s_wSystemBlitterUses > 0;
 }
 
 void systemSetInt(
