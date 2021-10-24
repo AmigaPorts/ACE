@@ -880,7 +880,6 @@ void systemIdleEnd(void) {
 #endif
 }
 
-
 UBYTE systemGetVerticalBlankFrequency(void){
 	return SysBase->VBlankFrequency;
 }
