@@ -7,6 +7,7 @@
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
 #include <ace/generic/screen.h>
+BYTE g_bIsPAL = 1;
 
 tView *viewCreate(void *pTags, ...) {
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
@@ -50,16 +51,16 @@ tView *viewCreate(void *pTags, ...) {
 	if(uwHeight != uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// Only height is passed - calculate Y pos so that display is centered
 		pView->uwHeight = uwHeight;
-		pView->ubPosY = 0x2C + (SCREEN_PAL_HEIGHT - uwHeight) / 2;
+		pView->ubPosY = SCREEN_PAL_YOFFSET + (SCREEN_PAL_HEIGHT - uwHeight) / 2;
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY != ubDefaultPosY) {
 		// Only Y pos is passed - calculate height as the remaining area of PAL display
 		pView->ubPosY = ubPosY;
-		pView->uwHeight = 0x2C + SCREEN_PAL_HEIGHT - ubPosY;
+		pView->uwHeight = SCREEN_PAL_YOFFSET + SCREEN_PAL_HEIGHT - ubPosY;
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// All default - use PAL
-		pView->ubPosY = 0x2C;
+		pView->ubPosY = SCREEN_PAL_YOFFSET;
 		pView->uwHeight = SCREEN_PAL_HEIGHT;
 	}
 	else {
@@ -137,8 +138,12 @@ void viewUpdateCLUT(tView *pView) {
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 #if defined(AMIGA)
-	while(getRayPos().bfPosY < 300) {}
 	if(!pView) {
+		UWORD waitPos = (g_bIsPAL==1) ? 300 : 260;
+		// if we are setting a NULL viewport we need to know if pal/NTSC
+		while(getRayPos().bfPosY < waitPos) {
+			logWrite("%u", getRayPos().bfPosY);
+		}
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->bplcon3 = 0; // AGA fix
@@ -152,6 +157,7 @@ void viewLoad(tView *pView) {
 	else {
 #if defined(ACE_DEBUG)
 		{
+		
 			// Check if view size matches size of last vport
 			tVPort *pVp = pView->pFirstVPort;
 			while(pVp->pNext) {
@@ -165,6 +171,7 @@ void viewLoad(tView *pView) {
 			}
 		}
 #endif
+		vPortWaitForEnd(pView->pFirstVPort);
 		g_sCopManager.pCopList = pView->pCopList;
 		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		g_pCustom->fmode = 0;        // AGA fix
@@ -183,7 +190,16 @@ void viewLoad(tView *pView) {
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
 	systemSetDmaBit(DMAB_RASTER, pView != 0);
-	while(getRayPos().bfPosY < 300) {}
+	if(!pView){
+
+	UWORD waitPos = (g_bIsPAL==1) ? 300 : 260;
+		// if we are setting a NULL viewport we need to know if pal/NTSC
+		while(getRayPos().bfPosY < waitPos) {
+			logWrite("%u", getRayPos().bfPosY);
+		}
+	}
+	else
+		vPortWaitForEnd(pView->pFirstVPort);		
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
 }
