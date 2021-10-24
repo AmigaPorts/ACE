@@ -22,7 +22,7 @@ tView *viewCreate(void *pTags, ...) {
 		g_bIsPAL = FALSE;
 	}// ntsc
 	
-	logWrite("system is %s)", g_bIsPAL ? "PAL" : "NTSC");
+	logWrite("system is %s", g_bIsPAL ? "PAL" : "NTSC");
 	// Create view stub
 	tView *pView = memAllocFastClear(sizeof(tView));
 	logWrite("addr: %p\n", pView);
