@@ -879,3 +879,8 @@ void systemIdleEnd(void) {
 	debug_stop_idle();
 #endif
 }
+
+
+UBYTE systemGetVerticalBlankFrequency(void){
+	return SysBase->VBlankFrequency;
+}

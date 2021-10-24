@@ -10,9 +10,19 @@
 BYTE g_bIsPAL = 1;
 
 tView *viewCreate(void *pTags, ...) {
+
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
 #ifdef AMIGA
 
+	UBYTE vblank = systemGetVerticalBlankFrequency();
+	if (vblank == 50) {
+		g_bIsPAL = TRUE;
+	}// pal
+	else if (vblank == 60) {
+		g_bIsPAL = FALSE;
+	}// ntsc
+	
+	logWrite("system is %s)", g_bIsPAL ? "PAL" : "NTSC");
 	// Create view stub
 	tView *pView = memAllocFastClear(sizeof(tView));
 	logWrite("addr: %p\n", pView);
@@ -51,17 +61,35 @@ tView *viewCreate(void *pTags, ...) {
 	if(uwHeight != uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// Only height is passed - calculate Y pos so that display is centered
 		pView->uwHeight = uwHeight;
-		pView->ubPosY = SCREEN_PAL_YOFFSET + (SCREEN_PAL_HEIGHT - uwHeight) / 2;
+		if (g_bIsPAL) {
+			pView->ubPosY = SCREEN_PAL_YOFFSET + (SCREEN_PAL_HEIGHT - uwHeight) / 2;
+		}
+		else{
+			pView->ubPosY = SCREEN_NTSC_YOFFSET + (SCREEN_NTSC_HEIGHT - uwHeight) / 2;
+		}
+		
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY != ubDefaultPosY) {
 		// Only Y pos is passed - calculate height as the remaining area of PAL display
 		pView->ubPosY = ubPosY;
-		pView->uwHeight = SCREEN_PAL_YOFFSET + SCREEN_PAL_HEIGHT - ubPosY;
+		if (g_bIsPAL) {
+			pView->uwHeight = SCREEN_PAL_YOFFSET + SCREEN_PAL_HEIGHT - ubPosY;
+		}
+		else{
+			pView->uwHeight = SCREEN_NTSC_YOFFSET + SCREEN_NTSC_HEIGHT - ubPosY;
+		}
+		
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// All default - use PAL
-		pView->ubPosY = SCREEN_PAL_YOFFSET;
-		pView->uwHeight = SCREEN_PAL_HEIGHT;
+		if (g_bIsPAL) {
+			pView->ubPosY = SCREEN_PAL_YOFFSET;
+			pView->uwHeight = SCREEN_PAL_HEIGHT;
+		}
+		else {
+			pView->ubPosY = SCREEN_NTSC_YOFFSET;
+			pView->uwHeight = SCREEN_NTSC_HEIGHT;
+		}
 	}
 	else {
 		// Use passed values
@@ -137,13 +165,18 @@ void viewUpdateCLUT(tView *pView) {
  */
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
+		UBYTE vblank = systemGetVerticalBlankFrequency();
+	if (vblank == 50) {
+		g_bIsPAL = TRUE;
+	}// pal
+	else if (vblank == 60) {
+		g_bIsPAL = FALSE;
+	}// ntsc
 #if defined(AMIGA)
 	if(!pView) {
 		UWORD waitPos = (g_bIsPAL==1) ? 300 : 260;
 		// if we are setting a NULL viewport we need to know if pal/NTSC
-		while(getRayPos().bfPosY < waitPos) {
-			logWrite("%u", getRayPos().bfPosY);
-		}
+		while(getRayPos().bfPosY < waitPos) {}
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->bplcon3 = 0; // AGA fix
@@ -194,9 +227,7 @@ void viewLoad(tView *pView) {
 
 	UWORD waitPos = (g_bIsPAL==1) ? 300 : 260;
 		// if we are setting a NULL viewport we need to know if pal/NTSC
-		while(getRayPos().bfPosY < waitPos) {
-			logWrite("%u", getRayPos().bfPosY);
-		}
+		while(getRayPos().bfPosY < waitPos) {}
 	}
 	else
 		vPortWaitForEnd(pView->pFirstVPort);		
@@ -209,7 +240,13 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	va_list vaTags;
 	va_start(vaTags, pTagList);
 #ifdef AMIGA
-
+	UBYTE vblank = systemGetVerticalBlankFrequency();
+	if (vblank == 50) {
+		g_bIsPAL = TRUE;
+	}// pal
+	else if (vblank == 60) {
+		g_bIsPAL = FALSE;
+	}// ntsc
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
 
@@ -222,7 +259,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	pVPort->pView = pView;
 	logWrite("Parent view: %p\n", pView);
 
-	const UWORD uwDefaultWidth = SCREEN_PAL_WIDTH;
+	const UWORD uwDefaultWidth = g_bIsPAL ? SCREEN_PAL_WIDTH : SCREEN_NTSC_WIDTH;
 	const UWORD uwDefaultHeight = -1;
 	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
 
@@ -364,7 +401,8 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
 	uwEndPos += pVPort->pView->ubPosY; // Addition from DiWStrt
 #if defined(ACE_DEBUG)
-	if(uwEndPos >= 312) {
+	UWORD yPos = g_bIsPAL ? 312 : 272;
+	if(uwEndPos >= yPos) {
 		logWrite("ERR: vPortWaitForPos - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
 		logWrite("\tVPort offs: %hu, pos: %hu\n", pVPort->uwOffsY, uwPosY);
 	}
