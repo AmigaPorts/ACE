@@ -884,8 +884,7 @@ UBYTE systemGetVerticalBlankFrequency(void){
 	return SysBase->VBlankFrequency;
 }
 
-UBYTE systemIsPal(void)
-{
+UBYTE systemIsPal(void) {
 	UBYTE isPal = 1;
 	UBYTE vblank = systemGetVerticalBlankFrequency();
 	if (vblank == 50) {

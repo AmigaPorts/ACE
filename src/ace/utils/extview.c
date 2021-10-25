@@ -7,7 +7,7 @@
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
 #include <ace/generic/screen.h>
-BYTE s_isPAL = 1;
+static UBYTE s_isPAL = 1;
 
 tView *viewCreate(void *pTags, ...) {
 
@@ -16,10 +16,10 @@ tView *viewCreate(void *pTags, ...) {
 
 	s_isPAL = systemIsPal();
 
-	logWrite("system is %s", s_isPAL ? "PAL" : "NTSC");
+	
 	// Create view stub
 	tView *pView = memAllocFastClear(sizeof(tView));
-	logWrite("addr: %p\n", pView);
+	logWrite("created %s viewport addr: %p\n", s_isPAL ? "PAL" : "NTSC", pView);
 
 	va_list vaTags;
 	va_start(vaTags, pTags);
@@ -161,12 +161,12 @@ void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 
 	s_isPAL = systemIsPal();
-
+	UWORD waitPos = (s_isPAL == 1) ? 300 : 260;
+	// if we are setting a NULL viewport we need to know if pal/NTSC
+	while(getRayPos().bfPosY < waitPos) {}
 #if defined(AMIGA)
 	if(!pView) {
-		UWORD waitPos = (s_isPAL == 1) ? 300 : 260;
-		// if we are setting a NULL viewport we need to know if pal/NTSC
-		while(getRayPos().bfPosY < waitPos) {}
+		
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->bplcon3 = 0; // AGA fix
@@ -194,7 +194,6 @@ void viewLoad(tView *pView) {
 			}
 		}
 #endif
-		vPortWaitForEnd(pView->pFirstVPort);
 		g_sCopManager.pCopList = pView->pCopList;
 		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		g_pCustom->fmode = 0;        // AGA fix
@@ -213,14 +212,10 @@ void viewLoad(tView *pView) {
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
 	systemSetDmaBit(DMAB_RASTER, pView != 0);
-	if(!pView){
 
-	UWORD waitPos = (s_isPAL == 1) ? 300 : 260;
-		// if we are setting a NULL viewport we need to know if pal/NTSC
-		while(getRayPos().bfPosY < waitPos) {}
-	}
-	else
-		vPortWaitForEnd(pView->pFirstVPort);		
+	// if we are setting a NULL viewport we need to know if pal/NTSC
+	while(getRayPos().bfPosY < waitPos) {}
+
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
 }
@@ -230,13 +225,8 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	va_list vaTags;
 	va_start(vaTags, pTagList);
 #ifdef AMIGA
-	UBYTE vblank = systemGetVerticalBlankFrequency();
-	if (vblank == 50) {
-		s_isPAL = TRUE;
-	}// pal
-	else if (vblank == 60) {
-		s_isPAL = FALSE;
-	}// ntsc
+	s_isPAL = systemIsPal();
+
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
 
