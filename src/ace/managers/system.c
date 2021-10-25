@@ -883,3 +883,17 @@ void systemIdleEnd(void) {
 UBYTE systemGetVerticalBlankFrequency(void){
 	return SysBase->VBlankFrequency;
 }
+
+UBYTE systemIsPal(void)
+{
+	UBYTE isPal = 1;
+	UBYTE vblank = systemGetVerticalBlankFrequency();
+	if (vblank == 50) {
+		isPal = 1;
+	}// pal
+	else if (vblank == 60) {
+		isPal = 0;
+	}// ntsc
+
+	return isPal;
+}

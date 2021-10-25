@@ -79,6 +79,8 @@ void systemIdleBegin(void);
 void systemIdleEnd(void);
 
 UBYTE systemGetVerticalBlankFrequency(void);
+
+UBYTE systemIsPal(void);
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;
