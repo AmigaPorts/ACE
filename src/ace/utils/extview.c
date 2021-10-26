@@ -218,9 +218,14 @@ void viewLoad(tView *pView)
 		// Seems strange that everything relies on the first viewport flags, and palette etc
 		if (pView->uwFlags & VIEWPORT_USES_AGA) {
 			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBPP) << 12) | BV(9) | BV(4); // BPP + composite output
+			if ( pView->pFirstVPort->ubBPP == 6) {
+			
+				g_pCustom->bplcon2 = BV(9);  // Set KillEHB flag, since we have declared out viewport to be aga, and 64 colours.
+			}
 		}
 		else {
 			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
+			g_pCustom->bplcon2 = 0; // No need to KILLEHB because we are not AGA, so just blank the flag.
 		}
 		g_pCustom->fmode = 0;        // AGA fix
 		g_pCustom->bplcon3 = 0;      // AGA fix
