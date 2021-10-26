@@ -885,14 +885,14 @@ UBYTE systemGetVerticalBlankFrequency(void){
 }
 
 UBYTE systemIsPal(void) {
-	UBYTE ubIsPal = 1;
-	UBYTE ubVBlank = systemGetVerticalBlankFrequency();
-	if (ubVBlank == 50) {
-		ubIsPal = 1;
+	UBYTE isPal = 1;
+	UBYTE ubVBlankFreq = systemGetVerticalBlankFrequency();
+	if (ubVBlankFreq == 50) {
+		isPal = 1;
 	}// pal
-	else if (ubVBlank == 60) {
-		ubIsPal = 0;
+	else if (ubVBlankFreq == 60) {
+		isPal = 0;
 	}// ntsc
 
-	return ubIsPal;
+	return isPal;
 }
