@@ -18,6 +18,7 @@ LONG fileGetSize(const char *szPath) {
 	// So I ultimately do it using fseek.
 
 	systemUse();
+	systemReleaseBlitterToOs();
 	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
 	FILE *pFile = fopen(szPath, "r");
 	if(!pFile) {
@@ -28,22 +29,30 @@ LONG fileGetSize(const char *szPath) {
 	fclose(pFile);
 
 	logBlockEnd("fileGetSize()");
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return lSize;
 }
 
 tFile *fileOpen(const char *szPath, const char *szMode) {
 	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
 	systemUse();
+	systemReleaseBlitterToOs();
 	FILE *pFile = fopen(szPath, szMode);
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return pFile;
 }
 
 void fileClose(tFile *pFile) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	fclose(pFile);
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 }
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
@@ -53,45 +62,62 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 	}
 #endif
 	systemUse();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = fread(pDest, ulSize, 1, pFile);
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return ulResult;
 }
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
 	fflush(pFile);
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return ulResult;
 }
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = fseek(pFile, ulPos, wMode);
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return ulResult;
 }
 
 ULONG fileGetPos(tFile *pFile) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	ULONG ulResult = ftell(pFile);
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return ulResult;
 }
 
 UBYTE fileIsEof(tFile *pFile) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	UBYTE ubResult = feof(pFile);
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return ubResult;
 }
 
 #if !defined(BARTMAN_GCC) // Not implemented in mini_std for now, sorry!
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
 	fflush(pFile);
+	systemGetBlitterFromOs();
 	systemUnuse();
 	return lResult;
 }
@@ -106,7 +132,9 @@ LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
 
 LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	LONG lResult = vfscanf(pFile, szFmt, vaArgs);
+	systemGetBlitterFromOs();
 	systemUnuse();
 	return lResult;
 }
@@ -122,7 +150,9 @@ LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
 
 void fileFlush(tFile *pFile) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	fflush(pFile);
+	systemGetBlitterFromOs();
 	systemUnuse();
 }
 
@@ -132,12 +162,15 @@ void fileWriteStr(tFile *pFile, const char *szLine) {
 
 UBYTE fileExists(const char *szPath) {
 	systemUse();
+	systemReleaseBlitterToOs();
 	UBYTE isExisting = 0;
 	tFile *pFile = fileOpen(szPath, "r");
 	if(pFile) {
 		isExisting = 1;
 		fileClose(pFile);
 	}
+	systemGetBlitterFromOs();
 	systemUnuse();
+
 	return isExisting;
 }

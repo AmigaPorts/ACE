@@ -43,6 +43,35 @@ tView *viewCreate(void *pTags, ...)
 		logWrite("Global CLUT mode enabled\n");
 	}
 
+	// Get the Y pos and height
+	const UWORD uwDefaultHeight = -1;
+	const UBYTE ubDefaultPosY = -1;
+	UWORD uwHeight = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_HEIGHT, uwDefaultHeight);
+	UBYTE ubPosY = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_START_Y, ubDefaultPosY);
+	if(uwHeight != uwDefaultHeight && ubPosY == ubDefaultPosY) {
+		// Only height is passed - calculate Y pos so that display is centered
+		pView->uwHeight = uwHeight;
+		pView->ubPosY = 0x2C + (SCREEN_PAL_HEIGHT - uwHeight) / 2;
+	}
+	else if(uwHeight == uwDefaultHeight && ubPosY != ubDefaultPosY) {
+		// Only Y pos is passed - calculate height as the remaining area of PAL display
+		pView->ubPosY = ubPosY;
+		pView->uwHeight = 0x2C + SCREEN_PAL_HEIGHT - ubPosY;
+	}
+	else if(uwHeight == uwDefaultHeight && ubPosY == ubDefaultPosY) {
+		// All default - use PAL
+		pView->ubPosY = 0x2C;
+		pView->uwHeight = SCREEN_PAL_HEIGHT;
+	}
+	else {
+		// Use passed values
+		pView->ubPosY = ubPosY;
+		pView->uwHeight = uwHeight;
+	}
+	logWrite(
+		"Display pos: %hhu,%hhu, size: %hu,%hu\n",
+		0x81, pView->ubPosY, SCREEN_PAL_WIDTH, pView->uwHeight
+	);
 // Additional CLUT tags
 	if (tagGet(pTags, vaTags, TAG_VIEW_USES_AGA, 0))
 	{
@@ -169,8 +198,22 @@ void viewLoad(tView *pView)
 		g_pCustom->bpl1mod = 0;
 		g_pCustom->bpl2mod = 0;
 	}
-	else
-	{
+	else {
+#if defined(ACE_DEBUG)
+		{
+			// Check if view size matches size of last vport
+			tVPort *pVp = pView->pFirstVPort;
+			while(pVp->pNext) {
+				pVp = pVp->pNext;
+			}
+			if(pVp->uwOffsY + pVp->uwHeight != pView->uwHeight) {
+				logWrite(
+					"ERR: View height %hu doesn't match the total VPort area: %hu",
+					pView->uwHeight, pVp->uwOffsY + pVp->uwHeight
+				);
+			}
+		}
+#endif
 		g_sCopManager.pCopList = pView->pCopList;
 		// Seems strange that everything relies on the first viewport flags, and palette etc
 		if (pView->uwFlags & VIEWPORT_USES_AGA) {
@@ -179,13 +222,17 @@ void viewLoad(tView *pView)
 		else {
 			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
 		}
-
-		
-		g_pCustom->fmode = 0;		 // AGA fix	
-		g_pCustom->bplcon3 = 0;		 // AGA fix
-
-		g_pCustom->diwstrt = 0x2C81; // VSTART: 0x2C, HSTART: 0x81
-		g_pCustom->diwstop = 0x2CC1; // VSTOP: 0x2C, HSTOP: 0xC1
+		g_pCustom->fmode = 0;        // AGA fix
+		g_pCustom->bplcon3 = 0;      // AGA fix
+		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
+		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
+		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
+			logWrite(
+				"ERR: DiwStopY (%hu) bit 8 (%hhu) must be different than bit 7 (%hhu)\n",
+				uwDiwStopY, BTST(uwDiwStopY, 8), BTST(uwDiwStopY, 7)
+			);
+		}
+		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | 0xC1; // HSTOP: 0xC1
 		viewUpdateCLUT(pView);
 	}
 	copProcessBlocks();
@@ -208,10 +255,6 @@ tVPort *vPortCreate(void *pTagList, ...)
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
 
-	const UWORD uwDefaultWidth = SCREEN_PAL_WIDTH;
-	const UWORD uwDefaultHeight = -1;
-	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
-
 	// Determine parent view
 	tView *pView = (tView *)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
 	if (!pView)
@@ -221,6 +264,10 @@ tVPort *vPortCreate(void *pTagList, ...)
 	}
 	pVPort->pView = pView;
 	logWrite("Parent view: %p\n", pView);
+
+	const UWORD uwDefaultWidth = SCREEN_PAL_WIDTH;
+	const UWORD uwDefaultHeight = -1;
+	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
 
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
@@ -241,9 +288,8 @@ tVPort *vPortCreate(void *pTagList, ...)
 	// Get dimensions
 	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
 	pVPort->uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
-	if (pVPort->uwHeight == uwDefaultHeight)
-	{
-		pVPort->uwHeight = SCREEN_PAL_HEIGHT - pVPort->uwOffsY;
+	if(pVPort->uwHeight == uwDefaultHeight) {
+		pVPort->uwHeight = pView->uwHeight - pVPort->uwOffsY;
 	}
 	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 	logWrite(
@@ -399,7 +445,7 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact)
 #ifdef AMIGA
 	// Determine VPort end position
 	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
-	uwEndPos += 0x2C; // Addition from DiWStrt
+	uwEndPos += pVPort->pView->ubPosY; // Addition from DiWStrt
 #if defined(ACE_DEBUG)
 	if (uwEndPos >= 312)
 	{
@@ -408,8 +454,7 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact)
 	}
 #endif
 
-	if (!isExact)
-	{
+	if(isExact) {
 		// If current beam pos is on or past end pos, wait for start of next frame
 		while (getRayPos().bfPosY >= uwEndPos)
 		{

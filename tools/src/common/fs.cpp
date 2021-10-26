@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 #if defined(_WIN32)
-#include <windows.h>
+#    include <direct.h>
 #endif
 
 namespace nFs {
@@ -15,7 +15,7 @@ namespace nFs {
 bool dirCreate(const std::string &szPath)
 {
 	#if defined(_WIN32)
-		auto Error = CreateDirectoryA(szPath.c_str(), 0);
+		auto Error = _mkdir(szPath.c_str());
 	#else
 		auto Error = mkdir(szPath.c_str(),0733);
 	#endif

@@ -20,37 +20,49 @@ extern "C" {
 #include <ace/managers/memory.h>
 #include <ace/managers/copper.h>
 
-// Copperlist mode: raw/block
-#define TAG_VIEW_COPLIST_MODE      (TAG_USER|1)
-// If in raw mode, specify copperlist instruction count
-#define TAG_VIEW_COPLIST_RAW_COUNT (TAG_USER|2)
-// If set with non-zero variable, view will use global palette & ignore vPorts'
-#define TAG_VIEW_GLOBAL_CLUT       (TAG_USER|3)
-#define TAG_VIEW_USES_AGA	   	   (TAG_USER|4)
-
+typedef enum _tTagView {
+	// Copperlist mode: raw/block
+	TAG_VIEW_COPLIST_MODE      = TAG_USER | 1,
+	// If in raw mode, specify copperlist instruction count
+	TAG_VIEW_COPLIST_RAW_COUNT = TAG_USER | 2,
+	// If set with non-zero variable, view will use global palette & ignore vPorts'
+	TAG_VIEW_GLOBAL_CLUT       = TAG_USER | 3,
+	// The X value for display window start.
+	// TAG_VIEW_WINDOW_START_X    = TAG_USER | 4,
+	// The Y value for display window start.
+	TAG_VIEW_WINDOW_START_Y    = TAG_USER | 5,
+	// The width of display window.
+	// TAG_VIEW_WINDOW_WIDTH      = TAG_USER | 6,
+	// The height of display window. Defaults to (lastPalScanline - TAG_VIEW_WINDOW_START_Y)
+	TAG_VIEW_WINDOW_HEIGHT     = TAG_USER | 7,
+    TAG_VIEW_USES_AGA          = TAG_USER | 8
+} tTagView;
 
 // Values for TAG_VIEW_COPLIST_MODE
 #define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
 #define VIEW_COPLIST_MODE_RAW   COPPER_MODE_RAW
 
-// Ptr to parent view
-#define TAG_VPORT_VIEW         (TAG_USER|1)
-// vPort dimensions, in pixels
-#define TAG_VPORT_WIDTH        (TAG_USER|2)
-#define TAG_VPORT_HEIGHT       (TAG_USER|3)
-// vPort depth, best effects on OCS with 4 or less since copper is faster
-#define TAG_VPORT_BPP          (TAG_USER|4)
-// Pointer to palette to initialize vPort with and its size, in color count.
-#define TAG_VPORT_PALETTE_PTR  (TAG_USER|5)
-#define TAG_VPORT_PALETTE_SIZE (TAG_USER|6)
-// Specify vertical offset from previous VPort
-// TODO auto CopBlocks for disabling bitplane DMA
-// When in raw mode, you have to disable DMA yourself, 'cuz making it work
-// automatically would mean passing additional 2 offsets for WAIT/MOVEs for
-// disabling/enabling DMA and then wasting all cycles between it for VPort
-// manager stuff without letting you including custom instructions in spare
-// time.
-#define TAG_VPORT_OFFSET_TOP   (TAG_USER|7)
+typedef enum _tTagVport {
+	// Ptr to parent view
+	TAG_VPORT_VIEW         = TAG_USER | 1,
+	// vPort dimensions, in pixels
+	TAG_VPORT_WIDTH        = TAG_USER | 2,
+	// vPort height. Defaults to remaining space in view.
+	TAG_VPORT_HEIGHT       = TAG_USER | 3,
+	// vPort depth, best effects on OCS with 4 or less since copper is faster
+	TAG_VPORT_BPP          = TAG_USER | 4,
+	// Pointer to palette to initialize vPort with and its size, in color count.
+	TAG_VPORT_PALETTE_PTR  = TAG_USER | 5,
+	TAG_VPORT_PALETTE_SIZE = TAG_USER | 6,
+	// Specify vertical offset from previous VPort
+	// TODO auto CopBlocks for disabling bitplane DMA
+	// When in raw mode, you have to disable DMA yourself, 'cuz making it work
+	// automatically would mean passing additional 2 offsets for WAIT/MOVEs for
+	// disabling/enabling DMA and then wasting all cycles between it for VPort
+	// manager stuff without letting you including custom instructions in spare
+	// time.
+	TAG_VPORT_OFFSET_TOP   = TAG_USER | 7,
+} tTagVport;
 
 
 
@@ -100,6 +112,8 @@ typedef void (*tVpManagerFn)(tVpManager *pManager);
 typedef struct _tView {
 	UBYTE ubVpCount;             ///< Viewport count.
 	UWORD uwFlags;               ///< Creation flags.
+	UBYTE ubPosY;               ///< Directly populates the DIWSTRT value.
+	UWORD uwHeight;
 	struct _tCopList *pCopList;  ///< Pointer to copperlist.
 	struct _tVPort *pFirstVPort; ///< Pointer to first VPort on list.
 } tView;

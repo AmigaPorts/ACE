@@ -32,18 +32,24 @@ extern "C" {
 #include <ace/managers/viewport/camera.h>
 
 // vPort ptr
-#define TAG_SCROLLBUFFER_VPORT          (TAG_USER|1)
-// Scrollable area bounds, in pixels
-#define TAG_SCROLLBUFFER_BOUND_WIDTH    (TAG_USER|2)
-#define TAG_SCROLLBUFFER_BOUND_HEIGHT   (TAG_USER|3)
-// Buffer bitmap creation flags
-#define TAG_SCROLLBUFFER_BITMAP_FLAGS   (TAG_USER|4)
-#define TAG_SCROLLBUFFER_IS_DBLBUF      (TAG_USER|5)
-// If in raw mode, offset on copperlist for placing required copper
-// instructions, specified in copper instruction count since beginning.
-#define TAG_SCROLLBUFFER_COPLIST_OFFSET_START (TAG_USER|6)
-#define TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK (TAG_USER|7)
-#define TAG_SCROLLBUFFER_MARGIN_WIDTH   (TAG_USER|8)
+typedef enum tScrollBufferCreateTags {
+	TAG_SCROLLBUFFER_VPORT =          (TAG_USER|1),
+
+	// Scrollable area bounds, in pixels
+	TAG_SCROLLBUFFER_BOUND_WIDTH =    (TAG_USER|2),
+	TAG_SCROLLBUFFER_BOUND_HEIGHT =   (TAG_USER|3),
+
+	// Buffer bitmap creation flags
+	TAG_SCROLLBUFFER_BITMAP_FLAGS =   (TAG_USER|4),
+	TAG_SCROLLBUFFER_IS_DBLBUF =      (TAG_USER|5),
+
+	// If in raw mode, offset on copperlist for placing required copper
+	// instructions, specified in copper instruction count since beginning.
+	TAG_SCROLLBUFFER_COPLIST_OFFSET_START = (TAG_USER|6),
+	TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK = (TAG_USER|7),
+
+	TAG_SCROLLBUFFER_MARGIN_WIDTH =   (TAG_USER|8),
+} tScrollBufferCreateTags;
 
 #define SCROLLBUFFER_FLAG_COPLIST_RAW 1
 
@@ -51,17 +57,23 @@ extern "C" {
 
 typedef struct _tScrollBufferManager {
 	tVpManager sCommon;
-	tCameraManager *pCamera; ///< Quick ref to camera
+	tCameraManager *pCamera;       ///< Quick ref to camera
 
-	tBitMap *pFront;         ///< Front buffer in double buffering
-	tBitMap *pBack;          ///< Back buffer in double buffering
-	tCopBlock *pStartBlock;  ///< Initial data fetch
-	tCopBlock *pBreakBlock;  ///< Bitplane ptr reset
-	tUwCoordYX uBfrBounds;   ///< Real bounds of buffer (includes height reserved for x-scroll)
-	UWORD uwBmAvailHeight;   ///< Avail height of buffer to blit (excludes height reserved for x-scroll)
-	UWORD uwVpHeightPrev;    ///< Prev height of related VPort, used to force refresh on change
-	UWORD uwModulo;          ///< Bitplane modulo
-	UBYTE ubFlags;
+	tBitMap *pFront;               ///< Front buffer in double buffering
+	tBitMap *pBack;                ///< Back buffer in double buffering
+	union {
+		tCopBlock *pStartBlock;    ///< Initial data fetch
+		UWORD uwCopperOffsetStart; ///< Start offset on copperlist in COP_RAW mode.
+	};                    ///< Select which field is valid based on SCROLLBUFFER_FLAG_COPLIST_RAW
+	union {
+		tCopBlock *pBreakBlock;    ///< Bitplane ptr reset
+		UWORD uwCopperOffsetBreak; ///< Break offset on copperlist in COP_RAW mode.
+	};                    ///< Select which field is valid based on SCROLLBUFFER_FLAG_COPLIST_RAW
+	tUwCoordYX uBfrBounds;         ///< Real bounds of buffer (includes height reserved for x-scroll)
+	UWORD uwBmAvailHeight;         ///< Avail height of buffer to blit (excludes height reserved for x-scroll)
+	UWORD uwVpHeightPrev;          ///< Prev height of related VPort, used to force refresh on change
+	UWORD uwModulo;                ///< Bitplane modulo
+	UBYTE ubFlags;                 ///< Read only. See SCROLLBUFFER_FLAG_*.
 } tScrollBufferManager;
 
 /* Globals */
@@ -95,6 +107,10 @@ void scrollBufferBlitMask(
 	WORD wWidth, WORD wHeight,
 	UWORD *pMsk
 );
+
+UBYTE scrollBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp);
+
+UBYTE scrollBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp);
 
 #endif // AMIGA
 

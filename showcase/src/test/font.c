@@ -182,7 +182,7 @@ void testFontDrawTable(void) {
 			sprintf(szCodeBfr, "%c", ubCharIdx);
 			fontDrawStr(
 				pFont, s_pTestFontBfr->pBack, (i/8)*40+40/2, (i%8)*32+(32/2),
-				szCodeBuffer, 3, FONT_CENTER|FONT_COOKIE, s_pGlyph
+				szCodeBfr, 3, FONT_CENTER|FONT_COOKIE, s_pGlyph
 			);
 		}
 

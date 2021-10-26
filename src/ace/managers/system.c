@@ -15,9 +15,14 @@
 #include <ace/managers/key.h>
 #include <exec/execbase.h>
 #include <exec/lists.h>
+#include <resources/cia.h>
 #include <proto/exec.h> // Bartman's compiler needs this
 #include <proto/dos.h> // Bartman's compiler needs this
 #include <proto/graphics.h> // Bartman's compiler needs this
+#include <proto/cia.h>
+#if defined(BARTMAN_GCC)
+#include <bartman/gcc8_c_support.h> // Idle measurement
+#endif
 
 // There are hardware interrupt vectors
 // Some may be triggered by more than one event - there are 15 events
@@ -54,8 +59,11 @@ static UWORD s_uwOsInitialDma;
 
 static UWORD s_pOsCiaTimerA[CIA_COUNT];
 static UWORD s_pOsCiaTimerB[CIA_COUNT];
+static UBYTE s_pOsCiaIcr[CIA_COUNT], s_pOsCiaCra[CIA_COUNT], s_pOsCiaCrb[CIA_COUNT];
 static UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
 static UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
+static UBYTE s_pAceCiaCra[CIA_COUNT] = {0, 0};
+static UBYTE s_pAceCiaCrb[CIA_COUNT] = {0, 0};
 
 // Interrupts
 static void HWINTERRUPT int1Handler(void);
@@ -73,14 +81,17 @@ static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static volatile tHwIntVector * s_pHwVectors = 0;
 static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static volatile tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static volatile UWORD s_uwAceInts = 0;
+static volatile UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
 
 // Manager logic vars
 static WORD s_wSystemUses;
+static WORD s_wSystemBlitterUses;
+
 struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
 static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 static struct IOAudio s_sIoAudio = {0};
+static struct Library *s_pCiaResource[CIA_COUNT];
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -164,22 +175,18 @@ void HWINTERRUPT int3Handler(void) {
 	}
 
 	// Copper
-	if(uwIntReq & INTF_COPER) {
-		if(s_pAceInterrupts[INTB_COPER].pHandler) {
-			s_pAceInterrupts[INTB_COPER].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
-			);
-		}
+	if((uwIntReq & INTF_COPER) && s_pAceInterrupts[INTB_COPER].pHandler) {
+		s_pAceInterrupts[INTB_COPER].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
+		);
 		uwReqClr |= INTF_COPER;
 	}
 
 	// Blitter
-	if(uwIntReq & INTF_BLIT) {
-		if(s_pAceInterrupts[INTB_BLIT].pHandler) {
-			s_pAceInterrupts[INTB_BLIT].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
-			);
-		}
+	if((uwIntReq & INTF_BLIT) && s_pAceInterrupts[INTB_BLIT].pHandler) {
+		s_pAceInterrupts[INTB_BLIT].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_VERTB].pData
+		);
 		uwReqClr |= INTF_BLIT;
 	}
 	logPopInt();
@@ -194,42 +201,34 @@ void HWINTERRUPT int4Handler(void) {
 	UWORD uwReqClr = 0;
 
 	// Audio channel 0
-	if(uwIntReq & INTF_AUD0) {
-		if(s_pAceInterrupts[INTB_AUD0].pHandler) {
-			s_pAceInterrupts[INTB_AUD0].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD0].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD0) && s_pAceInterrupts[INTB_AUD0].pHandler) {
+		s_pAceInterrupts[INTB_AUD0].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD0].pData
+		);
 		uwReqClr |= INTF_AUD0;
 	}
 
 	// Audio channel 1
-	if(uwIntReq & INTF_AUD1) {
-		if(s_pAceInterrupts[INTB_AUD1].pHandler) {
-			s_pAceInterrupts[INTB_AUD1].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD1].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD1) && s_pAceInterrupts[INTB_AUD1].pHandler) {
+		s_pAceInterrupts[INTB_AUD1].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD1].pData
+		);
 		uwReqClr |= INTF_AUD1;
 	}
 
 	// Audio channel 2
-	if(uwIntReq & INTF_AUD2) {
-		if(s_pAceInterrupts[INTB_AUD2].pHandler) {
-			s_pAceInterrupts[INTB_AUD2].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD2].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD2) && s_pAceInterrupts[INTB_AUD2].pHandler) {
+		s_pAceInterrupts[INTB_AUD2].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD2].pData
+		);
 		uwReqClr |= INTF_AUD2;
 	}
 
 	// Audio channel 3
-	if(uwIntReq & INTF_AUD3) {
-		if(s_pAceInterrupts[INTB_AUD3].pHandler) {
-			s_pAceInterrupts[INTB_AUD3].pHandler(
-				g_pCustom, s_pAceInterrupts[INTB_AUD3].pData
-			);
-		}
+	if((uwIntReq & INTF_AUD3) && s_pAceInterrupts[INTB_AUD3].pHandler) {
+		s_pAceInterrupts[INTB_AUD3].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD3].pData
+		);
 		uwReqClr |= INTF_AUD3;
 	}
 	logPopInt();
@@ -482,10 +481,10 @@ void systemCreate(void) {
   // Determine original stack size
   struct Process *pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
-  ULONG ulStackSize = (char *)pProcess->pr_Task.tc_SPUpper - pStackLower;
-  if (pProcess->pr_CLI) {
-    ulStackSize = *(ULONG *)pProcess->pr_ReturnAddr;
-  }
+	ULONG ulStackSize = (char *)pProcess->pr_Task.tc_SPUpper - pStackLower;
+	if(pProcess->pr_CLI) {
+		ulStackSize = *(ULONG *)pProcess->pr_ReturnAddr;
+	}
 	logWrite("Stack size: %lu\n", ulStackSize);
 	*pStackLower = SYSTEM_STACK_CANARY;
 
@@ -493,15 +492,12 @@ void systemCreate(void) {
 	// From https://gist.github.com/johngirvin/8fb0c4bb83b7c80427e2f439bb074e95
 	audioChannelAlloc(&s_sIoAudio);
 
+	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
+	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
+
 	// Disable as much of OS stuff as possible so that it won't trash stuff when
 	// re-enabled periodically.
 	// Save the system copperlists and flush the view
-
-	// This prevents "copjmp nasty bug"
-	// http://eab.abime.net/showthread.php?t=71190
-	// Asman told me that Ross from EAB found out that LoadView may cause such behavior
-	OwnBlitter();
-	WaitBlit();
 
 	s_pOsView = GfxBase->ActiView;
 	WaitTOF();
@@ -536,8 +532,11 @@ void systemCreate(void) {
 	// Unuse system so that it gets backed up once and then re-enable
 	// as little as needed
 	s_wSystemUses = 1;
+	s_wSystemBlitterUses = 1;
 	systemUnuse();
 	systemUse();
+
+	systemGetBlitterFromOs();
 }
 
 void systemDestroy(void) {
@@ -559,6 +558,7 @@ void systemDestroy(void) {
 	// Restore every single OS DMA & interrupt
 	s_wSystemUses = 0;
 	systemUse();
+	systemReleaseBlitterToOs();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// Free audio channels
@@ -568,9 +568,6 @@ void systemDestroy(void) {
 	WaitTOF();
 	LoadView(s_pOsView);
 	WaitTOF();
-
-	WaitBlit();
-	DisownBlitter();
 
 	struct Process *pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
@@ -600,19 +597,35 @@ void systemUnuse(void) {
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 
+		// Query CIA ICR bits set by OS for later CIA takeover restore
+		s_pOsCiaIcr[CIA_A] = AbleICR(s_pCiaResource[CIA_A], 0);
+		s_pOsCiaIcr[CIA_B] = AbleICR(s_pCiaResource[CIA_B], 0);
+
 		// Disable CIA interrupts
 		g_pCia[CIA_A]->icr = 0x7F;
 		g_pCia[CIA_B]->icr = 0x7F;
 
-		// save OS CIA timer values
+		// Save CRA bits
+		s_pOsCiaCra[CIA_A] = g_pCia[CIA_A]->cra;
+		s_pOsCiaCrb[CIA_A] = g_pCia[CIA_A]->crb;
+		s_pOsCiaCra[CIA_B] = g_pCia[CIA_B]->cra;
+		s_pOsCiaCrb[CIA_B] = g_pCia[CIA_B]->crb;
+
+		// Disable timers and trigger reload of value to read preset val
+		g_pCia[CIA_A]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
+		g_pCia[CIA_A]->crb = CIACRB_LOAD;
+		g_pCia[CIA_B]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
+		g_pCia[CIA_B]->crb = CIACRB_LOAD;
+
+		// Save OS CIA timer values
 		s_pOsCiaTimerA[CIA_A] = ciaGetTimerA(g_pCia[CIA_A]);
-		// s_pOsCiaTimerB[CIA_A] = ciaGetTimerB(g_pCia[CIA_A]);
+		s_pOsCiaTimerB[CIA_A] = ciaGetTimerB(g_pCia[CIA_A]);
 		s_pOsCiaTimerA[CIA_B] = ciaGetTimerA(g_pCia[CIA_B]);
 		s_pOsCiaTimerB[CIA_B] = ciaGetTimerB(g_pCia[CIA_B]);
 
 		// set ACE CIA timers
 		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
-		// ciaSetTimerB(g_pCia[CIA_A], s_pAceCiaTimerB[CIA_A]);
+		ciaSetTimerB(g_pCia[CIA_A], s_pAceCiaTimerB[CIA_A]);
 		ciaSetTimerA(g_pCia[CIA_B], s_pAceCiaTimerA[CIA_B]);
 		ciaSetTimerB(g_pCia[CIA_B], s_pAceCiaTimerB[CIA_B]);
 
@@ -623,6 +636,12 @@ void systemUnuse(void) {
 		g_pCia[CIA_B]->icr = (
 			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
 		);
+
+		// Restore ACE CIA CRA/CRB state
+		g_pCia[CIA_A]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_A];
+		g_pCia[CIA_A]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_A];
+		g_pCia[CIA_B]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_B];
+		g_pCia[CIA_B]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_B];
 
 		// Game's bitplanes & copperlists are still used so don't disable them
 		// Wait for vbl before disabling sprite DMA
@@ -641,10 +660,7 @@ void systemUnuse(void) {
 		// Everything that's supported by ACE to simplify things for now,
 		// but not audio channels since ptplayer relies on polling them, and I'm not
 		// currently being able to debug audio interrupt handler variant.
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | (
-			INTF_BLIT | INTF_COPER | INTF_VERTB | INTF_EXTER |
-			INTF_PORTS //| INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3
-		);
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
@@ -671,15 +687,28 @@ void systemUse(void) {
 			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pOsHwInterrupts[i];
 		}
 
+		// Stop the timers
+		g_pCia[CIA_A]->cra = 0;
+		g_pCia[CIA_A]->crb = 0;
+		g_pCia[CIA_B]->cra = 0;
+		g_pCia[CIA_B]->crb = 0;
+
 		// Restore old CIA timer values
 		ciaSetTimerA(g_pCia[CIA_A], s_pOsCiaTimerA[CIA_A]);
-		// ciaSetTimerB(g_pCia[CIA_A], s_pOsCiaTimerB[CIA_A]);
+		ciaSetTimerB(g_pCia[CIA_A], s_pOsCiaTimerB[CIA_A]);
 		ciaSetTimerA(g_pCia[CIA_B], s_pOsCiaTimerA[CIA_B]);
 		ciaSetTimerB(g_pCia[CIA_B], s_pOsCiaTimerB[CIA_B]);
 
-		// re-enable CIA-B ALRM interrupt which was set by AmigaOS
+		// Restore OS's CIA interrupts
 		// According to UAE debugger there's nothing in CIA_A
-		g_pCia[CIA_B]->icr = CIAICRF_SETCLR | CIAICRF_TOD;
+		g_pCia[CIA_A]->icr = CIAICRF_SETCLR | s_pOsCiaIcr[CIA_A];
+		g_pCia[CIA_B]->icr = CIAICRF_SETCLR | s_pOsCiaIcr[CIA_B];
+
+		// Restore CRA/CRB registers, load the timers again
+		g_pCia[CIA_A]->cra = CIACRA_LOAD | s_pOsCiaCra[CIA_A];
+		g_pCia[CIA_A]->crb = CIACRB_LOAD | s_pOsCiaCrb[CIA_A];
+		g_pCia[CIA_B]->cra = CIACRA_LOAD | s_pOsCiaCra[CIA_B];
+		g_pCia[CIA_B]->crb = CIACRB_LOAD | s_pOsCiaCrb[CIA_B];
 
 		// restore old DMA/INTENA/ADKCON etc. settings
 		// All interrupts but only needed DMA
@@ -697,15 +726,50 @@ UBYTE systemIsUsed(void) {
 	return s_wSystemUses > 0;
 }
 
+void systemGetBlitterFromOs(void) {
+	--s_wSystemBlitterUses;
+	if(!s_wSystemBlitterUses) {
+		OwnBlitter();
+		WaitBlit();
+	}
+
+#if defined(ACE_DEBUG)
+	if(s_wSystemBlitterUses < 0) {
+		logWrite("ERR: System Blitter uses less than 0!\n");
+		s_wSystemUses = 0;
+	}
+#endif
+}
+
+void systemReleaseBlitterToOs(void) {
+	if (!s_wSystemBlitterUses){
+		DisownBlitter();
+		WaitBlit();
+	}
+	++s_wSystemBlitterUses;
+}
+
+UBYTE systemBlitterIsUsed(void) {
+	return s_wSystemBlitterUses > 0;
+}
+
 void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 ) {
 	// Disable ACE handler during data swap to ensure atomic op
 	s_pAceInterrupts[ubIntNumber].pHandler = 0;
-	s_pAceInterrupts[ubIntNumber].pData = pIntData;
 
 	// Re-enable handler or disable it if 0 was passed
-	s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
+	if(pHandler == 0) {
+		g_pCustom->dmacon = BV(ubIntNumber);
+		s_uwAceIntEna &= ~BV(ubIntNumber);
+	}
+	else {
+		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
+		s_pAceInterrupts[ubIntNumber].pData = pIntData;
+		s_uwAceIntEna |= BV(ubIntNumber);
+		g_pCustom->intena = DMAF_SETCLR | BV(ubIntNumber);
+	}
 }
 
 void systemSetCiaInt(
@@ -717,6 +781,21 @@ void systemSetCiaInt(
 
 	// Re-enable handler or disable it if 0 was passed
 	s_pAceCiaInterrupts[ubCia][ubIntBit].pHandler = pHandler;
+}
+
+void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue) {
+	if(isCrB) {
+		s_pAceCiaCrb[ubCia] = ubCrValue;
+		if(!s_wSystemUses) {
+			g_pCia[ubCia]->crb = ubCrValue;
+		}
+	}
+	else {
+		s_pAceCiaCra[ubCia] = ubCrValue;
+		if(!s_wSystemUses) {
+			g_pCia[ubCia]->cra = ubCrValue;
+		}
+	}
 }
 
 void systemSetDmaBit(UBYTE ubDmaBit, UBYTE isEnabled) {
@@ -787,4 +866,16 @@ void systemDump(void) {
 	// }
 
 	// logBlockEnd("systemDump()");
+}
+
+void systemIdleBegin(void) {
+#if defined(BARTMAN_GCC)
+	debug_start_idle();
+#endif
+}
+
+void systemIdleEnd(void) {
+#if defined(BARTMAN_GCC)
+	debug_stop_idle();
+#endif
 }

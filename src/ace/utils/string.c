@@ -9,28 +9,28 @@ char *stringDecimalFromULong(ULONG ulVal, char *pDst) {
 	// Relies on prior verification that buffer != NULL and bufsize != 0
 	// TODO: add ACE checks for that
 
-  char* pEnd = pDst; // Pointer to the position to write
-  do {
+	char* pEnd = pDst; // Pointer to the position to write
+	do {
 		// Get the value of the rightmost digit
 		// (avoid modulo, it would perform another slow division)
-    ULONG ulQuot = ulVal / 10;
+		ULONG ulQuot = ulVal / 10;
 		ULONG digitval = ulVal - ulQuot * 10;
-    ulVal = ulQuot;
-    *pEnd++ = '0' + digitval; // Convert it to the representing character
-  } while (ulVal); // Iterate as long as digits are leftover
+		ulVal = ulQuot;
+		*pEnd++ = '0' + digitval; // Convert it to the representing character
+	} while (ulVal); // Iterate as long as digits are leftover
 	char *pWriteEnd = pEnd;
 
 	// Assign the terminating null and decrease the pointer in order to point
 	// To the last digit written
-  *pEnd-- = '\0';
-  while (pDst < pEnd) {
+	*pEnd-- = '\0';
+	while (pDst < pEnd) {
 		// Reverse the digits (only the digits) in the array because they are
 		// LTR written but we need them in RTL order
-    char transfer = *pEnd;
-    *pEnd-- = *pDst;
-    *pDst++ = transfer;
-  }
-  return pWriteEnd;
+		char transfer = *pEnd;
+		*pEnd-- = *pDst;
+		*pDst++ = transfer;
+	}
+	return pWriteEnd;
 }
 
 char charToUpper(char c) {
@@ -52,4 +52,12 @@ void strToUpper(const char *szSrc, char *szDst) {
 UBYTE stringIsEmpty(const char *szStr) {
 	UBYTE isEmpty = (szStr[0] == '\0');
 	return isEmpty;
+}
+
+char *stringCopy(const char *szSrc, char *szDest) {
+	while(*szSrc != '\0') {
+		*(szDest++) = *(szSrc++);
+	};
+	*szDest = '\0';
+	return szDest;
 }
