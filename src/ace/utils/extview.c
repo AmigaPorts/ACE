@@ -170,9 +170,11 @@ void viewUpdateCLUT(tView *pView)
 				//g_pCustom->bplcon3 = p << 13; // Set palette bank.
 				for (UBYTE i = 0; i < 32; ++i)
 				{
-					UBYTE r = pView->pFirstVPort->pPaletteAGA[(p*32) + i] >> 16;
-					UBYTE g = pView->pFirstVPort->pPaletteAGA[(p*32) + i] >> 8;
-					UBYTE b = pView->pFirstVPort->pPaletteAGA[(p*32) + i];
+					ULONG* pPaletteAGA = (ULONG*)pView->pFirstVPort->pPalette;
+
+					UBYTE r = pPaletteAGA[(p*32) + i] >> 16;
+					UBYTE g = pPaletteAGA[(p*32) + i] >> 8;
+					UBYTE b = pPaletteAGA[(p*32) + i];
 					g_pCustom->bplcon3 = p << 13; // Set palette bank LOW.
 					g_pCustom->color[i] = (r >>4) << 8 | (g >>4) << 4 | (b >>4) << 0;
 					g_pCustom->bplcon3 = p << 13 | BV(9); // Set palette bank High.
@@ -348,34 +350,49 @@ tVPort *vPortCreate(void *pTagList, ...)
 	// Palette tag
 
 	// Allocate memory for the palette;
-	if (pView->uwFlags & VIEWPORT_USES_AGA){
+	if (pView->uwFlags & VIEWPORT_USES_AGA) {
 		// AGA uses 24 bit palette entries. 		
-		pVPort->pPaletteAGA = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+		pVPort->pPalette = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+		UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
+		if (pSrcPalette)
+		{
+			UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
+			if (uwPaletteSize == 0xFFFF)
+			{
+				logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
+			}
+			else if (!uwPaletteSize || uwPaletteSize > 256)
+			{
+				logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
+			}
+			else
+			{
+				memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(ULONG));
+			}
+		}
 	} 
 	else {
 		// 12 bit palette entries for Non-AGA
 		pVPort->pPalette = memAllocFastClear(sizeof(UWORD) * 32); 
-	}
 	
-
-	UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
-	if (pSrcPalette)
-	{
-		UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
-		if (uwPaletteSize == 0xFFFF)
+		UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
+		if (pSrcPalette)
 		{
-			logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
-		}
-		else if (!uwPaletteSize || uwPaletteSize > 32)
-		{
-			logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
-		}
-		else
-		{
-			memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
+			UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
+			if (uwPaletteSize == 0xFFFF)
+			{
+				logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
+			}
+			else if (!uwPaletteSize || uwPaletteSize > 32)
+			{
+				logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
+			}
+			else
+			{
+				memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
+			}
 		}
 	}
-
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
@@ -425,7 +442,7 @@ void vPortDestroy(tVPort *pVPort)
 			if (pVPort->uwFlags & VIEWPORT_USES_AGA)
 			{
 				// AGA uses 24 bit palette entries. 
-				memFree(pVPort->pPaletteAGA, sizeof(ULONG) * (1 << pVPort->ubBPP));
+				memFree(pVPort->pPalette, sizeof(ULONG) * (1 << pVPort->ubBPP));
 			}
 			else
 			{
