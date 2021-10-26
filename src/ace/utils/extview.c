@@ -7,19 +7,19 @@
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
 #include <ace/generic/screen.h>
-static UBYTE s_isPAL = 1;
+static UBYTE s_ubIsPAL = 1;
 
 tView *viewCreate(void *pTags, ...) {
 
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
 #ifdef AMIGA
 
-	s_isPAL = systemIsPal();
+	s_ubIsPAL = systemIsPal();
 
 	
 	// Create view stub
 	tView *pView = memAllocFastClear(sizeof(tView));
-	logWrite("created %s viewport addr: %p\n", s_isPAL ? "PAL" : "NTSC", pView);
+	logWrite("created %s viewport addr: %p\n", s_ubIsPAL ? "PAL" : "NTSC", pView);
 
 	va_list vaTags;
 	va_start(vaTags, pTags);
@@ -55,7 +55,7 @@ tView *viewCreate(void *pTags, ...) {
 	if(uwHeight != uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// Only height is passed - calculate Y pos so that display is centered
 		pView->uwHeight = uwHeight;
-		if (s_isPAL) {
+		if (s_ubIsPAL) {
 			pView->ubPosY = SCREEN_PAL_YOFFSET + (SCREEN_PAL_HEIGHT - uwHeight) / 2;
 		}
 		else{
@@ -66,7 +66,7 @@ tView *viewCreate(void *pTags, ...) {
 	else if(uwHeight == uwDefaultHeight && ubPosY != ubDefaultPosY) {
 		// Only Y pos is passed - calculate height as the remaining area of PAL display
 		pView->ubPosY = ubPosY;
-		if (s_isPAL) {
+		if (s_ubIsPAL) {
 			pView->uwHeight = SCREEN_PAL_YOFFSET + SCREEN_PAL_HEIGHT - ubPosY;
 		}
 		else{
@@ -76,7 +76,7 @@ tView *viewCreate(void *pTags, ...) {
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// All default - use PAL
-		if (s_isPAL) {
+		if (s_ubIsPAL) {
 			pView->ubPosY = SCREEN_PAL_YOFFSET;
 			pView->uwHeight = SCREEN_PAL_HEIGHT;
 		}
@@ -160,10 +160,10 @@ void viewUpdateCLUT(tView *pView) {
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 
-	s_isPAL = systemIsPal();
-	UWORD waitPos = (s_isPAL == 1) ? 300 : 260;
+	s_ubIsPAL = systemIsPal();
+	UWORD uwWaitPos = (s_ubIsPAL == 1) ? 300 : 260;
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < waitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) {}
 #if defined(AMIGA)
 	if(!pView) {
 		
@@ -214,7 +214,7 @@ void viewLoad(tView *pView) {
 	systemSetDmaBit(DMAB_RASTER, pView != 0);
 
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < waitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) {}
 
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
@@ -225,7 +225,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	va_list vaTags;
 	va_start(vaTags, pTagList);
 #ifdef AMIGA
-	s_isPAL = systemIsPal();
+	s_ubIsPAL = systemIsPal();
 
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
 	logWrite("Addr: %p\n", pVPort);
@@ -239,7 +239,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	pVPort->pView = pView;
 	logWrite("Parent view: %p\n", pView);
 
-	const UWORD uwDefaultWidth = s_isPAL ? SCREEN_PAL_WIDTH : SCREEN_NTSC_WIDTH;
+	const UWORD uwDefaultWidth = s_ubIsPAL ? SCREEN_PAL_WIDTH : SCREEN_NTSC_WIDTH;
 	const UWORD uwDefaultHeight = -1;
 	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
 
