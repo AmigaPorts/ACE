@@ -305,13 +305,13 @@ static struct MsgPort *msgPortCreate(char *name, LONG pri) {
 	struct MsgPort *mp;
 
 	if((sigBit = AllocSignal(-1L)) == -1) {
-		return(NULL);
+		return NULL;
 	}
 
 	mp = (struct MsgPort *) AllocMem(sizeof(*mp), MEMF_PUBLIC | MEMF_CLEAR);
 	if (!mp) {
 		FreeSignal(sigBit);
-		return(NULL);
+		return NULL;
 	}
 	mp->mp_Node.ln_Name = name;
 	mp->mp_Node.ln_Pri = pri;
@@ -324,7 +324,7 @@ static struct MsgPort *msgPortCreate(char *name, LONG pri) {
 	mp->mp_MsgList.lh_Head = (struct Node*)&mp->mp_MsgList.lh_Tail;
 	mp->mp_MsgList.lh_Tail = NULL;
 	mp->mp_MsgList.lh_TailPred = (struct Node*)&mp->mp_MsgList.lh_Head;
-	return(mp);
+	return mp;
 }
 
 // http://amigadev.elowar.com/read/ADCD_2.1/Libraries_Manual_guide/node02ED.html
@@ -885,7 +885,7 @@ UBYTE systemGetVerticalBlankFrequency(void){
 }
 
 UBYTE systemIsPal(void) {
-	
+
 	UBYTE ubVBlankFreq = systemGetVerticalBlankFrequency();
 	if (ubVBlankFreq == 60) {
 		return 0; // NTSC
