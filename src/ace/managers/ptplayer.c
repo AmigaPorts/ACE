@@ -2673,8 +2673,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 	}
 	else {
 		logWrite("ERR: Unknown sample format version: %hhu", ubVersion);
-		ptplayerSfxDestroy(pSfx);
-		return 0;
+		goto fail;
 	}
 
 	fileClose(pFileSfx);
