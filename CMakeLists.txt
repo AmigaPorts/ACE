@@ -41,8 +41,8 @@ add_library(${TARGET_NAME} OBJECT ${SOURCES} ${HEADERS})
 
 set(CMAKE_C_STANDARD 11)
 target_compile_definitions(${TARGET_NAME} PUBLIC AMIGA)
-target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra)
-target_compile_options(${TARGET_NAME} PUBLIC -fomit-frame-pointer)
+target_compile_options(${TARGET_NAME} PRIVATE $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-Wall -Wextra>)
+target_compile_options(${TARGET_NAME} PUBLIC $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-fomit-frame-pointer>)
 if(ACE_DEBUG)
 	# Add ACE debugging features to release build
 	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG)
