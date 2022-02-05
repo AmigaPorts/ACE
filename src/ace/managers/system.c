@@ -275,13 +275,13 @@ void HWINTERRUPT int6Handler(void) {
 				);
 			}
 		}
+
+		// Zorro/Clockport/other expansions can trigger this interrupt and it sets
+		// the EXTER bit too. But you can't reliably detect and handle those devices
+		// unless you exactly know that they are present and how to poll their status.
+		// Leave the EXTER bit check in place since it should be cleared anyway.
 		uwReqClr |= INTF_EXTER;
-		// TODO: I heard that Zorro and Clockport can trigger this interrupt
-		// and it sets the same bit. So there should be a handler for it in case of
-		// ICR intbits not being set.
 	}
-	// TOOD: is there any other interrupt source on level 6?
-	// If yes, then detect it. If not, remove check for EXTER flag
 
 	logPopInt();
 	// Clear int flags
