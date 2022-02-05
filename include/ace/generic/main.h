@@ -38,7 +38,7 @@ void genericCreate(void);
 
 /**
  * @brief Main loop code.
- * This is called until GENERIC_MAIN_LOOP_CONDITION is true.
+ * This is called while GENERIC_MAIN_LOOP_CONDITION is true.
  * Use it to process things every frame, e.g. current game state,
  * or additional ACE modules.
  *
