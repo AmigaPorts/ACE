@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 2.8.5)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+cmake_minimum_required(VERSION 3.0.0)
+# Generator expression skips Debug/Release/... directories for MSVC
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/$<0:>)
 project(ACE_tools)
 
 # Adhere to GNU filesystem layout conventions
