@@ -376,7 +376,7 @@ bool tGlyphSet::isOk(void)
 	return m_mGlyphs.size() != 0;
 }
 
-bool tGlyphSet::remapGlyphs(const std::vector<std::pair<uint32_t, uint32_t>> &vFromTo)
+void tGlyphSet::remapGlyphs(const std::vector<std::pair<uint32_t, uint32_t>> &vFromTo)
 {
 	// Extract one by one and replace key so that other elements won't
 	// be overwritten before key changing

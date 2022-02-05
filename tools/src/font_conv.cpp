@@ -166,8 +166,8 @@ int main(int lArgCount, const char *pArgs[])
 		eInType = tFontFormat::TTF;
 	}
 	else if(nFs::isDir(szFontPath)) {
-		Glyphs = tGlyphSet::fromDir(szFontPath);
-		if(!Glyphs.isOk()) {
+		mGlyphs = tGlyphSet::fromDir(szFontPath);
+		if(!mGlyphs.isOk()) {
 			nLog::error("Loading glyphs from dir '{}' failed", szFontPath);
 			return EXIT_FAILURE;
 		}
@@ -210,7 +210,7 @@ int main(int lArgCount, const char *pArgs[])
 			fmt::print("Remapping {} => {}\n", From, To);
 			vFromTo.push_back({std::move(From), std::move(To)});
 		}
-		Glyphs.remapGlyphs(vFromTo);
+		mGlyphs.remapGlyphs(vFromTo);
 	}
 
 	// Determine default output path
@@ -230,7 +230,7 @@ int main(int lArgCount, const char *pArgs[])
 		if(szOutPath == szFontPath) {
 			szOutPath += ".dir";
 		}
-		Glyphs.toDir(szOutPath);
+		mGlyphs.toDir(szOutPath);
 	}
 	else {
 		if(eOutType == tFontFormat::PNG) {
@@ -244,7 +244,7 @@ int main(int lArgCount, const char *pArgs[])
 			if(szOutPath.substr(szOutPath.length() - 4) != ".fnt") {
 				szOutPath += ".fnt";
 			}
-			Glyphs.toAceFont(szOutPath);
+			mGlyphs.toAceFont(szOutPath);
 		}
 		else {
 			nLog::error("Unsupported output type");
