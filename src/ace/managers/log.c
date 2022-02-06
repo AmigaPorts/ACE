@@ -125,6 +125,7 @@ void _logBlockEnd(char *szBlockName) {
 		return;
 	}
 	systemUse();
+	memCheckIntegrity();
 	logPopIndent();
 	timerFormatPrec(
 		g_sLogManager.szTimeBfr,
