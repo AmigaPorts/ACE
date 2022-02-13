@@ -25,7 +25,7 @@ tChunkyBitmap::tChunkyBitmap(
 		m_uwHeight = 0;
 		return;
 	}
-	m_vData.reserve(m_uwWidth * m_uwHeight);
+	m_vData.resize(m_uwWidth * m_uwHeight, Palette.m_vColors[0]);
 	auto PxPerCell = sizeof(Planar.m_pPlanes[0][0]) * 8;
 	for(uint32_t ulY = 0; ulY < m_uwHeight; ++ulY) {
 		for(uint32_t ulX = 0; ulX < m_uwWidth; ++ulX) {
