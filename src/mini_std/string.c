@@ -9,8 +9,8 @@ int memcmp(const void *pLhs, const void *pRhs, size_t count) {
 		if(delta != 0) {
 			return delta;
 		}
-		++pLhs;
-		++pRhs;
+		++pLeft;
+		++pRight;
 	}
 	return 0;
 }
