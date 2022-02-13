@@ -17,13 +17,14 @@ file(GLOB COMMON_src src/common/*.cpp src/common/*.c)
 file(GLOB_RECURSE COMMON_hdr src/common/*.h src/common/*.hpp)
 add_library(common STATIC ${COMMON_src} ${COMMON_hdr})
 if(NOT MSVC)
-    target_compile_options(common PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wno-register>)
+	target_compile_options(common PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wno-register>)
+	target_link_libraries(common -static)
 endif()
 
 #fmt
 add_subdirectory(fmt)
 target_include_directories(fmt PUBLIC ${fmt_INCLUDE_DIRS})
-target_link_libraries(common -static fmt::fmt)
+target_link_libraries(common fmt::fmt)
 
 # App-related
 file(GLOB FONT_CONV_src src/font_conv.cpp)
