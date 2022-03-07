@@ -2670,6 +2670,12 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 			goto fail;
 		}
 		fileRead(pFileSfx, pSfx->pData, ulByteSize);
+
+		// This code doesn't check if pData[0] is zeroed-out to make code
+		// smaller/faster - it should be because after sfx playback ptplayer sets
+		// the channel playback to looped first word. Instead, this is done on sfx
+		// converter side. If your samples are humming after playback and you're
+		// using custom tooling for sfx, fix your tool or use latest ACE tools!
 	}
 	else {
 		logWrite("ERR: Unknown sample format version: %hhu", ubVersion);
