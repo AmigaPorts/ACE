@@ -47,10 +47,7 @@ tBitMap *bitmapCreate(
 		);
 		if(!pBitMap->Planes[0]) {
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
-			memFree(pBitMap, sizeof(tBitMap));
-			logBlockEnd("bitmapCreate()");
-			systemUnuse();
-			return 0;
+			goto fail;
 		}
 		for(i = 1; i != ubDepth; ++i) {
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
@@ -60,18 +57,30 @@ tBitMap *bitmapCreate(
 			memset(pBitMap->Planes[0], 0, pBitMap->Rows * pBitMap->BytesPerRow);
 		}
 	}
+	else if(ubFlags & BMF_CONTIGUOUS) {
+		pBitMap->Flags |= BMF_CONTIGUOUS;
+		ULONG ulPlaneSize = pBitMap->BytesPerRow * uwHeight;
+		pBitMap->Planes[0] = (PLANEPTR) memAllocChip(ulPlaneSize * ubDepth);
+		if(!pBitMap->Planes[0]) {
+				logWrite("ERR: Can't alloc contiguous bitplanes\n");
+				goto fail;
+		}
+		for(i = 1; i < ubDepth; ++i) {
+				pBitMap->Planes[i] = &pBitMap->Planes[i - 1][ulPlaneSize];
+		}
+		if (ubFlags & BMF_CLEAR) {
+				memset(pBitMap->Planes[0], 0, ulPlaneSize * ubDepth);
+		}
+	}
 	else {
 		for(i = ubDepth; i--;) {
-			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
+			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow * uwHeight);
 			if(!pBitMap->Planes[i]) {
-				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth-i+1,ubDepth);
+				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth - i + 1,ubDepth);
 				while(++i != ubDepth) {
 					memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*uwHeight);
 				}
-				memFree(pBitMap, sizeof(tBitMap));
-				logBlockEnd("bitmapCreate()");
-				systemUnuse();
-				return 0;
+				goto fail;
 			}
 			if (ubFlags & BMF_CLEAR) {
 				memset(pBitMap->Planes[i], 0, pBitMap->Rows * pBitMap->BytesPerRow);
@@ -86,6 +95,15 @@ tBitMap *bitmapCreate(
 	logBlockEnd("bitmapCreate()");
 	systemUnuse();
 	return pBitMap;
+
+fail:
+	if(pBitMap) {
+		memFree(pBitMap, sizeof(tBitMap));
+	}
+	logBlockEnd("bitmapCreate()");
+	systemUnuse();
+	return 0;
+
 #else
 	return 0;
 #endif // AMIGA
@@ -354,12 +372,17 @@ void bitmapDestroy(tBitMap *pBitMap) {
 #ifdef AMIGA
 		blitWait();
 #endif
-		if(bitmapIsInterleaved(pBitMap)) {
-			pBitMap->Depth = 1;
-		}
 		systemUse();
-		for(UBYTE i = pBitMap->Depth; i--;) {
-			memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*pBitMap->Rows);
+		if(bitmapIsInterleaved(pBitMap)) {
+			memFree(pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows);
+		}
+		else if(pBitMap->Flags & BMF_CONTIGUOUS) {
+			memFree(pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows * pBitMap->Depth);
+		}
+		else {
+			for(UBYTE i = pBitMap->Depth; i--;) {
+				memFree(pBitMap->Planes[i], pBitMap->BytesPerRow * pBitMap->Rows);
+			}
 		}
 		memFree(pBitMap, sizeof(tBitMap));
 		systemUnuse();
