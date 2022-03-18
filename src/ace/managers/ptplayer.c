@@ -1219,7 +1219,8 @@ static void mt_playvoice(
 		pChannelData->n_minusft = (ubFineTune >= 8);
 
 		pChannelData->n_volume = pSampleDef->ubVolume;
-		if(!pSampleDef->uwRepeatOffs) {
+		// MOD spec: repeat only if repeat length is bigger than 2 bytes.
+		if(pSampleDef->uwRepeatLength <= 1) {
 			// No repeat def - reload first empty sample word after playback,
 			// then disable channel.
 			pChannelData->n_looped = 0;
