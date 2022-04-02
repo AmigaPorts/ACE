@@ -311,6 +311,9 @@ void fontDrawStr(
 	const tFont *pFont, tBitMap *pDest, UWORD uwX, UWORD uwY,
 	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 ) {
+	if(!pTextBitMap) {
+		logWrite("ERR: pTextBitMap must be non-null!\n");
+	}
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
 }
