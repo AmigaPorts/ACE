@@ -30,6 +30,11 @@ tBitMap *bitmapCreate(
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
 	logWrite("addr: %p\n", pBitMap);
 
+	if(uwWidth < 16) {
+		logWrite("WARN: resizing bitmap width to 16\n");
+		uwWidth = 16;
+	}
+
 	pBitMap->BytesPerRow = (uwWidth + 7) / 8;
 	pBitMap->Rows = uwHeight;
 	pBitMap->Flags = 0;
