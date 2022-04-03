@@ -1559,6 +1559,13 @@ void ptplayerStop(void) {
 	g_pCustom->aud[3].ac_vol = 0;
 	systemSetDmaMask(DMAF_AUDIO, 0);
 	s_pModCurr = 0;
+
+	// Free the channels taken by SFX.
+	// Typically they would release themselves but turning off DMA prevents this.
+	mt_chan[0].ubSfxPriority = 0;
+	mt_chan[1].ubSfxPriority = 0;
+	mt_chan[2].ubSfxPriority = 0;
+	mt_chan[3].ubSfxPriority = 0;
 }
 
 static inline void setTempo(UWORD uwTempo) {
