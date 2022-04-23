@@ -27,15 +27,22 @@ tBitMap *bitmapCreate(
 		"bitmapCreate(uwWidth: %hu, uwHeight: %hu, ubDepth: %hhu, ubFlags: %hhu)",
 		uwWidth, uwHeight, ubDepth, ubFlags
 	);
+
+	if(uwWidth == 0 || uwHeight == 0) {
+		logWrite("ERR: invalid bitmap dimensions\n");
+		return 0;
+	}
+
+	if((uwWidth & 0xF) != 0) {
+		// Needed for blitter!
+		logWrite("ERR: bitmap width is not multiple of 16\n");
+		return 0;
+	}
+
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
 	logWrite("addr: %p\n", pBitMap);
 
-	if(uwWidth < 16) {
-		logWrite("WARN: resizing bitmap width to 16\n");
-		uwWidth = 16;
-	}
-
-	pBitMap->BytesPerRow = (uwWidth + 7) / 8;
+	pBitMap->BytesPerRow = uwWidth / 8;
 	pBitMap->Rows = uwHeight;
 	pBitMap->Flags = 0;
 	pBitMap->Depth = ubDepth;
@@ -91,10 +98,6 @@ tBitMap *bitmapCreate(
 				memset(pBitMap->Planes[i], 0, pBitMap->Rows * pBitMap->BytesPerRow);
 			}
 		}
-	}
-
-	if (ubFlags & BMF_CLEAR) {
-		blitWait();
 	}
 
 	logBlockEnd("bitmapCreate()");
