@@ -2706,8 +2706,17 @@ fail:
 }
 
 void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
+	logBlockBegin("ptplayerSfxDestroy(pSfx: %p)", pSfx);
 	if(pSfx) {
-		// ptplayerWaitForSfx();
+		for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
+			if(mt_chan[ubChannel].n_sfxptr == pSfx->pData) {
+				// ptplayer doesn't mute its channels after sfx playback to save cycles
+				logWrite("channel %hhu is still using the sample - muting...\n", ubChannel);
+				g_pCustom->aud[ubChannel].ac_vol = 0;
+				break;
+			}
+		}
+
 		systemUse();
 		if(pSfx->pData) {
 			memFree(pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
@@ -2715,6 +2724,7 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
 		memFree(pSfx, sizeof(*pSfx));
 		systemUnuse();
 	}
+	logBlockEnd("ptplayerSfxDestroy()");
 }
 
 /**

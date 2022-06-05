@@ -241,7 +241,8 @@ void fontDrawTextBitMap(
 ) {
 #if defined(ACE_DEBUG)
 	if(!pTextBitMap->uwActualWidth) {
-		logWrite("ERR: pTextBitMap %p has zero width!\n", pTextBitMap);
+		// you can usually figure that out and skip this call before even doing fontDrawStr() or fontFillTextBitMap()
+		logWrite("ERR: pTextBitMap %p has text of zero width - do the check beforehand!\n", pTextBitMap);
 		return;
 	}
 #endif
