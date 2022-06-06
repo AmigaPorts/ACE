@@ -76,7 +76,7 @@ tWav::tWav(const std::string &szPath)
 	StreamSubchunk.read(reinterpret_cast<char*>(&uwBitsPerSample), sizeof(uwBitsPerSample));
 
 	if(eAudioFormat != tAudioFormat::PCM) {
-		nLog::error("Unrecognized WAV audio format: {}", eAudioFormat);
+		nLog::error("Unrecognized WAV audio format: {}", static_cast<int>(eAudioFormat));
 		return;
 	}
 	if(uwNumChannels != 1) {
