@@ -124,14 +124,34 @@ tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight) {
 	logBlockBegin(
 		"fontCreateTextBitMap(uwWidth: %hu, uwHeight: %hu)", uwWidth, uwHeight
 	);
-	// Init text bitmap struct - also setting uwActualWidth and height to zero.
-	tTextBitMap *pTextBitMap = memAllocFast(sizeof(tTextBitMap));
+
+	tTextBitMap *pTextBitMap = memAllocFast(sizeof(*pTextBitMap));
+	if(!pTextBitMap) {
+		goto fail;
+	}
+
 	pTextBitMap->pBitMap = bitmapCreate(uwWidth, uwHeight, 1, BMF_CLEAR);
+	if(!pTextBitMap->pBitMap) {
+		goto fail;
+	}
+
+	// Mark pTextBitMap as without any text
 	pTextBitMap->uwActualWidth = 0;
 	pTextBitMap->uwActualHeight = 0;
 	logBlockEnd("fontCreateTextBitmap()");
 	systemUnuse();
 	return pTextBitMap;
+
+fail:
+	if(pTextBitMap) {
+		if(pTextBitMap->pBitMap) {
+			bitmapDestroy(pTextBitMap->pBitMap);
+		}
+		memFree(pTextBitMap, sizeof(*pTextBitMap));
+	}
+	logBlockEnd("fontCreateTextBitmap()");
+	systemUnuse();
+	return 0;
 }
 
 UBYTE fontTextFitsInTextBitmap(
@@ -218,7 +238,12 @@ void fontFillTextBitMap(
 
 #if defined(ACE_DEBUG)
 	if(!fontTextFitsInTextBitmap(pFont, pTextBitMap, szText)) {
-		logWrite("ERR: Text '%s' doesn't fit in text bitmap\n", szText);
+		tUwCoordYX sNeededDimensions = fontMeasureText(pFont, szText);
+		logWrite(
+			"ERR: Text '%s' doesn't fit in text bitmap, text needs: %hu,%hu, bitmap size: %hu,%hu\n",
+			szText, sNeededDimensions.uwX, sNeededDimensions.uwY,
+			bitmapGetByteWidth(pTextBitMap->pBitMap) * 8, pTextBitMap->pBitMap->Rows
+		);
 		return;
 	}
 #endif
