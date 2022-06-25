@@ -150,13 +150,7 @@ void _memCheckIntegrity(UWORD uwLine, const char *szFile) {
 		pEntry = pEntry->pNext;
 	}
 
-	register ULONG * a7 __asm("sp");
-
-	struct Process *pProcess = (struct Process *)FindTask(NULL);
-	if((ULONG)a7 < (ULONG)((char *)pProcess->pr_Task.tc_SPLower)) {
-		logWrite("[MEM] ERR: out of stack bounds!\n");
-		while(1) {}
-	}
+	systemCheckStack();
 }
 
 void _memCreate(void) {
