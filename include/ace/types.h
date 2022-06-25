@@ -32,7 +32,7 @@ typedef int16_t WORD;
 typedef int32_t LONG;
 #endif // AMIGA
 
-#if defined(__CODE_CHECKER__)
+#if defined(__CODE_CHECKER__) || defined(__INTELLISENSE__)
 // My realtime source checker has problems with GCC asm() expanded from REGARG()
 // being in fn arg list, so I just use blank defines for it
 #define INTERRUPT
