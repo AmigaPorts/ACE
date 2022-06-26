@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/utils/string.h>
+#include <ace/managers/log.h>
 
 char *stringDecimalFromULong(ULONG ulVal, char *pDst) {
 	// Modified from https://github.com/german-one/itostr/blob/master/itostr.c
@@ -57,6 +58,19 @@ UBYTE stringIsEmpty(const char *szStr) {
 char *stringCopy(const char *szSrc, char *szDest) {
 	while(*szSrc != '\0') {
 		*(szDest++) = *(szSrc++);
+	};
+	*szDest = '\0';
+	return szDest;
+}
+
+char *stringCopyLimited(const char *szSrc, char *szDest, UWORD uwMaxLength) {
+	if(uwMaxLength == 0) {
+		logWrite("ERR: stringCopyLimited(szSrc: '%s') uwMaxLength is zero!\n", szSrc);
+	}
+
+	while(*szSrc != '\0' && --uwMaxLength > 0) {
+		*(szDest++) = *(szSrc++);
+		--uwMaxLength;
 	};
 	*szDest = '\0';
 	return szDest;
