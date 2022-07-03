@@ -175,7 +175,16 @@ tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText) {
 			uwWidth = 0;
 		}
 		else {
-			uwWidth += fontGlyphWidth(pFont, *p) + 1;
+			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
+#if defined(ACE_DEBUG)
+			if(ubGlyphWidth == 0) {
+				logWrite(
+					"ERR: Missing glyph for char '%c' (code %hhu, 0x%hhX), "
+					"pos %ld in string '%s'\n", *p, *p, *p, p - szText, szText
+				);
+			}
+#endif
+			uwWidth += ubGlyphWidth + 1;
 			uwMaxWidth = MAX(uwMaxWidth, uwWidth);
 		}
 	}
@@ -212,6 +221,15 @@ tUwCoordYX fontDrawStr1bpp(
 		}
 		else {
 			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
+#if defined(ACE_DEBUG)
+			if(ubGlyphWidth == 0) {
+				logWrite(
+					"ERR: Missing glyph for char '%c' (code %hhu, 0x%hhX), "
+					"pos %ld in string '%s'\n", *p, *p, *p, p - szText, szText
+				);
+				continue;
+			}
+#endif
 			blitCopy(
 				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0, pBitMap, uwX, uwY,
 				ubGlyphWidth, pFont->uwHeight, MINTERM_COOKIE
