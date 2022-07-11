@@ -47,14 +47,9 @@ def buildStep() {
 			properties([pipelineTriggers([githubPush()])])
 			def commondir = env.WORKSPACE + '/../' + fixed_job_name + '/'
 
-			def pathInContainer
-
 			def dockerImageRef = docker.image("amigadev/crosstools:m68k-amigaos");
 			dockerImageRef.pull();
 
-			dockerImageRef.inside("") {
-				//pathInContainer = steps.sh(script: 'echo $PATH', returnStdout: true).trim()
-			}
 			checkout scm;
 
 			dockerImageRef.inside("") {
@@ -66,12 +61,9 @@ def buildStep() {
 				sh "mkdir -p lib/"
 				sh "rm -rfv build-68k/*"
 
-				//slackSend color: "good", channel: "#jenkins", message: "Starting ${os} build target..."
-
 				stage("Building...") {
 					sh "cmake -S . -B build-68k -DCMAKE_INSTALL_PREFIX=./install -DCMAKE_BUILD_TYPE=Release"
-					sh "VERBOSE=1 cmake --build build-68k --config Release --target install -j 8"
-					//sh "VERBOSE=1 cmake --build build-68k --config Release --target package_source -j 8"
+					sh "cmake --build build-68k --config Release --target install -j 8"
 					
 					sh "cd install && lha -c ../ace.lha ./*"
 
