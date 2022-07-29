@@ -226,7 +226,7 @@ function(transformBitmap)
 endfunction()
 
 function(extractBitmaps)
-	cmake_parse_arguments(args "" "TARGET;SOURCE" "DESTINATIONS" ${ARGN})
+	cmake_parse_arguments(args "" "TARGET;SOURCE;GENERATED_FILE_LIST" "DESTINATIONS" ${ARGN})
 	list(LENGTH args_DESTINATIONS destArgCount)
 	MATH(EXPR destCount "${destArgCount} / 5 - 1")
 	foreach(destIdx RANGE ${destCount})
@@ -245,19 +245,30 @@ function(extractBitmaps)
 			TARGET ${args_TARGET} SOURCE ${args_SOURCE} DESTINATION ${outName}
 			TRANSFORM -extract ${X} ${Y} ${width} ${height}
 		)
+		set(generatedFiles "${generatedFiles};${outName}")
 	endforeach()
+
+	if(DEFINED args_GENERATED_FILE_LIST)
+		SET(${args_GENERATED_FILE_LIST} ${generatedFiles} PARENT_SCOPE)
+	endif()
 endfunction()
 
 function(convertTileset)
 	getToolPath(tileset_conv TOOL_TILESET_CONV)
 	cmake_parse_arguments(
-		args "INTERLEAVED;VARIABLE_HEIGHT" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE" "TILES" ${ARGN}
+		args
+		"INTERLEAVED;VARIABLE_HEIGHT"
+		"TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE"
+		"TILE_PATHS" ${ARGN}
 	)
 
-	list(LENGTH args_TILES tilesCount)
-	foreach(tileNumber ${args_TILES})
-		set(convDepends "${convDepends};${args_SOURCE}/${tileNumber}")
-	endforeach()
+	if(DEFINED args_TILE_PATHS)
+		foreach(tileNumber ${args_TILE_PATHS})
+			set(convDepends "${convDepends};${tileNumber}")
+		endforeach()
+	else()
+		message(FATAL_ERROR "No TILE_PATHS param found")
+	endif()
 
 	if(${args_INTERLEAVED})
 		SET(argsOptional ${argsOptional} -i)
