@@ -33,6 +33,7 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#include <bit>           // std::bit_cast
 #include <cmath>         // std::signbit
 #include <cstdint>       // uint32_t
 #include <limits>        // std::numeric_limits
