@@ -269,6 +269,7 @@
 
 #ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 #  if defined(__cpp_nontype_template_args) &&                \
+      (!defined(_MSC_VER) || _MSC_VER >= 1930) &&            \
       ((FMT_GCC_VERSION >= 903 && __cplusplus >= 201709L) || \
        __cpp_nontype_template_args >= 201911L)
 #    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
