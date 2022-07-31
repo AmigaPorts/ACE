@@ -240,7 +240,7 @@ static void saveTiles(
 				Tile.copyRect(
 					0, 0, Out.value(), 0, uwOffsY, Tile.m_uwWidth, Tile.m_uwHeight
 				);
-				uwOffsY += Tile.m_uwHeight;
+				uwOffsY += Config.m_isVaryingHeight ? Tile.m_uwHeight : Config.m_lTileHeight;
 			}
 		}
 
