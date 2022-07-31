@@ -51,6 +51,17 @@ void ptplayerDestroy(void);
 void ptplayerProcess(void);
 
 /**
+ * @brief Sets PAL/NTSC mode. Relevant in CIA-based playback mode.
+ *
+ * Note that each tSfx stores period calculated for mode which was set during
+ * call to ptplayerSfxCreateFromFile(). You may need to correct their values
+ * manually.
+ *
+ * @param isPal In CIA mode, Set to 1 on PAL configs, zero on NTSC.
+ */
+void ptplayerSetPal(UBYTE isPal);
+
+/**
  * @brief Loads new MOD from file.
  *
  * @param szPath Path to .mod file.
@@ -127,7 +138,7 @@ void ptplayerEnableMusic(UBYTE isEnabled);
  * @brief Gets the value of the last E8 command.
  * It is reset to 0 after ptplayerInit().
  *
- * @return UBYTE
+ * @return Value of last-played E8 command.
  */
 UBYTE ptplayerGetE8(void);
 
@@ -144,8 +155,27 @@ void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount);
 
 //-------------------------------------------------------------------------- SFX
 
+/**
+ * @brief Loads SFX from given file.
+ * Note that this function sets sfx period based on currently set PAL/NTSC video
+ * mode. If you plan to change it after loading sfx, be sure to adjust
+ * the period value for new mode.
+ *
+ * @param szPath Path to .sfx file.
+ * @return Newly loaded SFX.
+ *
+ * @see ptplayerSfxDestroy()
+ * @see ptplayerSfxPlay()
+ */
 tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath);
 
+/**
+ * @brief Destroys given SFX, freeing its resources to OS.
+ *
+ * @param pSfx SFX to be destroyed.
+ *
+ * @see ptplayerSfxCreateFromFile()
+ */
 void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
 
 /**
@@ -186,6 +216,8 @@ void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd);
  * @brief Waits until all sound effects have been played.
  */
 void ptplayerWaitForSfx(void);
+
+UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx);
 
 #ifdef __cplusplus
 }

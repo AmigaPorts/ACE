@@ -890,6 +890,7 @@ static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
 static UBYTE s_isRepeat;
 static tPtplayerCbSongEnd s_cbSongEnd;
+static UBYTE s_isPal;
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 /**
@@ -1680,8 +1681,14 @@ void ptplayerCreate(UBYTE isPal) {
 	systemSetInt(INTB_AUD3, onAudio, (void*)3);
 #endif
 
+	ptplayerSetPal(isPal);
+	mt_reset();
+}
+
+void ptplayerSetPal(UBYTE isPal) {
 	// determine if 02 clock for timers is based on PAL or NTSC
-	if(isPal) {
+	s_isPal = isPal;
+	if(s_isPal) {
 		// Fcolor = 4.43361825 MHz (PAL color carrier frequency)
 		// CPU Clock = Fcolor * 1.6 = 7.0937892 MHz
 		// CIA Clock = Cpu Clock / 10 = 709.37892 kHz
@@ -1692,8 +1699,6 @@ void ptplayerCreate(UBYTE isPal) {
 	else {
 		mt_timerval = 1789773;
 	}
-
-	mt_reset();
 }
 
 void ptplayerLoadMod(
@@ -2564,6 +2569,17 @@ static const tPreFx prefx_tab[16] = {
 	[0xA ... 0xF] = set_period,
 };
 
+/**
+ * @brief Get the Paula's Clock Constant.
+ *
+ * http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node00DE.html
+ *
+ * @return The current clock constant, dependent on PAL/NTSC mode.
+ */
+static inline ULONG getClockConstant() {
+	return s_isPal ? 3546895 : 3579545;
+}
+
 void ptplayerProcess(void) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	if(s_isPendingPlay) {
@@ -2654,7 +2670,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 	tFile *pFileSfx = fileOpen(szPath, "rb");
 	tPtplayerSfx *pSfx = 0;
 	if(!pFileSfx) {
-		logWrite("ERR: File doesn't exist: '%s'\r\n", szPath);
+		logWrite("ERR: File doesn't exist: '%s'\n", szPath);
 		goto fail;
 	}
 
@@ -2670,8 +2686,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 
 		UWORD uwSampleRateHz;
 		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
-		// NOTE: 3546895 is for PAL, for NTSC use 3579545
-		pSfx->uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
+		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
 
 		pSfx->pData = memAllocChip(ulByteSize);
 		if(!pSfx->pData) {
@@ -2679,14 +2694,16 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 		}
 		fileRead(pFileSfx, pSfx->pData, ulByteSize);
 
-		// This code doesn't check if pData[0] is zeroed-out to make code
-		// smaller/faster - it should be because after sfx playback ptplayer sets
-		// the channel playback to looped first word. Instead, this is done on sfx
-		// converter side. If your samples are humming after playback and you're
-		// using custom tooling for sfx, fix your tool or use latest ACE tools!
+		// Check if pData[0] is zeroed-out - it should be because after sfx playback
+		// ptplayer sets the channel playback to looped first word. This should
+		// be done on sfx converter side. If your samples are humming after playback,
+		// fix your custom conversion tool or use latest ACE tools!
+		if(pSfx->pData[0] != 0) {
+			logWrite("ERR: SFX's first word isn't zeroed-out\n");
+		}
 	}
 	else {
-		logWrite("ERR: Unknown sample format version: %hhu", ubVersion);
+		logWrite("ERR: Unknown sample format version: %hhu\n", ubVersion);
 		goto fail;
 	}
 
@@ -2921,4 +2938,12 @@ void ptplayerWaitForSfx(void) {
 void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd) {
 	s_isRepeat = isRepeat;
 	s_cbSongEnd = cbSongEnd;
+}
+
+UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
+	// Get rounded sampling rate.
+	UWORD uwSamplingRateHz = (getClockConstant() + (pSfx->uwPeriod / 2)) / pSfx->uwPeriod;
+	// Get frame count - round it up.
+	UWORD uwFrameCount = (pSfx->uwWordLength * 2 * 50 + uwSamplingRateHz - 1) / uwSamplingRateHz;
+	return uwFrameCount;
 }
