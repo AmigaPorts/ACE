@@ -14,15 +14,17 @@ struct tRgb {
 	tRgb(uint8_t ubNewR, uint8_t ubNewG, uint8_t ubNewB):
 		ubR(ubNewR), ubG(ubNewG), ubB(ubNewB) { }
 
-	tRgb(uint8_t ubRgb):
-		ubR(ubRgb), ubG(ubRgb), ubB(ubRgb) { }
+	tRgb(uint8_t ubGrayscale):
+		ubR(ubGrayscale), ubG(ubGrayscale), ubB(ubGrayscale) { }
 
 	tRgb():
 		ubR(0), ubG(0), ubB(0) { }
 
 	tRgb(const std::string &szCode);
 
-	std::string toString(void);
+	std::string toString(void) const;
+
+	tRgb to12Bit(void) const;
 
 	bool operator == (const tRgb &Rhs) const {
 		return ubB == Rhs.ubB && ubG == Rhs.ubG && ubR == Rhs.ubR;

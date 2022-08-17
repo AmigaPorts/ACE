@@ -28,7 +28,16 @@ tRgb::tRgb(const std::string &szCode)
 	}
 }
 
-std::string tRgb::toString(void)
+tRgb tRgb::to12Bit(void) const
+{
+	auto R4 = ((this->ubR + 16) / 17);
+	auto G4 = ((this->ubG + 16) / 17);
+	auto B4 = ((this->ubB + 16) / 17);
+	auto Out = tRgb((R4 << 4) | R4, (G4 << 4) | G4, (B4 << 4) | B4);
+	return Out;
+}
+
+std::string tRgb::toString(void) const
 {
 	return fmt::format("#{:02X}{:02X}{:02X}", ubR, ubG, ubB);
 }
