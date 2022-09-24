@@ -75,9 +75,9 @@ void spriteRemove(tSprite *pSprite) {
 }
 
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
-	if(!(pBitmap->Flags & BMF_INTERLEAVED)) {
+	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
 		logWrite(
-			"ERR: Sprite %hhu bitmap %p isn't interleaved\n",
+			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP!\n",
 			pSprite->ubSpriteIndex, pBitmap
 		);
 		return;
@@ -85,7 +85,10 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 
 	UBYTE ubByteWidth = bitmapGetByteWidth(pBitmap);
 	if(ubByteWidth != 2) {
-		logWrite("ERR: Unsupported sprite width: %hhu\n", ubByteWidth * 8);
+		logWrite(
+			"ERR: Unsupported sprite width: %hhu, expected 16\n",
+			ubByteWidth * 8
+		);
 		return;
 	}
 
