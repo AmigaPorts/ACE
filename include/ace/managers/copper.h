@@ -117,6 +117,22 @@ typedef struct _tCopManager {
 	tCopList *pBlankList; /// Empty copperlist - LoadView(0) equivalent
 } tCopManager;
 
+/**
+ * @brief Values for composing bit mask of sprites.
+ * Note that the first sprite is called "0" because this way it is consistent
+ * with odd/even sprite naming which is widespread in literature.
+ */
+typedef enum tSpriteMask {
+	SPRITE_0 = BV(0),
+	SPRITE_1 = BV(1),
+	SPRITE_2 = BV(2),
+	SPRITE_3 = BV(3),
+	SPRITE_4 = BV(4),
+	SPRITE_5 = BV(5),
+	SPRITE_6 = BV(6),
+	SPRITE_7 = BV(7),
+} tSpriteMask;
+
 //---------------------------------------------------------------------- GLOBALS
 
 extern tCopManager g_sCopManager;
@@ -181,13 +197,12 @@ void copProcessBlocks(void);
  *  Adds copBlock which disables given sprites.
  *  Resulting copBlock is placed at 0,0 so that it will be executed during VBlank.
  *
- *  @param pList         Copperlist to be edited.
- *  @param fubSpriteMask Determines sprites to be disabled.
- *                       Setting bit0 to 1 disables sprite 0, etc.
+ *  @param pList       Copperlist to be edited.
+ *  @param eSpriteMask Determines sprites to be disabled.
  *
  *  @return Pointer to resulting copBlock.
  */
-tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask);
+tCopBlock *copBlockDisableSprites(tCopList *pList, tSpriteMask eSpriteMask);
 
 /********************* Copperblock cmd functions ******************************/
 
@@ -264,14 +279,13 @@ static inline void copSetMoveVal(tCopMoveCmd *pMoveCmd, UWORD uwValue) {
  * This function doesn't add any WAIT cmd, be sure to put those cmds in VBlank.
  * Number of MOVE instructions added equals two times number of sprites disabled.
  *
- * @param pList        Copperlist to be edited.
- * @param ubSpriteMask Determines sprites to be disabled.
- *                     Setting bit0 to 1 disables sprite 0, etc.
- * @param uwCmdOffs    Start position on raw copperlist.
+ * @param pList       Copperlist to be edited.
+ * @param eSpriteMask Determines sprites to be disabled.
+ * @param uwCmdOffs   Start position on raw copperlist.
  * @return Number of MOVE instructions added.
  */
 UBYTE copRawDisableSprites(
-	tCopList *pList, UBYTE ubSpriteMask, UWORD uwCmdOffs
+	tCopList *pList, tSpriteMask eSpriteMask, UWORD uwCmdOffs
 );
 
 #endif // AMIGA

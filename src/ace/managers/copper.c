@@ -586,55 +586,59 @@ void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
 	copSetMoveVal(pMoveCmd, uwValue);
 }
 
-static UWORD CHIP s_pBlankSprite[2];
+static tHardwareSpriteHeader CHIP s_uBlankSprite;
 
-tCopBlock *copBlockDisableSprites(tCopList *pList, FUBYTE fubSpriteMask) {
-	FUBYTE fubCmdCnt = 0;
-	FUBYTE fubMask = fubSpriteMask;
+tCopBlock *copBlockDisableSprites(tCopList *pList, tSpriteMask eSpriteMask) {
+	// TODO: move to sprite manager?
+	UBYTE ubCmdCount = 0;
+	tSpriteMask eMask = eSpriteMask;
 
 	// Determine instruction count
-	for(FUBYTE i = 0; i != 8; ++i) {
-		if(fubMask & 1) {
-			fubCmdCnt += 2;
+	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
+		if(eMask & 1) {
+			ubCmdCount += 2;
 		}
-		fubMask >>= 1;
+		eMask >>= 1;
 	}
 
 	// Set instructions
-	ULONG ulBlank = (ULONG)s_pBlankSprite;
-	tCopBlock *pBlock = copBlockCreate(pList, fubCmdCnt, 0, 0);
-	fubMask = fubSpriteMask;
-	for(FUBYTE i = 0; i != 8; ++i) {
-		if(fubMask & 1) {
+	ULONG ulBlank = s_uBlankSprite.ulRaw;
+	tCopBlock *pBlock = copBlockCreate(pList, ubCmdCount, 0, 0);
+	eMask = eSpriteMask;
+	for(UBYTE i = 0; i < HARDWARE_SPRITE_CHANNEL_COUNT; ++i) {
+		if(eMask & 1) {
 			copMove(pList, pBlock, &g_pSprFetch[i].uwHi, ulBlank >> 16);
 			copMove(pList, pBlock, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
 		}
-		fubMask >>= 1;
+		eMask >>= 1;
 	}
 	return pBlock;
 }
 
-UBYTE copRawDisableSprites(tCopList *pList, UBYTE ubSpriteMask, UWORD uwCmdOffs) {
-	UBYTE ubCmdCnt = 0;
-	ULONG ulBlank = (ULONG)s_pBlankSprite;
+UBYTE copRawDisableSprites(
+	tCopList *pList, tSpriteMask eSpriteMask, UWORD uwCmdOffs
+) {
+	// TODO: move to sprite
+	UBYTE ubCmdCount = 0;
+	ULONG ulBlank = s_uBlankSprite.ulRaw;
 
 	// No WAIT - could be done earlier by other stuff
 	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[uwCmdOffs].sMove;
-	for(UBYTE i = 0; i != 8; ++i) {
-		if(ubSpriteMask & 1) {
+	for(UBYTE i = 0; i < HARDWARE_SPRITE_CHANNEL_COUNT; ++i) {
+		if(eSpriteMask & 1) {
 			copSetMove(pCmd++, &g_pSprFetch[i].uwHi, ulBlank >> 16);
 			copSetMove(pCmd++, &g_pSprFetch[i].uwLo, ulBlank & 0xFFFF);
-			ubCmdCnt += 2;
+			ubCmdCount += 2;
 		}
-		ubSpriteMask >>= 1;
+		eSpriteMask >>= 1;
 	}
 
 	// Copy to front buffer
-	for(UWORD i = uwCmdOffs; i < uwCmdOffs + ubCmdCnt; ++i) {
+	for(UWORD i = uwCmdOffs; i < uwCmdOffs + ubCmdCount; ++i) {
 		pList->pFrontBfr->pList[i].ulCode = pList->pBackBfr->pList[i].ulCode;
 	}
 
-	return ubCmdCnt;
+	return ubCmdCount;
 }
 
 #endif // AMIGA
