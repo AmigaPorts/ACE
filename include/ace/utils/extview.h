@@ -25,8 +25,8 @@ typedef enum _tTagView {
 	TAG_VIEW_COPLIST_MODE      = TAG_USER | 1,
 	// If in raw mode, specify copperlist instruction count
 	TAG_VIEW_COPLIST_RAW_COUNT = TAG_USER | 2,
-	// If set with non-zero variable, view will use global palette & ignore vPorts'
-	TAG_VIEW_GLOBAL_CLUT       = TAG_USER | 3,
+	// If set to non-zero, view will use first vport's palette as global & ignore other ones
+	TAG_VIEW_GLOBAL_PALETTE    = TAG_USER | 3,
 	// The X value for display window start.
 	// TAG_VIEW_WINDOW_START_X    = TAG_USER | 4,
 	// The Y value for display window start.
