@@ -44,6 +44,7 @@ tSprite *spriteAdd(
 	tSprite *pSprite = memAllocFast(sizeof(*pSprite));
 	pSprite->ubSpriteIndex = ubSpriteIndex;
 	pSprite->uwRawCopPos = uwRawCopPos;
+	pSprite->ubRawCopListRegenCount = 0;
 	pSprite->wX = 0;
 	pSprite->wY = 0;
 
