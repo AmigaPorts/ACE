@@ -120,9 +120,10 @@ void spriteUpdate(tSprite *pSprite) {
 		copSetMove(&pList[1].sMove, &g_pSprFetch[pSprite->ubSpriteIndex].uwLo, ulSprAddr & 0xFFFF);
 	}
 
-	// Sprite in list mode has 2-word header before and after data.
+	// Sprite in list mode has 2-word header before and after data, each
+	// occupies 1 line of the bitmap.
 	// TODO: get rid of hardcoded 128 X offset in reasonable way.
-	const UWORD uwSpriteHeight = pSprite->pBitmap->Rows;
+	const UWORD uwSpriteHeight = pSprite->pBitmap->Rows - 2;
 	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
 	UWORD uwVStop = uwVStart + uwSpriteHeight;
 	UWORD uwHStart = 128 + pSprite->wX;
