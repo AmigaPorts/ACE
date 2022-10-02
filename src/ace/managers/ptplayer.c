@@ -29,6 +29,10 @@
 // if channel is idle. May be better in the long run for os-friendly use. Buggy!
 // #define PTPLAYER_USE_AUDIO_INT_HANDLERS
 
+// TODO: ENABLE_SAWRECT from ptplayer 6.1?
+// TODO: MINIMAL from ptplayer?
+// TODO: VBL-friendly changes from ptplayer 6.2
+
 //---------------------------------------------------------------------- DEFINES
 
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
@@ -40,6 +44,16 @@
 
 // Size of period table.
 #define MOD_PERIOD_TABLE_LENGTH 36
+
+/**
+ * @brief Delay in CIA-ticks, which guarantees that at least one Audio-DMA
+ * took place, even with the lowest periods.
+ * 496 should be the correct value. But there are some A1200 which
+ * need at least 550.
+ */
+#define DMA_DELAY 576
+
+#define SFX_PRIORITY_LOOPED 0xFF
 
 //------------------------------------------------------------------------ TYPES
 
@@ -97,8 +111,12 @@ typedef struct _tChannelStatus {
 	UWORD *n_loopstart;
 	UWORD n_length;
 	UWORD n_replen;
-	UWORD n_period;
-	UWORD n_volume;
+	UWORD uwPeriod;
+
+	/**
+	 * @brief Volume for channel (0..64)
+	 */
+	UWORD uwVolume;
 
 	/**
 	 * @brief Currently used period table - for arpeggio / fine-tune.
@@ -116,25 +134,36 @@ typedef struct _tChannelStatus {
 	UBYTE *n_wavestart;
 	UWORD n_reallength;
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+	/**
+	 * @brief Channel index.
+	 *
+	 * Original ptplayer name: n_index.
+	 */
+	UBYTE ubChannelIndex;
+
 	volatile UBYTE *pDoneBit;
-	UWORD uwChannelIdx;
 #endif
 
 	/**
-	 * @brief Pending sfx length. Set to 0 after registers are set to play it.
+	 * @brief Pending sfx length. Set by player to 0 after registers are set
+	 * to play it.
 	 */
-	UWORD n_sfxlen;
+	UWORD uwSfxWordLength;
 
 	UWORD *n_sfxptr;
-	UWORD n_sfxper;
-	UWORD n_sfxvol;
+	UWORD uwSfxPeriod;
+
+	/**
+	 * @brief Volume for sample (0..64)
+	 */
+	UWORD uwSfxVolume;
 
 	/**
 	 * @brief Set to 1 if sample has repeat offset/length which is other value
 	 * than sample start / sample length - prevents from using channel for sfx
 	 * after first sample play.
 	 */
-	UBYTE n_looped;
+	UBYTE isLooped;
 
 	/**
 	 * @brief Set to 1 to indicate that finetune value is negative.
@@ -163,6 +192,11 @@ typedef struct _tChannelStatus {
 
 	UBYTE n_freecnt;
 	UBYTE n_musiconly;
+
+	/**
+	 * @brief If enabled for music playback, set to 0xFF, otherwise set to 0.
+	 */
+	UBYTE isEnabledForMusic;
 } tChannelStatus;
 
 typedef void (*tVoidFn)(void);
@@ -170,6 +204,12 @@ typedef void (*tFx)(
 	UBYTE ubArgs, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 );
+
+/**
+ * @brief E Command callback.
+ *
+ * @param ubArg - E command parameter, set to 0..F.
+ */
 typedef void (*tEFn)(
 	UBYTE ubArg, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
@@ -921,6 +961,13 @@ static volatile UBYTE mt_MusicChannels = 0;
 static volatile UBYTE mt_E8Trigger = 0;
 static volatile UBYTE mt_Enable = 0;
 
+/**
+ * @brief Used to determine what Timer B interrupt should do next.
+ *
+ * Original ptplayer variable name: TB_toggle.
+ */
+static volatile UBYTE s_isNextTimerBSetRep;
+
 static tChannelStatus mt_chan[4];
 static UWORD *mt_SampleStarts[31]; ///< Start address of each sample
 static tModFileHeader *mt_mod;
@@ -952,23 +999,21 @@ static tPtplayerMod *s_pModCurr;
 
 static void clearAudioDone(void) {
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
-	// When channel is idle, original ptplayer loops playback of  the first word
+	// When channel is idle, original ptplayer loops playback of the first word
 	// and allows Paula to keep the intbit being set, so clearing here intreq
 	// for all channels didn't permanently affected idle channel bits.
 	// int-handler version disables channel's DMA when sfx played back to prevent
 	// interrupt spamming, so they can't maintain the 'done' intbit.
 	s_uChannelDone.ulChannelMask = 0;
 #else
-	g_pCustom->intreq = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
-	// This originally cleared only the intbits set by mt_dmaon.
-	// KaiN's note: Audio dmaBits = 0b0001..0b1000, intBits = dmaBits << 7
-	g_pCustom->intreq = mt_dmaon << 7;
 	// for some reason I've had the following code here - why?
 	// g_pCustom->intreq = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
+	// KaiN's note: Audio dmaBits = 0b0001..0b1000, intBits = dmaBits << 7
+	g_pCustom->intreq = (mt_dmaon << 7) | INTF_EXTER;
 #endif
 }
 
-static void setAudioDone(tChannelStatus *pChannelData) {
+static void setAudioDone(UNUSED_ARG tChannelStatus *pChannelData) {
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	pChannelData->pDoneBit = 1;
 #endif
@@ -978,6 +1023,11 @@ static UBYTE isChannelDone(tChannelStatus *pChannelData) {
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	return *pChannelData->pDoneBit;
 #else
+	if (pChannelData->isLooped) {
+		// Looping channels are not done
+		return 0;
+	}
+
 	// This doesn't work when nothing has yet played - check dmaconr for that
 	// KaiN's note: Audio dmaBits = 0b0001..0b1000, intBits = dmaBits << 7
 	UWORD uwIntReqr = g_pCustom->intreqr;
@@ -989,7 +1039,7 @@ static UBYTE isChannelDone(tChannelStatus *pChannelData) {
 #endif
 }
 
-static void printVoices(const tModVoice *pVoices) {
+static void printVoices(UNUSED_ARG const tModVoice *pVoices) {
 #if defined(ACE_DEBUG_PTPLAYER)
 	typedef struct _tPeriodNote {
 		UWORD uwPeriod;
@@ -1095,26 +1145,39 @@ static void startSfx(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 #if defined(ACE_DEBUG_PTPLAYER)
-	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, pChannelData->n_sfxlen);
+	logWrite("startsfx: %p:%hu\n", pChannelData->n_sfxptr, pChannelData->uwSfxWordLength);
 #endif
 	// play new sound effect on this channel
 	systemSetDmaMask(pChannelData->uwDmaFlag, 0);
-	pChannelReg->ac_ptr = pChannelData->n_sfxptr;
-	pChannelReg->ac_len = pChannelData->n_sfxlen;
-	pChannelReg->ac_per = pChannelData->n_sfxper;
-	pChannelReg->ac_vol = pChannelData->n_sfxvol;
+	UWORD uwRepeatLength;
+	if(pChannelData->ubSfxPriority == SFX_PRIORITY_LOOPED) {
+		pChannelData->isLooped = 1;
+
+		// Skip first word which is used for idling
+		++pChannelData->n_sfxptr;
+		uwRepeatLength = pChannelData->n_length - 1;
+		pChannelReg->ac_ptr = pChannelData->n_sfxptr;
+		pChannelReg->ac_len = uwRepeatLength;
+	}
+	else {
+		pChannelData->isLooped = 0;
+		uwRepeatLength = 1;
+		pChannelReg->ac_ptr = pChannelData->n_sfxptr;
+		pChannelReg->ac_len = pChannelData->uwSfxWordLength;
+	}
+	pChannelReg->ac_per = pChannelData->uwSfxPeriod;
+	pChannelReg->ac_vol = pChannelData->uwSfxVolume;
 
 	// Save repeat and period for TimerB interrupt.
 	// After the sample has fully played back and there is no repeat,
 	// the channel's pointer will be set to first word of sample and play back
 	// the first word continuously.
 	pChannelData->n_loopstart = pChannelData->n_sfxptr;
-	pChannelData->n_replen = 1;
-	pChannelData->n_period = pChannelData->n_period;
-	pChannelData->n_looped = 0;
-	pChannelData->n_sfxlen = 0;
+	pChannelData->n_replen = uwRepeatLength;
+	pChannelData->uwPeriod = pChannelData->uwPeriod;
+	pChannelData->uwSfxWordLength = 0; // Don't call startSfx() again
 
-	mt_dmaon |= pChannelData->uwDmaFlag;
+	mt_dmaon |= pChannelData->uwDmaFlag; // DMA channel to enable on Timer B
 }
 
 void moreBlockedFx(
@@ -1168,7 +1231,7 @@ static void mt_playvoice(
 ) {
 	if(pChannelData->ubSfxPriority) {
 		// Channel is blocked by external sound effect
-		if(pChannelData->n_sfxlen) {
+		if(pChannelData->uwSfxWordLength) {
 			// There are pending sfx data to be written into channel regs
 			startSfx(pChannelData, pChannelReg);
 			moreBlockedFx(pVoice->uwCmd, pChannelData, pChannelReg);
@@ -1186,7 +1249,7 @@ static void mt_playvoice(
 	}
 	// n_note/cmd: any note or cmd set?
 	if(!pChannelData->sVoice.ulData) {
-		pChannelReg->ac_per = pChannelData->n_period;
+		pChannelReg->ac_per = pChannelData->uwPeriod;
 	}
 	pChannelData->sVoice.ulData = pVoice->ulData;
 
@@ -1207,9 +1270,18 @@ static void mt_playvoice(
 		UWORD uwSampleLength = pSampleDef->uwLength;
 		if(!uwSampleLength) {
 			// Use the first two bytes from the first sample for empty samples
-			pSampleStart = mt_SampleStarts[0];
+			uwSampleIdx = 0;
+			pSampleStart = mt_SampleStarts[uwSampleIdx];
 			uwSampleLength = 1;
 		}
+
+		if(!pSampleStart) {
+			logWrite(
+				"ERR: Malformed MOD: start offset of sample %hu is zero\n",
+				uwSampleIdx
+			);
+		}
+
 		// logWrite("playvoice sample: %hu, length: %hu\n", uwSampleIdx, uwSampleLength);
 		pChannelData->n_start = pSampleStart;
 		pChannelData->n_reallength = uwSampleLength;
@@ -1219,17 +1291,17 @@ static void mt_playvoice(
 		pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 		pChannelData->n_minusft = (ubFineTune >= 8);
 
-		pChannelData->n_volume = pSampleDef->ubVolume;
+		pChannelData->uwVolume = pSampleDef->ubVolume;
 		// MOD spec: repeat only if repeat length is bigger than 2 bytes.
 		if(pSampleDef->uwRepeatLength <= 1) {
 			// No repeat def - reload first empty sample word after playback,
 			// then disable channel.
-			pChannelData->n_looped = 0;
+			pChannelData->isLooped = 0;
 			pChannelData->n_replen = 1;
 		}
 		else {
 			// Set repeat
-			pChannelData->n_looped = 1;
+			pChannelData->isLooped = 1;
 			pChannelData->n_replen = pSampleDef->uwRepeatLength;
 			uwSampleLength = pSampleDef->uwRepeatLength + ubFineTune * 2;
 			pSampleStart += pSampleDef->uwRepeatOffs;
@@ -1239,7 +1311,7 @@ static void mt_playvoice(
 		pChannelData->n_length = uwSampleLength;
 		pChannelData->n_loopstart = pSampleStart;
 		pChannelData->n_wavestart = (UBYTE*)pSampleStart;
-		pChannelReg->ac_vol = mt_MasterVolTab[pSampleDef->ubVolume];
+		pChannelReg->ac_vol = mt_MasterVolTab[pSampleDef->ubVolume] & pChannelData->isEnabledForMusic;
 	}
 
 	// inlined set_regs function here:
@@ -1265,7 +1337,7 @@ static void mt_checkfx(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	if(pChannelData->ubSfxPriority) {
-		UWORD uwLen = pChannelData->n_sfxlen;
+		UWORD uwLen = pChannelData->uwSfxWordLength;
 		if(uwLen) {
 			startSfx(pChannelData, pChannelReg);
 		}
@@ -1294,7 +1366,7 @@ static void mt_checkfx(
 	UWORD uwCmd = (pChannelData->sVoice.uwCmd & 0x0FFF);
 	if(!uwCmd) {
 		// Just set the current period - same as mt_pernop
-		pChannelReg->ac_per = pChannelData->n_period;
+		pChannelReg->ac_per = pChannelData->uwPeriod;
 	}
 	else {
 		UBYTE ubCmdIndex = (pChannelData->sVoice.ubCmdHi & 0xF);
@@ -1310,7 +1382,7 @@ static void mt_checkfx(
 static void mt_sfxonly(void);
 static void mt_music(void);
 
-static void intPlay(volatile tCustom *pCustom) {
+static void intPlay() {
 	// it was a TA interrupt, do music when enabled
 	if(mt_Enable) {
 		mt_music();
@@ -1324,13 +1396,13 @@ static void intPlay(volatile tCustom *pCustom) {
 // TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
 // which defaults to 50 times per second.
 static void mt_TimerAInt(
-	REGARG(volatile tCustom *pCustom, "a0"),
+	UNUSED_ARG REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
 ) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	s_isPendingPlay = 1;
 #else
-	intPlay(pCustom);
+	intPlay();
 #endif
 }
 
@@ -1361,7 +1433,7 @@ static inline void setChannelRepeat(
 		if(mt_dmaon & pChannelData->uwDmaFlag) {
 			// Channel is still on - give the audio interrupt signal that it should
 			// disable channel DMA after playback of this one.
-			s_pAudioChannelPendingDisable[pChannelData->uwChannelIdx] = 1;
+			s_pAudioChannelPendingDisable[pChannelData->ubChannelIndex] = 1;
 		}
 	}
 #endif
@@ -1390,42 +1462,37 @@ static void intSetRep(volatile tCustom *pCustom) {
 
 	// restore TimerA music interrupt vector
 	ptplayerEnableMainHandler(1);
-	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
-// One-shot TimerB interrupt to set repeat samples after another 576 ticks.
-static void mt_TimerBsetrep(
-	REGARG(volatile tCustom *pCustom, "a0"),
-	UNUSED_ARG REGARG(volatile void *pData, "a1")
-) {
-#if defined(PTPLAYER_DEFER_INTERRUPTS)
-	s_isPendingSetRep = 1;
-#else
-	intSetRep(pCustom);
-#endif
-}
-
-static void intDmaOn(volatile tCustom *pCustom) {
-	// pCustom->color[0] = 0x00F;
+static void intDmaOn() {
 	// Restart timer to set repeat, enable DMA
 	systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START);
 	systemSetDmaMask(mt_dmaon, 1);
-
-	// set level 6 interrupt to mt_TimerBsetrep
 	ptplayerEnableMainHandler(0);
-	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBsetrep, 0);
-	// pCustom->color[0] = 0x000;
 }
 
-// One-shot TimerB interrupt to enable audio DMA after 576 ticks.
-static void mt_TimerBdmaon(
+// One-shot TimerB interrupt to enable audio DMA after DMA_DELAY ticks.
+static void mt_TimerBInt(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
 ) {
+	// Do DMA on first, then Set Repeat
+	UBYTE isSetRep = s_isNextTimerBSetRep;
+	s_isNextTimerBSetRep = !s_isNextTimerBSetRep;
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
-	s_isPendingDmaOn = 1;
+	if(isSetRep) {
+		s_isPendingSetRep = 1;
+	}
+	else {
+		s_isPendingDmaOn = 1;
+	}
 #else
-	intDmaOn(pCustom);
+	if(isSetRep) {
+		intSetRep(pCustom);
+	}
+	else {
+		intDmaOn();
+	}
 #endif
 }
 
@@ -1433,7 +1500,7 @@ static void chan_sfx_only(
 	volatile tChannelRegs *pChannelReg, tChannelStatus *pChannelData
 ) {
 	if(pChannelData->ubSfxPriority) {
-		if(pChannelData->n_sfxlen) {
+		if(pChannelData->uwSfxWordLength) {
 			startSfx(pChannelData, pChannelReg);
 		}
 		else if(isChannelDone(pChannelData) && !(mt_dmaon & pChannelData->uwDmaFlag)) {
@@ -1454,7 +1521,6 @@ void mt_sfxonly(void) {
 
 	if(mt_dmaon) {
 		ptplayerEnableMainHandler(0);
-		systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 		systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START); // load/start timer B, one-shot
 	}
 }
@@ -1476,7 +1542,6 @@ static void mt_music(void) {
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon) {
 			ptplayerEnableMainHandler(0);
-			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 			systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START); // load/start timer B, one-shot
 		}
 	}
@@ -1508,7 +1573,6 @@ static void mt_music(void) {
 		// set one-shot TimerB interrupt for enabling DMA, when needed
 		if(mt_dmaon) {
 			ptplayerEnableMainHandler(0);
-			systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBdmaon, 0);
 			systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START); // load/start timer B, one-shot
 		}
 
@@ -1551,13 +1615,30 @@ static void mt_music(void) {
 	}
 }
 
+/**
+ * @brief Resets channel status. All registers are preserved!
+ *
+ * @param pChannel
+ */
+static void resetChannel(tChannelStatus *pChannel) {
+	pChannel->uwPeriod = 320; // make sure period is not illegal
+	pChannel->uwVolume = 0;
+	pChannel->uwSfxWordLength = 0;
+	pChannel->uwFunkSpeed = 0;
+	pChannel->ubSfxPriority = 0;
+	pChannel->isLooped = 0;
+	pChannel->n_gliss = 0;
+	pChannel->n_musiconly = 0;
+	pChannel->isEnabledForMusic = 0xFF;
+}
+
 // Stop playing current module.
 void ptplayerStop(void) {
 	ptplayerEnableMusic(0);
-	g_pCustom->aud[0].ac_vol = 0;
-	g_pCustom->aud[1].ac_vol = 0;
-	g_pCustom->aud[2].ac_vol = 0;
-	g_pCustom->aud[3].ac_vol = 0;
+	resetChannel(&mt_chan[0]);
+	resetChannel(&mt_chan[1]);
+	resetChannel(&mt_chan[2]);
+	resetChannel(&mt_chan[3]);
 	systemSetDmaMask(DMAF_AUDIO, 0);
 	s_pModCurr = 0;
 
@@ -1583,8 +1664,8 @@ static void mt_reset(void) {
 	systemSetCiaCr(CIA_B, 0, CIACRA_LOAD | CIACRA_START); // load timer, start continuous
 #endif
 
-	// Load TimerB with 576 ticks for setting DMA and repeat
-	systemSetTimer(CIA_B, 1, 576);
+	// Load TimerB with DMA_DELAY ticks for setting DMA and repeat
+	systemSetTimer(CIA_B, 1, DMA_DELAY);
 
 	// Enable CIA B interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
@@ -1593,6 +1674,11 @@ static void mt_reset(void) {
 	mt_Speed = 6;
 	mt_Counter = 0;
 	mt_PatternPos = 0;
+	mt_PattDelTime = 0;
+	mt_PattDelTime2 = 0;
+	mt_PBreakPos = 0;
+	mt_PBreakFlag = 0;
+	mt_PosJumpFlag = 0;
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	// Set all channels as done in case of waiting for sfx before any have been
@@ -1607,16 +1693,14 @@ static void mt_reset(void) {
 	mt_MasterVolTab = MasterVolTab[64];
 
 	// initialise channel DMA, interrupt bits and audio register base
-	// make sure n_period doesn't start as 0
+	// make sure uwPeriod doesn't start as 0
 	// disable sound effects
 	for(UBYTE i = 4; i--;) {
 		mt_chan[i].uwDmaFlag = 1 << (DMAB_AUD0 + i);
 	#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
-		mt_chan[i].uwChannelIdx = i;
+		mt_chan[i].ubChannelIndex = i;
 		mt_chan[i].pDoneBit = &s_uChannelDone.pChannels[i];
 	#endif
-		mt_chan[i].n_period = 320;
-		mt_chan[i].n_sfxlen = 0;
 	}
 
 	mt_SilCntValid = 0;
@@ -1629,15 +1713,15 @@ static void INTERRUPT onAudio(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	REGARG(volatile void *pData, "a1")
 ) {
-	UBYTE ubChannelIdx = (ULONG)pData;
-	s_uChannelDone.pChannels[ubChannelIdx] = 1;
+	UBYTE ubChannelIndex = (ULONG)pData;
+	s_uChannelDone.pChannels[ubChannelIndex] = 1;
 
-	if(s_pAudioChannelPendingDisable[ubChannelIdx]) {
+	if(s_pAudioChannelPendingDisable[ubChannelIndex]) {
 		// This is to prevent repeatedly triggering audio interrupt and slowing
 		// Amiga down after sfx playback.
-		s_pAudioChannelPendingDisable[ubChannelIdx] = 0;
-		systemSetDmaMask(DMAF_AUD0 << ubChannelIdx, 0);
-		pCustom->aud[ubChannelIdx].ac_dat = 0;
+		s_pAudioChannelPendingDisable[ubChannelIndex] = 0;
+		systemSetDmaMask(DMAF_AUD0 << ubChannelIndex, 0);
+		pCustom->aud[ubChannelIndex].ac_dat = 0;
 	}
 };
 #endif
@@ -1646,12 +1730,14 @@ void ptplayerDestroy(void) {
 	ptplayerStop();
 	// Disable handling of music
 	ptplayerEnableMusic(0);
-	systemSetCiaInt(CIA_B, 0, 0, 0);
-	systemSetCiaInt(CIA_B, 1, 0, 0);
-	// systemSetInt(INTB_AUD0, 0, 0);
-	// systemSetInt(INTB_AUD1, 0, 0);
-	// systemSetInt(INTB_AUD2, 0, 0);
-	// systemSetInt(INTB_AUD3, 0, 0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_A, 0, 0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
+#if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
+	systemSetInt(INTB_AUD0, 0, 0);
+	systemSetInt(INTB_AUD1, 0, 0);
+	systemSetInt(INTB_AUD2, 0, 0);
+	systemSetInt(INTB_AUD3, 0, 0);
+#endif
 }
 
 void ptplayerCreate(UBYTE isPal) {
@@ -1673,7 +1759,7 @@ void ptplayerCreate(UBYTE isPal) {
 	// disable CIA B interrupts, set player interrupt vector
 	g_pCustom->intena = INTF_EXTER;
 	ptplayerEnableMainHandler(1);
-	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, mt_TimerBInt, 0);
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	systemSetInt(INTB_AUD0, onAudio, (void*)0);
 	systemSetInt(INTB_AUD1, onAudio, (void*)1);
@@ -1779,9 +1865,39 @@ void ptplayerSetMusicChannelMask(UBYTE ChannelMask) {
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
 
+static void setAllVolumes(void) {
+	// Only set volume for channels used in MOD playback.
+	if (!mt_chan[0].ubSfxPriority) {
+		g_pCustom->aud[0].ac_vol = mt_MasterVolTab[mt_chan[0].uwVolume] & mt_chan[0].isEnabledForMusic;
+	}
+	if (!mt_chan[1].ubSfxPriority) {
+		g_pCustom->aud[1].ac_vol = mt_MasterVolTab[mt_chan[1].uwVolume] & mt_chan[1].isEnabledForMusic;
+	}
+	if (!mt_chan[2].ubSfxPriority) {
+		g_pCustom->aud[2].ac_vol = mt_MasterVolTab[mt_chan[2].uwVolume] & mt_chan[2].isEnabledForMusic;
+	}
+	if (!mt_chan[3].ubSfxPriority) {
+		g_pCustom->aud[3].ac_vol = mt_MasterVolTab[mt_chan[3].uwVolume] & mt_chan[3].isEnabledForMusic;
+	}
+}
+
 void ptplayerSetMasterVolume(UBYTE ubMasterVolume) {
 	g_pCustom->intena = INTF_INTEN;
+
+	// Set new table and adapt all channel volumes immediately
 	mt_MasterVolTab = MasterVolTab[ubMasterVolume];
+	setAllVolumes();
+
+	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
+}
+
+void ptplayerMuteMusicChannels(UBYTE ubChannelMask) {
+	g_pCustom->intena = INTF_INTEN;
+	mt_chan[0].isEnabledForMusic = BTST(ubChannelMask, 0) ? 0 : 0xFF;
+	mt_chan[1].isEnabledForMusic = BTST(ubChannelMask, 1) ? 0 : 0xFF;
+	mt_chan[2].isEnabledForMusic = BTST(ubChannelMask, 2) ? 0 : 0xFF;
+	mt_chan[3].isEnabledForMusic = BTST(ubChannelMask, 3) ? 0 : 0xFF;
+	setAllVolumes();
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
 
@@ -1792,9 +1908,9 @@ static void mt_toneporta_nc(
 ) {
 	if(pChannelData->n_wantedperiod) {
 		UWORD uwNew;
-		if(pChannelData->n_period > pChannelData->n_wantedperiod) {
+		if(pChannelData->uwPeriod > pChannelData->n_wantedperiod) {
 			// tone porta up
-			uwNew = pChannelData->n_period - pChannelData->n_toneportspeed;
+			uwNew = pChannelData->uwPeriod - pChannelData->n_toneportspeed;
 			if(uwNew < pChannelData->n_wantedperiod) {
 				uwNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
@@ -1802,13 +1918,13 @@ static void mt_toneporta_nc(
 		}
 		else {
 			// tone porta down
-			uwNew = pChannelData->n_period + pChannelData->n_toneportspeed;
+			uwNew = pChannelData->uwPeriod + pChannelData->n_toneportspeed;
 			if(uwNew > pChannelData->n_wantedperiod) {
 				uwNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
 			}
 		}
-		pChannelData->n_period = uwNew;
+		pChannelData->uwPeriod = uwNew;
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
 			const UWORD *pPeriodTable = pChannelData->pPeriodTable;
@@ -1843,7 +1959,7 @@ static void mt_vibrato_nc(
 	}
 
 	// add vibrato-offset to period
-	pChannelReg->ac_per = pChannelData->n_period + pTable[ubOffs];
+	pChannelReg->ac_per = pChannelData->uwPeriod + pTable[ubOffs];
 
 	// Increase vibratopos by speed
 	pChannelData->n_vibratopos += ubSpeed;
@@ -1869,7 +1985,7 @@ static void mt_arpeggio(
 	};
 
 	// Step 0, just use normal period
-	pChannelReg->ac_per = pChannelData->n_period;
+	pChannelReg->ac_per = pChannelData->uwPeriod;
 
 	UWORD uwVal;
 	if(pArpTab[mt_Counter] >= 0) {
@@ -1895,8 +2011,8 @@ static void ptDoPortaUp(
 	UBYTE ubVal, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
-	UWORD uwNewPer = MAX(113, pChannelData->n_period - ubVal);
-	pChannelData->n_period = uwNewPer;
+	UWORD uwNewPer = MAX(113, pChannelData->uwPeriod - ubVal);
+	pChannelData->uwPeriod = uwNewPer;
 	pChannelReg->ac_per = uwNewPer;
 }
 
@@ -1912,8 +2028,8 @@ static void ptDoPortaDn(
 	UBYTE ubVal, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
-	UWORD uwNewPer = MIN(pChannelData->n_period - ubVal, 856);
-	pChannelData->n_period = uwNewPer;
+	UWORD uwNewPer = MIN(pChannelData->uwPeriod - ubVal, 856);
+	pChannelData->uwPeriod = uwNewPer;
 	pChannelReg->ac_per = uwNewPer;
 }
 
@@ -1964,9 +2080,9 @@ static void ptVolSlide(
 	volatile tChannelRegs *pChannelReg
 ) {
 	bVolNew = CLAMP(bVolNew, 0, 64);
-	pChannelData->n_volume = bVolNew;
-	pChannelReg->ac_per = pChannelData->n_period;
-	pChannelReg->ac_vol = mt_MasterVolTab[bVolNew];
+	pChannelData->uwVolume = bVolNew;
+	pChannelReg->ac_per = pChannelData->uwPeriod;
+	pChannelReg->ac_vol = mt_MasterVolTab[bVolNew] & pChannelData->isEnabledForMusic;
 }
 
 static void mt_volumeslide(
@@ -1977,7 +2093,7 @@ static void mt_volumeslide(
 	UBYTE ubVolDn  = ubArgs & 0x0F;
 	UBYTE ubVolUp = ubArgs >> 4;
 
-	BYTE bVol = pChannelData->n_volume;
+	BYTE bVol = pChannelData->uwVolume;
 	if(!ubVolUp) {
 		// Slide up, until 64
 		ptVolSlide(bVol + ubVolUp, pChannelData, pChannelReg);
@@ -2016,8 +2132,7 @@ static void mt_vibrvolslide(
 }
 
 static void mt_tremolo(
-	UBYTE ubArgs, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
+	UBYTE ubArgs, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// uwCmd: 0x07'XY (x = speed, y = amplitude)
 	UBYTE ubAmplitude = ubArgs & 0x0F;
@@ -2055,11 +2170,11 @@ static void mt_tremolo(
 	}
 
 	// add tremolo-offset to volume
-	WORD wNewVol = pChannelData->n_volume + pWaveform[uwOffset];
+	WORD wNewVol = pChannelData->uwVolume + pWaveform[uwOffset];
 	wNewVol = CLAMP(wNewVol, 0, 64);
 
-	pChannelReg->ac_per = pChannelData->n_period;
-	pChannelReg->ac_vol = wNewVol;
+	pChannelReg->ac_per = pChannelData->uwPeriod;
+	pChannelReg->ac_vol = wNewVol & pChannelData->isEnabledForMusic;
 
 	// increase tremolopos by speed
 	pChannelData->n_tremolopos += ubSpeed;
@@ -2174,18 +2289,40 @@ static void mt_pernop(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// just set the current period
-	pChannelReg->ac_per = pChannelData->n_period;
+	pChannelReg->ac_per = pChannelData->uwPeriod;
 }
 
 static void mt_volchange(
 	UBYTE ubNewVolume,
-	UNUSED_ARG tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd C x y (xy = new volume)
 	if(ubNewVolume > 64) {
 		ubNewVolume = 64;
 	}
-	pChannelReg->ac_vol = mt_MasterVolTab[ubNewVolume];
+	pChannelReg->ac_vol = mt_MasterVolTab[ubNewVolume] & pChannelData->isEnabledForMusic;
+}
+
+static void mt_sampleoffset(
+	UBYTE ubArg, tChannelStatus *pChannelData,
+	UNUSED_ARG volatile tChannelRegs *pChannelReg
+) {
+	// cmd 9 x y (xy = offset in 256's of bytes)
+	// d4 = xy
+	if(!ubArg) {
+		ubArg = pChannelData->n_sampleoffset;
+	}
+	else {
+		pChannelData->n_sampleoffset = ubArg;
+	}
+	UWORD uwLength = ubArg * (256 / sizeof(UWORD));
+	if(uwLength < pChannelData->n_length) {
+		pChannelData->n_length -= uwLength;
+		pChannelData->n_start += uwLength;
+	}
+	else {
+		pChannelData->n_length = 1;
+	}
 }
 
 static const tFx blmorefx_tab[16] = {
@@ -2198,7 +2335,9 @@ static const tFx blmorefx_tab[16] = {
 };
 
 static const tFx morefx_tab[16] = {
-	[0 ... 0x0A] = mt_pernop,
+	[0 ... 0x08] = mt_pernop,
+	[0x09] = mt_sampleoffset,
+	[0x0A] = mt_pernop,
 	[0x0B] = mt_posjump,
 	[0x0C] = mt_volchange,
 	[0x0D] = mt_patternbrk,
@@ -2246,7 +2385,7 @@ static void mt_glissctrl(
 	UNUSED_ARG volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'3X (x = gliss)
-	pChannelData->n_gliss = (pChannelData->n_gliss & 4) | ubArg;
+	pChannelData->n_gliss = ubArg;
 }
 
 static void mt_vibratoctrl(
@@ -2323,8 +2462,7 @@ static void ptDoRetrigger(
 }
 
 static void mt_retrignote(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
+	UBYTE ubArg, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'9X (x = retrigger count)
 	if(!ubArg) {
@@ -2353,44 +2491,41 @@ static void mt_retrignote(
 }
 
 static void mt_volfineup(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
+	UBYTE ubArg, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'AX (x = volume add)
 	if(!mt_Counter) {
-		ptVolSlide(pChannelData->n_volume + ubArg, pChannelData, pChannelReg);
+		ptVolSlide(pChannelData->uwVolume + ubArg, pChannelData, pChannelReg);
 	}
 }
 
 static void mt_volfinedn(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
+	UBYTE ubArg, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'BX (x = volume subtract)
 	if(!mt_Counter) {
-		ptVolSlide(pChannelData->n_volume - ubArg, pChannelData, pChannelReg);
+		ptVolSlide(pChannelData->uwVolume - ubArg, pChannelData, pChannelReg);
 	}
 }
 
 static void mt_notecut(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
+	UBYTE ubArg, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'CX (x = counter to cut at)
 	if(mt_Counter == ubArg) {
-		pChannelData->n_volume = 0;
+		pChannelData->uwVolume = 0;
 		pChannelReg->ac_vol = 0;
 	}
 }
 
 static void mt_notedelay(
-	UBYTE ubArg, tChannelStatus *pChannelData,
-	volatile tChannelRegs *pChannelReg
+	UBYTE ubArg, tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd 0x0E'DX (x = counter to retrigger at)
 	if(mt_Counter == ubArg) {
 		// Trigger note when given
 		if(pChannelData->sVoice.uwNote) {
+			pChannelReg->ac_per = pChannelData->uwPeriod;
 			ptDoRetrigger(pChannelData, pChannelReg);
 		}
 	}
@@ -2460,7 +2595,7 @@ static void set_period(
 
 	// Apply finetuning, set period and note-offset
 	UWORD uwPeriod = pChannelData->pPeriodTable[ubPeriodPos];
-	pChannelData->n_period = uwPeriod;
+	pChannelData->uwPeriod = uwPeriod;
 	pChannelData->n_noteoff = ubPeriodPos * 2; // TODO later: convert to word offs (div by 2)
 
 	// Check for notedelay
@@ -2494,7 +2629,7 @@ static void set_finetune(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// logWrite("Set finetune\n");
-	UBYTE ubFineTune = pChannelData->sVoice.ubCmdLo & 0xF;
+	UBYTE ubFineTune = uwCmdArg & 0xF;
 	pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 	pChannelData->n_minusft = ubFineTune >= 8;
 	set_period(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
@@ -2507,21 +2642,7 @@ static void set_sampleoffset(
 	// logWrite("set_sampleoffset\n");
 	// cmd 9 x y (xy = offset in 256 bytes)
 	// d4 = xy
-	UWORD ubArg = uwCmdArg;
-	if(!ubArg) {
-		ubArg = pChannelData->n_sampleoffset;
-	}
-	else {
-		pChannelData->n_sampleoffset = ubArg;
-	}
-	UWORD uwLength = ubArg << 7;
-	if(uwLength < pChannelData->n_length) {
-		pChannelData->n_length -= uwLength;
-		pChannelData->n_start += uwLength;
-	}
-	else {
-		pChannelData->n_length = 1;
-	}
+	mt_sampleoffset(uwCmdArg, pChannelData, pChannelReg);
 	set_period(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 }
 
@@ -2545,7 +2666,7 @@ static void set_toneporta(
 
 	// Note offset in period table
 	pChannelData->n_noteoff = ubPeriodPos * 2;
-	UWORD uwPeriod = pChannelData->n_period;
+	UWORD uwPeriod = pChannelData->uwPeriod;
 	UWORD uwNewPeriod = pChannelData->pPeriodTable[ubPeriodPos];
 	if(uwNewPeriod == uwPeriod) {
 		uwNewPeriod = 0;
@@ -2584,11 +2705,11 @@ void ptplayerProcess(void) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	if(s_isPendingPlay) {
 		s_isPendingPlay = 0;
-		intPlay(g_pCustom);
+		intPlay();
 	}
 	if(s_isPendingDmaOn) {
 		s_isPendingDmaOn = 0;
-		intDmaOn(g_pCustom);
+		intDmaOn();
 	}
 	if(s_isPendingSetRep) {
 		s_isPendingSetRep = 0;
@@ -2613,6 +2734,7 @@ void ptplayerGetVoiceProgress(UWORD *pCurr, UWORD *pMax) {
 
 void ptplayerEnableMusic(UBYTE isEnabled) {
 	mt_Enable = isEnabled;
+	s_isNextTimerBSetRep = 0;
 }
 
 UBYTE ptplayerGetE8(void) {
@@ -2621,6 +2743,10 @@ UBYTE ptplayerGetE8(void) {
 
 void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount) {
 	mt_MusicChannels = ubChannelCount;
+}
+
+void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume) {
+	mt_mod->pSamples[ubSampleIndex].ubVolume = ubVolume;
 }
 
 tPtplayerMod *ptplayerModCreate(const char *szPath) {
@@ -2747,38 +2873,70 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
 /**
  * @brief Activates the sound effect on this channel.
  *
+ * A looped sound effect has always highest priority and will
+ * replace a previous effect on the same channel. No automatic channel
+ * selection will be used.
+ *
  * @param pChannel Channel to be used.
  * @param pSfx Sound effect to be played.
  * @param ubVolume Sound volume (0..63) - ignores mod master volume
  * @param ubPriority Playback priority, must be non-zero. The bigger the
- *                   more important.
+ * more important. Set to SFX_PRIORITY_LOOPED for looped sfx.
  */
 static void channelSetSfx(
 	tChannelStatus *pChannel, const tPtplayerSfx *pSfx, UBYTE ubVolume,
 	UBYTE ubPriority
 ) {
 	pChannel->n_sfxptr = pSfx->pData;
-	pChannel->n_sfxlen = pSfx->uwWordLength;
-	pChannel->n_sfxper = pSfx->uwPeriod;
-	pChannel->n_sfxvol = ubVolume;
+	pChannel->uwSfxWordLength = pSfx->uwWordLength;
+	pChannel->uwSfxPeriod = pSfx->uwPeriod;
+	pChannel->uwSfxVolume = ubVolume;
 	pChannel->ubSfxPriority = ubPriority;
 }
 
-void ptplayerSfxPlay(
-	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
+void ptplayerSfxStopOnChannel(UBYTE ubChannel) {
+	g_pCustom->intena = INTF_INTEN;
+	tChannelStatus *pChannel = &mt_chan[ubChannel];
+	if(pChannel->ubSfxPriority != 0) {
+		pChannel->ubSfxPriority = 1;
+		pChannel->uwSfxWordLength = 1; // Idle loop
+		pChannel->uwSfxPeriod = 108; // Enter idle as quickly as possible
+		pChannel->uwSfxVolume = 0;
+		if(pChannel->isLooped) {
+			// Looped sfx have first empty word skipped to prevent loop glitches
+			// - bring it back.
+			pChannel->isLooped = 0;
+			--pChannel->n_sfxptr;
+		}
+	}
+	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
+}
+
+void ptplayerSfxPlayLooped(
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
 ) {
-	if(bChannel >= 0) {
+	g_pCustom->intena = INTF_INTEN;
+	tChannelStatus *pChannel = &mt_chan[ubChannel];
+	channelSetSfx(pChannel, pSfx, ubVolume, SFX_PRIORITY_LOOPED);
+	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
+}
+
+void ptplayerSfxPlay(
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
+) {
+	g_pCustom->intena = INTF_INTEN;
+	if(ubChannel != PTPLAYER_SFX_CHANNEL_ANY) {
 		// Use fixed channel for effect
-		tChannelStatus *pChannel = &mt_chan[bChannel];
+		tChannelStatus *pChannel = &mt_chan[ubChannel];
 
 		// Priority high enough to replace a present effect on this channel?
-		g_pCustom->intena = INTF_INTEN;
 		if(ubPriority >= pChannel->ubSfxPriority) {
 			channelSetSfx(pChannel, pSfx, ubVolume, ubPriority);
 		}
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 		return;
 	}
+
 	// Did we already calculate the n_freecnt values for all channels?
 	if(!mt_SilCntValid) {
 		// Look at the next 8 pattern steps to find the longest sequence
@@ -2845,8 +3003,6 @@ void ptplayerSfxPlay(
 		mt_SilCntValid = 1;
 	}
 
-	g_pCustom->intena = INTF_INTEN;
-
 	// Determine which channels are already allocated for sound
 	// effects and check if the limit was reached. In this case only
 	// replace sound effect channels by higher priority.
@@ -2871,16 +3027,25 @@ void ptplayerSfxPlay(
 		// the last instrument sample has been played completely, and the channel
 		// is now idle.
 		UWORD uwChannelsToCheck = 0;
+		UWORD uwChannelsNonLooped = 0;
 		UWORD uwIntFlag = INTF_AUD0;
 		for(UBYTE i = 0; i < 4; ++i) {
-			if(!mt_chan[i].n_looped && isChannelDone(&mt_chan[i])) {
-				uwChannelsToCheck |= uwIntFlag;
+			if(!mt_chan[i].isLooped) {
+				uwChannelsNonLooped |= uwIntFlag;
+				if(isChannelDone(&mt_chan[i])) {
+					uwChannelsToCheck |= uwIntFlag;
+				}
 			}
 			uwIntFlag <<= 1;
 		}
 
 		if(!uwChannelsToCheck) {
-			// All channels are busy, then it doesn't matter which one we break...
+			// All channels are busy, then break the non-looped ones first...
+			uwChannelsToCheck = uwChannelsNonLooped;
+		}
+
+		if(!uwChannelsToCheck) {
+			// ...except there are none. Then it doesn't matter.
 			uwChannelsToCheck = INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3;
 		}
 
@@ -2897,7 +3062,8 @@ void ptplayerSfxPlay(
 		}
 	}
 	if(!ubBestFreeCnt) {
-		// Finally try to overwrite a sound effect with lower/equal priority
+		// All channels reserved/playing effects.
+		// Finally try to overwrite a sound effect with lower/equal priority.
 		UBYTE ubBestFreeCnt = 0;
 		for(UBYTE i = 0; i < 4; ++i) {
 			if(

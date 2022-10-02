@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Protracker V2.3B Playroutine Version 5.1
-// Written by Frank Wille in 2013, 2016, 2017, 2018.
-// Rewritten to C by KaiN for ACE
+// Protracker V2.3B Playroutine Version 6.2
+// Original written in assembly by Frank Wille in 2013, 2016-2022.
+// Rewritten for ACE usage to C.
 
 #ifndef _ACE_MANAGERS_PTPLAYER_H_
 #define _ACE_MANAGERS_PTPLAYER_H_
@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #define PTPLAYER_VOLUME_MAX 64
+#define PTPLAYER_SFX_CHANNEL_ANY 0xFF
 
 #include <ace/types.h>
 #include <ace/utils/bitmap.h>
@@ -84,7 +85,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod);
  *
  * @param pMod Pointer to MOD struct.
  * @param pSamples When set to 0, the samples are assumed to be stored inside
- *                 the MOD, after the patterns.
+ * the MOD, after the patterns.
  * @param uwInitialSongPos
  *
  * @see ptplayerEnableMusic()
@@ -104,14 +105,14 @@ void ptplayerStop(void);
 
 /**
  * @brief Set bits in the mask define which specific channels are reserved
- *        for music only.
+ * for music only.
  *
  * When calling ptplayerSfxPlay with automatic channel selection
  * (sfx_cha=-1) then these masked channels will never be picked.
  * The mask defaults to 0.
  *
  * @param ubChannelMask Mask of channels reserved for playing music. Set bit 0
- *                      for channel 0, bit 1 for channel 1, etc.
+ * for channel 0, bit 1 for channel 1, etc.
  * @see ptplayerSfxPlay()
  */
 void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
@@ -124,6 +125,13 @@ void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
  * @param ubMasterVolume Value between 0 and 64. Bigger is louder.
  */
 void ptplayerSetMasterVolume(UBYTE ubMasterVolume);
+
+/**
+ * @brief Define which music channels are muted. Set bit 0 for channel 0, etc.
+ *
+ * @param ubChannelMask Bit mask of music channels to be muted. Uses bits 0..3.
+ */
+void ptplayerMuteMusicChannels(UBYTE ubChannelMask);
 
 /**
  * @brief Enables or disables music playback.
@@ -153,6 +161,16 @@ UBYTE ptplayerGetE8(void);
  */
 void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount);
 
+/**
+ * @brief Redefine a sample's volume on currently played MOD.
+ * May also be done while the song is playing. This change is persistent and can
+ * only be reverted by setting volume to previous value or reloading the MOD.
+ *
+ * @param ubSampleIndex Sample number (0-31).
+ * @param ubVolume Volume (0-64).
+ */
+void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume);
+
 //-------------------------------------------------------------------------- SFX
 
 /**
@@ -180,7 +198,7 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
 
 /**
  * @brief Request playing of a prioritized external sound effect, either on a
- *        fixed channel or on the most unused one.
+ * fixed channel or on the most unused one.
  *
  * When multiple samples are assigned to the same channel the lower priority
  * sample will be replaced. When priorities are the same, then the older sample
@@ -189,15 +207,30 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
  * been replayed.
  *
  * @param pSfx Sfx sample to be played.
- * @param bChannel Selected replay channel (0..3), -1 selects best channel.
+ * @param bChannel Selected replay channel (0..3), PTPLAYER_SFX_CHANNEL_ANY
+ * selects best channel.
  * @param ubVolume Playback volume 0..64, unaffected by the song's master volume.
  * @param ubPriority Playback priority. The bigger the value, the higher
- *                   the priority. Must be non-zero.
+ * the priority. Must be non-zero.
  *
- * @see ptplayerSetMusicChannelMask
+ * @see ptplayerSetMusicChannelMask()
+ * @see ptplayerSfxPlayLooped()
  */
 void ptplayerSfxPlay(
-	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
+);
+
+/**
+ * @brief Request playing of a looped external sound effect, on a fixed channel.
+ *
+ * @param pSfx Sfx sample to be played.
+ * @param ubChannel Selected replay channel (0..3).
+ * @param ubVolume Playback volume 0..64, unaffected by the song's master volume.
+ *
+ * @see ptplayerSfxPlay()
+ */
+void ptplayerSfxPlayLooped(
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
 );
 
 /**
