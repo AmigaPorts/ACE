@@ -757,14 +757,14 @@ void systemSetInt(
 
 	// Re-enable handler or disable it if 0 was passed
 	if(pHandler == 0) {
-		g_pCustom->dmacon = BV(ubIntNumber);
+		g_pCustom->intena = BV(ubIntNumber);
 		s_uwAceIntEna &= ~BV(ubIntNumber);
 	}
 	else {
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		g_pCustom->intena = DMAF_SETCLR | BV(ubIntNumber);
+		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
 	}
 }
 
