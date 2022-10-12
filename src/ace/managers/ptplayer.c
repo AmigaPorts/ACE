@@ -2634,7 +2634,7 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	else {
 		pMod = memAllocFast(sizeof(*pMod));
 		if(pMod) {
-			pMod->ulSize = fileGetSize(szPath);
+			pMod->ulSize = lSize;
 			pMod->pData = memAllocChip(pMod->ulSize);
 			if(pMod->pData) {
 				tFile *pFileMod = fileOpen(szPath, "rb");
