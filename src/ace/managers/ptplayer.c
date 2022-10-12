@@ -1646,8 +1646,8 @@ void ptplayerDestroy(void) {
 	ptplayerStop();
 	// Disable handling of music
 	ptplayerEnableMusic(0);
-	systemSetCiaInt(CIA_B, 0, 0, 0);
-	systemSetCiaInt(CIA_B, 1, 0, 0);
+	ptplayerEnableMainHandler(0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 	// systemSetInt(INTB_AUD0, 0, 0);
 	// systemSetInt(INTB_AUD1, 0, 0);
 	// systemSetInt(INTB_AUD2, 0, 0);
