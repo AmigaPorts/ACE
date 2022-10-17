@@ -2536,15 +2536,15 @@ static void set_toneporta(
 	// Find first period which is less or equal the note in d6
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
 	UBYTE ubPeriodPos = findPeriod(mt_PeriodTables[0], uwNote);
-	if(ubPeriodPos) {
-		// One before for less/equal
-		--ubPeriodPos;
-	}
+	// if(ubPeriodPos) {
+	// 	// One before for less/equal
+	// 	--ubPeriodPos;
+	// }
 
-	if(pChannelData->n_minusft && ubPeriodPos) {
-		// Negative fine tune? Then take the previous period.
-		--ubPeriodPos;
-	}
+	// if(pChannelData->n_minusft && ubPeriodPos) {
+	// 	// Negative fine tune? Then take the previous period.
+	// 	--ubPeriodPos;
+	// }
 
 	// Note offset in period table
 	pChannelData->n_noteoff = ubPeriodPos * 2;
