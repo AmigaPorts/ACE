@@ -1981,7 +1981,7 @@ static void mt_volumeslide(
 	UBYTE ubVolUp = ubArgs >> 4;
 
 	BYTE bVol = pChannelData->n_volume;
-	if(!ubVolUp) {
+	if(ubVolUp) {
 		// Slide up, until 64
 		ptVolSlide(bVol + ubVolUp, pChannelData, pChannelReg);
 	}
