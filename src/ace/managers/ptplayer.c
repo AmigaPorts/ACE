@@ -1060,12 +1060,13 @@ static void printVoices(const tModVoice *pVoices) {
 
 static inline UBYTE findPeriod(const UWORD *pPeriods, UWORD uwNote) {
 	// Find nearest period for a note value
-	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
+	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH - 1; ++ubPeriodPos) {
 		if (uwNote >= pPeriods[ubPeriodPos]) {
 			return ubPeriodPos;
 		}
 	}
-	return 0;
+
+	return MOD_PERIOD_TABLE_LENGTH - 1;
 }
 
 static void ptSongStep(void) {
