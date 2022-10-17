@@ -1394,7 +1394,9 @@ static void intSetRep(volatile tCustom *pCustom) {
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
-// One-shot TimerB interrupt to set repeat samples after another 576 ticks.
+#define TIMERB_TICKS (576)
+
+// One-shot TimerB interrupt to set repeat samples after another TIMERB_TICKS ticks.
 static void mt_TimerBsetrep(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
@@ -1418,7 +1420,7 @@ static void intDmaOn(volatile tCustom *pCustom) {
 	// pCustom->color[0] = 0x000;
 }
 
-// One-shot TimerB interrupt to enable audio DMA after 576 ticks.
+// One-shot TimerB interrupt to enable audio DMA after TIMERB_TICKS ticks.
 static void mt_TimerBdmaon(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
@@ -1584,8 +1586,8 @@ static void mt_reset(void) {
 	systemSetCiaCr(CIA_B, 0, CIACRA_LOAD | CIACRA_START); // load timer, start continuous
 #endif
 
-	// Load TimerB with 576 ticks for setting DMA and repeat
-	systemSetTimer(CIA_B, 1, 576);
+	// Load TimerB with TIMERB_TICKS ticks for setting DMA and repeat
+	systemSetTimer(CIA_B, 1, TIMERB_TICKS);
 
 	// Enable CIA B interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
