@@ -1794,7 +1794,7 @@ static void mt_toneporta_nc(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	if(pChannelData->n_wantedperiod) {
-		UWORD uwNew;
+		WORD uwNew;
 		if(pChannelData->n_period > pChannelData->n_wantedperiod) {
 			// tone porta up
 			uwNew = pChannelData->n_period - pChannelData->n_toneportspeed;
