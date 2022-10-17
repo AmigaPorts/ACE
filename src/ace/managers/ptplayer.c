@@ -1216,7 +1216,7 @@ static void mt_playvoice(
 		pChannelData->n_reallength = uwSampleLength;
 
 		// Determine period table from fine-tune parameter
-		UBYTE ubFineTune = pSampleDef->ubFineTune; // d3
+		UBYTE ubFineTune = pSampleDef->ubFineTune & 0xF;
 		pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 		pChannelData->n_minusft = (ubFineTune >= 8);
 
