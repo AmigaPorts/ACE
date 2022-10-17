@@ -2517,7 +2517,7 @@ static void set_sampleoffset(
 	else {
 		pChannelData->n_sampleoffset = ubArg;
 	}
-	UWORD uwLength = ubArg << 7;
+	UWORD uwLength = ubArg << 6;
 	if(uwLength < pChannelData->n_length) {
 		pChannelData->n_length -= uwLength;
 		pChannelData->n_start += uwLength;
