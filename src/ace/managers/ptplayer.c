@@ -1244,7 +1244,7 @@ static void mt_playvoice(
 	}
 
 	// inlined set_regs function here:
-	if(!pVoice->uwNote) {
+	if(!(pVoice->uwNote & 0xFFF)) {
 		checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 	}
 	else if(uwMaskedCmdE == 0x0E50) {
