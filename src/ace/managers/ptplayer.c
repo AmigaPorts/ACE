@@ -2485,7 +2485,7 @@ static void set_period(
 		// );
 
 		pChannelReg->ac_ptr = pChannelData->n_start;
-		pChannelReg->ac_len = pChannelData->n_length;
+		pChannelReg->ac_len = pChannelData->n_reallength;
 		pChannelReg->ac_per = uwPeriod;
 		mt_dmaon |= pChannelData->uwDmaFlag;
 	}
