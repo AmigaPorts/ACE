@@ -1915,7 +1915,7 @@ static void ptDoPortaDn(
 	UBYTE ubVal, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
-	UWORD uwNewPer = MIN(pChannelData->n_period - ubVal, 856);
+	UWORD uwNewPer = MIN(pChannelData->n_period + ubVal, 856);
 	pChannelData->n_period = uwNewPer;
 	pChannelReg->ac_per = uwNewPer;
 }
