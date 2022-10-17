@@ -1232,7 +1232,7 @@ static void mt_playvoice(
 			// Set repeat
 			pChannelData->n_looped = 1;
 			pChannelData->n_replen = pSampleDef->uwRepeatLength;
-			uwSampleLength = pSampleDef->uwRepeatLength + ubFineTune * 2;
+			uwSampleLength = pSampleDef->uwRepeatLength;
 			pSampleStart += pSampleDef->uwRepeatOffs;
 		}
 
