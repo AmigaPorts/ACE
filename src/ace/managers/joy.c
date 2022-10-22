@@ -48,9 +48,7 @@ void joyClose(void) {
 		logWrite("ERR: Joy was initialized multiple times!\n");
 	}
 #endif
-	if(s_isParallelEnabled) {
-		joyDisableParallel();
-	}
+	joyDisableParallel();
 }
 
 void joySetState(UBYTE ubJoyCode, UBYTE ubJoyState) {

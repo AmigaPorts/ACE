@@ -102,8 +102,6 @@ ULONG randUlMinMax(tRandManager *pRand, ULONG ulMin, ULONG ulMax);
 
 //---------------------------------------------------------------------- GLOBALS
 
-extern tRandManager g_sRandManager;
-
 #ifdef __cplusplus
 }
 #endif
