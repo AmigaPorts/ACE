@@ -13,6 +13,7 @@
 static const tView *s_pView;
 static tSprite *s_pFirstSpritesInChannel[HARDWARE_SPRITE_CHANNEL_COUNT];
 static tCopBlock *s_pChannelCopBlocks[HARDWARE_SPRITE_CHANNEL_COUNT];
+static tHardwareSpriteHeader CHIP s_uBlankSprite;
 
 void spriteManagerCreate(const tView *pView) {
 	// TODO: add support for non-chained mode (setting sprxdat with copper)?
@@ -47,6 +48,8 @@ tSprite *spriteAdd(
 	pSprite->ubRawCopListRegenCount = 0;
 	pSprite->wX = 0;
 	pSprite->wY = 0;
+	pSprite->uwHeight = 0;
+	pSprite->isEnabled = 1;
 
 	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
 		// TODO: when in sprite chain mode, only for first sprite in the channel
@@ -75,6 +78,17 @@ void spriteRemove(tSprite *pSprite) {
 	systemUnuse();
 }
 
+void spriteEnable(tSprite *pSprite, UBYTE isEnabled) {
+	pSprite->isEnabled = isEnabled;
+	if(s_pView->pCopList->ubMode == COPPER_MODE_RAW) {
+		pSprite->ubRawCopListRegenCount = 2; // for front/back buffers
+	}
+}
+
+void spriteRequestHeaderUpdate(tSprite *pSprite) {
+	pSprite->isToUpdateHeader = 1;
+}
+
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
 		logWrite(
@@ -94,46 +108,58 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	}
 
 	pSprite->pBitmap = pBitmap;
+	spriteSetHeight(pSprite, pBitmap->Rows - 2);
 
-	if (s_pView->pCopList->ubMode == COPPER_MODE_RAW) {
+	if(s_pView->pCopList->ubMode == COPPER_MODE_RAW) {
 		pSprite->ubRawCopListRegenCount = 2; // for front/back buffers
 	}
 	else {
-		ULONG ulSprAddr = (ULONG)(pSprite->pBitmap->Planes[0]);
 		tCopBlock *pBlock = s_pChannelCopBlocks[pSprite->ubSpriteIndex];
 		pBlock->uwCurrCount = 0;
+		ULONG ulSprAddr = pSprite->isEnabled ? (ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw;
 		copMove(s_pView->pCopList, pBlock, &g_pSprFetch[pSprite->ubSpriteIndex].uwHi, ulSprAddr >> 16);
 		copMove(s_pView->pCopList, pBlock, &g_pSprFetch[pSprite->ubSpriteIndex].uwLo, ulSprAddr & 0xFFFF);
 	}
-
-	spriteUpdate(pSprite);
 }
 
 void spriteUpdate(tSprite *pSprite) {
 	// Update relevant part of current raw copperlist
 	if(pSprite->ubRawCopListRegenCount) {
 		--pSprite->ubRawCopListRegenCount;
-		ULONG ulSprAddr = (ULONG)(pSprite->pBitmap->Planes[0]);
 		tCopCmd *pList = &s_pView->pCopList->pBackBfr->pList[pSprite->uwRawCopPos];
 
+		ULONG ulSprAddr = pSprite->isEnabled ? (ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw;
 		copSetMove(&pList[0].sMove, &g_pSprFetch[pSprite->ubSpriteIndex].uwHi, ulSprAddr >> 16);
 		copSetMove(&pList[1].sMove, &g_pSprFetch[pSprite->ubSpriteIndex].uwLo, ulSprAddr & 0xFFFF);
 	}
 
-	// Sprite in list mode has 2-word header before and after data, each
-	// occupies 1 line of the bitmap.
-	// TODO: get rid of hardcoded 128 X offset in reasonable way.
-	const UWORD uwSpriteHeight = pSprite->pBitmap->Rows - 2;
-	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
-	UWORD uwVStop = uwVStart + uwSpriteHeight;
-	UWORD uwHStart = 128 + pSprite->wX;
+	if(pSprite->isToUpdateHeader) {
+		// Sprite in list mode has 2-word header before and after data, each
+		// occupies 1 line of the bitmap.
+		// TODO: get rid of hardcoded 128 X offset in reasonable way.
+		UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
+		UWORD uwVStop = uwVStart + pSprite->uwHeight;
+		UWORD uwHStart = 128 + pSprite->wX;
 
-	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
-	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
-	pHeader->uwRawCtl = (UWORD) (
-		(uwVStop << 8) |
-		(BTST(uwVStart, 8) << 2) |
-		(BTST(uwVStop, 8) << 1) |
-		BTST(uwHStart, 0)
-	);
+		tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
+		pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
+		pHeader->uwRawCtl = (UWORD) (
+			(uwVStop << 8) |
+			(BTST(uwVStart, 8) << 2) |
+			(BTST(uwVStop, 8) << 1) |
+			BTST(uwHStart, 0)
+		);
+	}
+}
+
+void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
+	if(uwHeight >= 512) {
+		logWrite(
+			"ERR: Invalid sprite %p height %hu, max is 512\n",
+			pSprite, uwHeight
+		);
+	}
+
+	pSprite->uwHeight = uwHeight;
+	pSprite->isToUpdateHeader = 1;
 }

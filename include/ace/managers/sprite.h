@@ -13,9 +13,12 @@ typedef struct tSprite {
 	tBitMap *pBitmap;
 	WORD wX; ///< X position, measured from the left of the view.
 	WORD wY; ///< Y position, measured from the top of the view.
+	UWORD uwHeight;
 	UBYTE ubSpriteIndex;
 	UBYTE uwRawCopPos;
 	UBYTE ubRawCopListRegenCount;
+	UBYTE isEnabled;
+	UBYTE isToUpdateHeader;
 } tSprite;
 
 /**
@@ -75,7 +78,7 @@ tSprite *spriteAdd(
 void spriteRemove(tSprite *pSprite);
 
 /**
- * @brief Changes bitmap image used to display the sprite.
+ * @brief Changes bitmap image used to display the sprite. Also resizes sprite to bitmap height.
  *
  * @note The sprite will write to the bitmap's bitplanes to update its control
  * words. If you need to use same bitmap for different sprites, be sure to have
@@ -87,6 +90,24 @@ void spriteRemove(tSprite *pSprite);
  * which will not be displayed but used for storing control data.
  */
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap);
+
+/**
+ * @brief Overrides sprite height to given value.
+ *
+ * @param pSprite Sprite of which height is to be changed.
+ * @param uwHeight New sprite height. Maximum is 511.
+ */
+void spriteSetHeight(tSprite *pSprite, UWORD uwHeight);
+
+/**
+ * @brief Enables or disables a given sprite.
+ *
+ * @param pSprite Sprite to be enabled.
+ * @param isEnabled Set to 1 to enable sprite, otherwise set to 0.
+ */
+void spriteEnable(tSprite *pSprite, UBYTE isEnabled);
+
+void spriteRequestHeaderUpdate(tSprite *pSprite);
 
 /**
  * @brief Updates the sprite on the display.
