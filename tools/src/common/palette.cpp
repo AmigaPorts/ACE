@@ -86,7 +86,7 @@ tPalette tPalette::fromPromotionPal(const std::string &szPath)
 	tPalette Palette;
 
 	std::ifstream Source(szPath, std::ios::in | std::ios::binary);
-	uint8_t ubLastNonZero = 0;
+	uint16_t uwLastNonZero = 0;
 	for(uint16_t i = 0; i < 256; ++i) {
 		uint8_t ubR, ubG, ubB;
 		Source.read(reinterpret_cast<char*>(&ubR), 1);
@@ -94,13 +94,13 @@ tPalette tPalette::fromPromotionPal(const std::string &szPath)
 		Source.read(reinterpret_cast<char*>(&ubB), 1);
 		Palette.m_vColors.push_back(tRgb(ubR, ubG, ubB));
 		if(ubR || ubG || ubB) {
-			ubLastNonZero = i;
+			uwLastNonZero = i;
 		}
 	}
 
 	// Palette is always 256 colors long, so now it's time to trim it
 	Palette.m_vColors = std::vector<tRgb>(
-		Palette.m_vColors.begin(), Palette.m_vColors.begin() + ubLastNonZero + 1
+		Palette.m_vColors.begin(), Palette.m_vColors.begin() + uwLastNonZero + 1
 	);
 
 	fmt::print("Palette color count: {}\n", Palette.m_vColors.size());
@@ -155,15 +155,29 @@ tPalette tPalette::fromFile(const std::string &szPath)
 	return Palette;
 }
 
-bool tPalette::toPlt(const std::string &szPath)
+bool tPalette::toPlt(const std::string &szPath, bool isForceOcs)
 {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
 	if(!Dest.is_open()) {
 		return false;
 	}
-	uint8_t ubSize = m_vColors.size();
-	Dest.write(reinterpret_cast<char*>(&ubSize), 1);
-	for(const auto &Color: m_vColors) {
+	auto PaletteSize = m_vColors.size();
+	Dest.write(reinterpret_cast<char*>(&PaletteSize), 1);
+	for(uint16_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
+		const auto &Color = m_vColors[uwColorIdx];
+		if(isForceOcs) {
+			const auto &ColorOcs = Color.to12Bit();
+			if(ColorOcs != Color) {
+				throw std::runtime_error(fmt::format(
+					FMT_STRING(
+						"Color at index {} ({}) is not suited for OCS. "
+						"Expected 4-bit channels, e.g. {}"
+					),
+					uwColorIdx, Color.toString(), ColorOcs.toString()
+				));
+			}
+		}
+
 		uint8_t ubXR = Color.ubR >> 4;
 		uint8_t ubGB = ((Color.ubG >> 4) << 4) | (Color.ubB >> 4);
 		Dest.write(reinterpret_cast<char*>(&ubXR), 1);
@@ -239,7 +253,7 @@ bool tPalette::toAct(const std::string &szPath)
 		Dest.write(pBlank, 3);
 		++i;
 	}
-	uint8_t ubSizeHi = m_vColors.size() >> 8;
+	uint8_t ubSizeHi = uint16_t(m_vColors.size()) >> 8;
 	uint8_t ubSizeLo = m_vColors.size() & 0xFF;
 
 	Dest.write(reinterpret_cast<char*>(&ubSizeHi), 1);

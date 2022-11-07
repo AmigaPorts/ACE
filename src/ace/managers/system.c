@@ -92,6 +92,7 @@ struct View *s_pOsView;
 static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 static struct IOAudio s_sIoAudio = {0};
 static struct Library *s_pCiaResource[CIA_COUNT];
+static struct Process *s_pProcess;
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -275,13 +276,13 @@ void HWINTERRUPT int6Handler(void) {
 				);
 			}
 		}
+
+		// Zorro/Clockport/other expansions can trigger this interrupt and it sets
+		// the EXTER bit too. But you can't reliably detect and handle those devices
+		// unless you exactly know that they are present and how to poll their status.
+		// Leave the EXTER bit check in place since it should be cleared anyway.
 		uwReqClr |= INTF_EXTER;
-		// TODO: I heard that Zorro and Clockport can trigger this interrupt
-		// and it sets the same bit. So there should be a handler for it in case of
-		// ICR intbits not being set.
 	}
-	// TOOD: is there any other interrupt source on level 6?
-	// If yes, then detect it. If not, remove check for EXTER flag
 
 	logPopInt();
 	// Clear int flags
@@ -305,26 +306,26 @@ static struct MsgPort *msgPortCreate(char *name, LONG pri) {
 	struct MsgPort *mp;
 
 	if((sigBit = AllocSignal(-1L)) == -1) {
-		return(NULL);
+		return NULL;
 	}
 
 	mp = (struct MsgPort *) AllocMem(sizeof(*mp), MEMF_PUBLIC | MEMF_CLEAR);
 	if (!mp) {
 		FreeSignal(sigBit);
-		return(NULL);
+		return NULL;
 	}
 	mp->mp_Node.ln_Name = name;
 	mp->mp_Node.ln_Pri = pri;
 	mp->mp_Node.ln_Type = NT_MSGPORT;
 	mp->mp_Flags = PA_SIGNAL;
 	mp->mp_SigBit = sigBit;
-	mp->mp_SigTask = (struct Task *)FindTask(0L); // Find THIS task.
+	mp->mp_SigTask = (struct Task *)s_pProcess;
 
 	// NewList(&(mp->mp_MsgList)); // Init message list - not in headers
 	mp->mp_MsgList.lh_Head = (struct Node*)&mp->mp_MsgList.lh_Tail;
 	mp->mp_MsgList.lh_Tail = NULL;
 	mp->mp_MsgList.lh_TailPred = (struct Node*)&mp->mp_MsgList.lh_Head;
-	return(mp);
+	return mp;
 }
 
 // http://amigadev.elowar.com/read/ADCD_2.1/Libraries_Manual_guide/node02ED.html
@@ -421,8 +422,7 @@ static void systemFlushIo() {
 	struct MsgPort *pMsgPort = DeviceProc((CONST_STRPTR)"sys");
 	if (pMsgPort) {
 		// Get our message port
-		struct Process *pProcess = (struct Process *)FindTask(0);
-		struct MsgPort *pProcessMsgPort = &pProcess->pr_MsgPort;
+		struct MsgPort *pProcessMsgPort = &s_pProcess->pr_MsgPort;
 
 		// Fill in packet
 		struct DosPacket *pDosPacket = &pPacket->sp_Pkt;
@@ -479,11 +479,11 @@ void systemCreate(void) {
 	}
 
   // Determine original stack size
-  struct Process *pProcess = (struct Process *)FindTask(NULL);
-	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
-	ULONG ulStackSize = (char *)pProcess->pr_Task.tc_SPUpper - pStackLower;
-	if(pProcess->pr_CLI) {
-		ulStackSize = *(ULONG *)pProcess->pr_ReturnAddr;
+  s_pProcess = (struct Process *)FindTask(NULL);
+	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
+	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
+	if(s_pProcess->pr_CLI) {
+		ulStackSize = *(ULONG *)s_pProcess->pr_ReturnAddr;
 	}
 	logWrite("Stack size: %lu\n", ulStackSize);
 	*pStackLower = SYSTEM_STACK_CANARY;
@@ -569,11 +569,7 @@ void systemDestroy(void) {
 	LoadView(s_pOsView);
 	WaitTOF();
 
-	struct Process *pProcess = (struct Process *)FindTask(NULL);
-	char *pStackLower = (char *)pProcess->pr_Task.tc_SPLower;
-	if(*pStackLower != SYSTEM_STACK_CANARY) {
-		logWrite("Stack has probably overflown!");
-	}
+	systemCheckStack();
 
 	logWrite("Closing graphics.library...\n");
 	CloseLibrary((struct Library *) GfxBase);
@@ -761,14 +757,14 @@ void systemSetInt(
 
 	// Re-enable handler or disable it if 0 was passed
 	if(pHandler == 0) {
-		g_pCustom->dmacon = BV(ubIntNumber);
+		g_pCustom->intena = BV(ubIntNumber);
 		s_uwAceIntEna &= ~BV(ubIntNumber);
 	}
 	else {
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		g_pCustom->intena = DMAF_SETCLR | BV(ubIntNumber);
+		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
 	}
 }
 
@@ -885,14 +881,26 @@ UBYTE systemGetVerticalBlankFrequency(void){
 }
 
 UBYTE systemIsPal(void) {
-	UBYTE isPal = 1;
-	UBYTE vblank = systemGetVerticalBlankFrequency();
-	if (vblank == 50) {
-		isPal = 1;
-	}// pal
-	else if (vblank == 60) {
-		isPal = 0;
-	}// ntsc
 
-	return isPal;
+	UBYTE ubVBlankFreq = systemGetVerticalBlankFrequency();
+	if (ubVBlankFreq == 60) {
+		return 0; // NTSC
+	}
+
+	return 1; // PAL
+}
+
+void systemCheckStack(void) {
+	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
+	register ULONG *pCurrentStackPos __asm("sp");
+
+	if(*pStackLower != SYSTEM_STACK_CANARY) {
+		logWrite("ERR: Stack has probably overflown!");
+		while(1) {}
+	}
+
+	if((ULONG)pCurrentStackPos < (ULONG)(pStackLower)) {
+		logWrite("ERR: out of stack bounds!\n");
+		while(1) {}
+	}
 }

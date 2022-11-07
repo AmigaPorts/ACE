@@ -1,6 +1,7 @@
 #include <stdint.h>
 
-int __clzsi2 (unsigned int x) {
+__attribute__ ((used))
+int __clzsi2 (unsigned x) {
 	// https://en.wikipedia.org/wiki/Find_first_set#CLZ - using clz3
 	if(x == 0) {
 		return 32;

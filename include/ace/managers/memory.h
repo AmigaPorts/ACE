@@ -40,6 +40,8 @@ extern "C" {
  */
 UBYTE memType(const void *pMem);
 
+ULONG memGetChipSize(void);
+
 void _memCreate(void);
 void _memDestroy(void);
 

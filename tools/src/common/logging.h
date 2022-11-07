@@ -10,16 +10,16 @@
 namespace nLog {
 
 template<typename... t_tArgs>
-void error(const std::string &szFmt, const t_tArgs &... Args) {
+void error(fmt::format_string<t_tArgs...> szFmt, t_tArgs&&... Args) {
 	fmt::print("ERR: ");
-	fmt::print(szFmt, Args...);
+	fmt::print(szFmt, std::forward<t_tArgs>(Args)...);
 	fmt::print("\n");
 }
 
 template<typename... t_tArgs>
-void warn(const std::string &szFmt, const t_tArgs &... Args) {
+void warn(fmt::format_string<t_tArgs...> szFmt, const t_tArgs&&... Args) {
 	fmt::print("WARN: ");
-	fmt::print(szFmt, Args...);
+	fmt::print(szFmt, std::forward<t_tArgs>(Args)...);
 	fmt::print("\n");
 }
 

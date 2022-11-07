@@ -27,10 +27,22 @@ tBitMap *bitmapCreate(
 		"bitmapCreate(uwWidth: %hu, uwHeight: %hu, ubDepth: %hhu, ubFlags: %hhu)",
 		uwWidth, uwHeight, ubDepth, ubFlags
 	);
+
+	if(uwWidth == 0 || uwHeight == 0) {
+		logWrite("ERR: invalid bitmap dimensions\n");
+		return 0;
+	}
+
+	if((uwWidth & 0xF) != 0) {
+		// Needed for blitter!
+		logWrite("ERR: bitmap width is not multiple of 16\n");
+		return 0;
+	}
+
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
 	logWrite("addr: %p\n", pBitMap);
 
-	pBitMap->BytesPerRow = (uwWidth + 7) / 8;
+	pBitMap->BytesPerRow = uwWidth / 8;
 	pBitMap->Rows = uwHeight;
 	pBitMap->Flags = 0;
 	pBitMap->Depth = ubDepth;
@@ -47,10 +59,7 @@ tBitMap *bitmapCreate(
 		);
 		if(!pBitMap->Planes[0]) {
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
-			memFree(pBitMap, sizeof(tBitMap));
-			logBlockEnd("bitmapCreate()");
-			systemUnuse();
-			return 0;
+			goto fail;
 		}
 		for(i = 1; i != ubDepth; ++i) {
 			pBitMap->Planes[i] = pBitMap->Planes[i-1] + uwRealWidth;
@@ -60,18 +69,30 @@ tBitMap *bitmapCreate(
 			memset(pBitMap->Planes[0], 0, pBitMap->Rows * pBitMap->BytesPerRow);
 		}
 	}
+	else if(ubFlags & BMF_CONTIGUOUS) {
+		pBitMap->Flags |= BMF_CONTIGUOUS;
+		ULONG ulPlaneSize = pBitMap->BytesPerRow * uwHeight;
+		pBitMap->Planes[0] = (PLANEPTR) memAllocChip(ulPlaneSize * ubDepth);
+		if(!pBitMap->Planes[0]) {
+				logWrite("ERR: Can't alloc contiguous bitplanes\n");
+				goto fail;
+		}
+		for(i = 1; i < ubDepth; ++i) {
+				pBitMap->Planes[i] = &pBitMap->Planes[i - 1][ulPlaneSize];
+		}
+		if (ubFlags & BMF_CLEAR) {
+				memset(pBitMap->Planes[0], 0, ulPlaneSize * ubDepth);
+		}
+	}
 	else {
 		for(i = ubDepth; i--;) {
-			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow*uwHeight);
+			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow * uwHeight);
 			if(!pBitMap->Planes[i]) {
-				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth-i+1,ubDepth);
+				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth - i + 1,ubDepth);
 				while(++i != ubDepth) {
 					memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*uwHeight);
 				}
-				memFree(pBitMap, sizeof(tBitMap));
-				logBlockEnd("bitmapCreate()");
-				systemUnuse();
-				return 0;
+				goto fail;
 			}
 			if (ubFlags & BMF_CLEAR) {
 				memset(pBitMap->Planes[i], 0, pBitMap->Rows * pBitMap->BytesPerRow);
@@ -79,13 +100,18 @@ tBitMap *bitmapCreate(
 		}
 	}
 
-	if (ubFlags & BMF_CLEAR) {
-		blitWait();
-	}
-
 	logBlockEnd("bitmapCreate()");
 	systemUnuse();
 	return pBitMap;
+
+fail:
+	if(pBitMap) {
+		memFree(pBitMap, sizeof(tBitMap));
+	}
+	logBlockEnd("bitmapCreate()");
+	systemUnuse();
+	return 0;
+
 #else
 	return 0;
 #endif // AMIGA
@@ -292,7 +318,7 @@ void bitmapLoadFromMem(
 
 tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	tBitMap *pBitMap;
-	FILE *pFile;
+	tFile *pFile;
 	UWORD uwWidth, uwHeight;  // Image dimensions
 	UBYTE ubVersion, ubFlags; // Format version & flags
 	UBYTE ubPlaneCount;       // Bitplane count
@@ -354,12 +380,17 @@ void bitmapDestroy(tBitMap *pBitMap) {
 #ifdef AMIGA
 		blitWait();
 #endif
-		if(bitmapIsInterleaved(pBitMap)) {
-			pBitMap->Depth = 1;
-		}
 		systemUse();
-		for(UBYTE i = pBitMap->Depth; i--;) {
-			memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*pBitMap->Rows);
+		if(bitmapIsInterleaved(pBitMap)) {
+			memFree(pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows);
+		}
+		else if(pBitMap->Flags & BMF_CONTIGUOUS) {
+			memFree(pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows * pBitMap->Depth);
+		}
+		else {
+			for(UBYTE i = pBitMap->Depth; i--;) {
+				memFree(pBitMap->Planes[i], pBitMap->BytesPerRow * pBitMap->Rows);
+			}
 		}
 		memFree(pBitMap, sizeof(tBitMap));
 		systemUnuse();
@@ -442,7 +473,7 @@ void bitmapSaveBmp(
 
 	systemUse();
 	UWORD uwWidth = bitmapGetByteWidth(pBitMap) << 3;
-	FILE *pOut = fileOpen(szFilePath, "w");
+	tFile *pOut = fileOpen(szFilePath, "w");
 
 	// BMP header
 	fileWrite(pOut, "BM", 2);

@@ -61,4 +61,18 @@ UBYTE stringIsEmpty(const char *szStr);
  */
 char *stringCopy(const char *szSrc, char *szDest);
 
+/**
+ * @brief Copies string from given source to destination buffer, with specified
+ * length limit.
+ *
+ * The resulting string in destination buffer is null-terminated.
+ *
+ * @param szSrc Source string.
+ * @param szDest Buffer for destination string.
+ * @param uwMaxLength Maximum length of string to be written in szDest,
+ * including the null terminator. Must be non-zero
+ * @return Pointer to null-terminator character at the end of szDest.
+ */
+char *stringCopyLimited(const char *szSrc, char *szDest, UWORD uwMaxLength);
+
 #endif // _ACE_UTILS_STRING_H_

@@ -124,14 +124,34 @@ tTextBitMap *fontCreateTextBitMap(UWORD uwWidth, UWORD uwHeight) {
 	logBlockBegin(
 		"fontCreateTextBitMap(uwWidth: %hu, uwHeight: %hu)", uwWidth, uwHeight
 	);
-	// Init text bitmap struct - also setting uwActualWidth and height to zero.
-	tTextBitMap *pTextBitMap = memAllocFast(sizeof(tTextBitMap));
+
+	tTextBitMap *pTextBitMap = memAllocFast(sizeof(*pTextBitMap));
+	if(!pTextBitMap) {
+		goto fail;
+	}
+
 	pTextBitMap->pBitMap = bitmapCreate(uwWidth, uwHeight, 1, BMF_CLEAR);
+	if(!pTextBitMap->pBitMap) {
+		goto fail;
+	}
+
+	// Mark pTextBitMap as without any text
 	pTextBitMap->uwActualWidth = 0;
 	pTextBitMap->uwActualHeight = 0;
 	logBlockEnd("fontCreateTextBitmap()");
 	systemUnuse();
 	return pTextBitMap;
+
+fail:
+	if(pTextBitMap) {
+		if(pTextBitMap->pBitMap) {
+			bitmapDestroy(pTextBitMap->pBitMap);
+		}
+		memFree(pTextBitMap, sizeof(*pTextBitMap));
+	}
+	logBlockEnd("fontCreateTextBitmap()");
+	systemUnuse();
+	return 0;
 }
 
 UBYTE fontTextFitsInTextBitmap(
@@ -155,7 +175,16 @@ tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText) {
 			uwWidth = 0;
 		}
 		else {
-			uwWidth += fontGlyphWidth(pFont, *p) + 1;
+			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
+#if defined(ACE_DEBUG)
+			if(ubGlyphWidth == 0) {
+				logWrite(
+					"ERR: Missing glyph for char '%c' (code %hhu, 0x%hhX), "
+					"pos %ld in string '%s'\n", *p, *p, *p, p - szText, szText
+				);
+			}
+#endif
+			uwWidth += ubGlyphWidth + 1;
 			uwMaxWidth = MAX(uwMaxWidth, uwWidth);
 		}
 	}
@@ -192,6 +221,15 @@ tUwCoordYX fontDrawStr1bpp(
 		}
 		else {
 			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
+#if defined(ACE_DEBUG)
+			if(ubGlyphWidth == 0) {
+				logWrite(
+					"ERR: Missing glyph for char '%c' (code %hhu, 0x%hhX), "
+					"pos %ld in string '%s'\n", *p, *p, *p, p - szText, szText
+				);
+				continue;
+			}
+#endif
 			blitCopy(
 				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0, pBitMap, uwX, uwY,
 				ubGlyphWidth, pFont->uwHeight, MINTERM_COOKIE
@@ -218,7 +256,12 @@ void fontFillTextBitMap(
 
 #if defined(ACE_DEBUG)
 	if(!fontTextFitsInTextBitmap(pFont, pTextBitMap, szText)) {
-		logWrite("ERR: Text '%s' doesn't fit in text bitmap\n", szText);
+		tUwCoordYX sNeededDimensions = fontMeasureText(pFont, szText);
+		logWrite(
+			"ERR: Text '%s' doesn't fit in text bitmap, text needs: %hu,%hu, bitmap size: %hu,%hu\n",
+			szText, sNeededDimensions.uwX, sNeededDimensions.uwY,
+			bitmapGetByteWidth(pTextBitMap->pBitMap) * 8, pTextBitMap->pBitMap->Rows
+		);
 		return;
 	}
 #endif
@@ -241,7 +284,8 @@ void fontDrawTextBitMap(
 ) {
 #if defined(ACE_DEBUG)
 	if(!pTextBitMap->uwActualWidth) {
-		logWrite("ERR: pTextBitMap %p has zero width!\n", pTextBitMap);
+		// you can usually figure that out and skip this call before even doing fontDrawStr() or fontFillTextBitMap()
+		logWrite("ERR: pTextBitMap %p has text of zero width - do the check beforehand!\n", pTextBitMap);
 		return;
 	}
 #endif
@@ -311,6 +355,9 @@ void fontDrawStr(
 	const tFont *pFont, tBitMap *pDest, UWORD uwX, UWORD uwY,
 	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 ) {
+	if(!pTextBitMap) {
+		logWrite("ERR: pTextBitMap must be non-null!\n");
+	}
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
 }

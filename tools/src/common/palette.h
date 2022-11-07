@@ -22,7 +22,7 @@ public:
 
 	static tPalette fromAct(const std::string &szPath);
 
-	bool toPlt(const std::string &szPath);
+	bool toPlt(const std::string &szPath, bool isForceOcs);
 
 	bool toGpl(const std::string &szPath);
 

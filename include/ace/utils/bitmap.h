@@ -40,7 +40,18 @@ typedef struct _tBitMap {
 #define BMF_STANDARD    (1 << 3)
 #define BMF_MINPLANES   (1 << 4)
 #endif // AMIGA
-#define BMF_FASTMEM 1 << 5
+
+/**
+ * @brief Stores bitplanes in FAST memory. Can be handy to load extra bitmaps
+ * to non-CHIP mem and copy in their contents when needed.
+ */
+#define BMF_FASTMEM (1 << 5)
+
+/**
+ * @brief Stores bitplanes in one contiguous chunk of memory, one after another.
+ *  This is needed for some optimized routines, e.g. Kalms C2P. *
+ */
+#define BMF_CONTIGUOUS (1 << 6)
 
 /**
  * @brief New bitmap format.

@@ -63,11 +63,11 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 #endif
 	systemUse();
 	systemReleaseBlitterToOs();
-	ULONG ulResult = fread(pDest, ulSize, 1, pFile);
+	ULONG ulReadCount = fread(pDest, ulSize, 1, pFile);
 	systemGetBlitterFromOs();
 	systemUnuse();
 
-	return ulResult;
+	return ulReadCount;
 }
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {

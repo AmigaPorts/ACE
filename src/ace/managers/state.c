@@ -8,11 +8,8 @@
 /* Functions */
 
 #ifdef ACE_DEBUG
-#define checkNull(pPointer) _checkNull(pPointer, "##pPointer", __FILE__, __LINE__)
-#else
-#define checkNull(pPointer) 1
-#endif
 
+#define checkNull(pPointer) _checkNull(pPointer, "##pPointer", __FILE__, __LINE__)
 static void _checkNull(
 	void *pPointer, const char *szPointerName, const char *szFile, UWORD uwLine
 ) {
@@ -23,6 +20,10 @@ static void _checkNull(
 		);
 	}
 }
+
+#else
+#define checkNull(pPointer) do {} while(0)
+#endif
 
 tStateManager *stateManagerCreate(void) {
 	logBlockBegin("stateManagerCreate()");

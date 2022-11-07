@@ -41,8 +41,8 @@ add_library(${TARGET_NAME} OBJECT ${SOURCES} ${HEADERS})
 
 set(CMAKE_C_STANDARD 11)
 target_compile_definitions(${TARGET_NAME} PUBLIC AMIGA)
-target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra)
-target_compile_options(${TARGET_NAME} PUBLIC -fomit-frame-pointer)
+target_compile_options(${TARGET_NAME} PRIVATE $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-Wall -Wextra>)
+target_compile_options(${TARGET_NAME} PUBLIC $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-fomit-frame-pointer>)
 if(ACE_DEBUG)
 	# Add ACE debugging features to release build
 	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG)
@@ -187,7 +187,11 @@ function(convertFont)
 	toAbsolute(args_SOURCE)
 	toAbsolute(args_DESTINATION)
 	get_filename_component(ext ${args_DESTINATION} EXT)
-	string(SUBSTRING ${ext} 1 -1 ext)
+	if(ext)
+		string(SUBSTRING ${ext} 1 -1 ext)
+	else()
+		SET(ext "dir")
+	endif()
 
 	if(DEFINED args_FIRST_CHAR)
 		SET(argsOptional ${argsOptional} -fc ${args_FIRST_CHAR})
@@ -222,7 +226,7 @@ function(transformBitmap)
 endfunction()
 
 function(extractBitmaps)
-	cmake_parse_arguments(args "" "TARGET;SOURCE" "DESTINATIONS" ${ARGN})
+	cmake_parse_arguments(args "" "TARGET;SOURCE;GENERATED_FILE_LIST" "DESTINATIONS" ${ARGN})
 	list(LENGTH args_DESTINATIONS destArgCount)
 	MATH(EXPR destCount "${destArgCount} / 5 - 1")
 	foreach(destIdx RANGE ${destCount})
@@ -241,22 +245,37 @@ function(extractBitmaps)
 			TARGET ${args_TARGET} SOURCE ${args_SOURCE} DESTINATION ${outName}
 			TRANSFORM -extract ${X} ${Y} ${width} ${height}
 		)
+		set(generatedFiles "${generatedFiles};${outName}")
 	endforeach()
+
+	if(DEFINED args_GENERATED_FILE_LIST)
+		SET(${args_GENERATED_FILE_LIST} ${generatedFiles} PARENT_SCOPE)
+	endif()
 endfunction()
 
 function(convertTileset)
 	getToolPath(tileset_conv TOOL_TILESET_CONV)
 	cmake_parse_arguments(
-		args "INTERLEAVED" "TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE" "TILES" ${ARGN}
+		args
+		"INTERLEAVED;VARIABLE_HEIGHT"
+		"TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE"
+		"TILE_PATHS" ${ARGN}
 	)
 
-	list(LENGTH args_TILES tilesCount)
-	foreach(tileNumber ${args_TILES})
-		set(convDepends "${convDepends};${args_SOURCE}/${tileNumber}")
-	endforeach()
+	if(DEFINED args_TILE_PATHS)
+		foreach(tileNumber ${args_TILE_PATHS})
+			set(convDepends "${convDepends};${tileNumber}")
+		endforeach()
+	else()
+		message(FATAL_ERROR "No TILE_PATHS param found")
+	endif()
 
 	if(${args_INTERLEAVED})
 		SET(argsOptional ${argsOptional} -i)
+	endif()
+
+	if(${args_VARIABLE_HEIGHT})
+		SET(argsOptional ${argsOptional} -vh)
 	endif()
 
 	if(DEFINED args_HEIGHT)

@@ -27,7 +27,7 @@ public:
 
 	tChunkyBitmap(void) { };
 
-	bool toPng(const std::string &szPngPath);
+	bool toPng(const std::string &szPngPath) const;
 
 	static tChunkyBitmap fromPng(const std::string &szPath);
 

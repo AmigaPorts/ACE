@@ -27,7 +27,7 @@ int main(int lArgCount, const char *pArgs[])
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	std::string szPathIn = pArgs[1];
@@ -53,40 +53,46 @@ int main(int lArgCount, const char *pArgs[])
 	bool isOk = false;
 	if(nFs::getExt(szPathIn) == szExtOut) {
 		nLog::error("Input and output extensions are the same");
-		return 1;
+		return EXIT_FAILURE;
 	}
-	else if(szExtOut == "gpl") {
-		isOk = Palette.toGpl(szPathOut);
-	}
-	else if(szExtOut == "act") {
-		isOk = Palette.toAct(szPathOut);
-	}
-	else if(szExtOut == "pal") {
-		isOk = Palette.toPromotionPal(szPathOut);
-	}
-	else if(szExtOut == "plt") {
-		isOk = Palette.toPlt(szPathOut);
-	}
-	else if(szExtOut == "png") {
-		auto ColorCount = Palette.m_vColors.size();
-		tChunkyBitmap PltPreview(ColorCount * 32, 16);
-		for(uint8_t i = 0; i < ColorCount; ++i) {
-			const auto &Color = Palette.m_vColors[i];
-			PltPreview.fillRect(i * 32, 0, 32, 16, Color);
-			isOk = PltPreview.toPng(szPathOut);
+
+	try {
+		if(szExtOut == "gpl") {
+			isOk = Palette.toGpl(szPathOut);
+		}
+		else if(szExtOut == "act") {
+			isOk = Palette.toAct(szPathOut);
+		}
+		else if(szExtOut == "pal") {
+			isOk = Palette.toPromotionPal(szPathOut);
+		}
+		else if(szExtOut == "plt") {
+			isOk = Palette.toPlt(szPathOut, true);
+		}
+		else if(szExtOut == "png") {
+			auto ColorCount = Palette.m_vColors.size();
+			tChunkyBitmap PltPreview(ColorCount * 32, 16);
+			for(uint8_t i = 0; i < ColorCount; ++i) {
+				const auto &Color = Palette.m_vColors[i];
+				PltPreview.fillRect(i * 32, 0, 32, 16, Color);
+				isOk = PltPreview.toPng(szPathOut);
+			}
+		}
+		else {
+			nLog::error("unsupported output extension: '{}'", szExtOut);
+			printUsage(pArgs[0]);
+			return EXIT_FAILURE;
 		}
 	}
-	else {
-		nLog::error("unsupported output extension: '{}'", szExtOut);
-		printUsage(pArgs[0]);
-		return 1;
+	catch(const std::exception &Exc) {
+		nLog::error("Writing palette failed: {}", Exc.what());
 	}
 
 	if(!isOk) {
 		nLog::error("Couldn't write to '{}'", szPathOut);
-		return 1;
+		return EXIT_FAILURE;
 	}
 	fmt::print("Generated palette: '{}'\n", szPathOut);
 
-	return 0;
+	return EXIT_SUCCESS;
 }

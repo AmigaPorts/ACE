@@ -890,6 +890,7 @@ static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
 static UBYTE s_isRepeat;
 static tPtplayerCbSongEnd s_cbSongEnd;
+static UBYTE s_isPal;
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 /**
@@ -1219,7 +1220,8 @@ static void mt_playvoice(
 		pChannelData->n_minusft = (ubFineTune >= 8);
 
 		pChannelData->n_volume = pSampleDef->ubVolume;
-		if(!pSampleDef->uwRepeatOffs) {
+		// MOD spec: repeat only if repeat length is bigger than 2 bytes.
+		if(pSampleDef->uwRepeatLength <= 1) {
 			// No repeat def - reload first empty sample word after playback,
 			// then disable channel.
 			pChannelData->n_looped = 0;
@@ -1558,6 +1560,13 @@ void ptplayerStop(void) {
 	g_pCustom->aud[3].ac_vol = 0;
 	systemSetDmaMask(DMAF_AUDIO, 0);
 	s_pModCurr = 0;
+
+	// Free the channels taken by SFX.
+	// Typically they would release themselves but turning off DMA prevents this.
+	mt_chan[0].ubSfxPriority = 0;
+	mt_chan[1].ubSfxPriority = 0;
+	mt_chan[2].ubSfxPriority = 0;
+	mt_chan[3].ubSfxPriority = 0;
 }
 
 static inline void setTempo(UWORD uwTempo) {
@@ -1637,8 +1646,8 @@ void ptplayerDestroy(void) {
 	ptplayerStop();
 	// Disable handling of music
 	ptplayerEnableMusic(0);
-	systemSetCiaInt(CIA_B, 0, 0, 0);
-	systemSetCiaInt(CIA_B, 1, 0, 0);
+	ptplayerEnableMainHandler(0);
+	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 	// systemSetInt(INTB_AUD0, 0, 0);
 	// systemSetInt(INTB_AUD1, 0, 0);
 	// systemSetInt(INTB_AUD2, 0, 0);
@@ -1672,8 +1681,14 @@ void ptplayerCreate(UBYTE isPal) {
 	systemSetInt(INTB_AUD3, onAudio, (void*)3);
 #endif
 
+	ptplayerSetPal(isPal);
+	mt_reset();
+}
+
+void ptplayerSetPal(UBYTE isPal) {
 	// determine if 02 clock for timers is based on PAL or NTSC
-	if(isPal) {
+	s_isPal = isPal;
+	if(s_isPal) {
 		// Fcolor = 4.43361825 MHz (PAL color carrier frequency)
 		// CPU Clock = Fcolor * 1.6 = 7.0937892 MHz
 		// CIA Clock = Cpu Clock / 10 = 709.37892 kHz
@@ -1684,8 +1699,6 @@ void ptplayerCreate(UBYTE isPal) {
 	else {
 		mt_timerval = 1789773;
 	}
-
-	mt_reset();
 }
 
 void ptplayerLoadMod(
@@ -2556,6 +2569,17 @@ static const tPreFx prefx_tab[16] = {
 	[0xA ... 0xF] = set_period,
 };
 
+/**
+ * @brief Get the Paula's Clock Constant.
+ *
+ * http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node00DE.html
+ *
+ * @return The current clock constant, dependent on PAL/NTSC mode.
+ */
+static inline ULONG getClockConstant() {
+	return s_isPal ? 3546895 : 3579545;
+}
+
 void ptplayerProcess(void) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	if(s_isPendingPlay) {
@@ -2610,7 +2634,7 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	else {
 		pMod = memAllocFast(sizeof(*pMod));
 		if(pMod) {
-			pMod->ulSize = fileGetSize(szPath);
+			pMod->ulSize = lSize;
 			pMod->pData = memAllocChip(pMod->ulSize);
 			if(pMod->pData) {
 				tFile *pFileMod = fileOpen(szPath, "rb");
@@ -2646,7 +2670,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 	tFile *pFileSfx = fileOpen(szPath, "rb");
 	tPtplayerSfx *pSfx = 0;
 	if(!pFileSfx) {
-		logWrite("ERR: File doesn't exist: '%s'\r\n", szPath);
+		logWrite("ERR: File doesn't exist: '%s'\n", szPath);
 		goto fail;
 	}
 
@@ -2662,19 +2686,25 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 
 		UWORD uwSampleRateHz;
 		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
-		// NOTE: 3546895 is for PAL, for NTSC use 3579545
-		pSfx->uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
+		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
 
 		pSfx->pData = memAllocChip(ulByteSize);
 		if(!pSfx->pData) {
 			goto fail;
 		}
 		fileRead(pFileSfx, pSfx->pData, ulByteSize);
+
+		// Check if pData[0] is zeroed-out - it should be because after sfx playback
+		// ptplayer sets the channel playback to looped first word. This should
+		// be done on sfx converter side. If your samples are humming after playback,
+		// fix your custom conversion tool or use latest ACE tools!
+		if(pSfx->pData[0] != 0) {
+			logWrite("ERR: SFX's first word isn't zeroed-out\n");
+		}
 	}
 	else {
-		logWrite("ERR: Unknown sample format version: %hhu", ubVersion);
-		ptplayerSfxDestroy(pSfx);
-		return 0;
+		logWrite("ERR: Unknown sample format version: %hhu\n", ubVersion);
+		goto fail;
 	}
 
 	fileClose(pFileSfx);
@@ -2693,8 +2723,17 @@ fail:
 }
 
 void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
+	logBlockBegin("ptplayerSfxDestroy(pSfx: %p)", pSfx);
 	if(pSfx) {
-		// ptplayerWaitForSfx();
+		for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
+			if(mt_chan[ubChannel].n_sfxptr == pSfx->pData) {
+				// ptplayer doesn't mute its channels after sfx playback to save cycles
+				logWrite("channel %hhu is still using the sample - muting...\n", ubChannel);
+				g_pCustom->aud[ubChannel].ac_vol = 0;
+				break;
+			}
+		}
+
 		systemUse();
 		if(pSfx->pData) {
 			memFree(pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
@@ -2702,6 +2741,7 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
 		memFree(pSfx, sizeof(*pSfx));
 		systemUnuse();
 	}
+	logBlockEnd("ptplayerSfxDestroy()");
 }
 
 /**
@@ -2898,4 +2938,12 @@ void ptplayerWaitForSfx(void) {
 void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd) {
 	s_isRepeat = isRepeat;
 	s_cbSongEnd = cbSongEnd;
+}
+
+UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
+	// Get rounded sampling rate.
+	UWORD uwSamplingRateHz = (getClockConstant() + (pSfx->uwPeriod / 2)) / pSfx->uwPeriod;
+	// Get frame count - round it up.
+	UWORD uwFrameCount = (pSfx->uwWordLength * 2 * 50 + uwSamplingRateHz - 1) / uwSamplingRateHz;
+	return uwFrameCount;
 }

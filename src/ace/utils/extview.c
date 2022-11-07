@@ -207,9 +207,9 @@ void viewLoad(tView *pView)
 	logBlockBegin("viewLoad(pView: %p)", pView);
 
 	s_isPAL = systemIsPal();
-	UWORD waitPos = (s_isPAL == 1) ? 300 : 260;
+	UWORD uwWaitPos = (s_isPAL == 1) ? 300 : 260;
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < waitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) {}
 #if defined(AMIGA)
 	if(!pView) {
 		
@@ -272,7 +272,7 @@ void viewLoad(tView *pView)
 	systemSetDmaBit(DMAB_RASTER, pView != 0);
 
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < waitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) {}
 
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
