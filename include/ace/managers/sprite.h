@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_SPRITE_H_
 #define _ACE_MANAGERS_SPRITE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/macros.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/extview.h>
@@ -14,9 +18,7 @@ typedef struct tSprite {
 	WORD wX; ///< X position, measured from the left of the view.
 	WORD wY; ///< Y position, measured from the top of the view.
 	UWORD uwHeight;
-	UBYTE ubSpriteIndex;
-	UBYTE uwRawCopPos;
-	UBYTE ubRawCopListRegenCount;
+	UBYTE ubChannelIndex;
 	UBYTE isEnabled;
 	UBYTE isToUpdateHeader;
 } tSprite;
@@ -31,12 +33,15 @@ typedef struct tSprite {
  * since one may want to control it with joy, keyboard or in other kind of way.
  *
  * @param pView View used for displaying sprites.
+ * @param uwRawCopPos In block mode, specifies an offset on where
+ * the sprite commands should reside. Requires space of 16 copper commands.
+ *
  * @see copBlockDisableSprites()
  * @see copRawDisableSprites()
  * @see systemSetDmaBit()
  * @see spriteManagerDestroy()
  */
-void spriteManagerCreate(const tView *pView);
+void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos);
 
 /**
  * @brief Destroys the hardware sprite manager.
@@ -54,18 +59,15 @@ void spriteManagerDestroy(void);
  *
  * @note This function may temporarily re-enable OS.
  *
- * @param ubSpriteIndex Index of the channel. 0 is the first channel.
+ * @param ubChannelIndex Index of the channel. 0 is the first channel.
  * @param pBitmap Bitmap to be used to display sprite. See spriteSetBitmap()'s
  * documentation for relevant constraints.
- * @param uwRawCopPos If using raw coperlist mode, specifies copperlist position
- * on which relevant copper commands will be written.
  * @return Newly created sprite struct on success, 0 on failure.
+ *
  * @see spriteRemove()
  * @see spriteSetBitmap()
  */
-tSprite *spriteAdd(
-	UBYTE ubSpriteIndex, tBitMap *pBitmap, UWORD uwRawCopPos
-);
+tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap);
 
 /**
  * @brief Removes given sprite from the display and destroys its struct.
@@ -73,12 +75,13 @@ tSprite *spriteAdd(
  * @note This function may temporarily re-enable OS.
  *
  * @param pSprite Sprite to be destroyed.
- * @see spriteCreate()
+ * @see spriteAdd()
  */
 void spriteRemove(tSprite *pSprite);
 
 /**
- * @brief Changes bitmap image used to display the sprite. Also resizes sprite to bitmap height.
+ * @brief Changes bitmap image used to display the sprite.
+ * Also resizes sprite to bitmap height.
  *
  * @note The sprite will write to the bitmap's bitplanes to update its control
  * words. If you need to use same bitmap for different sprites, be sure to have
@@ -93,6 +96,7 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap);
 
 /**
  * @brief Overrides sprite height to given value.
+ * Also sets metadata update pending flag.
  *
  * @param pSprite Sprite of which height is to be changed.
  * @param uwHeight New sprite height. Maximum is 511.
@@ -105,16 +109,47 @@ void spriteSetHeight(tSprite *pSprite, UWORD uwHeight);
  * @param pSprite Sprite to be enabled.
  * @param isEnabled Set to 1 to enable sprite, otherwise set to 0.
  */
-void spriteEnable(tSprite *pSprite, UBYTE isEnabled);
-
-void spriteRequestHeaderUpdate(tSprite *pSprite);
+void spriteSetEnabled(tSprite *pSprite, UBYTE isEnabled);
 
 /**
- * @brief Updates the sprite on the display.
- * Be sure to call it after changing the sprite position.
+ * @brief Sets metadata update as pending. Be sure to call it after
+ * changing sprite's position, sizing or pointer to the next sprite.
+ *
+ * Multiple operations on sprite may independently require rebuilding
+ * its metadata.
+ * This function marks it as invalid so that it will be rebuilt only once
+ * by spriteProcess() later on.
+ *
+ * @param pSprite Sprite of which metadata should be set to pending update.
+ *
+ * @see spriteProcess()
+ */
+void spriteRequestMetadataUpdate(tSprite *pSprite);
+
+/**
+ * @brief Updates the sprite's metadata if set as requiring update.
+ * Be sure to call it at least whenever sprite's metadata needs updating.
  *
  * @param pSprite Sprite of which screen position is to be updated.
+ *
+ * @see spriteRequestMetadataUpdate()
+ * @see spriteProcessChannel()
  */
-void spriteUpdate(tSprite *pSprite);
+void spriteProcess(tSprite *pSprite);
+
+/**
+ * @brief Updates the given sprite channel.
+ * Be sure to call it whenever the first sprite in channel have changed
+ * and/or was enabled/disabled.
+ *
+ * @param ubChannelIndex
+ *
+ * @see spriteProcess()
+ */
+void spriteProcessChannel(UBYTE ubChannelIndex);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_SPRITE_H_

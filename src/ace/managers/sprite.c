@@ -8,57 +8,102 @@
 #include <ace/managers/mouse.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/sprite.h>
 #include <ace/generic/screen.h>
 
-static const tView *s_pView;
-static tSprite *s_pFirstSpritesInChannel[HARDWARE_SPRITE_CHANNEL_COUNT];
-static tCopBlock *s_pChannelCopBlocks[HARDWARE_SPRITE_CHANNEL_COUNT];
-static tHardwareSpriteHeader CHIP s_uBlankSprite;
+typedef struct tSpriteChannel {
+	union {
+		struct {
+			UWORD uwCopPos; ///< Offset for channel's first sprite fetch copper cmd.
+		} sRaw;
+		struct {
+			tCopBlock *pCopBlock;
+		} sBlock;
+	};
+	tSprite *pFirstSprite; ///< First sprite on the chained list in channel.
+	UBYTE ubCopperRegenCount;
+} tSpriteChannel;
 
-void spriteManagerCreate(const tView *pView) {
+static const tView *s_pView;
+static tSpriteChannel s_pChannelsData[HARDWARE_SPRITE_CHANNEL_COUNT];
+static tHardwareSpriteHeader CHIP s_uBlankSprite;
+static tCopBlock *s_pInitialClearCopBlock;
+
+static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
+	pChannel->ubCopperRegenCount = 2; // for front/back buffers in raw mode
+}
+
+void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
 	// TODO: add support for non-chained mode (setting sprxdat with copper)?
 	// TODO: add copBlockDisableSprites / copRawDisableSprites?
 	s_pView = pView;
 	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
-		s_pChannelCopBlocks[i] = 0;
-		s_pFirstSpritesInChannel[i] = 0;
+		s_pChannelsData[i] = (tSpriteChannel){
+			.sRaw = {.uwCopPos = uwRawCopPos + 2 * i}
+		};
+	}
+
+	// Initially disable all sprites so that no garbage will be fed on screen
+	// before actual sprites.
+	if(pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
+		s_pInitialClearCopBlock = spriteDisableInCopBlockMode(
+			s_pView->pCopList,
+			SPRITE_0 | SPRITE_1 | SPRITE_2 | SPRITE_3 |
+			SPRITE_4 | SPRITE_5 | SPRITE_6 | SPRITE_7
+		);
+	}
+	else {
+		spriteDisableInCopRawMode(
+			s_pView->pCopList,
+			SPRITE_0 | SPRITE_1 | SPRITE_2 | SPRITE_3 |
+			SPRITE_4 | SPRITE_5 | SPRITE_6 | SPRITE_7, uwRawCopPos
+		);
 	}
 }
 
 void spriteManagerDestroy(void) {
 	systemUse();
 	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
-		tSprite *pSprite = s_pFirstSpritesInChannel[i];
+		tSprite *pSprite = s_pChannelsData[i].pFirstSprite;
 		if(pSprite) {
 			spriteRemove(pSprite);
 		}
 	}
+	copBlockDestroy(s_pView->pCopList, s_pInitialClearCopBlock);
 	systemUnuse();
 }
 
-tSprite *spriteAdd(
-	UBYTE ubSpriteIndex, tBitMap *pBitmap, UWORD uwRawCopPos
-) {
+tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 	systemUse();
 	// TODO: add support for attaching next sprite to the chain.
 	// TODO: add support for attached sprites (16-color)
 	tSprite *pSprite = memAllocFast(sizeof(*pSprite));
-	pSprite->ubSpriteIndex = ubSpriteIndex;
-	pSprite->uwRawCopPos = uwRawCopPos;
-	pSprite->ubRawCopListRegenCount = 0;
+	pSprite->ubChannelIndex = ubChannelIndex;
 	pSprite->wX = 0;
 	pSprite->wY = 0;
 	pSprite->uwHeight = 0;
 	pSprite->isEnabled = 1;
 
-	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
-		// TODO: when in sprite chain mode, only for first sprite in the channel
-		if(s_pChannelCopBlocks[ubSpriteIndex] != 0) {
-			logWrite("ERR: Sprite channel %hhu is already used\n", ubSpriteIndex);
-			systemUnuse();
-			return 0;
+	tSpriteChannel *pChannel = &s_pChannelsData[ubChannelIndex];
+	if(pChannel->pFirstSprite) {
+		// TODO: add support for chaining sprites
+		logWrite("ERR: Sprite channel %hhu is already used\n", ubChannelIndex);
+	}
+	else {
+		if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
+#if defined(ACE_DEBUG)
+			if(pChannel->sBlock.pCopBlock) {
+				logWrite("ERR: Sprite channel %hhu already has copBlock\n", ubChannelIndex);
+				systemUnuse();
+				return 0;
+			}
+#endif
+			pChannel->sBlock.pCopBlock = copBlockCreate(
+				s_pView->pCopList, 2, 0, 0
+			);
 		}
-		s_pChannelCopBlocks[ubSpriteIndex] = copBlockCreate(s_pView->pCopList, 2, 0, 0);
+		spriteChannelRequestCopperUpdate(pChannel);
+		pChannel->pFirstSprite = pSprite;
 	}
 
 	spriteSetBitmap(pSprite, pBitmap);
@@ -68,24 +113,32 @@ tSprite *spriteAdd(
 
 void spriteRemove(tSprite *pSprite) {
 	systemUse();
-	if(s_pChannelCopBlocks[pSprite->ubSpriteIndex]) {
+	tCopBlock *pCopBlock = s_pChannelsData[pSprite->ubChannelIndex].sBlock.pCopBlock;
+	if(pCopBlock) {
 		copBlockDestroy(
-			s_pView->pCopList, s_pChannelCopBlocks[pSprite->ubSpriteIndex]
+			s_pView->pCopList, pCopBlock
 		);
-		s_pChannelCopBlocks[pSprite->ubSpriteIndex] = 0;
+		pCopBlock = 0;
 	}
+
+	tSpriteChannel *pChannel = &s_pChannelsData[pSprite->ubChannelIndex];
+	if(pChannel->pFirstSprite == pSprite) {
+		// TODO: Move sprite next in chain to be the first one?
+		pChannel->pFirstSprite = 0;
+		spriteChannelRequestCopperUpdate(pChannel);
+	}
+
 	memFree(pSprite, sizeof(*pSprite));
 	systemUnuse();
 }
 
-void spriteEnable(tSprite *pSprite, UBYTE isEnabled) {
+void spriteSetEnabled(tSprite *pSprite, UBYTE isEnabled) {
 	pSprite->isEnabled = isEnabled;
-	if(s_pView->pCopList->ubMode == COPPER_MODE_RAW) {
-		pSprite->ubRawCopListRegenCount = 2; // for front/back buffers
-	}
+	// TODO: only after modifying first sprite in chain, change next sprite ptr in the prior one
+	s_pChannelsData[pSprite->ubChannelIndex].ubCopperRegenCount = 2; // for front/back buffers
 }
 
-void spriteRequestHeaderUpdate(tSprite *pSprite) {
+void spriteRequestMetadataUpdate(tSprite *pSprite) {
 	pSprite->isToUpdateHeader = 1;
 }
 
@@ -93,7 +146,7 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
 		logWrite(
 			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP!\n",
-			pSprite->ubSpriteIndex, pBitmap
+			pSprite->ubChannelIndex, pBitmap
 		);
 		return;
 	}
@@ -110,55 +163,84 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	pSprite->pBitmap = pBitmap;
 	spriteSetHeight(pSprite, pBitmap->Rows - 2);
 
-	if(s_pView->pCopList->ubMode == COPPER_MODE_RAW) {
-		pSprite->ubRawCopListRegenCount = 2; // for front/back buffers
+	tSpriteChannel *pChannel = &s_pChannelsData[pSprite->ubChannelIndex];
+	spriteChannelRequestCopperUpdate(pChannel);
+}
+
+void spriteProcessChannel(UBYTE ubChannelIndex) {
+	tSpriteChannel *pChannel = &s_pChannelsData[ubChannelIndex];
+	if(!pChannel->ubCopperRegenCount) {
+		return;
+	}
+
+	// Update relevant part of current raw copperlist
+	const tSprite *pSprite = pChannel->pFirstSprite;
+	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
+		pChannel->ubCopperRegenCount = 0;
+		tCopBlock *pCopBlock = pChannel->sBlock.pCopBlock;
+		pCopBlock->uwCurrCount = 0;
+		ULONG ulSprAddr = (
+			pSprite->isEnabled ?
+			(ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw
+		);
+		copMove(
+			s_pView->pCopList, pCopBlock,
+			&g_pSprFetch[pSprite->ubChannelIndex].uwHi, ulSprAddr >> 16
+		);
+		copMove(
+			s_pView->pCopList, pCopBlock,
+			&g_pSprFetch[pSprite->ubChannelIndex].uwLo, ulSprAddr & 0xFFFF
+		);
 	}
 	else {
-		tCopBlock *pBlock = s_pChannelCopBlocks[pSprite->ubSpriteIndex];
-		pBlock->uwCurrCount = 0;
-		ULONG ulSprAddr = pSprite->isEnabled ? (ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw;
-		copMove(s_pView->pCopList, pBlock, &g_pSprFetch[pSprite->ubSpriteIndex].uwHi, ulSprAddr >> 16);
-		copMove(s_pView->pCopList, pBlock, &g_pSprFetch[pSprite->ubSpriteIndex].uwLo, ulSprAddr & 0xFFFF);
+		--pChannel->ubCopperRegenCount;
+		UWORD uwRawCopPos = pChannel->sRaw.uwCopPos;
+		tCopCmd *pList = &s_pView->pCopList->pBackBfr->pList[uwRawCopPos];
+
+		ULONG ulSprAddr = (
+			pSprite && pSprite->isEnabled ?
+			(ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw
+		);
+		copSetMoveVal(&pList[0].sMove, ulSprAddr >> 16);
+		copSetMoveVal(&pList[1].sMove, ulSprAddr & 0xFFFF);
 	}
 }
 
-void spriteUpdate(tSprite *pSprite) {
-	// Update relevant part of current raw copperlist
-	if(pSprite->ubRawCopListRegenCount) {
-		--pSprite->ubRawCopListRegenCount;
-		tCopCmd *pList = &s_pView->pCopList->pBackBfr->pList[pSprite->uwRawCopPos];
-
-		ULONG ulSprAddr = pSprite->isEnabled ? (ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw;
-		copSetMove(&pList[0].sMove, &g_pSprFetch[pSprite->ubSpriteIndex].uwHi, ulSprAddr >> 16);
-		copSetMove(&pList[1].sMove, &g_pSprFetch[pSprite->ubSpriteIndex].uwLo, ulSprAddr & 0xFFFF);
+void spriteProcess(tSprite *pSprite) {
+	if(!pSprite->isToUpdateHeader) {
+		return;
 	}
 
-	if(pSprite->isToUpdateHeader) {
-		// Sprite in list mode has 2-word header before and after data, each
-		// occupies 1 line of the bitmap.
-		// TODO: get rid of hardcoded 128 X offset in reasonable way.
-		UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
-		UWORD uwVStop = uwVStart + pSprite->uwHeight;
-		UWORD uwHStart = 128 + pSprite->wX;
+	// Sprite in list mode has 2-word header before and after data, each
+	// occupies 1 line of the bitmap.
+	// TODO: get rid of hardcoded 128 X offset in reasonable way.
+	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
+	UWORD uwVStop = uwVStart + pSprite->uwHeight;
+	UWORD uwHStart = 128 + pSprite->wX;
 
-		tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
-		pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
-		pHeader->uwRawCtl = (UWORD) (
-			(uwVStop << 8) |
-			(BTST(uwVStart, 8) << 2) |
-			(BTST(uwVStop, 8) << 1) |
-			BTST(uwHStart, 0)
-		);
-	}
+	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
+	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
+	pHeader->uwRawCtl = (UWORD) (
+		(uwVStop << 8) |
+		(BTST(uwVStart, 8) << 2) |
+		(BTST(uwVStop, 8) << 1) |
+		BTST(uwHStart, 0)
+	);
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
-	if(uwHeight >= 512) {
+#if defined(ACE_DEBUG)
+	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
+	UWORD uwMaxHeight = 511 - uwVStart;
+	if(uwHeight >= uwMaxHeight) {
+		// This is not exactly true, max is 512 - vstart
 		logWrite(
-			"ERR: Invalid sprite %p height %hu, max is 512\n",
-			pSprite, uwHeight
+			"ERR: Invalid sprite %hhu height %hu, max is %hu\n",
+			pSprite->ubChannelIndex, uwHeight, uwMaxHeight
 		);
+		uwHeight = uwMaxHeight;
 	}
+#endif
 
 	pSprite->uwHeight = uwHeight;
 	pSprite->isToUpdateHeader = 1;
