@@ -9,7 +9,20 @@
 extern "C" {
 #endif
 
-#include <ace/macros.h>
+/**
+ * @file sprite.h
+ *
+ * @brief The basic sprite manager. Sets up the chained sprite list for each
+ * of hardware sprite channels.
+ *
+ * @todo Add support for chained sprites - only one per channel atm
+ * @todo Add support for attached (16-color) sprites?
+ * @todo AGA differences?
+ * @todo Separate spriteAdd/spriteRemove from spriteCreate/spriteDestroy
+ * @todo Make allocations optional, allow using spriteInit(tSprite *) instead of Create/Destroy
+ * @todo Allow using fragments of bitmap (specified Y offset) for sprite tiles support. How to solve metadata writing?
+ */
+
 #include <ace/utils/bitmap.h>
 #include <ace/utils/extview.h>
 
