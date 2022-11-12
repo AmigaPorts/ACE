@@ -3,24 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/sprite.h>
-#include <ace/managers/system.h>
 #include <ace/macros.h>
+#include <ace/generic/screen.h>
+#include <ace/managers/system.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
 #include <ace/utils/sprite.h>
-#include <ace/generic/screen.h>
 
 typedef struct tSpriteChannel {
-	union {
-		struct {
-			UWORD uwCopPos; ///< Offset for channel's first sprite fetch copper cmd.
-		} sRaw;
-		struct {
-			tCopBlock *pCopBlock;
-		} sBlock;
-	};
 	tSprite *pFirstSprite; ///< First sprite on the chained list in channel.
+	tCopBlock *pCopBlock;
+	UWORD uwRawCopPos; ///< Offset for channel's first sprite fetch copper cmd.
 	UBYTE ubCopperRegenCount;
 } tSpriteChannel;
 
@@ -35,11 +29,10 @@ static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
 
 void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
 	// TODO: add support for non-chained mode (setting sprxdat with copper)?
-	// TODO: add copBlockDisableSprites / copRawDisableSprites?
 	s_pView = pView;
 	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
 		s_pChannelsData[i] = (tSpriteChannel){
-			.sRaw = {.uwCopPos = uwRawCopPos + 2 * i}
+			.uwRawCopPos = uwRawCopPos + 2 * i
 		};
 	}
 
@@ -90,20 +83,21 @@ tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 		logWrite("ERR: Sprite channel %hhu is already used\n", ubChannelIndex);
 	}
 	else {
+		spriteChannelRequestCopperUpdate(pChannel);
+		pChannel->pFirstSprite = pSprite;
+
 		if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
 #if defined(ACE_DEBUG)
-			if(pChannel->sBlock.pCopBlock) {
+			if(pChannel->pCopBlock) {
 				logWrite("ERR: Sprite channel %hhu already has copBlock\n", ubChannelIndex);
 				systemUnuse();
 				return 0;
 			}
 #endif
-			pChannel->sBlock.pCopBlock = copBlockCreate(
+			pChannel->pCopBlock = copBlockCreate(
 				s_pView->pCopList, 2, 0, 0
 			);
 		}
-		spriteChannelRequestCopperUpdate(pChannel);
-		pChannel->pFirstSprite = pSprite;
 	}
 
 	spriteSetBitmap(pSprite, pBitmap);
@@ -113,19 +107,20 @@ tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 
 void spriteRemove(tSprite *pSprite) {
 	systemUse();
-	tCopBlock *pCopBlock = s_pChannelsData[pSprite->ubChannelIndex].sBlock.pCopBlock;
-	if(pCopBlock) {
-		copBlockDestroy(
-			s_pView->pCopList, pCopBlock
-		);
-		pCopBlock = 0;
-	}
-
 	tSpriteChannel *pChannel = &s_pChannelsData[pSprite->ubChannelIndex];
+
 	if(pChannel->pFirstSprite == pSprite) {
 		// TODO: Move sprite next in chain to be the first one?
 		pChannel->pFirstSprite = 0;
 		spriteChannelRequestCopperUpdate(pChannel);
+
+		if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
+			tCopBlock *pCopBlock = pChannel->pCopBlock;
+			if(pCopBlock) {
+				copBlockDestroy(s_pView->pCopList, pCopBlock);
+				pChannel->pCopBlock = 0;
+			}
+		}
 	}
 
 	memFree(pSprite, sizeof(*pSprite));
@@ -175,9 +170,9 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 
 	// Update relevant part of current raw copperlist
 	const tSprite *pSprite = pChannel->pFirstSprite;
-	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
+	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK && pChannel->pCopBlock) {
 		pChannel->ubCopperRegenCount = 0;
-		tCopBlock *pCopBlock = pChannel->sBlock.pCopBlock;
+		tCopBlock *pCopBlock = pChannel->pCopBlock;
 		pCopBlock->uwCurrCount = 0;
 		ULONG ulSprAddr = (
 			pSprite->isEnabled ?
@@ -194,7 +189,7 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 	}
 	else {
 		--pChannel->ubCopperRegenCount;
-		UWORD uwRawCopPos = pChannel->sRaw.uwCopPos;
+		UWORD uwRawCopPos = pChannel->uwRawCopPos;
 		tCopCmd *pList = &s_pView->pCopList->pBackBfr->pList[uwRawCopPos];
 
 		ULONG ulSprAddr = (
