@@ -37,8 +37,7 @@ CMake:
 
 ``` cmake
 cmake_minimum_required(VERSION 2.8.5)
-project(hello)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+project(hello LANGUAGES C)
 
 # Lowercase project name for binaries and packaging
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
