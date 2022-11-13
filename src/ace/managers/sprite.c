@@ -46,6 +46,7 @@ void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
 		);
 	}
 	else {
+		s_pInitialClearCopBlock = 0;
 		spriteDisableInCopRawMode(
 			s_pView->pCopList,
 			SPRITE_0 | SPRITE_1 | SPRITE_2 | SPRITE_3 |
@@ -62,7 +63,9 @@ void spriteManagerDestroy(void) {
 			spriteRemove(pSprite);
 		}
 	}
-	copBlockDestroy(s_pView->pCopList, s_pInitialClearCopBlock);
+	if(s_pInitialClearCopBlock) {
+		copBlockDestroy(s_pView->pCopList, s_pInitialClearCopBlock);
+	}
 	systemUnuse();
 }
 
@@ -70,11 +73,8 @@ tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 	systemUse();
 	// TODO: add support for attaching next sprite to the chain.
 	// TODO: add support for attached sprites (16-color)
-	tSprite *pSprite = memAllocFast(sizeof(*pSprite));
+	tSprite *pSprite = memAllocFastClear(sizeof(*pSprite));
 	pSprite->ubChannelIndex = ubChannelIndex;
-	pSprite->wX = 0;
-	pSprite->wY = 0;
-	pSprite->uwHeight = 0;
 	pSprite->isEnabled = 1;
 
 	tSpriteChannel *pChannel = &s_pChannelsData[ubChannelIndex];
@@ -94,9 +94,7 @@ tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 				return 0;
 			}
 #endif
-			pChannel->pCopBlock = copBlockCreate(
-				s_pView->pCopList, 2, 0, 0
-			);
+			pChannel->pCopBlock = copBlockCreate(s_pView->pCopList, 2, 0, 0);
 		}
 	}
 
