@@ -69,8 +69,8 @@ For both variants:
   }
   ```
   - Create empty CMakeLists.txt file **and restart the editor** so that it can discover that you're inside CMake-based project.
-    (You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".)
-  - Enter command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and start typing "CMake Scan for kits" and select the Bartman kit from the options.
+    (You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".). If your user
+    config already has CMake kits, VSCode may ask you which kit you want to use, then select the Bartman kit from the options.
 
 After this you should be good to go. You can probably check in the `.vscode/cmake-kits.json` file and just adapt the `BARTMAN_PREFIX_PATH` environment variable setting on each machine. You may even want to check in the `.vscode/settings.json` file if you want to make sure that you use the same version of Bartman's extension on all development machines.
 
