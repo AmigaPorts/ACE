@@ -23,7 +23,7 @@ The setup is a bit troublesome but in the end it allows swapping compiler with B
 
 Variant A: Using the MinGW GCC compiler toolchain
 - Download and install any MinGW GCC compiler (e.g. [7.3.0-i686-posix-dwarf](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/threads-posix/dwarf/i686-7.3.0-release-posix-dwarf-rt_v5-rev0.7z/download)) if you don't have any already in your system (MSVC and others will work too).
-- Make sure the directory containing the GCC executable is in the system PATH.
+- Make sure the directory containing the `mingw32-make` executable is in the system PATH.
 
 Variant B: Using MSVC
 - Install Visual Studio. At the very least the VisualStudio Build Tools. The VSCode extensions will discover what you need from them automatically.
