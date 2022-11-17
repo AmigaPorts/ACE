@@ -39,7 +39,7 @@ For both variants:
     Be sure that the `m68k-bartman.cmake` file is there. Do not add the AmigaCMakeCrossToolchains to your workspace, it just
     needs to be next to the project folder.
   - Create a folder .vscode in your project
-  - Create a file .vscode/cmake-kits.json with the following content. *IMPORTANT:* If you use the MingGW toolchain, choose `MinGW Makefiles` as preferred generator, for MSVC choose `Ninja`.
+  - Create a file .vscode/cmake-kits.json with the following content.
   ```json5
   [
     {
@@ -47,9 +47,6 @@ For both variants:
       "toolchainFile": "${workspaceFolder}\\..\\AmigaCMakeCrossToolchains\\m68k-bartman.cmake",
       "environmentVariables": {
         "PATH": "${env:BARTMAN_PREFIX_PATH}/opt/bin;${env:BARTMAN_PREFIX_PATH};${env:BARTMAN_PREFIX_PATH}/opt/bin/m68k-amiga-elf/bin;${env:PATH}"
-      },
-      "preferredGenerator": {
-        "name": "MinGW Makefiles"
       },
       "cmakeSettings": {
         "CMAKE_C_COMPILER:FILEPATH": "${env:BARTMAN_PREFIX_PATH}/opt/bin/m68k-amiga-elf-gcc.exe",
@@ -62,12 +59,13 @@ For both variants:
     }
   ]
   ```
-  - Create a file .vscode/settings.json with the following content, replacing the extension name/version so that it matches your filesystem:
+  - Create a file .vscode/settings.json with the following content, replacing the extension name/version so that it matches your filesystem. The generator will be chosen automatically, if you use the MinGW toolchain, `mingw32-make` should be on your `PATH` and it will pick the first, for MSVC, you may see a message `[proc] The command: mingw32-make --version failed with error: Error: spawn mingw32-make ENOENT` in the Output tab, but that's ok, MSVC will just use Ninja.
   ```json5
   {
     "cmake.environment": {
         "BARTMAN_PREFIX_PATH": "${userHome}/.vscode/extensions/bartmanabyss.amiga-debug-1.6.7/bin/win32/"
-    }
+    },
+    "cmake.preferredGenerators": ["MinGW Makefiles", "Ninja"]
   }
   ```
   - Create empty CMakeLists.txt file **and restart the editor** so that it can discover that you're inside CMake-based project.
