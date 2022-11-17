@@ -21,53 +21,60 @@ To obtain the newest package:
 This is recommended approach by [Last Minute Creations](https://github.com/Last-Minute-Creations) team members.
 The setup is a bit troublesome but in the end it allows swapping compiler with Bebbo variant easily and makes it more portable.
 
+Variant A: Using the MinGW GCC compiler toolchain
 - Download and install any MinGW GCC compiler (e.g. [7.3.0-i686-posix-dwarf](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/threads-posix/dwarf/i686-7.3.0-release-posix-dwarf-rt_v5-rev0.7z/download)) if you don't have any already in your system (MSVC and others will work too).
 - Make sure the directory containing the GCC executable is in the system PATH.
+
+Variant B: Using MSVC
+- Install Visual Studio. At the very least the VisualStudio Build Tools. The VSCode extensions will discover what you need from them automatically.
+
+For both variants:
 - Download and install [CMake](https://cmake.org) if you haven't already.
   Be sure its executable directory is in your PATH or you'll have to configure vscode extension with it manually.
-- In VSCode, install `twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support.
 - If CMake's executable is not in your system's PATH, enter VSCode settings and set full path to cmake.exe.
-- Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo.
-  Be sure you have `m68k-bartman.cmake` file there.
-- Confiure VSCode CMake extension:
+- In VSCode, install `twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support.
+- Configure VSCode CMake extension:
   - In the IDE, open any directory which will contain your project.
-  - Create empty CMakeLists.txt file **and restart the editor** so that it can discover that you're inside CMake-based project.
-  - Enter command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and start typing "CMake Scan for kits" and select it from the options.
-  - Enter command palette again and select "CMake Edit User-Local CMake Kits"
-  - You will see a .json file which holds the array of configurations of compilers in your system.
-    There will be one matching the MinGW compiler, but you need to append the configuration for Bartman suite manually.
-    Simply add a comma after last compiler config in the file and add the following, replacing `YOUR_USER_NAME`, `m68k-bartman.cmake` path and extension name/version so that it matches your filesystem:
-
-    ```json5
-    [
-      {
-        "name": "Some other compiler which was automatically detected",
-        // Some other fields...
+  - Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo next to that folder.
+    Be sure that the `m68k-bartman.cmake` file is there. Do not add the AmigaCMakeCrossToolchains to your workspace, it just
+    needs to be next to the project folder.
+  - Create a folder .vscode in your project
+  - Create a file .vscode/cmake-kits.json with the following content. *IMPORTANT:* If you use the MingGW toolchain, choose `MinGW Makefiles` as preferred generator, for MSVC choose `Ninja`.
+  ```json5
+  [
+    {
+      "name": "GCC Bartman m68k",
+      "toolchainFile": "${workspaceFolder}\\..\\AmigaCMakeCrossToolchains\\m68k-bartman.cmake",
+      "environmentVariables": {
+        "PATH": "${env:BARTMAN_PREFIX_PATH}/opt/bin;${env:BARTMAN_PREFIX_PATH};${env:BARTMAN_PREFIX_PATH}/opt/bin/m68k-amiga-elf/bin;${env:PATH}"
       },
-      {
-        "name": "GCC Bartman m68k",
-        "toolchainFile": "C:\\PATH_TO\\AmigaCMakeCrossToolchains\\m68k-bartman.cmake",
-        "compilers": {
-          "C": "C:\\Users\\YOUR_USER_NAME\\.vscode\\extensions\\bartmanabyss.amiga-debug-1.1.0-preview33\\bin\\opt\\bin\\m68k-amiga-elf-gcc.exe",
-          "CXX": "C:\\Users\\YOUR_USER_NAME\\.vscode\\extensions\\bartmanabyss.amiga-debug-1.1.0-preview33\\bin\\opt\\bin\\m68k-amiga-elf-g++.exe"
-        },
-        "environmentVariables": {
-          "PATH": "C:/Users/YOUR_USER_NAME/.vscode/extensions/bartmanabyss.amiga-debug-1.1.0-preview33/bin/opt/bin;C:/Users/YOUR_USER_NAME/.vscode/extensions/bartmanabyss.amiga-debug-1.1.0-preview33/bin;${env:PATH}"
-        },
-        "preferredGenerator": {
-          "name": "MinGW Makefiles"
-        },
-        "cmakeSettings": {
-          "M68K_CPU": "68000",
-          "TOOLCHAIN_PREFIX": "m68k-amiga-elf",
-          "TOOLCHAIN_PATH": "C:/Users/YOUR_USER_NAME/.vscode/extensions/bartmanabyss.amiga-debug-1.1.0-preview33/bin/opt"
-        },
-        "keep": true
-      }
-    ]
-    ```
+      "preferredGenerator": {
+        "name": "MinGW Makefiles"
+      },
+      "cmakeSettings": {
+        "CMAKE_C_COMPILER:FILEPATH": "${env:BARTMAN_PREFIX_PATH}/opt/bin/m68k-amiga-elf-gcc.exe",
+        "M68K_CPU": "68000",
+        "TOOLCHAIN_PREFIX": "m68k-amiga-elf",
+        "TOOLCHAIN_PATH": "${env:BARTMAN_PREFIX_PATH}/opt",
+        "CMAKE_AR": "${env:BARTMAN_PREFIX_PATH}/opt/m68k-amiga-elf/bin/ar.exe"
+      },
+      "keep": true
+    }
+  ]
+  ```
+  - Create a file .vscode/settings.json with the following content, replacing `YOUR_USER_NAME` and the extension name/version so that it matches your filesystem:
+  ```json5
+  {
+    "cmake.environment": {
+        "BARTMAN_PREFIX_PATH": "C:/Users/YOUR_USER_NAME/.vscode/extensions/bartmanabyss.amiga-debug-1.6.7/bin/win32/"
+    }
+  }
+  ```
+  - Create empty CMakeLists.txt file **and restart the editor** so that it can discover that you're inside CMake-based project.
+    (You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".)
+  - Enter command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and start typing "CMake Scan for kits" and select the Bartman kit from the options.
 
-After this you should be good to go.
+After this you should be good to go. You can probably check in the .vscode/cmake-kits.json file and just adapt the `BARTMAN_PREFIX_PATH` environment variable setting on each machine.
 
 - From the command palette, select "CMake Configure" to configure your project.
 - The <kbd>F7</kbd> key builds your project,
