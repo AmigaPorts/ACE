@@ -72,7 +72,7 @@ For both variants:
     (You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".)
   - Enter command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and start typing "CMake Scan for kits" and select the Bartman kit from the options.
 
-After this you should be good to go. You can probably check in the .vscode/cmake-kits.json file and just adapt the `BARTMAN_PREFIX_PATH` environment variable setting on each machine.
+After this you should be good to go. You can probably check in the `.vscode/cmake-kits.json` file and just adapt the `BARTMAN_PREFIX_PATH` environment variable setting on each machine. You may even want to check in the `.vscode/settings.json` file if you want to make sure that you use the same version of Bartman's extension on all development machines.
 
 - From the command palette, select "CMake Configure" to configure your project.
 - The <kbd>F7</kbd> key builds your project,
