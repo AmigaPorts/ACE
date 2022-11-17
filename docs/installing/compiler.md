@@ -62,11 +62,11 @@ For both variants:
     }
   ]
   ```
-  - Create a file .vscode/settings.json with the following content, replacing `YOUR_USER_NAME` and the extension name/version so that it matches your filesystem:
+  - Create a file .vscode/settings.json with the following content, replacing the extension name/version so that it matches your filesystem:
   ```json5
   {
     "cmake.environment": {
-        "BARTMAN_PREFIX_PATH": "C:/Users/YOUR_USER_NAME/.vscode/extensions/bartmanabyss.amiga-debug-1.6.7/bin/win32/"
+        "BARTMAN_PREFIX_PATH": "${userHome}/.vscode/extensions/bartmanabyss.amiga-debug-1.6.7/bin/win32/"
     }
   }
   ```
