@@ -19,60 +19,64 @@ To obtain the newest package:
 ### Using Bartman's compiler with CMake
 
 This is recommended approach by [Last Minute Creations](https://github.com/Last-Minute-Creations) team members.
-The setup is a bit troublesome but in the end it allows swapping compiler with Bebbo variant easily and makes it more portable.
+The latest versions of Bartman's plugin support Windows, Linux, and macOS for development. This setup works on
+each of these platforms.
 
-Variant A: Using the MinGW GCC compiler toolchain
-- Download and install any MinGW GCC compiler (e.g. [7.3.0-i686-posix-dwarf](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/threads-posix/dwarf/i686-7.3.0-release-posix-dwarf-rt_v5-rev0.7z/download)) if you don't have any already in your system (MSVC and others will work too).
-- Make sure the directory containing the `mingw32-make` executable is in the system PATH.
+On Windows, you need either the MinGW GCC compiler toolchain (e.g. [7.3.0-i686-posix-dwarf](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/threads-posix/dwarf/i686-7.3.0-release-posix-dwarf-rt_v5-rev0.7z/download)) or MSVC. If using MinGW, make sure the directory containing the `mingw32-make` executable is in the system PATH.
+Also download and install [CMake](https://cmake.org) if you haven't already. Be sure its executable directory is in your PATH or you'll have to configure vscode extension with it manually.
 
-Variant B: Using MSVC
-- Install Visual Studio. At the very least the VisualStudio Build Tools. The VSCode extensions will discover what you need from them automatically.
+On Linux or macOS, make sure you have CMake and Make installed and on the PATH.
 
-For both variants:
-- Download and install [CMake](https://cmake.org) if you haven't already.
-  Be sure its executable directory is in your PATH or you'll have to configure vscode extension with it manually.
-- If CMake's executable is not in your system's PATH, enter VSCode settings and set full path to cmake.exe.
-- In VSCode, install `twxs.cmake` and `ms-vscode.cmake-tools` extensions for CMake support.
-- Configure VSCode CMake extension:
-  - In the IDE, open any directory which will contain your project.
-  - Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo next to that folder.
-    Be sure that the `m68k-bartman.cmake` file is there. Do not add the AmigaCMakeCrossToolchains to your workspace, it just
-    needs to be next to the project folder.
-  - Create a folder .vscode in your project
-  - Create a file .vscode/cmake-kits.json with the following content.
+Now for the VSCode setup:
+- In VSCode, install the `twxs.cmake`, `ms-vscode.cmake-tools`, `ms-vscode.cpptools` and `BartmanAbyss.amiga-debug` extensions.
+- Also in VSCode, open any directory which will contain your project.
+- Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo either next to
+  your project folder or as a submodule inside of it.
+- Create a folder .vscode in your project
+- Create a file .vscode/cmake-kits.json with the following content. Adapt the pth to `AmigaCMakeCrossToolchains` to match
+  where you cloned that repository.
   ```json5
   [
+    // Sigh... the only reason we need two entries is because PATH on Windows needs ';' as separator, and on Unix it's ':'
     {
-      "name": "GCC Bartman m68k",
-      "toolchainFile": "${workspaceFolder}\\..\\AmigaCMakeCrossToolchains\\m68k-bartman.cmake",
+      "name": "GCC Bartman m68k Win32",
+      "toolchainFile": "${workspaceFolder}/../AmigaCMakeCrossToolchains/m68k-bartman.cmake",
       "environmentVariables": {
-        "PATH": "${env:BARTMAN_PREFIX_PATH}/opt/bin;${env:BARTMAN_PREFIX_PATH};${env:BARTMAN_PREFIX_PATH}/opt/bin/m68k-amiga-elf/bin;${env:PATH}"
+        "PATH": "${command:amiga.bin-path}/opt/bin;${command:amiga.bin-path};${command:amiga.bin-path}/opt/m68k-amiga-elf/bin;${env:PATH}"
+      },
+      "preferredGenerator": {
+        "name": "Ninja"
       },
       "cmakeSettings": {
-        "CMAKE_C_COMPILER:FILEPATH": "${env:BARTMAN_PREFIX_PATH}/opt/bin/m68k-amiga-elf-gcc.exe",
         "M68K_CPU": "68000",
         "TOOLCHAIN_PREFIX": "m68k-amiga-elf",
-        "TOOLCHAIN_PATH": "${env:BARTMAN_PREFIX_PATH}/opt",
-        "CMAKE_AR": "${env:BARTMAN_PREFIX_PATH}/opt/m68k-amiga-elf/bin/ar.exe"
+        "TOOLCHAIN_PATH": "${command:amiga.bin-path}/opt"
+      },
+      "keep": true
+    },
+    {
+      "name": "GCC Bartman m68k Unix",
+      "toolchainFile": "${workspaceFolder}/deps/AmigaCMakeCrossToolchains/m68k-bartman.cmake",
+      "environmentVariables": {
+        "PATH": "${command:amiga.bin-path}/opt/bin:${command:amiga.bin-path}:${command:amiga.bin-path}/opt/m68k-amiga-elf/bin:${env:PATH}"
+      },
+      "preferredGenerator": {
+        "name": "Unix Makefiles"
+      },
+      "cmakeSettings": {
+        "M68K_CPU": "68000",
+        "TOOLCHAIN_PREFIX": "m68k-amiga-elf",
+        "TOOLCHAIN_PATH": "${command:amiga.bin-path}/opt"
       },
       "keep": true
     }
   ]
   ```
-  - Create a file .vscode/settings.json with the following content, replacing the extension name/version so that it matches your filesystem. The generator will be chosen automatically, if you use the MinGW toolchain, `mingw32-make` should be on your `PATH` and it will pick the first, for MSVC, you may see a message `[proc] The command: mingw32-make --version failed with error: Error: spawn mingw32-make ENOENT` in the Output tab, but that's ok, MSVC will just use Ninja.
-  ```json5
-  {
-    "cmake.environment": {
-        "BARTMAN_PREFIX_PATH": "${userHome}/.vscode/extensions/bartmanabyss.amiga-debug-1.6.7/bin/win32/"
-    },
-    "cmake.preferredGenerators": ["MinGW Makefiles", "Ninja"]
-  }
-  ```
   - Create empty CMakeLists.txt file **and restart the editor** so that it can discover that you're inside CMake-based project.
-    (You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".). If your user
-    config already has CMake kits, VSCode may ask you which kit you want to use, then select the Bartman kit from the options.
+    (You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".).
 
-After this you should be good to go. You can probably check in the `.vscode/cmake-kits.json` file and just adapt the `BARTMAN_PREFIX_PATH` environment variable setting on each machine. You may even want to check in the `.vscode/settings.json` file if you want to make sure that you use the same version of Bartman's extension on all development machines.
+After this you should be good to go. You can check in the `.vscode/cmake-kits.json` file, as long as you keep `AmigaCMakeCrossToolchains`
+in the same relative path to the project. You will be able to compile your project on Windows, macOS, and Linux without any further config.
 
 - From the command palette, select "CMake Configure" to configure your project.
 - The <kbd>F7</kbd> key builds your project,
@@ -80,7 +84,9 @@ After this you should be good to go. You can probably check in the `.vscode/cmak
 
 Note: The Bartman's compiler produces ELF executables instead of Hunk file format.
 To mitigate this, you need to invoke `elf2hunk` bundled with Bartman's toolchain.
-You may want to look at how its made in CMakeLists of some other projects (e.g. [GermZ](https://github.com/tehKaiN/germz)) to see how ACE is included and debugger is invoked. Also, you may want to further investigate `CMakeLists.txt` there and `.vscode/launch.json` to see how debugger is set up.
+You may want to look at how its made in CMakeLists of some other projects (e.g. [GermZ](https://github.com/tehKaiN/germz)) to see how ACE is
+included and the debugger is invoked there. Also, you may want to further investigate `CMakeLists.txt` there and `.vscode/launch.json` to
+see how debugger is set up, as well as `.vscode/c_cpp_properties.json` to get auto-completion working.
 
 ### Integrating ACE into Bartman's sample project
 
