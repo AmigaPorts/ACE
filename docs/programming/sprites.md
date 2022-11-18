@@ -86,11 +86,11 @@ Be sure to dispose of them afterwards:
 
 ```c
 // Somewhere in your gamestate destruction:
-spriteRemove()
 bitmapDestroy(s_pSprite0Data);
 bitmapDestroy(s_pSprite3Data);
 spriteRemove(s_pSprite0);
 spriteRemove(s_pSprite3);
+spriteManagerDestroy();
 ```
 
 ### Updating sprite

@@ -11,6 +11,9 @@
 #include <ace/utils/custom.h>
 #include <ace/utils/sprite.h>
 
+#define SPRITE_VPOS_BITS 9
+#define SPRITE_HEIGHT_MAX ((1 << SPRITE_VPOS_BITS) - 1)
+
 typedef struct tSpriteChannel {
 	tSprite *pFirstSprite; ///< First sprite on the chained list in channel.
 	tCopBlock *pCopBlock;
@@ -132,7 +135,7 @@ void spriteSetEnabled(tSprite *pSprite, UBYTE isEnabled) {
 }
 
 void spriteRequestMetadataUpdate(tSprite *pSprite) {
-	pSprite->isToUpdateHeader = 1;
+	pSprite->isHeaderToBeUpdated = 1;
 }
 
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
@@ -200,7 +203,7 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 }
 
 void spriteProcess(tSprite *pSprite) {
-	if(!pSprite->isToUpdateHeader) {
+	if(!pSprite->isHeaderToBeUpdated) {
 		return;
 	}
 
@@ -224,9 +227,8 @@ void spriteProcess(tSprite *pSprite) {
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
 #if defined(ACE_DEBUG)
 	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
-	UWORD uwMaxHeight = 511 - uwVStart;
+	UWORD uwMaxHeight = SPRITE_HEIGHT_MAX - uwVStart;
 	if(uwHeight >= uwMaxHeight) {
-		// This is not exactly true, max is 512 - vstart
 		logWrite(
 			"ERR: Invalid sprite %hhu height %hu, max is %hu\n",
 			pSprite->ubChannelIndex, uwHeight, uwMaxHeight
@@ -236,5 +238,5 @@ void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
 #endif
 
 	pSprite->uwHeight = uwHeight;
-	pSprite->isToUpdateHeader = 1;
+	pSprite->isHeaderToBeUpdated = 1;
 }

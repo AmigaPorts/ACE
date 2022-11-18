@@ -33,7 +33,7 @@ typedef struct tSprite {
 	UWORD uwHeight;
 	UBYTE ubChannelIndex;
 	UBYTE isEnabled;
-	UBYTE isToUpdateHeader;
+	UBYTE isHeaderToBeUpdated;
 } tSprite;
 
 /**
