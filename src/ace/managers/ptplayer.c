@@ -2596,7 +2596,7 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 		return 0;
 	}
 
-	pMod = memAllocFast(sizeof(*pMod));
+	pMod = memAllocFastClear(sizeof(*pMod));
 	if(!pMod) {
 		return 0;
 	}
