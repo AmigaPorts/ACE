@@ -1150,19 +1150,20 @@ static void startSfx(
 	// play new sound effect on this channel
 	systemSetDmaMask(pChannelData->uwDmaFlag, 0);
 	UWORD uwRepeatLength;
+	UWORD *pSfxData = pChannelReg->ac_ptr = pChannelData->n_sfxptr;
 	if(pChannelData->ubSfxPriority == SFX_PRIORITY_LOOPED) {
 		pChannelData->isLooped = 1;
 
 		// Skip first word which is used for idling
-		++pChannelData->n_sfxptr;
-		uwRepeatLength = pChannelData->n_length - 1;
-		pChannelReg->ac_ptr = pChannelData->n_sfxptr;
+		++pSfxData;
+		uwRepeatLength = pChannelData->uwSfxWordLength - 1;
+		pChannelReg->ac_ptr = pSfxData;
 		pChannelReg->ac_len = uwRepeatLength;
 	}
 	else {
 		pChannelData->isLooped = 0;
 		uwRepeatLength = 1;
-		pChannelReg->ac_ptr = pChannelData->n_sfxptr;
+		pChannelReg->ac_ptr = pSfxData;
 		pChannelReg->ac_len = pChannelData->uwSfxWordLength;
 	}
 	pChannelReg->ac_per = pChannelData->uwSfxPeriod;
