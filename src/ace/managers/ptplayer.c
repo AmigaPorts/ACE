@@ -31,6 +31,26 @@
 
 //---------------------------------------------------------------------- DEFINES
 
+/**
+ * @brief Minimum safe CIA timer ticks count after which Paula channel regs can
+ * be set for next sample.
+ * 
+ * A raster line has a DMA slot for each audio channel. Depending on the current
+ * AUDxPER of the audio channel some of these DMA slots are not used.
+ * For example: when playing a very high frequency the DMA might have to read
+ * a new sample every line. But when playing a very low frequency there might be
+ * 10 or more raster lines without DMA activity for this channel.
+ * 
+ * The problem is that changes like DMA-on/off, or setting a new sample-pointer
+ * in AUDxLC, are only recognized by Paula when the next sample data are read
+ * from Chip-RAM.
+ * 
+ * So we have to be prepared for the worst case, which means that
+ * up to 11 raster lines may pass without DMA-activity (reading a new sample),
+ * when playing the lowest note from the lowest Protracker octave.
+ */
+#define TIMERB_TICKS (576)
+
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
 #define MOD_ROWS_IN_PATTERN 64
 #define MOD_NOTES_PER_ROW 4
@@ -1395,8 +1415,6 @@ static void intSetRep(volatile tCustom *pCustom) {
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
-#define TIMERB_TICKS (576)
-
 // One-shot TimerB interrupt to set repeat samples after another TIMERB_TICKS ticks.
 static void mt_TimerBsetrep(
 	REGARG(volatile tCustom *pCustom, "a0"),
@@ -1795,33 +1813,33 @@ static void mt_toneporta_nc(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	if(pChannelData->n_wantedperiod) {
-		WORD uwNew;
+		WORD wNew;
 		if(pChannelData->n_period > pChannelData->n_wantedperiod) {
 			// tone porta up
-			uwNew = pChannelData->n_period - pChannelData->n_toneportspeed;
-			if(uwNew < pChannelData->n_wantedperiod) {
-				uwNew = pChannelData->n_wantedperiod;
+			wNew = pChannelData->n_period - pChannelData->n_toneportspeed;
+			if(wNew < pChannelData->n_wantedperiod) {
+				wNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
 			}
 		}
 		else {
 			// tone porta down
-			uwNew = pChannelData->n_period + pChannelData->n_toneportspeed;
-			if(uwNew > pChannelData->n_wantedperiod) {
-				uwNew = pChannelData->n_wantedperiod;
+			wNew = pChannelData->n_period + pChannelData->n_toneportspeed;
+			if(wNew > pChannelData->n_wantedperiod) {
+				wNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
 			}
 		}
-		pChannelData->n_period = uwNew;
+		pChannelData->n_period = wNew;
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
 			const UWORD *pPeriodTable = pChannelData->pPeriodTable;
 			UWORD uwNoteOffs = 0;
 			UBYTE ubPeriodPos = findPeriod(pChannelData->pPeriodTable, uwNoteOffs);
 			pChannelData->n_noteoff = ubPeriodPos * 2;
-			uwNew = pPeriodTable[ubPeriodPos];
+			wNew = pPeriodTable[ubPeriodPos];
 		}
-		pChannelReg->ac_per = uwNew;
+		pChannelReg->ac_per = wNew;
 	}
 }
 
