@@ -7,7 +7,8 @@
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
 #include <ace/generic/screen.h>
-static UBYTE s_isPAL = 1;
+
+static UBYTE s_isPAL;
 
 tView *viewCreate(void *pTags, ...) {
 
