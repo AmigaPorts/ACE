@@ -31,6 +31,26 @@
 
 //---------------------------------------------------------------------- DEFINES
 
+/**
+ * @brief Minimum safe CIA timer ticks count after which Paula channel regs can
+ * be set for next sample.
+ * 
+ * A raster line has a DMA slot for each audio channel. Depending on the current
+ * AUDxPER of the audio channel some of these DMA slots are not used.
+ * For example: when playing a very high frequency the DMA might have to read
+ * a new sample every line. But when playing a very low frequency there might be
+ * 10 or more raster lines without DMA activity for this channel.
+ * 
+ * The problem is that changes like DMA-on/off, or setting a new sample-pointer
+ * in AUDxLC, are only recognized by Paula when the next sample data are read
+ * from Chip-RAM.
+ * 
+ * So we have to be prepared for the worst case, which means that
+ * up to 11 raster lines may pass without DMA-activity (reading a new sample),
+ * when playing the lowest note from the lowest Protracker octave.
+ */
+#define TIMERB_TICKS (576)
+
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
 #define MOD_ROWS_IN_PATTERN 64
 #define MOD_NOTES_PER_ROW 4
@@ -1038,12 +1058,13 @@ static void printVoices(const tModVoice *pVoices) {
 
 static inline UBYTE findPeriod(const UWORD *pPeriods, UWORD uwNote) {
 	// Find nearest period for a note value
-	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
+	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH - 1; ++ubPeriodPos) {
 		if (uwNote >= pPeriods[ubPeriodPos]) {
 			return ubPeriodPos;
 		}
 	}
-	return 0;
+
+	return MOD_PERIOD_TABLE_LENGTH - 1;
 }
 
 static void ptSongStep(void) {
@@ -1193,7 +1214,8 @@ static void mt_playvoice(
 		pChannelData->n_reallength = uwSampleLength;
 
 		// Determine period table from fine-tune parameter
-		UBYTE ubFineTune = pSampleDef->ubFineTune; // d3
+		// TODO: sanitize this value to only have lower nibble set when loading MOD/samplepack
+		UBYTE ubFineTune = pSampleDef->ubFineTune & 0xF;
 		pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 		pChannelData->n_minusft = (ubFineTune >= 8);
 
@@ -1209,7 +1231,7 @@ static void mt_playvoice(
 			// Set repeat
 			pChannelData->n_looped = 1;
 			pChannelData->n_replen = pSampleDef->uwRepeatLength;
-			uwSampleLength = pSampleDef->uwRepeatLength + ubFineTune * 2;
+			uwSampleLength = pSampleDef->uwRepeatLength;
 			pSampleStart += pSampleDef->uwRepeatOffs;
 		}
 
@@ -1221,7 +1243,7 @@ static void mt_playvoice(
 	}
 
 	// inlined set_regs function here:
-	if(!pVoice->uwNote) {
+	if(!(pVoice->uwNote & 0xFFF)) {
 		checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 	}
 	else if(uwMaskedCmdE == 0x0E50) {
@@ -1371,7 +1393,7 @@ static void intSetRep(volatile tCustom *pCustom) {
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
-// One-shot TimerB interrupt to set repeat samples after another 576 ticks.
+// One-shot TimerB interrupt to set repeat samples after another TIMERB_TICKS ticks.
 static void mt_TimerBsetrep(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
@@ -1395,7 +1417,7 @@ static void intDmaOn(volatile tCustom *pCustom) {
 	// pCustom->color[0] = 0x000;
 }
 
-// One-shot TimerB interrupt to enable audio DMA after 576 ticks.
+// One-shot TimerB interrupt to enable audio DMA after TIMERB_TICKS ticks.
 static void mt_TimerBdmaon(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
@@ -1561,8 +1583,8 @@ static void mt_reset(void) {
 	systemSetCiaCr(CIA_B, 0, CIACRA_LOAD | CIACRA_START); // load timer, start continuous
 #endif
 
-	// Load TimerB with 576 ticks for setting DMA and repeat
-	systemSetTimer(CIA_B, 1, 576);
+	// Load TimerB with TIMERB_TICKS ticks for setting DMA and repeat
+	systemSetTimer(CIA_B, 1, TIMERB_TICKS);
 
 	// Enable CIA B interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
@@ -1754,33 +1776,33 @@ static void mt_toneporta_nc(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	if(pChannelData->n_wantedperiod) {
-		UWORD uwNew;
+		WORD wNew;
 		if(pChannelData->n_period > pChannelData->n_wantedperiod) {
 			// tone porta up
-			uwNew = pChannelData->n_period - pChannelData->n_toneportspeed;
-			if(uwNew < pChannelData->n_wantedperiod) {
-				uwNew = pChannelData->n_wantedperiod;
+			wNew = pChannelData->n_period - pChannelData->n_toneportspeed;
+			if(wNew < pChannelData->n_wantedperiod) {
+				wNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
 			}
 		}
 		else {
 			// tone porta down
-			uwNew = pChannelData->n_period + pChannelData->n_toneportspeed;
-			if(uwNew > pChannelData->n_wantedperiod) {
-				uwNew = pChannelData->n_wantedperiod;
+			wNew = pChannelData->n_period + pChannelData->n_toneportspeed;
+			if(wNew > pChannelData->n_wantedperiod) {
+				wNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
 			}
 		}
-		pChannelData->n_period = uwNew;
+		pChannelData->n_period = wNew;
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
 			const UWORD *pPeriodTable = pChannelData->pPeriodTable;
 			UWORD uwNoteOffs = 0;
 			UBYTE ubPeriodPos = findPeriod(pChannelData->pPeriodTable, uwNoteOffs);
 			pChannelData->n_noteoff = ubPeriodPos * 2;
-			uwNew = pPeriodTable[ubPeriodPos];
+			wNew = pPeriodTable[ubPeriodPos];
 		}
-		pChannelReg->ac_per = uwNew;
+		pChannelReg->ac_per = wNew;
 	}
 }
 
@@ -1875,7 +1897,7 @@ static void ptDoPortaDn(
 	UBYTE ubVal, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
-	UWORD uwNewPer = MIN(pChannelData->n_period - ubVal, 856);
+	UWORD uwNewPer = MIN(pChannelData->n_period + ubVal, 856);
 	pChannelData->n_period = uwNewPer;
 	pChannelReg->ac_per = uwNewPer;
 }
@@ -1941,7 +1963,7 @@ static void mt_volumeslide(
 	UBYTE ubVolUp = ubArgs >> 4;
 
 	BYTE bVol = pChannelData->n_volume;
-	if(!ubVolUp) {
+	if(ubVolUp) {
 		// Slide up, until 64
 		ptVolSlide(bVol + ubVolUp, pChannelData, pChannelReg);
 	}
@@ -2445,7 +2467,7 @@ static void set_period(
 		// );
 
 		pChannelReg->ac_ptr = pChannelData->n_start;
-		pChannelReg->ac_len = pChannelData->n_length;
+		pChannelReg->ac_len = pChannelData->n_reallength;
 		pChannelReg->ac_per = uwPeriod;
 		mt_dmaon |= pChannelData->uwDmaFlag;
 	}
@@ -2477,7 +2499,8 @@ static void set_sampleoffset(
 	else {
 		pChannelData->n_sampleoffset = ubArg;
 	}
-	UWORD uwLength = ubArg << 7;
+	// Offset is in 256s of bytes, length is in words
+	UWORD uwLength = ubArg * (256 / sizeof(UWORD));
 	if(uwLength < pChannelData->n_length) {
 		pChannelData->n_length -= uwLength;
 		pChannelData->n_start += uwLength;
@@ -2496,15 +2519,16 @@ static void set_toneporta(
 	// Find first period which is less or equal the note in d6
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
 	UBYTE ubPeriodPos = findPeriod(mt_PeriodTables[0], uwNote);
-	if(ubPeriodPos) {
-		// One before for less/equal
-		--ubPeriodPos;
-	}
+	// Original ASM code does something similar, but without those lines it sounds accurate and not out-of-tune
+	// if(ubPeriodPos) {
+	// 	// One before for less/equal
+	// 	--ubPeriodPos;
+	// }
 
-	if(pChannelData->n_minusft && ubPeriodPos) {
-		// Negative fine tune? Then take the previous period.
-		--ubPeriodPos;
-	}
+	// if(pChannelData->n_minusft && ubPeriodPos) {
+	// 	// Negative fine tune? Then take the previous period.
+	// 	--ubPeriodPos;
+	// }
 
 	// Note offset in period table
 	pChannelData->n_noteoff = ubPeriodPos * 2;
