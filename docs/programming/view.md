@@ -78,7 +78,7 @@ static tSimpleBufferManager *s_pMainBuffer;
 void gameGsCreate(void) {
   // Create a view - first arg is always zero, then it's option-value
   s_pView = viewCreate(0,
-    TAG_VIEW_GLOBAL_CLUT, 1, // Same Color LookUp Table for all viewports
+    TAG_VIEW_GLOBAL_PALETTE, 1, // Same Color LookUp Table for all viewports
   TAG_END); // Must always end with TAG_END or synonym: TAG_DONE
 
   // Viewport for score bar - on top of screen

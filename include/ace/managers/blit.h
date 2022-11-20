@@ -39,6 +39,7 @@ extern "C" {
 #define MINTERM_C 0xAA
 #define MINTERM_A_OR_C 0xFA
 #define MINTERM_COOKIE 0xCA
+#define MINTERM_REVERSE_COOKIE 0xAC
 #define MINTERM_COPY 0xC0
 
 /**

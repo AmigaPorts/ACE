@@ -580,6 +580,7 @@ void systemDestroy(void) {
 void systemUnuse(void) {
 	--s_wSystemUses;
 	if(!s_wSystemUses) {
+		logWrite("Turning off the system...\n");
 		if(g_pCustom->dmaconr & DMAF_DISK) {
 			// Flush disk activity if it was used
 			// This 'if' is here because otherwise systemUnuse() called
@@ -668,6 +669,7 @@ void systemUnuse(void) {
 
 void systemUse(void) {
 	if(!s_wSystemUses) {
+		logWrite("Turning on the system...\n");
 		// Disable app interrupts/dma, keep display-related DMA
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;

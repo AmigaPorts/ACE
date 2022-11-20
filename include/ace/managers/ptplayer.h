@@ -29,10 +29,32 @@ typedef struct _tPtplayerSfx {
 	UWORD uwPeriod;     ///< Hardware replay period for sample.
 } tPtplayerSfx;
 
+typedef struct _tPtplayerSampleHeader {
+	char szName[22];
+	UWORD uwLength; ///< Sample data length, in words.
+	UBYTE ubFineTune; ///< Finetune. Only lower nibble is used.
+	                  ///  Values translate to finetune: {0..7, -8..-1}
+	UBYTE ubVolume; ///< Sample volume. 0..64
+	UWORD uwRepeatOffs; ///< In words.
+	UWORD uwRepeatLength; ///< In words.
+} tPtplayerSampleHeader;
+
 typedef struct _tPtplayerMod {
-	UBYTE *pData;
-	ULONG ulSize;
-	// TODO: move some vars from ptplayer here
+	char szSongName[20];
+	tPtplayerSampleHeader pSampleHeaders[31];
+	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
+	                           /// pattern count in file. Max 128.
+	UBYTE ubSongEndPos;
+	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
+	                         /// These list up to 128 pattern numbers
+	                         /// and the order they should be played in.
+	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
+	// MOD pattern/sample data follows
+
+	UBYTE *pPatterns;
+	ULONG ulPatternsSize;
+	UWORD *pSamples;
+	ULONG ulSamplesSize;
 } tPtplayerMod;
 
 typedef void (*tPtplayerCbSongEnd)(void);

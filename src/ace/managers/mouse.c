@@ -33,11 +33,11 @@ void mouseCreate(UBYTE ubPortFlags) {
 #endif // AMIGA
 
 	if(ubPortFlags & MOUSE_PORT_1) {
-		mouseSetBounds(MOUSE_PORT_1, 0, 0, SCREEN_PAL_WIDTH, SCREEN_PAL_HEIGHT);
+		mouseSetBounds(MOUSE_PORT_1, 0, 0, SCREEN_PAL_WIDTH - 1, SCREEN_PAL_HEIGHT - 1);
 		mouseResetPos(MOUSE_PORT_1);
 	}
 	if(ubPortFlags & MOUSE_PORT_2) {
-		mouseSetBounds(MOUSE_PORT_2, 0, 0, SCREEN_PAL_WIDTH, SCREEN_PAL_HEIGHT);
+		mouseSetBounds(MOUSE_PORT_2, 0, 0, SCREEN_PAL_WIDTH - 1, SCREEN_PAL_HEIGHT - 1);
 		mouseResetPos(MOUSE_PORT_2);
 	}
 }

@@ -43,7 +43,7 @@ void prepareRefBitmap(void) {
 void gsTestBlitSmallDestCreate(void) {
 	// Prepare view & viewport
 	s_pTestBlitView = viewCreate(0,
-		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_VIEW_GLOBAL_PALETTE, 1,
 		TAG_DONE
 	);
 	s_pTestBlitVPort = vPortCreate(0,

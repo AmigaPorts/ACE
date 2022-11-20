@@ -16,7 +16,6 @@ tView *viewCreate(void *pTags, ...) {
 
 	s_isPAL = systemIsPal();
 
-	
 	// Create view stub
 	tView *pView = memAllocFastClear(sizeof(tView));
 	logWrite("created %s viewport addr: %p\n", s_isPAL ? "PAL" : "NTSC", pView);
@@ -42,7 +41,7 @@ tView *viewCreate(void *pTags, ...) {
 	}
 
 	// Additional CLUT tags
-	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_CLUT, 0)) {
+	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_PALETTE, 0)) {
 		pView->uwFlags |= VIEW_FLAG_GLOBAL_CLUT;
 		logWrite("Global CLUT mode enabled\n");
 	}
@@ -61,7 +60,6 @@ tView *viewCreate(void *pTags, ...) {
 		else{
 			pView->ubPosY = SCREEN_NTSC_YOFFSET + (SCREEN_NTSC_HEIGHT - uwHeight) / 2;
 		}
-		
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY != ubDefaultPosY) {
 		// Only Y pos is passed - calculate height as the remaining area of PAL display
@@ -72,7 +70,6 @@ tView *viewCreate(void *pTags, ...) {
 		else{
 			pView->uwHeight = SCREEN_NTSC_YOFFSET + SCREEN_NTSC_HEIGHT - ubPosY;
 		}
-		
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// All default - use PAL
@@ -166,7 +163,6 @@ void viewLoad(tView *pView) {
 	while(getRayPos().bfPosY < uwWaitPos) {}
 #if defined(AMIGA)
 	if(!pView) {
-		
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->bplcon3 = 0; // AGA fix
@@ -180,7 +176,6 @@ void viewLoad(tView *pView) {
 	else {
 #if defined(ACE_DEBUG)
 		{
-		
 			// Check if view size matches size of last vport
 			tVPort *pVp = pView->pFirstVPort;
 			while(pVp->pNext) {
@@ -314,7 +309,7 @@ void vPortDestroy(tVPort *pVPort) {
 	tVPort *pPrevVPort, *pCurrVPort;
 
 	pView = pVPort->pView;
-	logWrite("Parent extView: %p\n", pView);
+	logWrite("Parent view: %p\n", pView);
 	pPrevVPort = 0;
 	pCurrVPort = pView->pFirstVPort;
 	while(pCurrVPort) {

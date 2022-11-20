@@ -44,6 +44,7 @@ typedef int32_t LONG;
 #define FAR
 #define FN_HOTSPOT
 #define FN_COLDSPOT
+#define BITFIELD_STRUCT struct __attribute__((packed))
 #elif defined(__VBCC__)
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 #define INTERRUPT __amigainterrupt __saveds
@@ -61,6 +62,7 @@ typedef int32_t LONG;
 #define INTERRUPT_END do {} while(0)
 #define FN_HOTSPOT
 #define FN_COLDSPOT
+#define BITFIELD_STRUCT struct
 #elif defined(BARTMAN_GCC)
 #define INTERRUPT
 #define INTERRUPT_END do {} while(0)
@@ -71,6 +73,7 @@ typedef int32_t LONG;
 #define FAR
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
+#define BITFIELD_STRUCT struct
 #elif defined(__GNUC__) // Bebbo
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
 // Interrupt macros for OS interrupts (handlers)
@@ -89,6 +92,7 @@ typedef int32_t LONG;
 #define FAR __far
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
+#define BITFIELD_STRUCT struct
 #else
 #error "Compiler not supported!"
 #endif

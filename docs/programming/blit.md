@@ -103,7 +103,7 @@ static tSimpleBufferManager *s_pMainBuffer;
 
 void gameGsCreate(void) {
   s_pView = viewCreate(0,
-    TAG_VIEW_GLOBAL_CLUT, 1,
+    TAG_VIEW_GLOBAL_PALETTE, 1,
   TAG_END);
 
   // Viewport for score bar - on top of screen
