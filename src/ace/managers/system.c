@@ -448,8 +448,12 @@ static void systemFlushIo() {
 }
 
 void systemKill(const char *szMsg) {
-	printf("ERR: SYSKILL: '%s'", szMsg);
-	logWrite("ERR: SYSKILL: '%s'", szMsg);
+	logWrite("ERR: ACE SYSKILL: '%s'", szMsg);
+	if(DOSBase) {
+		BPTR lOut = Output();
+		Write(lOut, "ERR: ACE SYSKILL: ", sizeof("ERR: ACE SYSKILL: "));
+		Write(lOut, (char*)szMsg, strlen(szMsg));
+	}
 
 	if(GfxBase) {
 		CloseLibrary((struct Library *) GfxBase);
@@ -466,26 +470,28 @@ void systemCreate(void) {
 	SysBase = *((struct ExecBase**)4UL);
 #endif
 
-	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
-	if (!GfxBase) {
-		systemKill("Can't open Gfx Library!\n");
-		return;
-	}
-
 	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
 	if (!DOSBase) {
 		systemKill("Can't open DOS Library!\n");
 		return;
 	}
 
+	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
+	if (!GfxBase) {
+		systemKill("Can't open Gfx Library!\n");
+		return;
+	}
+
   // Determine original stack size
   s_pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
+#if defined(ACE_DEBUG)
 	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
 	if(s_pProcess->pr_CLI) {
 		ulStackSize = *(ULONG *)s_pProcess->pr_ReturnAddr;
 	}
 	logWrite("Stack size: %lu\n", ulStackSize);
+#endif
 	*pStackLower = SYSTEM_STACK_CANARY;
 
 	// Reserve all audio channels - apparantly this allows for int flag polling
