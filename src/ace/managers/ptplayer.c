@@ -1216,6 +1216,7 @@ static void mt_playvoice(
 		pChannelData->n_reallength = uwSampleLength;
 
 		// Determine period table from fine-tune parameter
+		// TODO: sanitize this value to only have lower nibble set when loading MOD/samplepack
 		UBYTE ubFineTune = pSampleDef->ubFineTune & 0xF;
 		pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 		pChannelData->n_minusft = (ubFineTune >= 8);
@@ -2517,7 +2518,8 @@ static void set_sampleoffset(
 	else {
 		pChannelData->n_sampleoffset = ubArg;
 	}
-	UWORD uwLength = ubArg << 6;
+	// Offset is in 256s of bytes, length is in words
+	UWORD uwLength = ubArg * (256 / sizeof(UWORD));
 	if(uwLength < pChannelData->n_length) {
 		pChannelData->n_length -= uwLength;
 		pChannelData->n_start += uwLength;
@@ -2536,6 +2538,7 @@ static void set_toneporta(
 	// Find first period which is less or equal the note in d6
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
 	UBYTE ubPeriodPos = findPeriod(mt_PeriodTables[0], uwNote);
+	// Original ASM code does something similar, but without those lines it sounds accurate and not out-of-tune
 	// if(ubPeriodPos) {
 	// 	// One before for less/equal
 	// 	--ubPeriodPos;
