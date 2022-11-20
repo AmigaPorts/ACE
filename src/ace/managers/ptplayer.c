@@ -277,7 +277,7 @@ static const UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
 	}
 };
 
-static UBYTE MasterVolTab[][65] = {
+static const UBYTE MasterVolTab[][65] = {
 	{
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -923,7 +923,7 @@ static tChannelStatus mt_chan[4];
 static UWORD *mt_SampleStarts[31]; ///< Start address of each sample
 static tPtplayerMod *mt_mod; ///< Currently played MOD.
 static ULONG mt_timerval; ///< Base interrupt frequency of CIA-B timer A used to advance the song. Equals 125*50Hz.
-static UBYTE *mt_MasterVolTab;
+static const UBYTE * mt_MasterVolTab;
 static UWORD mt_PatternPos;
 static UWORD mt_PBreakPos; ///< Pattern break pos
 static UBYTE mt_PosJumpFlag;
@@ -1765,6 +1765,8 @@ void ptplayerSetMusicChannelMask(UBYTE ChannelMask) {
 }
 
 void ptplayerSetMasterVolume(UBYTE ubMasterVolume) {
+	// TODO: expose define which would make this function calculate current volume
+	// table instead of toring 4KB of table data.
 	g_pCustom->intena = INTF_INTEN;
 	mt_MasterVolTab = MasterVolTab[ubMasterVolume];
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
