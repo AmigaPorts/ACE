@@ -1037,13 +1037,20 @@ static void printVoices(const tModVoice *pVoices) {
 }
 
 static inline UBYTE findPeriod(const UWORD *pPeriods, UWORD uwNote) {
-	// Find nearest period for a note value
-	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
-		if (uwNote >= pPeriods[ubPeriodPos]) {
-			return ubPeriodPos;
+	// Find nearest period (equal or lower) for a note value using a binary search lookup
+	UBYTE ubPeriodPos = 0;
+	UBYTE maxBound = MOD_PERIOD_TABLE_LENGTH;
+	while (ubPeriodPos != maxBound) {
+		UBYTE currentIndex = (ubPeriodPos + maxBound) >> 1;
+		// if this period is greater, skip 'bottom half' of the array and continue searching
+		if (pPeriods[currentIndex] > uwNote) {
+			ubPeriodPos = currentIndex + 1;
+		}
+		else { // else, the period we seek is between ubPeriodPos and currentIndex
+			maxBound = currentIndex;
 		}
 	}
-	return 0;
+	return ubPeriodPos;
 }
 
 static void ptSongStep(void) {
