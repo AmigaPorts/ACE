@@ -64,6 +64,7 @@ void ptplayerSetPal(UBYTE isPal);
 
 /**
  * @brief Loads new MOD from file.
+ * @note This function may use OS.
  *
  * @param szPath Path to .mod file.
  * @return Pointer to new MOD structure, initialized with file contents.
@@ -71,7 +72,8 @@ void ptplayerSetPal(UBYTE isPal);
 tPtplayerMod *ptplayerModCreate(const char *szPath);
 
 /**
- * @brief Frees given MOD structure from memory.
+ * @brief Frees given MOD from memory.
+ * @note This function may use OS.
  *
  * @param pMod MOD struct to be destroyed.
  */
@@ -85,7 +87,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod);
  *
  * @param pMod Pointer to MOD struct.
  * @param pSamples When set to 0, the samples are assumed to be stored inside
- * the MOD, after the patterns.
+ * the MOD, after the patterns. Otherwise, uses samples from given samplepack.
  * @param uwInitialSongPos
  *
  * @see ptplayerEnableMusic()
@@ -178,6 +180,7 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume);
  * Note that this function sets sfx period based on currently set PAL/NTSC video
  * mode. If you plan to change it after loading sfx, be sure to adjust
  * the period value for new mode.
+ * @note This function may use OS.
  *
  * @param szPath Path to .sfx file.
  * @return Newly loaded SFX.
@@ -189,6 +192,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath);
 
 /**
  * @brief Destroys given SFX, freeing its resources to OS.
+ * @note This function may use OS.
  *
  * @param pSfx SFX to be destroyed.
  *
@@ -232,6 +236,13 @@ void ptplayerSfxPlay(
 void ptplayerSfxPlayLooped(
 	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
 );
+
+/**
+ * @brief Stops SFX played on given channel.
+ *
+ * @param ubChannel Selected SFX channel (0..3).
+ */
+void ptplayerSfxStopOnChannel(UBYTE ubChannel);
 
 /**
  * @brief Configure behavior on song being played to the end.
