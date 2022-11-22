@@ -1789,11 +1789,11 @@ void ptplayerSetPal(UBYTE isPal) {
 }
 
 void ptplayerLoadMod(
-	tPtplayerMod *pMod, UWORD *pSampleData, UWORD uwInitialSongPos
+	tPtplayerMod *pMod, tPtplayerSamplePack *pSamples, UWORD uwInitialSongPos
 ) {
 	logBlockBegin(
-		"ptplayerInit(pMod: %p, pSampleData: %p, uwInitialSongPos: %hu)",
-		pMod, pSampleData, uwInitialSongPos
+		"ptplayerInit(pMod: %p, pSamples: %p, uwInitialSongPos: %hu)",
+		pMod, pSamples, uwInitialSongPos
 	);
 
 	// Initialize new module.
@@ -1812,7 +1812,8 @@ void ptplayerLoadMod(
 	mt_SongPos = uwInitialSongPos;
 
 	// sample data location is given?
-	if(!pSampleData) {
+	UWORD *pSampleData;
+	if(!pSamples) {
 		// Get number of highest pattern
 		UBYTE ubLastPattern = 0;
 		for(UBYTE i = 0; i < 127; ++i) {
@@ -1828,12 +1829,14 @@ void ptplayerLoadMod(
 			sizeof(tModFileHeader) + ubPatternCount * MOD_PATTERN_LENGTH
 		);
 		pSampleData = (UWORD*)&pMod->pData[ulSampleOffs];
-		// FIXME: use as pointer for empty samples
 	}
+	else {
+		pSampleData = pSamples->pData;
+	}
+	logWrite("Using sample data from: %p\n", pSampleData);
 
 	// Save start address of each sample
 	ULONG ulOffs = 0;
-	logWrite("Sample data starts at: %p\n", pSampleData);
 	for(UBYTE i = 0; i < 31; ++i) {
 		mt_SampleStarts[i] = &pSampleData[ulOffs];
 		if(mt_mod->pSamples[i].uwLength > 0) {
@@ -3113,4 +3116,50 @@ UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
 	// Get frame count - round it up.
 	UWORD uwFrameCount = (pSfx->uwWordLength * 2 * 50 + uwSamplingRateHz - 1) / uwSamplingRateHz;
 	return uwFrameCount;
+}
+
+tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath) {
+	// TODO: add some kind of header for the file, read each sample separately
+	logBlockBegin("ptplayerSampleDataCreate(szPath: '%s')", szPath);
+	systemUse();
+	tPtplayerSamplePack *pSamplePack = 0;
+	LONG lSize = fileGetSize(szPath);
+	if(lSize <= 0) {
+		logWrite("ERR: Invalid file size. File exists?\n");
+		goto fail;
+	}
+
+	pSamplePack = memAllocFastClear(sizeof(*pSamplePack));
+	logWrite("Addr: %p\n", pSamplePack);
+	pSamplePack->ulSize = lSize;
+	pSamplePack->pData = memAllocChip(pSamplePack->ulSize);
+	if(!pSamplePack->pData) {
+		goto fail;
+	}
+
+	tFile *pFileSamples = fileOpen(szPath, "rb");
+	fileRead(pFileSamples, pSamplePack->pData, pSamplePack->ulSize);
+	fileClose(pFileSamples);
+
+	systemUnuse();
+	logBlockEnd("ptplayerSampleDataCreate()");
+	return pSamplePack;
+fail:
+	if(pSamplePack) {
+		if(pSamplePack->pData) {
+			memFree(pSamplePack->pData, pSamplePack->ulSize);
+		}
+		memFree(pSamplePack, sizeof(*pSamplePack));
+	}
+
+	systemUnuse();
+	logBlockEnd("ptplayerSampleDataCreate()");
+	return 0;
+}
+
+void ptplayerSamplePackDestroy(tPtplayerSamplePack *pSamplePack) {
+	logBlockBegin("ptplayerSamplePackDestroy(pSamplePack: %p)", pSamplePack);
+	memFree(pSamplePack->pData, pSamplePack->ulSize);
+	memFree(pSamplePack, sizeof(*pSamplePack));
+	logBlockEnd("ptplayerSamplePackDestroy()");
 }

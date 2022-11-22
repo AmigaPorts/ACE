@@ -36,6 +36,11 @@ typedef struct _tPtplayerMod {
 	// TODO: move some vars from ptplayer here
 } tPtplayerMod;
 
+typedef struct tPtplayerSamplePack {
+	ULONG ulSize;
+	UWORD *pData;
+} tPtplayerSamplePack;
+
 typedef void (*tPtplayerCbSongEnd)(void);
 
 /**
@@ -94,7 +99,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod);
  * @see ptplayerStop()
  */
 void ptplayerLoadMod(
-	tPtplayerMod *pMod, UWORD *pSampleData, UWORD uwInitialSongPos
+	tPtplayerMod *pMod, tPtplayerSamplePack *pSamples, UWORD uwInitialSongPos
 );
 
 /**
@@ -262,6 +267,23 @@ void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd);
 void ptplayerWaitForSfx(void);
 
 UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx);
+
+/**
+ * @brief Loads MOD sample pack from file at given path.
+ * @note This function may use OS.
+ *
+ * @param szPath Path to sample pack to be loaded.
+ * @return Pointer to newly allocated sample pack, zero on failure.
+ */
+tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath);
+
+/**
+ * @brief Destroys given sample pack, freeing its resources to OS.
+ * @note This function may use OS.
+ *
+ * @param pSamplePack Sample pack to be destroyed.
+ */
+void ptplayerSamplePackDestroy(tPtplayerSamplePack *pSamplePack);
 
 #ifdef __cplusplus
 }
