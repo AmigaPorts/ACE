@@ -1706,6 +1706,7 @@ static void mt_reset(void) {
 
 	mt_SilCntValid = 0;
 	mt_E8Trigger = 0;
+	s_isNextTimerBSetRep = 0;
 	ptplayerStop();
 }
 

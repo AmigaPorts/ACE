@@ -44,6 +44,10 @@ int main(int lArgCount, const char *pArgs[])
 	for(const auto &pMod: vModsIn) {
 		const auto &ModSamples = pMod->getSamples();
 		for(const auto &ModSample: ModSamples) {
+			if(ModSample.m_vData.empty()) {
+				continue;
+			}
+
 			// Check if sample is on the list
 			auto FoundMergedSample = std::find_if(
 				vMergedSamples.begin(), vMergedSamples.end(),
@@ -54,6 +58,7 @@ int main(int lArgCount, const char *pArgs[])
 			);
 			if(FoundMergedSample == vMergedSamples.end()) {
 				// Sample not on the list - add it
+				fmt::print(FMT_STRING("Adding sample '{}' at index {}\n"), ModSample.m_szName, vMergedSamples.size());
 				vMergedSamples.push_back(ModSample);
 			}
 			else {
