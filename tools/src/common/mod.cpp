@@ -228,9 +228,12 @@ void tMod::reorderSamples(const std::vector<uint8_t> vNewOrder)
 
 	// Replace sample index in patterns
 	for(auto &Pattern: m_vPatterns) {
-		for(auto Row: Pattern) {
-			for(auto Channel: Row) {
-				Channel.ubInstrument = vNewOrder[Channel.ubInstrument];
+		for(auto &Row: Pattern) {
+			for(auto &Channel: Row) {
+				if(Channel.ubInstrument) {
+					// instruments are starting with 1, zero means "none"
+					Channel.ubInstrument = vNewOrder[Channel.ubInstrument - 1] + 1;
+				}
 			}
 		}
 	}
