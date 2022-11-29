@@ -8,6 +8,8 @@
 #include <fmt/format.h>
 #include "endian.h"
 
+#define SAMPLE_NAME_SIZE 22
+
 tMod::tMod(const std::string &szFileName)
 {
 	std::ifstream FileIn;
@@ -26,7 +28,7 @@ tMod::tMod(const std::string &szFileName)
 	// Read sample info
 	uint32_t ulTotalSampleSize = 0;
 	for(uint8_t i = 0; i < 31; ++i) {
-		char szSampleNameRaw[22];
+		char szSampleNameRaw[SAMPLE_NAME_SIZE];
 		uint16_t uwSampleLen, uwSampleRepeatOffs, uwSampleRepeatLength;
 		uint8_t ubSampleFineTune, ubSampleLinearVolume;
 
@@ -55,6 +57,9 @@ tMod::tMod(const std::string &szFileName)
 
 		// Data read successfully, fill sample info
 		tSample Sample;
+		for (uint8_t i = 0; i < SAMPLE_NAME_SIZE; ++i){ 
+			szSampleNameRaw[i] = toupper(szSampleNameRaw[i]); // sample name to uppercase, to avoid duplicates
+		}
 		Sample.m_szName = szSampleNameRaw;
 		Sample.m_ubFineTune = ubSampleFineTune;
 		Sample.m_ubVolume = ubSampleLinearVolume;
