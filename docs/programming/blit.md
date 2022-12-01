@@ -143,7 +143,7 @@ void gameGsCreate(void) {
 
   // Draw wall on the bottom of main VPort
   blitRect(
-    s_pScoreBuffer->pBack,
+    s_pMainBuffer->pBack,
     0, s_pVpMain->uwHeight - WALL_HEIGHT,
     s_pVpMain->uwWidth, WALL_HEIGHT, WALL_COLOR
   );
