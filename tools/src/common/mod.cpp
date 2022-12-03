@@ -57,8 +57,10 @@ tMod::tMod(const std::string &szFileName)
 
 		// Data read successfully, fill sample info
 		tSample Sample;
-		for (uint8_t i = 0; i < SAMPLE_NAME_SIZE; ++i){ 
-			szSampleNameRaw[i] = toupper(szSampleNameRaw[i]); // sample name to uppercase, to avoid duplicates
+		for (uint8_t ubCharIndex = 0; ubCharIndex < SAMPLE_NAME_SIZE; ++ubCharIndex){
+			// sample name to uppercase, to avoid duplicates
+			// will be reworked to: comparison between samples on temporarily uppercased copies
+			szSampleNameRaw[ubCharIndex] = std::toupper(szSampleNameRaw[ubCharIndex]); 
 		}
 		Sample.m_szName = szSampleNameRaw;
 		Sample.m_ubFineTune = ubSampleFineTune;
