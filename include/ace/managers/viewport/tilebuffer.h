@@ -123,6 +123,7 @@ typedef struct _tTileBufferManager {
 	                              ///  TODO: refresh when scrollbuffer changes
 	tTileDrawCallback cbTileDraw; ///< Called when tile is redrawn
 	UBYTE **pTileData;            ///< 2D array of tile indices
+	UBYTE **pTileCache;           ///< 2D array of drawn tile indices
 	tBitMap *pTileSet;            ///< Tileset - one tile beneath another
 	// Margin & queue geometry
 	UBYTE ubMarginXLength; ///< Tile number in margins: left & right
