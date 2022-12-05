@@ -243,15 +243,6 @@ void tileBufferReset(
 		);
 	}
 
-	// Free old tile cache
-	if(pManager->pTileCache) {
-		for(UWORD uwCol = pManager->uwMarginedWidth >> ubTileShift; uwCol--;) {
-			memFree(pManager->pTileCache[uwCol], (pManager->uwMarginedHeight >> ubTileShift) * sizeof(UBYTE) * 2);
-		}
-		memFree(pManager->pTileCache, (pManager->uwMarginedWidth >> ubTileShift) * sizeof(UBYTE *) * 2);
-		pManager->pTileCache = 0;
-	}
-
 	// Scrollin on one of dirs may be disabled - less redraw on other axis margin
 	pManager->uwMarginedWidth = bitmapGetByteWidth(pManager->pScroll->pFront)*8;
 	pManager->uwMarginedHeight = pManager->pScroll->uwBmAvailHeight;
@@ -269,20 +260,69 @@ void tileBufferReset(
 		pManager->ubMarginXLength, pManager->ubMarginYLength
 	);
 
-	// Init new tile cache
-	// TODO: like the redraw states, we always maintain a double buffered cache right now, which eats quite some memory
-	if((pManager->uwMarginedWidth >> ubTileShift) && (pManager->uwMarginedHeight >> ubTileShift)) {
-		pManager->pTileCache = memAllocFast((pManager->uwMarginedWidth >> ubTileShift) * sizeof(UBYTE*) * 2);
-		for(UWORD uwCol = (pManager->uwMarginedWidth >> ubTileShift); uwCol--;) {
-			pManager->pTileCache[uwCol] = memAllocFastClear((pManager->uwMarginedHeight >> ubTileShift) * sizeof(UBYTE) * 2);
-		}
-	}
-
 	// Reset margin redraw structs
 	tileBufferResetRedrawState(&pManager->pRedrawStates[0]);
 	tileBufferResetRedrawState(&pManager->pRedrawStates[1]);
 
 	logBlockEnd("tileBufferReset()");
+}
+
+/**
+ * Prepare quick drawing of tiles by setting up all blitter
+ * registers that stay constant when blitting multiple tiles
+ * quickly. To be followed by a loop of tileBufferContinueTileDraw
+ * calls.
+ * 
+ * @return bltsize - to use in tileBufferContinueTileDraw or -1 on error
+ */
+static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
+	UWORD uwBlitWords, uwBltCon0;
+	WORD wDstModulo, wSrcModulo;
+
+	if (!bitmapIsInterleaved(pManager->pTileSet) || !bitmapIsInterleaved(pManager->pScroll->pBack)) {
+		return -1;
+	}
+
+	uwBlitWords = pManager->ubTileSize >> 4;
+	uwBltCon0 = USEA|USED|MINTERM_A;
+
+	wSrcModulo = bitmapGetByteWidth(pManager->pTileSet) - (uwBlitWords<<1);
+	wDstModulo = bitmapGetByteWidth(pManager->pScroll->pBack) - (uwBlitWords<<1);
+
+	blitWait(); // Don't modify registers when other blit is in progress
+	g_pCustom->bltcon0 = uwBltCon0;
+	g_pCustom->bltcon1 = 0;
+	g_pCustom->bltafwm = 0xFFFF;
+	g_pCustom->bltalwm = 0xFFFF;
+	g_pCustom->bltamod = wSrcModulo;
+	g_pCustom->bltdmod = wDstModulo;
+
+	return ((pManager->ubTileSize * pManager->pTileSet->Depth) << 6) | uwBlitWords;
+}
+
+static inline void tileBufferContinueTileDraw(
+	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
+	UWORD uwBfrX, UWORD uwBfrY, UWORD uwBltsize
+) {
+	UBYTE ubTileToDraw = pManager->pTileData[uwTileX][uwTileY];
+	UBYTE ubTileShift = pManager->ubTileShift;
+	ULONG ulSrcOffs, ulDstOffs;
+	ulSrcOffs = pManager->pTileSet->BytesPerRow * (ubTileToDraw << ubTileShift);
+	ulDstOffs = pManager->pScroll->pBack->BytesPerRow * uwBfrY + (uwBfrX>>3);
+
+	UBYTE *pUbBltapt = (UBYTE*)((ULONG)pManager->pTileSet->Planes[0] + ulSrcOffs);
+	UBYTE *pUbBltdpt = (UBYTE*)((ULONG)pManager->pScroll->pBack->Planes[0] + ulDstOffs);
+
+	blitWait(); // Don't modify registers when other blit is in progress
+	// This hell of a casting must stay here or else large offsets get bugged!
+	g_pCustom->bltapt = pUbBltapt;
+	g_pCustom->bltdpt = pUbBltdpt;
+	g_pCustom->bltsize = uwBltsize;
+	if(pManager->cbTileDraw) {
+		pManager->cbTileDraw(
+			uwTileX, uwTileY, pManager->pScroll->pBack, uwBfrX, uwBfrY
+		);
+	}
 }
 
 FN_HOTSPOT
@@ -317,10 +357,11 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) & (pManager->uwMarginedHeight-1);
 				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
 				// Redraw remaining tiles
+				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 				while (pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
-					tileBufferDrawTileQuick(
+					tileBufferContinueTileDraw(
 						pManager, pState->pMarginX->wTilePos, pState->pMarginX->wTileCurr,
-						uwTileOffsX, uwTileOffsY
+						uwTileOffsX, uwTileOffsY, uwBltsize
 					);
 					++pState->pMarginX->wTileCurr;
 					uwTileOffsY = (uwTileOffsY + ubTileSize);
@@ -388,10 +429,11 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				uwTileOffsY = (pState->pMarginY->wTilePos << ubTileShift) & (pManager->uwMarginedHeight-1);
 				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
 				// Redraw remaining tiles
+				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 				while(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
-					tileBufferDrawTileQuick(
+					tileBufferContinueTileDraw(
 						pManager, pState->pMarginY->wTileCurr, pState->pMarginY->wTilePos,
-						uwTileOffsX, uwTileOffsY
+						uwTileOffsX, uwTileOffsY, uwBltsize
 					);
 					++pState->pMarginY->wTileCurr;
 					uwTileOffsX += ubTileSize;
@@ -463,8 +505,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		UWORD uwTileOffsX = (wStartX << ubTileShift);
 
 		for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
-			// force redraw by invalidating cache
-			pManager->pTileCache[uwTileOffsX >> ubTileShift][uwTileOffsY >> ubTileShift] = pManager->pTileData[uwTileX][uwTileY] + 1;
+			// draw
 			tileBufferDrawTileQuick(
 				pManager, uwTileX, uwTileY, uwTileOffsX, uwTileOffsY
 			);
@@ -509,20 +550,14 @@ void tileBufferDrawTileQuick(
 ) {
 	UBYTE ubTileToDraw = pManager->pTileData[uwTileX][uwTileY];
 	UBYTE ubTileShift = pManager->ubTileShift;
-	UBYTE ubStateIdx = pManager->ubStateIdx;
-	UBYTE *pubDrawnTile = &pManager->pTileCache[uwBfrX >> (ubTileShift - ubStateIdx)][uwBfrY >> (ubTileShift - ubStateIdx)];
-	if (*pubDrawnTile != ubTileToDraw) {
-		// the correct tile is not already on the buffer
-		*pubDrawnTile = ubTileToDraw;
-		// This can't use safe blit fn because when scrolling in X direction,
-		// we need to draw on bitplane 1 as if it is part of bitplane 0.
-		blitUnsafeCopyAligned(
-			pManager->pTileSet,
-			0, ubTileToDraw << pManager->ubTileShift,
-			pManager->pScroll->pBack, uwBfrX, uwBfrY,
-			pManager->ubTileSize, pManager->ubTileSize
-		);
-	}
+	// This can't use safe blit fn because when scrolling in X direction,
+	// we need to draw on bitplane 1 as if it is part of bitplane 0.
+	blitUnsafeCopyAligned(
+		pManager->pTileSet,
+		0, ubTileToDraw << ubTileShift,
+		pManager->pScroll->pBack, uwBfrX, uwBfrY,
+		pManager->ubTileSize, pManager->ubTileSize
+	);
 	if(pManager->cbTileDraw) {
 		pManager->cbTileDraw(
 			uwTileX, uwTileY, pManager->pScroll->pBack, uwBfrX, uwBfrY
