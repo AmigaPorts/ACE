@@ -300,6 +300,7 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 	return ((pManager->ubTileSize * pManager->pTileSet->Depth) << 6) | uwBlitWords;
 }
 
+FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
 	UWORD uwBfrX, UWORD uwBfrY, UWORD uwBltsize
@@ -358,17 +359,22 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
-				while (pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
+				UWORD uwTileCurr = pState->pMarginX->wTileCurr;
+				UWORD uwTileEnd = pState->pMarginX->wTileEnd;
+				UWORD uwTilePos = pState->pMarginX->wTilePos;
+				UWORD uwMarginedHeight = pManager->uwMarginedHeight;
+				while (uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
-						pManager, pState->pMarginX->wTilePos, pState->pMarginX->wTileCurr,
+						pManager, uwTilePos, uwTileCurr,
 						uwTileOffsX, uwTileOffsY, uwBltsize
 					);
-					++pState->pMarginX->wTileCurr;
-					uwTileOffsY = (uwTileOffsY + ubTileSize);
-					if(uwTileOffsY >= pManager->uwMarginedHeight) {
-						uwTileOffsY -= pManager->uwMarginedHeight;
+					++uwTileCurr;
+					uwTileOffsY += ubTileSize;
+					if(uwTileOffsY >= uwMarginedHeight) {
+						uwTileOffsY -= uwMarginedHeight;
 					}
 				}
+				pState->pMarginX->wTileCurr = pState->pMarginX->wTileEnd;
 			}
 			// Prepare new column redraw data
 			pState->pMarginX->wTilePos = wTileIdxX;
@@ -430,14 +436,18 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
-				while(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
+				UWORD uwTileCurr = pState->pMarginY->wTileCurr;
+				UWORD uwTileEnd = pState->pMarginY->wTileEnd;
+				UWORD uwTilePos = pState->pMarginY->wTilePos;
+				while(uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
-						pManager, pState->pMarginY->wTileCurr, pState->pMarginY->wTilePos,
+						pManager, uwTileCurr, uwTilePos,
 						uwTileOffsX, uwTileOffsY, uwBltsize
 					);
-					++pState->pMarginY->wTileCurr;
+					++uwTileCurr;
 					uwTileOffsX += ubTileSize;
 				}
+				pState->pMarginY->wTileCurr = pState->pMarginY->wTileEnd;
 			}
 			// Prepare new row redraw data
 			pState->pMarginY->wTilePos = wTileIdxY;
