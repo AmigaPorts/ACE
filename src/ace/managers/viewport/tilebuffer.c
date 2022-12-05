@@ -178,6 +178,11 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 	}
 	memFree(pManager->pTileData, pManager->uTileBounds.uwX * sizeof(UBYTE *));
 
+	// Free tile offset lookup table
+	if(pManager->pTileSetOffsets) {
+		memFree(pManager->pTileSetOffsets, sizeof(APTR) * 0xFF);
+	}
+
 	if(pManager->pRedrawStates[0].pPendingQueue) {
 		memFree(pManager->pRedrawStates[0].pPendingQueue, pManager->ubQueueSize);
 	}
@@ -209,6 +214,11 @@ void tileBufferReset(
 		pManager->pTileData = 0;
 	}
 
+	// Free old tile offset lookup table
+	if(pManager->pTileSetOffsets) {
+		memFree(pManager->pTileSetOffsets, sizeof(APTR) * 0xFF);
+	}
+
 	// Init new tile data
 	pManager->uTileBounds.uwX = uwTileX;
 	pManager->uTileBounds.uwY = uwTileY;
@@ -217,6 +227,12 @@ void tileBufferReset(
 		for(UWORD uwCol = uwTileX; uwCol--;) {
 			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(UBYTE));
 		}
+	}
+
+	// Init tile offset lookup table
+	pManager->pTileSetOffsets = memAllocFastClear(sizeof(APTR) * 0xFF);
+	for (UBYTE i = 0; i < 0xFF; ++i) {
+		pManager->pTileSetOffsets[i] = (APTR)(pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift));
 	}
 
 	// Reset scrollManager, create if not exists
@@ -306,9 +322,8 @@ static inline void tileBufferContinueTileDraw(
 	UWORD uwBfrX, UWORD uwBfrY, UWORD uwBltsize
 ) {
 	UBYTE ubTileToDraw = pManager->pTileData[uwTileX][uwTileY];
-	UBYTE ubTileShift = pManager->ubTileShift;
 	ULONG ulSrcOffs, ulDstOffs;
-	ulSrcOffs = pManager->pTileSet->BytesPerRow * (ubTileToDraw << ubTileShift);
+	ulSrcOffs = (ULONG)pManager->pTileSetOffsets[ubTileToDraw];
 	ulDstOffs = pManager->pScroll->pBack->BytesPerRow * uwBfrY + (uwBfrX>>3);
 
 	UBYTE *pUbBltapt = (UBYTE*)((ULONG)pManager->pTileSet->Planes[0] + ulSrcOffs);
