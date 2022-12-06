@@ -602,6 +602,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
 	UWORD uwDstOffsStep = ubTileSize >> 3;
+	systemSetDmaBit(DMAB_BLITHOG, 1);
 	for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
 		UWORD uwTileCurr = wStartX;
 		ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
@@ -615,6 +616,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		}
 		uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
 	}
+	systemSetDmaBit(DMAB_BLITHOG, 0);
 
 	// Copy from back buffer to front buffer.
 	// Width is always a multiple of 16, so use WORD copy.
