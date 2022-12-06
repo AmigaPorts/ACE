@@ -23,18 +23,6 @@ tCopperUlong FAR REGPTR g_pCopLc = (tCopperUlong REGPTR)(
 tCopperUlong FAR REGPTR g_pCop2Lc = (tCopperUlong REGPTR)(
 	CUSTOM_BASE + offsetof(tCustom, cop2lc)
 );
-tCopperUlong FAR REGPTR g_pBltapt = (tCopperUlong REGPTR)(
-	CUSTOM_BASE + offsetof(tCustom, bltapt)
-);
-tCopperUlong FAR REGPTR g_pBltbpt = (tCopperUlong REGPTR)(
-	CUSTOM_BASE + offsetof(tCustom, bltbpt)
-);
-tCopperUlong FAR REGPTR g_pBltcpt = (tCopperUlong REGPTR)(
-	CUSTOM_BASE + offsetof(tCustom, bltcpt)
-);
-tCopperUlong FAR REGPTR g_pBltdpt = (tCopperUlong REGPTR)(
-	CUSTOM_BASE + offsetof(tCustom, bltdpt)
-);
 
 tCia FAR REGPTR g_pCia[CIA_COUNT] = {(tCia*)0xBFE001, (tCia*)0xBFD000};
 

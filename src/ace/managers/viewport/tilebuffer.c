@@ -234,7 +234,7 @@ void tileBufferReset(
 	// Init tile offset lookup table
 	pManager->pTileSetOffsets = memAllocFastClear(sizeof(pManager->pTileSetOffsets[0]) * 256);
 	for (UBYTE i = 0; i < 0xFF; ++i) {
-		pManager->pTileSetOffsets[i] = (UBYTE*)((ULONG)pManager->pTileSet->Planes[0] + (pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift)));
+		pManager->pTileSetOffsets[i] = pManager->pTileSet->Planes[0] + (pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift));
 	}
 
 	// Reset scrollManager, create if not exists
@@ -357,7 +357,7 @@ static inline void tileBufferContinueTileDraw(
 			// this function should be inlined into the caller, where
 			// ubSetDst should be a *constant* argument, so this check
 			// folds away
-			pUbBltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
+			pUbBltdpt = pDstPlane + ulDstOffs;
 		}
 
 		blitWait(); // Don't modify registers when other blit is in progress
@@ -370,9 +370,8 @@ static inline void tileBufferContinueTileDraw(
 	else {
 		ULONG ulSrcOffs = (ULONG)pManager->pTileSetOffsets[ubTileToDraw] - (ULONG)pManager->pTileSet->Planes[0];
 		for(UBYTE ubPlane = pManager->pTileSet->Depth; ubPlane--;) {
-			// This hell of a casting must stay here or else large offsets get bugged!
-			UBYTE *pUbBltapt = (UBYTE*)(((ULONG)(pManager->pTileSet->Planes[ubPlane])) + ulSrcOffs);
-			UBYTE *pUbBltdpt = (UBYTE*)(((ULONG)(pManager->pScroll->pBack->Planes[ubPlane])) + ulDstOffs);
+			UBYTE *pUbBltapt = pManager->pTileSet->Planes[ubPlane] + ulSrcOffs;
+			UBYTE *pUbBltdpt = pManager->pScroll->pBack->Planes[ubPlane] + ulDstOffs;
 			blitWait();  // Don't modify registers when other blit is in progress
 			g_pCustom->bltapt = pUbBltapt;
 			g_pCustom->bltdpt = pUbBltdpt;
@@ -428,7 +427,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				// interleaved, this is wasted, but interleaved will be faster with
 				// this. we can just do this here, since tileBufferSetupTileDraw
 				// already waited for the blitter to be idle
-				g_pCustom->bltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
+				g_pCustom->bltdpt = pDstPlane + ulDstOffs;
 				while (uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileColumn, uwTileCurr,
@@ -445,7 +444,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 						uwTileOffsY -= uwMarginedHeight;
 						ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
 						blitWait(); // this happens at most once in a column, so we take the hit
-						g_pCustom->bltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
+						g_pCustom->bltdpt = pDstPlane + ulDstOffs;
 					}
 					else {
 						ulDstOffs += uwDstOffsStep;
@@ -601,7 +600,6 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		UWORD uwTileOffsX = (wStartX << ubTileShift);
 
 		for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
-			// draw
 			tileBufferDrawTileQuick(
 				pManager, uwTileX, uwTileY, uwTileOffsX, uwTileOffsY
 			);

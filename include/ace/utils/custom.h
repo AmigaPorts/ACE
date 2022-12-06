@@ -169,17 +169,13 @@ tRayPos getRayPos(void);
 extern tCustom FAR REGPTR g_pCustom;
 
 /**
- * Copper accessible regs with 16-bit access.
- * For use with Copper only. Other stuff should use g_pCustom->*
+ * Bitplane display regs with 16-bit access.
+ * For use with Copper. Other stuff should use g_pCustom->bplpt
  */
 extern tCopperUlong FAR REGPTR g_pSprFetch;
 extern tCopperUlong FAR REGPTR g_pBplFetch;
 extern tCopperUlong FAR REGPTR g_pCopLc;
 extern tCopperUlong FAR REGPTR g_pCop2Lc;
-extern tCopperUlong FAR REGPTR g_pBltapt;
-extern tCopperUlong FAR REGPTR g_pBltbpt;
-extern tCopperUlong FAR REGPTR g_pBltcpt;
-extern tCopperUlong FAR REGPTR g_pBltdpt;
 
 extern tCia FAR REGPTR g_pCia[CIA_COUNT];
 
