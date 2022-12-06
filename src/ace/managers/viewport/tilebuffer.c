@@ -346,17 +346,25 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, UBYTE *pTileDataColumn, UWORD uwTileY,
-	UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane,
+	UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst
 ) {
 	UBYTE ubTileToDraw = pTileDataColumn[uwTileY];
 
 	if (!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)) {
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[ubTileToDraw];
-		UBYTE *pUbBltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
+		UBYTE *pUbBltdpt;
+		if (ubSetDst) {
+			// this function should be inlined into the caller, where
+			// ubSetDst should be a *constant* argument, so this check
+			// folds away
+			pUbBltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
+		}
 
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltapt = pUbBltapt;
-		g_pCustom->bltdpt = pUbBltdpt;
+		if (ubSetDst) {
+			g_pCustom->bltdpt = pUbBltdpt;
+		}
 		g_pCustom->bltsize = uwBltsize;
 	}
 	else {
@@ -416,10 +424,17 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 				ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
 				UWORD uwDstOffsStep = uwDstBytesPerRow * ubTileSize;
+				// set up the first bltdpt for an interleaved blit. if this isn't
+				// interleaved, this is wasted, but interleaved will be faster with
+				// this. we can just do this here, since tileBufferSetupTileDraw
+				// already waited for the blitter to be idle
+				g_pCustom->bltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
 				while (uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileColumn, uwTileCurr,
-						uwBltsize, ulDstOffs, pDstPlane
+						uwBltsize, ulDstOffs, pDstPlane,
+						// do not set bltdpt, it was left at the right place by the previous blit
+						0
 					);
 					if (cbTileDraw) {
 						cbTileDraw(uwTilePos, uwTileCurr, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
@@ -429,6 +444,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					if(uwTileOffsY >= uwMarginedHeight) {
 						uwTileOffsY -= uwMarginedHeight;
 						ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
+						blitWait(); // this happens at most once in a column, so we take the hit
+						g_pCustom->bltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
 					}
 					else {
 						ulDstOffs += uwDstOffsStep;
@@ -507,7 +524,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				while(uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
-						uwBltsize, ulDstOffs, pDstPlane
+						uwBltsize, ulDstOffs, pDstPlane, 1
 					);
 					if (cbTileDraw) {
 						cbTileDraw(uwTileCurr, uwTilePos, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
