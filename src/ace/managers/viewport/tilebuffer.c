@@ -233,7 +233,7 @@ void tileBufferReset(
 
 	// Init tile offset lookup table
 	pManager->pTileSetOffsets = memAllocFastClear(sizeof(pManager->pTileSetOffsets[0]) * 256);
-	for (UBYTE i = 0; i < 0xFF; ++i) {
+	for (UWORD i = 0; i < 256; ++i) {
 		pManager->pTileSetOffsets[i] = pManager->pTileSet->Planes[0] + (pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift));
 	}
 
