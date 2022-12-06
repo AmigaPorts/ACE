@@ -283,27 +283,44 @@ void tileBufferReset(
 	logBlockEnd("tileBufferReset()");
 }
 
+#define UW_BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
 /**
  * Prepare quick drawing of tiles by setting up all blitter
  * registers that stay constant when blitting multiple tiles
  * quickly. To be followed by a loop of tileBufferContinueTileDraw
  * calls.
  * 
- * @return bltsize - to use in tileBufferContinueTileDraw or -1 on error
+ * @return bltsize - to use in tileBufferContinueTileDraw
  */
 static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
-	UWORD uwBlitWords, uwBltCon0;
 	WORD wDstModulo, wSrcModulo;
 
-	if (!bitmapIsInterleaved(pManager->pTileSet) || !bitmapIsInterleaved(pManager->pScroll->pBack)) {
-		return -1;
-	}
-
-	uwBlitWords = pManager->ubTileSize >> 4;
-	uwBltCon0 = USEA|USED|MINTERM_A;
+	UWORD uwBlitWords = pManager->ubTileSize >> 4;
+	UWORD uwBltCon0 = USEA|USED|MINTERM_A;
 
 	wSrcModulo = bitmapGetByteWidth(pManager->pTileSet) - (uwBlitWords<<1);
 	wDstModulo = bitmapGetByteWidth(pManager->pScroll->pBack) - (uwBlitWords<<1);
+
+	UBYTE ubSrcInterleaved = bitmapIsInterleaved(pManager->pTileSet);
+	UBYTE ubDstInterleaved = bitmapIsInterleaved(pManager->pScroll->pBack);
+
+	UWORD uwHeight = pManager->ubTileSize;
+
+	if(ubSrcInterleaved && ubDstInterleaved) {
+		uwHeight *= pManager->pTileSet->Depth;
+	} else {
+		// XXX: misuse uwBlitWords to store the flag for non-interleaved
+		uwBlitWords |= UW_BLIT_WORDS_NON_INTERLEAVED_BIT;
+		if (ubSrcInterleaved ^ ubDstInterleaved) {
+			// Since you're using this fn for speed
+			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
+		}
+		if(ubSrcInterleaved) {
+			wSrcModulo += pManager->pTileSet->BytesPerRow * (pManager->pTileSet->Depth-1);
+		} else if(ubDstInterleaved) {
+			wDstModulo += pManager->pScroll->pBack->BytesPerRow * (pManager->pScroll->pBack->Depth-1);
+		}
+	}
 
 	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltcon0 = uwBltCon0;
@@ -313,7 +330,7 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 	g_pCustom->bltamod = wSrcModulo;
 	g_pCustom->bltdmod = wDstModulo;
 
-	return ((pManager->ubTileSize * pManager->pTileSet->Depth) << 6) | uwBlitWords;
+	return (uwHeight << 6) | uwBlitWords;
 }
 
 FN_HOTSPOT
@@ -322,17 +339,28 @@ static inline void tileBufferContinueTileDraw(
 	UWORD uwBfrX, UWORD uwBfrY, UWORD uwBltsize, UWORD uwDstBytesPerRow, PLANEPTR pDstPlane
 ) {
 	UBYTE ubTileToDraw = pTileDataColumn[uwTileY];
-	ULONG ulDstOffs;
-	ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX>>3);
+	ULONG ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX>>3);
 
-	UBYTE *pUbBltapt = pManager->pTileSetOffsets[ubTileToDraw];
-	UBYTE *pUbBltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
+	if (!(uwBltsize & UW_BLIT_WORDS_NON_INTERLEAVED_BIT)) {
+		UBYTE *pUbBltapt = pManager->pTileSetOffsets[ubTileToDraw];
+		UBYTE *pUbBltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
 
-	blitWait(); // Don't modify registers when other blit is in progress
-	// This hell of a casting must stay here or else large offsets get bugged!
-	g_pCustom->bltapt = pUbBltapt;
-	g_pCustom->bltdpt = pUbBltdpt;
-	g_pCustom->bltsize = uwBltsize;
+		blitWait(); // Don't modify registers when other blit is in progress
+		g_pCustom->bltapt = pUbBltapt;
+		g_pCustom->bltdpt = pUbBltdpt;
+		g_pCustom->bltsize = uwBltsize;
+	} else {
+		ULONG ulSrcOffs = (ULONG)pManager->pTileSetOffsets[ubTileToDraw] - (ULONG)pManager->pTileSet->Planes[0];
+		for(UBYTE ubPlane = pManager->pTileSet->Depth; ubPlane--;) {
+			// This hell of a casting must stay here or else large offsets get bugged!
+			UBYTE *pUbBltapt = (UBYTE*)(((ULONG)(pManager->pTileSet->Planes[ubPlane])) + ulSrcOffs);
+			UBYTE *pUbBltdpt = (UBYTE*)(((ULONG)(pManager->pScroll->pBack->Planes[ubPlane])) + ulDstOffs);
+			blitWait();  // Don't modify registers when other blit is in progress
+			g_pCustom->bltapt = pUbBltapt;
+			g_pCustom->bltdpt = pUbBltdpt;
+			g_pCustom->bltsize = uwBltsize & ~UW_BLIT_WORDS_NON_INTERLEAVED_BIT;
+		}
+	}
 }
 
 FN_HOTSPOT
