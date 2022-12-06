@@ -115,13 +115,13 @@ UBYTE blitSafeCopyAligned(
 UBYTE blitUnsafeCopyMask(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, const UWORD *pMsk
+	WORD wWidth, WORD wHeight, const UBYTE *pMsk
 );
 
 UBYTE blitSafeCopyMask(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, const UWORD *pMsk,
+	WORD wWidth, WORD wHeight, const UBYTE *pMsk,
 	UWORD uwLine, const char *szFile
 );
 

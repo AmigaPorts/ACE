@@ -209,9 +209,9 @@ UBYTE blitUnsafeCopy(
 	while(ubPlane--) {
 		blitWait();
 		// This hell of a casting must stay here or else large offsets get bugged!
-		g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-		g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		g_pCustom->bltbpt = pSrc->Planes[ubPlane] + ulSrcOffs;
+		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
+		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
 
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
@@ -263,9 +263,8 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
 
-		// This hell of a casting must stay here or else large offsets get bugged!
-		g_pCustom->bltcpt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
-		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
+		g_pCustom->bltcpt = pSrc->Planes[0] + ulSrcOffs;
+		g_pCustom->bltdpt = pDst->Planes[0] + ulDstOffs;
 
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
@@ -291,9 +290,8 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltdmod = wDstModulo;
 		for(ubPlane = pSrc->Depth; ubPlane--;) {
 			blitWait();
-			// This hell of a casting must stay here or else large offsets get bugged!
-			g_pCustom->bltcpt = (UBYTE*)(((ULONG)(pSrc->Planes[ubPlane])) + ulSrcOffs);
-			g_pCustom->bltdpt = (UBYTE*)(((ULONG)(pDst->Planes[ubPlane])) + ulDstOffs);
+			g_pCustom->bltcpt = pSrc->Planes[ubPlane] + ulSrcOffs;
+			g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
 			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}
 	}
@@ -327,7 +325,7 @@ UBYTE blitSafeCopyAligned(
 UBYTE blitUnsafeCopyMask(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, const UWORD *pMsk
+	WORD wWidth, WORD wHeight, const UBYTE *pMsk
 ) {
 #ifdef AMIGA
 	WORD wDstModulo, wSrcModulo;
@@ -362,10 +360,10 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltcmod = wDstModulo;
 		g_pCustom->bltdmod = wDstModulo;
 
-		g_pCustom->bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
-		g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[0] + ulSrcOffs);
-		g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
-		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[0] + ulDstOffs);
+		g_pCustom->bltapt = pMsk + ulSrcOffs;
+		g_pCustom->bltbpt = pSrc->Planes[0] + ulSrcOffs;
+		g_pCustom->bltcpt = pDst->Planes[0] + ulDstOffs;
+		g_pCustom->bltdpt = pDst->Planes[0] + ulDstOffs;
 
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 	}
@@ -392,10 +390,10 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltdmod = wDstModulo;
 		for(UBYTE ubPlane = pSrc->Depth; ubPlane--;) {
 			blitWait();
-			g_pCustom->bltapt = (UBYTE*)((ULONG)pMsk + ulSrcOffs);
-			g_pCustom->bltbpt = (UBYTE*)((ULONG)pSrc->Planes[ubPlane] + ulSrcOffs);
-			g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-			g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+			g_pCustom->bltapt = pMsk + ulSrcOffs;
+			g_pCustom->bltbpt = pSrc->Planes[ubPlane] + ulSrcOffs;
+			g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
+			g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
 
 			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}
@@ -407,7 +405,7 @@ UBYTE blitUnsafeCopyMask(
 UBYTE blitSafeCopyMask(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, const UWORD *pMsk, UWORD uwLine, const char *szFile
+	WORD wWidth, WORD wHeight, const UBYTE *pMsk, UWORD uwLine, const char *szFile
 ) {
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
@@ -468,8 +466,8 @@ UBYTE _blitRect(
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!
-		g_pCustom->bltcpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
-		g_pCustom->bltdpt = (UBYTE*)((ULONG)pDst->Planes[ubPlane] + ulDstOffs);
+		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
+		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
 		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		ubColor >>= 1;
 		++ubPlane;
