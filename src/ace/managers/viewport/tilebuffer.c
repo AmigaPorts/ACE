@@ -596,14 +596,22 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	);
 
 	UWORD uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
+	UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
+	PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
+	UBYTE **pTileData = pManager->pTileData;
+	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
+	UWORD uwTileOffsX = (wStartX << ubTileShift);
+	UWORD uwDstOffsStep = ubTileSize >> 3;
 	for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
-		UWORD uwTileOffsX = (wStartX << ubTileShift);
-
-		for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
-			tileBufferDrawTileQuick(
-				pManager, uwTileX, uwTileY, uwTileOffsX, uwTileOffsY
+		UWORD uwTileCurr = wStartX;
+		ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
+		while(uwTileCurr < uwEndX) {
+			tileBufferContinueTileDraw(
+				pManager, pTileData[uwTileCurr], uwTileY,
+				uwBltsize, ulDstOffs, pDstPlane, 1
 			);
-			uwTileOffsX += ubTileSize;
+			++uwTileCurr;
+			ulDstOffs += uwDstOffsStep;
 		}
 		uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
 	}
