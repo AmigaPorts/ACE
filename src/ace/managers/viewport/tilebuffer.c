@@ -19,6 +19,8 @@ static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 
 #ifdef AMIGA
 
+#define BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
+
 static void tileBufferResetRedrawState(tRedrawState *pState) {
 	memset(&pState->sMarginL, 0, sizeof(tMarginState));
 	memset(&pState->sMarginR, 0, sizeof(tMarginState));
@@ -180,7 +182,7 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 
 	// Free tile offset lookup table
 	if(pManager->pTileSetOffsets) {
-		memFree(pManager->pTileSetOffsets, sizeof(APTR) * 0xFF);
+		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * 256);
 	}
 
 	if(pManager->pRedrawStates[0].pPendingQueue) {
@@ -216,7 +218,7 @@ void tileBufferReset(
 
 	// Free old tile offset lookup table
 	if(pManager->pTileSetOffsets) {
-		memFree(pManager->pTileSetOffsets, sizeof(APTR) * 0xFF);
+		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * 256);
 	}
 
 	// Init new tile data
@@ -230,7 +232,7 @@ void tileBufferReset(
 	}
 
 	// Init tile offset lookup table
-	pManager->pTileSetOffsets = memAllocFastClear(sizeof(APTR) * 0xFF);
+	pManager->pTileSetOffsets = memAllocFastClear(sizeof(pManager->pTileSetOffsets[0]) * 256);
 	for (UBYTE i = 0; i < 0xFF; ++i) {
 		pManager->pTileSetOffsets[i] = (UBYTE*)((ULONG)pManager->pTileSet->Planes[0] + (pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift)));
 	}
@@ -283,7 +285,6 @@ void tileBufferReset(
 	logBlockEnd("tileBufferReset()");
 }
 
-#define UW_BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
 /**
  * Prepare quick drawing of tiles by setting up all blitter
  * registers that stay constant when blitting multiple tiles
@@ -308,16 +309,18 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 
 	if(ubSrcInterleaved && ubDstInterleaved) {
 		uwHeight *= pManager->pTileSet->Depth;
-	} else {
+	}
+	else {
 		// XXX: misuse uwBlitWords to store the flag for non-interleaved
-		uwBlitWords |= UW_BLIT_WORDS_NON_INTERLEAVED_BIT;
+		uwBlitWords |= BLIT_WORDS_NON_INTERLEAVED_BIT;
 		if (ubSrcInterleaved ^ ubDstInterleaved) {
 			// Since you're using this fn for speed
 			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
 		}
 		if(ubSrcInterleaved) {
 			wSrcModulo += pManager->pTileSet->BytesPerRow * (pManager->pTileSet->Depth-1);
-		} else if(ubDstInterleaved) {
+		}
+		else if(ubDstInterleaved) {
 			wDstModulo += pManager->pScroll->pBack->BytesPerRow * (pManager->pScroll->pBack->Depth-1);
 		}
 	}
@@ -333,6 +336,13 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 	return (uwHeight << 6) | uwBlitWords;
 }
 
+/**
+ * Quickly draw a tile. This is used after the blitter was set up
+ * with a call to tileBufferSetupTileDraw, to draw multiple tiles
+ * as quickly as possible. The fastest path by far is for interleaved
+ * bitmaps, but it works for non-interleaved bitmaps, too, with
+ * a slightly larger performance hit.
+ */
 FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, UBYTE *pTileDataColumn, UWORD uwTileY,
@@ -341,7 +351,7 @@ static inline void tileBufferContinueTileDraw(
 	UBYTE ubTileToDraw = pTileDataColumn[uwTileY];
 	ULONG ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX>>3);
 
-	if (!(uwBltsize & UW_BLIT_WORDS_NON_INTERLEAVED_BIT)) {
+	if (!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)) {
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[ubTileToDraw];
 		UBYTE *pUbBltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
 
@@ -349,7 +359,8 @@ static inline void tileBufferContinueTileDraw(
 		g_pCustom->bltapt = pUbBltapt;
 		g_pCustom->bltdpt = pUbBltdpt;
 		g_pCustom->bltsize = uwBltsize;
-	} else {
+	}
+	else {
 		ULONG ulSrcOffs = (ULONG)pManager->pTileSetOffsets[ubTileToDraw] - (ULONG)pManager->pTileSet->Planes[0];
 		for(UBYTE ubPlane = pManager->pTileSet->Depth; ubPlane--;) {
 			// This hell of a casting must stay here or else large offsets get bugged!
@@ -358,7 +369,7 @@ static inline void tileBufferContinueTileDraw(
 			blitWait();  // Don't modify registers when other blit is in progress
 			g_pCustom->bltapt = pUbBltapt;
 			g_pCustom->bltdpt = pUbBltdpt;
-			g_pCustom->bltsize = uwBltsize & ~UW_BLIT_WORDS_NON_INTERLEAVED_BIT;
+			g_pCustom->bltsize = uwBltsize & ~BLIT_WORDS_NON_INTERLEAVED_BIT;
 		}
 	}
 }
