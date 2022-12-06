@@ -346,10 +346,9 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, UBYTE *pTileDataColumn, UWORD uwTileY,
-	UWORD uwBfrX, UWORD uwBfrY, UWORD uwBltsize, UWORD uwDstBytesPerRow, PLANEPTR pDstPlane
+	UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane,
 ) {
 	UBYTE ubTileToDraw = pTileDataColumn[uwTileY];
-	ULONG ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX>>3);
 
 	if (!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)) {
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[ubTileToDraw];
@@ -415,11 +414,12 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UBYTE *pTileColumn = pManager->pTileData[uwTilePos];
 				UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
 				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
+				ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
+				UWORD uwDstOffsStep = uwDstBytesPerRow * ubTileSize;
 				while (uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileColumn, uwTileCurr,
-						uwTileOffsX, uwTileOffsY, uwBltsize,
-						uwDstBytesPerRow, pDstPlane
+						uwBltsize, ulDstOffs, pDstPlane
 					);
 					if (cbTileDraw) {
 						cbTileDraw(uwTilePos, uwTileCurr, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
@@ -428,6 +428,10 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					uwTileOffsY += ubTileSize;
 					if(uwTileOffsY >= uwMarginedHeight) {
 						uwTileOffsY -= uwMarginedHeight;
+						ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
+					}
+					else {
+						ulDstOffs += uwDstOffsStep;
 					}
 				}
 				pState->pMarginX->wTileCurr = pState->pMarginX->wTileEnd;
@@ -498,17 +502,19 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UBYTE **pTileData = pManager->pTileData;
 				UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
 				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
+				ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
+				UWORD uwDstOffsStep = ubTileSize >> 3;
 				while(uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
-						uwTileOffsX, uwTileOffsY, uwBltsize,
-						uwDstBytesPerRow, pDstPlane
+						uwBltsize, ulDstOffs, pDstPlane
 					);
 					if (cbTileDraw) {
 						cbTileDraw(uwTileCurr, uwTilePos, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
+						uwTileOffsX += ubTileSize;
 					}
 					++uwTileCurr;
-					uwTileOffsX += ubTileSize;
+					ulDstOffs += uwDstOffsStep;
 				}
 				pState->pMarginY->wTileCurr = pState->pMarginY->wTileEnd;
 			}
