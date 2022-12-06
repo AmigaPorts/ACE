@@ -232,7 +232,7 @@ void tileBufferReset(
 	// Init tile offset lookup table
 	pManager->pTileSetOffsets = memAllocFastClear(sizeof(APTR) * 0xFF);
 	for (UBYTE i = 0; i < 0xFF; ++i) {
-		pManager->pTileSetOffsets[i] = (APTR)(pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift));
+		pManager->pTileSetOffsets[i] = (UBYTE*)((ULONG)pManager->pTileSet->Planes[0] + (pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift)));
 	}
 
 	// Reset scrollManager, create if not exists
@@ -318,16 +318,15 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 
 FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
-	const tTileBufferManager *pManager, UBYTE *pTileRowOrColumn, UWORD uwTileRowOrColumnOffset,
-	UWORD uwBfrX, UWORD uwBfrY, UWORD uwBltsize
+	const tTileBufferManager *pManager, UBYTE *pTileDataColumn, UWORD uwTileY,
+	UWORD uwBfrX, UWORD uwBfrY, UWORD uwBltsize, UWORD uwDstBytesPerRow, PLANEPTR pDstPlane
 ) {
-	UBYTE ubTileToDraw = pTileRowOrColumn[uwTileRowOrColumnOffset];
-	ULONG ulSrcOffs, ulDstOffs;
-	ulSrcOffs = (ULONG)pManager->pTileSetOffsets[ubTileToDraw];
-	ulDstOffs = pManager->pScroll->pBack->BytesPerRow * uwBfrY + (uwBfrX>>3);
+	UBYTE ubTileToDraw = pTileDataColumn[uwTileY];
+	ULONG ulDstOffs;
+	ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX>>3);
 
-	UBYTE *pUbBltapt = (UBYTE*)((ULONG)pManager->pTileSet->Planes[0] + ulSrcOffs);
-	UBYTE *pUbBltdpt = (UBYTE*)((ULONG)pManager->pScroll->pBack->Planes[0] + ulDstOffs);
+	UBYTE *pUbBltapt = pManager->pTileSetOffsets[ubTileToDraw];
+	UBYTE *pUbBltdpt = (UBYTE*)((ULONG)pDstPlane + ulDstOffs);
 
 	blitWait(); // Don't modify registers when other blit is in progress
 	// This hell of a casting must stay here or else large offsets get bugged!
@@ -341,6 +340,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	WORD wTileIdxX, wTileIdxY;
 	UWORD uwTileOffsX, uwTileOffsY;
 	tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
+	tTileDrawCallback cbTileDraw = pManager->cbTileDraw;
 
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
@@ -374,15 +374,16 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwMarginedHeight = pManager->uwMarginedHeight;
 				UWORD uwTilePos = pState->pMarginX->wTilePos;
 				UBYTE *pTileColumn = pManager->pTileData[uwTilePos];
+				UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
+				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 				while (uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileColumn, uwTileCurr,
-						uwTileOffsX, uwTileOffsY, uwBltsize
+						uwTileOffsX, uwTileOffsY, uwBltsize,
+						uwDstBytesPerRow, pDstPlane
 					);
-					if(pManager->cbTileDraw) {
-						pManager->cbTileDraw(
-							uwTilePos, uwTileCurr, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY
-						);
+					if (cbTileDraw) {
+						cbTileDraw(uwTilePos, uwTileCurr, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
 					}
 					++uwTileCurr;
 					uwTileOffsY += ubTileSize;
@@ -456,15 +457,16 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileEnd = pState->pMarginY->wTileEnd;
 				UWORD uwTilePos = pState->pMarginY->wTilePos;
 				UBYTE **pTileData = pManager->pTileData;
+				UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
+				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 				while(uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
-						uwTileOffsX, uwTileOffsY, uwBltsize
+						uwTileOffsX, uwTileOffsY, uwBltsize,
+						uwDstBytesPerRow, pDstPlane
 					);
-					if(pManager->cbTileDraw) {
-						pManager->cbTileDraw(
-							uwTileCurr, uwTilePos, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY
-						);
+					if (cbTileDraw) {
+						cbTileDraw(uwTileCurr, uwTilePos, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
 					}
 					++uwTileCurr;
 					uwTileOffsX += ubTileSize;

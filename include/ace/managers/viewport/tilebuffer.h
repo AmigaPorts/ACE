@@ -124,7 +124,7 @@ typedef struct _tTileBufferManager {
 	tTileDrawCallback cbTileDraw; ///< Called when tile is redrawn
 	UBYTE **pTileData;            ///< 2D array of tile indices
 	tBitMap *pTileSet;            ///< Tileset - one tile beneath another
-	APTR *pTileSetOffsets;        ///< Lookup table for tile offsets in pTileSet
+	UBYTE **pTileSetOffsets;      ///< Lookup table for tile offsets in pTileSet
 	// Margin & queue geometry
 	UBYTE ubMarginXLength; ///< Tile number in margins: left & right
 	UBYTE ubMarginYLength; ///< Ditto, up & down
