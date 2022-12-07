@@ -453,10 +453,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					while (uwTileCurr < uwTileEnd) {
 						pManager->cbTileDraw(uwTilePos, uwTileCurr, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
 						++uwTileCurr;
-						uwTileOffsY += ubTileSize;
-						if(uwTileOffsY >= uwMarginedHeight) {
-							uwTileOffsY -= uwMarginedHeight;
-						}
+						uwTileOffsY = (uwTileOffsY + ubTileSize) & (uwMarginedHeight - 1);
 					}
 				}
 				pState->pMarginX->wTileCurr = pState->pMarginX->wTileEnd;
