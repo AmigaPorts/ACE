@@ -265,7 +265,6 @@ void tileBufferReset(
 	// Scrollin on one of dirs may be disabled - less redraw on other axis margin
 	pManager->uwMarginedWidth = bitmapGetByteWidth(pManager->pScroll->pFront)*8;
 	pManager->uwMarginedHeight = pManager->pScroll->uwBmAvailHeight;
-	pManager->ubWidthShift = shiftFromPowerOfTwo(pManager->uwMarginedWidth);
 	pManager->ubMarginXLength = MIN(
 		pManager->uTileBounds.uwY,
 		(pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 4
