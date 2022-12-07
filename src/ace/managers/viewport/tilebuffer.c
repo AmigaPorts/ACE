@@ -5,6 +5,7 @@
 #include <ace/managers/viewport/tilebuffer.h>
 #include <ace/macros.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/system.h>
 #include <ace/utils/tag.h>
 #include <proto/exec.h> // Bartman's compiler needs this
 
