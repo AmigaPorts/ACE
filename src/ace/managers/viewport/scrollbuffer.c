@@ -462,7 +462,7 @@ void scrollBufferBlitMask(
 		blitUnsafeCopyMask(
 			pSrc, wSrcX, wSrcY,
 			pDstManager->pBack, wDstX, wDstY,
-			wWidth, wHeight, pMsk
+			wWidth, wHeight, (UBYTE*)pMsk
 		);
 	}
 	else {
@@ -472,12 +472,12 @@ void scrollBufferBlitMask(
 		blitUnsafeCopyMask(
 			pSrc, wSrcX, wSrcY,
 			pDstManager->pBack, wDstX, wDstY,
-			wWidth, wPartHeight, pMsk
+			wWidth, wPartHeight, (UBYTE*)pMsk
 		);
 		blitUnsafeCopyMask(
 			pSrc, wSrcX, wSrcY + wPartHeight,
 			pDstManager->pBack, wDstX, 0,
-			wWidth, wHeight - wPartHeight, pMsk
+			wWidth, wHeight - wPartHeight, (UBYTE*)pMsk
 		);
 	}
 }
