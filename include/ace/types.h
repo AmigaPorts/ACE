@@ -137,6 +137,11 @@ typedef struct _tBCoordYX {
 	BYTE bX;
 } tBCoordYX;
 
+typedef struct _tWCoordYX {
+	WORD wY;
+	WORD wX;
+} tWCoordYX;
+
 /**
  * Rectangle type
  */
