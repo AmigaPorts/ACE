@@ -74,6 +74,8 @@ inline short divsw(int a, short b) {
     return a;
 }
 
+extern char *g_pStartStackPos; // ACE CHANGES
+
 #ifdef __cplusplus
 	} // extern "C"
 #endif
