@@ -1690,9 +1690,6 @@ static void mt_reset(void) {
 	// Disable the filter
 	g_pCia[CIA_A]->pra |= BV(1);
 
-	// set master volume to 64
-	mt_MasterVolTab = MasterVolTab[64];
-
 	// initialise channel DMA, interrupt bits and audio register base
 	// make sure uwPeriod doesn't start as 0
 	// disable sound effects
@@ -1770,6 +1767,7 @@ void ptplayerCreate(UBYTE isPal) {
 #endif
 
 	ptplayerSetPal(isPal);
+	mt_MasterVolTab = MasterVolTab[64];
 	mt_reset();
 }
 
