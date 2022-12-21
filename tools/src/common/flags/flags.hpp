@@ -86,7 +86,7 @@ public:
 
   template <class FwIter>
   flags(FwIter b, FwIter e,
-        typename convertible<decltype(*b)>::type = nullptr)
+        typename convertible<decltype(FwIter::operator *)>::type = nullptr)
   noexcept(noexcept(std::declval<flags>().insert(std::declval<FwIter>(),
                                                  std::declval<FwIter>())))
   : val_(0)
