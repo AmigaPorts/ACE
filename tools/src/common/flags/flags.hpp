@@ -253,14 +253,14 @@ public:
 
   size_type erase(enum_type e) noexcept {
     auto e_count = count(e);
-    val_ ^= static_cast<impl_type>(e);
+    val_ &= ~static_cast<impl_type>(e);
     return e_count;
   }
 
   iterator erase(iterator i1, iterator i2) noexcept {
     val_ ^= flags(i1, i2).val_;
     update_uvalue(i2);
-    return ++i2;
+    return i2;
   }
 
 
