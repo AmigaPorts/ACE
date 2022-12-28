@@ -65,6 +65,16 @@ UBYTE blitIsIdle(void);
  */
 void blitWait(void);
 
+/**
+ * Blit without mask. Channels:
+ * 	A: mask const, read disabled
+ * 	B: src read
+ * 	C: dest read
+ * 	D: dest write
+ *
+ * @param ubMinterm Blitter logic operation to be used. Usually set to MINTERM_COOKIE.
+ * @note Source and destination regions must not overlap.
+ */
 UBYTE blitUnsafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
