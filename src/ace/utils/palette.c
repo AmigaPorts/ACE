@@ -44,7 +44,9 @@ void paletteLoadFromMem(const UBYTE* pData, UWORD *pPalette, UBYTE ubMaxLength) 
 	logBlockEnd("paletteLoadFromMem()");
 }
 
-void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
+void paletteDim(
+	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
+) {
 	for(UBYTE c = 0; c != ubColorCount; ++c) {
 		pDest[c] = paletteColorDim(pSource[c],  ubLevel) ;
 	}
@@ -67,7 +69,7 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 }
 
 void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
-	UBYTE ubLastColor = ubColorCnt -1;
+	UBYTE ubLastColor = ubColorCnt - 1;
 	UBYTE ubBpp = 0;
 	while(ubLastColor) {
 		ubLastColor >>= 1;
