@@ -1150,7 +1150,7 @@ static void startSfx(
 	// play new sound effect on this channel
 	systemSetDmaMask(pChannelData->uwDmaFlag, 0);
 	UWORD uwRepeatLength;
-	UWORD *pSfxData = pChannelReg->ac_ptr = pChannelData->n_sfxptr;
+	volatile UWORD *pSfxData = pChannelReg->ac_ptr = pChannelData->n_sfxptr;
 	if(pChannelData->ubSfxPriority == SFX_PRIORITY_LOOPED) {
 		pChannelData->isLooped = 1;
 
