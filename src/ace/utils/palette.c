@@ -43,7 +43,9 @@ void paletteLoadFromMem(const UBYTE* pData, UWORD *pPalette, UBYTE ubMaxLength) 
 	logBlockEnd("paletteLoadFromMem()");
 }
 
-void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
+void paletteDim(
+	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
+) {
 	for(UBYTE c = 0; c != ubColorCount; ++c) {
 		pDest[c] = paletteColorDim(pSource[c],  ubLevel) ;
 	}
@@ -65,15 +67,15 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 	return (r << 8) | (g << 4) | b;
 }
 
-void paletteDump(UWORD *pPalette, FUBYTE fubColorCnt, char *szPath) {
-	FUBYTE fubLastColor = fubColorCnt -1;
-	FUBYTE fubBpp = 0;
+void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
+	UBYTE fubLastColor = ubColorCnt -1;
+	UBYTE fubBpp = 0;
 	while(fubLastColor) {
 		fubLastColor >>= 1;
 		++fubBpp;
 	}
-	tBitMap *pBm = bitmapCreate((1+8)*fubColorCnt + 1, 10, fubBpp, BMF_CLEAR);
-	for(FUBYTE i = 0; i <= fubColorCnt; ++i) {
+	tBitMap *pBm = bitmapCreate((1+8)*ubColorCnt + 1, 10, fubBpp, BMF_CLEAR);
+	for(UBYTE i = 0; i <= ubColorCnt; ++i) {
 		blitRect(pBm, 1+(8+1)*i, 1, 8, 8, i);
 	}
 	bitmapSaveBmp(pBm, pPalette, szPath);
