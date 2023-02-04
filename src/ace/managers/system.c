@@ -51,6 +51,10 @@ typedef struct _tAceInterrupt {
 
 //---------------------------------------------------------------------- GLOBALS
 
+// Store VBR query code in .text so that it plays nice with instruction cache
+__attribute__((section("text")))
+static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
+
 // Saved regs
 static UWORD s_uwOsIntEna;
 static UWORD s_uwOsDmaCon;
@@ -514,8 +518,7 @@ void systemCreate(void) {
 	// get VBR location on 68010+ machine
 	// http://eab.abime.net/showthread.php?t=65430&page=3
 	if (SysBase->AttnFlags & AFF_68010) {
-		UWORD pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
-		s_pHwVectors = (tHwIntVector *)Supervisor((void *)pGetVbrCode);
+		s_pHwVectors = (tHwIntVector *)Supervisor((void *)s_pGetVbrCode);
 	}
 
 	// Finish disk activity
