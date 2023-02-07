@@ -307,7 +307,7 @@ UBYTE blitSafeCopyAligned(
 	UWORD uwLine, const char *szFile
 ) {
 	if((wSrcX | wDstX | wWidth) & 0x000F) {
-		logWrite("Dimensions are not divisible by 16!\n");
+		logWrite("ERR: Dimensions are not divisible by 16\n");
 		return 0;
 	}
 	if(!blitCheck(
@@ -321,7 +321,7 @@ UBYTE blitSafeCopyAligned(
 /**
  * Copies source data to destination over mask
  * Optimizations require following conditions:
- * - wSrcX < wDstX (shifts to right)
+ * - wSrcX <= wDstX (shifts to right)
  * - mask must have same dimensions as source bitplane
  */
 UBYTE blitUnsafeCopyMask(
@@ -409,6 +409,13 @@ UBYTE blitSafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UWORD *pMsk, UWORD uwLine, const char *szFile
 ) {
+	if(wSrcX > wDstX) {
+		logWrite(
+			"ERR: wSrcX %hd must be smaller than or equal to wDstX %hd\n",
+			wSrcX, wDstX
+		);
+		return 0;
+	}
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
 	}

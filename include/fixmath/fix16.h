@@ -205,14 +205,14 @@ static inline fix16_t fix16_deg_to_rad(fix16_t degrees)
 
 /*! Converts degrees to radians.
 */
-static inline fix16_t fix16_deg2rad(fix16_t fAngleDegrees) { 
-  return fix16_div(fix16_mul(fAngleDegrees, fix16_pi),fix16_from_int(180)); 
+static inline fix16_t fix16_deg2rad(fix16_t fAngleDegrees) {
+  return fix16_div(fix16_mul(fAngleDegrees, fix16_pi),fix16_from_int(180));
 }
 
 /*! Converts radians to degrees.
 */
-static inline fix16_t fix16_rad2deg(fix16_t fAngleRads) { 
-  return fix16_div(fix16_mul(fAngleRads, fix16_from_int(180)),fix16_pi); 
+static inline fix16_t fix16_rad2deg(fix16_t fAngleRads) {
+  return fix16_div(fix16_mul(fAngleRads, fix16_from_int(180)),fix16_pi);
 }
 
 /*! Returns the square root of the given fix16_t.
@@ -336,7 +336,6 @@ extern fix16_t fix16_from_str(const char *buf);
 
 #ifdef __cplusplus
 }
-#include "fix16.hpp"
 #endif
 
 #endif

@@ -33,6 +33,10 @@ static inline void uaeWrite(const char *szMsg) {
 
 // Functions
 
+static UBYTE isWritingToFileAllowed(void) {
+	return g_sLogManager.pFile && !g_sLogManager.wInterruptDepth;
+}
+
 /**
  * Base debug functions
  */
@@ -81,9 +85,11 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 
 	vsprintf(&szMsg[uwOffs], szFormat, vaArgs);
 	uaeWrite(szMsg);
-	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
+	if(isWritingToFileAllowed()) {
+		systemUse();
 		fileWrite(g_sLogManager.pFile, szMsg, strlen(szMsg));
 		fileFlush(g_sLogManager.pFile);
+		systemUnuse();
 	}
 }
 
@@ -104,7 +110,9 @@ void _logBlockBegin(char *szBlockName, ...) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
-	systemUse();
+	if(isWritingToFileAllowed()) {
+		systemUse();
+	}
 
 	logWrite("Block begin: ");
 	va_list vaArgs;
@@ -117,14 +125,20 @@ void _logBlockBegin(char *szBlockName, ...) {
 	logPushIndent();
 	g_sLogManager.isBlockEmpty = 1;
 	memCheckIntegrity();
-	systemUnuse();
+
+	if(isWritingToFileAllowed()) {
+		systemUnuse();
+	}
 }
 
 void _logBlockEnd(char *szBlockName) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
-	systemUse();
+	if(isWritingToFileAllowed()) {
+		systemUse();
+	}
+
 	memCheckIntegrity();
 	logPopIndent();
 	timerFormatPrec(
@@ -146,7 +160,9 @@ void _logBlockEnd(char *szBlockName) {
 		logWrite("Block end: %s, time: %s\n", szBlockName, g_sLogManager.szTimeBfr);
 	}
 	g_sLogManager.isBlockEmpty = 0;
-	systemUnuse();
+	if(isWritingToFileAllowed()) {
+		systemUnuse();
+	}
 }
 
 // Average logging
@@ -215,11 +231,11 @@ void _logAvgWrite(tAvg *pAvg) {
 }
 
 void _logPushInt(void) {
-	++g_sLogManager.wIntDepth;
+	++g_sLogManager.wInterruptDepth;
 }
 
 void _logPopInt(void) {
-	if(--g_sLogManager.wIntDepth < 0) {
+	if(--g_sLogManager.wInterruptDepth < 0) {
 		logWrite("ERR: INT DEPTH NEGATIVE!\n");
 	}
 }

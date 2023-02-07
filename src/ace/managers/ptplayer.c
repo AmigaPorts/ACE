@@ -31,6 +31,26 @@
 
 //---------------------------------------------------------------------- DEFINES
 
+/**
+ * @brief Minimum safe CIA timer ticks count after which Paula channel regs can
+ * be set for next sample.
+ * 
+ * A raster line has a DMA slot for each audio channel. Depending on the current
+ * AUDxPER of the audio channel some of these DMA slots are not used.
+ * For example: when playing a very high frequency the DMA might have to read
+ * a new sample every line. But when playing a very low frequency there might be
+ * 10 or more raster lines without DMA activity for this channel.
+ * 
+ * The problem is that changes like DMA-on/off, or setting a new sample-pointer
+ * in AUDxLC, are only recognized by Paula when the next sample data are read
+ * from Chip-RAM.
+ * 
+ * So we have to be prepared for the worst case, which means that
+ * up to 11 raster lines may pass without DMA-activity (reading a new sample),
+ * when playing the lowest note from the lowest Protracker octave.
+ */
+#define TIMERB_TICKS (576)
+
 // Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
 #define MOD_ROWS_IN_PATTERN 64
 #define MOD_NOTES_PER_ROW 4
@@ -42,28 +62,6 @@
 #define MOD_PERIOD_TABLE_LENGTH 36
 
 //------------------------------------------------------------------------ TYPES
-
-typedef struct _tModSampleHeader {
-	char szName[22];
-	UWORD uwLength; ///< Sample data length, in words.
-	UBYTE ubFineTune; ///< Finetune. Only lower nibble is used. Values translate to finetune: {0..7, -8..-1}
-	UBYTE ubVolume; ///< Sample volume. 0..64
-	UWORD uwRepeatOffs; ///< In words.
-	UWORD uwRepeatLength; ///< In words.
-} tModSampleHeader;
-
-typedef struct _tModFileHeader {
-	char szSongName[20];
-	tModSampleHeader pSamples[31];
-	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
-	                           /// pattern count in file. Max 128.
-	UBYTE ubSongEndPos;
-	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
-	                         /// These list up to 128 pattern numbers
-	                         /// and the order they should be played in.
-	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
-	// MOD pattern/sample data follows
-} tModFileHeader;
 
 typedef struct AudChannel tChannelRegs;
 
@@ -279,7 +277,7 @@ static const UWORD mt_PeriodTables[][MOD_PERIOD_TABLE_LENGTH] = {
 	}
 };
 
-static UBYTE MasterVolTab[][65] = {
+static const UBYTE MasterVolTab[][65] = {
 	{
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -923,9 +921,9 @@ static volatile UBYTE mt_Enable = 0;
 
 static tChannelStatus mt_chan[4];
 static UWORD *mt_SampleStarts[31]; ///< Start address of each sample
-static tModFileHeader *mt_mod;
+static tPtplayerMod *mt_mod; ///< Currently played MOD.
 static ULONG mt_timerval; ///< Base interrupt frequency of CIA-B timer A used to advance the song. Equals 125*50Hz.
-static UBYTE *mt_MasterVolTab;
+static const UBYTE * mt_MasterVolTab;
 static UWORD mt_PatternPos;
 static UWORD mt_PBreakPos; ///< Pattern break pos
 static UBYTE mt_PosJumpFlag;
@@ -1060,12 +1058,13 @@ static void printVoices(const tModVoice *pVoices) {
 
 static inline UBYTE findPeriod(const UWORD *pPeriods, UWORD uwNote) {
 	// Find nearest period for a note value
-	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH; ++ubPeriodPos) {
+	for(UBYTE ubPeriodPos = 0; ubPeriodPos < MOD_PERIOD_TABLE_LENGTH - 1; ++ubPeriodPos) {
 		if (uwNote >= pPeriods[ubPeriodPos]) {
 			return ubPeriodPos;
 		}
 	}
-	return 0;
+
+	return MOD_PERIOD_TABLE_LENGTH - 1;
 }
 
 static void ptSongStep(void) {
@@ -1203,7 +1202,7 @@ static void mt_playvoice(
 		--uwSampleIdx;
 		// Read length, volume and repeat from sample info table
 		UWORD *pSampleStart = mt_SampleStarts[uwSampleIdx];
-		tModSampleHeader *pSampleDef = &mt_mod->pSamples[uwSampleIdx];
+		tPtplayerSampleHeader *pSampleDef = &mt_mod->pSampleHeaders[uwSampleIdx];
 		UWORD uwSampleLength = pSampleDef->uwLength;
 		if(!uwSampleLength) {
 			// Use the first two bytes from the first sample for empty samples
@@ -1215,7 +1214,8 @@ static void mt_playvoice(
 		pChannelData->n_reallength = uwSampleLength;
 
 		// Determine period table from fine-tune parameter
-		UBYTE ubFineTune = pSampleDef->ubFineTune; // d3
+		// TODO: sanitize this value to only have lower nibble set when loading MOD/samplepack
+		UBYTE ubFineTune = pSampleDef->ubFineTune & 0xF;
 		pChannelData->pPeriodTable = mt_PeriodTables[ubFineTune];
 		pChannelData->n_minusft = (ubFineTune >= 8);
 
@@ -1231,7 +1231,7 @@ static void mt_playvoice(
 			// Set repeat
 			pChannelData->n_looped = 1;
 			pChannelData->n_replen = pSampleDef->uwRepeatLength;
-			uwSampleLength = pSampleDef->uwRepeatLength + ubFineTune * 2;
+			uwSampleLength = pSampleDef->uwRepeatLength;
 			pSampleStart += pSampleDef->uwRepeatOffs;
 		}
 
@@ -1243,7 +1243,7 @@ static void mt_playvoice(
 	}
 
 	// inlined set_regs function here:
-	if(!pVoice->uwNote) {
+	if(!(pVoice->uwNote & 0xFFF)) {
 		checkmorefx(uwCmd, uwCmdArg, pChannelData, pChannelReg);
 	}
 	else if(uwMaskedCmdE == 0x0E50) {
@@ -1393,7 +1393,7 @@ static void intSetRep(volatile tCustom *pCustom) {
 	systemSetCiaInt(CIA_B, CIAICRB_TIMER_B, 0, 0);
 }
 
-// One-shot TimerB interrupt to set repeat samples after another 576 ticks.
+// One-shot TimerB interrupt to set repeat samples after another TIMERB_TICKS ticks.
 static void mt_TimerBsetrep(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
@@ -1417,7 +1417,7 @@ static void intDmaOn(volatile tCustom *pCustom) {
 	// pCustom->color[0] = 0x000;
 }
 
-// One-shot TimerB interrupt to enable audio DMA after 576 ticks.
+// One-shot TimerB interrupt to enable audio DMA after TIMERB_TICKS ticks.
 static void mt_TimerBdmaon(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	UNUSED_ARG REGARG(volatile void *pData, "a1")
@@ -1485,7 +1485,7 @@ static void mt_music(void) {
 		mt_Counter = 0;
 		if(mt_PattDelTime2 <= 0) {
 			// determine pointer to current pattern line
-			UBYTE *pPatternData = &((UBYTE*)mt_mod)[sizeof(tModFileHeader)];
+			UBYTE *pPatternData = mt_mod->pPatterns;
 			UBYTE *pArrangement = mt_mod->pArrangement;
 			UBYTE ubPatternIdx = pArrangement[mt_SongPos];
 			UBYTE *pCurrentPattern = &pPatternData[ubPatternIdx * 1024];
@@ -1583,8 +1583,8 @@ static void mt_reset(void) {
 	systemSetCiaCr(CIA_B, 0, CIACRA_LOAD | CIACRA_START); // load timer, start continuous
 #endif
 
-	// Load TimerB with 576 ticks for setting DMA and repeat
-	systemSetTimer(CIA_B, 1, 576);
+	// Load TimerB with TIMERB_TICKS ticks for setting DMA and repeat
+	systemSetTimer(CIA_B, 1, TIMERB_TICKS);
 
 	// Enable CIA B interrupts
 	g_pCustom->intena = INTF_SETCLR | INTF_EXTER;
@@ -1712,7 +1712,7 @@ void ptplayerLoadMod(
 	// Initialize new module.
 	// Reset speed to 6, tempo to 125 and start at given song position.
 	// Master volume is at 64 (maximum).
-	mt_mod = (tModFileHeader*)pMod->pData;
+	mt_mod = pMod;
 	logWrite(
 		"Song name: '%s', arrangement length: %hhu, end pos: %hhu\n",
 		mt_mod->szSongName, mt_mod->ubArrangementLength, mt_mod->ubSongEndPos
@@ -1726,34 +1726,19 @@ void ptplayerLoadMod(
 
 	// sample data location is given?
 	if(!pSampleData) {
-		// Get number of highest pattern
-		UBYTE ubLastPattern = 0;
-		for(UBYTE i = 0; i < 127; ++i) {
-			if(mt_mod->pArrangement[i] > ubLastPattern) {
-				ubLastPattern = mt_mod->pArrangement[i];
-			}
-		}
-		UBYTE ubPatternCount = ubLastPattern + 1;
-		logWrite("Pattern count: %hhu\n", ubPatternCount);
-
-		// now we can calculate the base address of the sample data
-		ULONG ulSampleOffs = (
-			sizeof(tModFileHeader) + ubPatternCount * MOD_PATTERN_LENGTH
-		);
-		pSampleData = (UWORD*)&pMod->pData[ulSampleOffs];
-		// FIXME: use as pointer for empty samples
+		pSampleData = pMod->pSamples;
 	}
+	logWrite("Loading sample data from: %p\n", pSampleData);
 
 	// Save start address of each sample
 	ULONG ulOffs = 0;
-	logWrite("Sample data starts at: %p\n", pSampleData);
 	for(UBYTE i = 0; i < 31; ++i) {
 		mt_SampleStarts[i] = &pSampleData[ulOffs];
-		if(mt_mod->pSamples[i].uwLength > 0) {
+		if(mt_mod->pSampleHeaders[i].uwLength > 0) {
 			logWrite(
 				"Sample %hhu name: '%.*s', word length: %hu, start: %p, repeat offs: %hu, repeat len:%hu\n",
-				i, 22, mt_mod->pSamples[i].szName, mt_mod->pSamples[i].uwLength,
-				mt_SampleStarts[i], mt_mod->pSamples[i].uwRepeatOffs, mt_mod->pSamples[i].uwRepeatLength
+				i, 22, mt_mod->pSampleHeaders[i].szName, mt_mod->pSampleHeaders[i].uwLength,
+				mt_SampleStarts[i], mt_mod->pSampleHeaders[i].uwRepeatOffs, mt_mod->pSampleHeaders[i].uwRepeatLength
 			);
 
 			// Make sure each sample starts with two 0-bytes
@@ -1761,7 +1746,7 @@ void ptplayerLoadMod(
 		}
 
 		// Go to next sample
-		ulOffs += mt_mod->pSamples[i].uwLength;
+		ulOffs += mt_mod->pSampleHeaders[i].uwLength;
 	};
 
 	mt_reset();
@@ -1780,6 +1765,8 @@ void ptplayerSetMusicChannelMask(UBYTE ChannelMask) {
 }
 
 void ptplayerSetMasterVolume(UBYTE ubMasterVolume) {
+	// TODO: expose define which would make this function calculate current volume
+	// table instead of toring 4KB of table data.
 	g_pCustom->intena = INTF_INTEN;
 	mt_MasterVolTab = MasterVolTab[ubMasterVolume];
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
@@ -1791,33 +1778,33 @@ static void mt_toneporta_nc(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	if(pChannelData->n_wantedperiod) {
-		UWORD uwNew;
+		WORD wNew;
 		if(pChannelData->n_period > pChannelData->n_wantedperiod) {
 			// tone porta up
-			uwNew = pChannelData->n_period - pChannelData->n_toneportspeed;
-			if(uwNew < pChannelData->n_wantedperiod) {
-				uwNew = pChannelData->n_wantedperiod;
+			wNew = pChannelData->n_period - pChannelData->n_toneportspeed;
+			if(wNew < pChannelData->n_wantedperiod) {
+				wNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
 			}
 		}
 		else {
 			// tone porta down
-			uwNew = pChannelData->n_period + pChannelData->n_toneportspeed;
-			if(uwNew > pChannelData->n_wantedperiod) {
-				uwNew = pChannelData->n_wantedperiod;
+			wNew = pChannelData->n_period + pChannelData->n_toneportspeed;
+			if(wNew > pChannelData->n_wantedperiod) {
+				wNew = pChannelData->n_wantedperiod;
 				pChannelData->n_wantedperiod = 0;
 			}
 		}
-		pChannelData->n_period = uwNew;
+		pChannelData->n_period = wNew;
 		if(pChannelData->n_gliss) {
 			// glissando: find nearest note for new period
 			const UWORD *pPeriodTable = pChannelData->pPeriodTable;
 			UWORD uwNoteOffs = 0;
 			UBYTE ubPeriodPos = findPeriod(pChannelData->pPeriodTable, uwNoteOffs);
 			pChannelData->n_noteoff = ubPeriodPos * 2;
-			uwNew = pPeriodTable[ubPeriodPos];
+			wNew = pPeriodTable[ubPeriodPos];
 		}
-		pChannelReg->ac_per = uwNew;
+		pChannelReg->ac_per = wNew;
 	}
 }
 
@@ -1912,7 +1899,7 @@ static void ptDoPortaDn(
 	UBYTE ubVal, tChannelStatus *pChannelData,
 	volatile tChannelRegs *pChannelReg
 ) {
-	UWORD uwNewPer = MIN(pChannelData->n_period - ubVal, 856);
+	UWORD uwNewPer = MIN(pChannelData->n_period + ubVal, 856);
 	pChannelData->n_period = uwNewPer;
 	pChannelReg->ac_per = uwNewPer;
 }
@@ -1978,7 +1965,7 @@ static void mt_volumeslide(
 	UBYTE ubVolUp = ubArgs >> 4;
 
 	BYTE bVol = pChannelData->n_volume;
-	if(!ubVolUp) {
+	if(ubVolUp) {
 		// Slide up, until 64
 		ptVolSlide(bVol + ubVolUp, pChannelData, pChannelReg);
 	}
@@ -2482,7 +2469,7 @@ static void set_period(
 		// );
 
 		pChannelReg->ac_ptr = pChannelData->n_start;
-		pChannelReg->ac_len = pChannelData->n_length;
+		pChannelReg->ac_len = pChannelData->n_reallength;
 		pChannelReg->ac_per = uwPeriod;
 		mt_dmaon |= pChannelData->uwDmaFlag;
 	}
@@ -2514,7 +2501,8 @@ static void set_sampleoffset(
 	else {
 		pChannelData->n_sampleoffset = ubArg;
 	}
-	UWORD uwLength = ubArg << 7;
+	// Offset is in 256s of bytes, length is in words
+	UWORD uwLength = ubArg * (256 / sizeof(UWORD));
 	if(uwLength < pChannelData->n_length) {
 		pChannelData->n_length -= uwLength;
 		pChannelData->n_start += uwLength;
@@ -2533,15 +2521,16 @@ static void set_toneporta(
 	// Find first period which is less or equal the note in d6
 	UWORD uwNote = pVoice->uwNote & 0xFFF;
 	UBYTE ubPeriodPos = findPeriod(mt_PeriodTables[0], uwNote);
-	if(ubPeriodPos) {
-		// One before for less/equal
-		--ubPeriodPos;
-	}
+	// Original ASM code does something similar, but without those lines it sounds accurate and not out-of-tune
+	// if(ubPeriodPos) {
+	// 	// One before for less/equal
+	// 	--ubPeriodPos;
+	// }
 
-	if(pChannelData->n_minusft && ubPeriodPos) {
-		// Negative fine tune? Then take the previous period.
-		--ubPeriodPos;
-	}
+	// if(pChannelData->n_minusft && ubPeriodPos) {
+	// 	// Negative fine tune? Then take the previous period.
+	// 	--ubPeriodPos;
+	// }
 
 	// Note offset in period table
 	pChannelData->n_noteoff = ubPeriodPos * 2;
@@ -2598,7 +2587,7 @@ void ptplayerProcess(void) {
 }
 
 const tModVoice *ptplayerGetCurrentVoices(void) {
-	UBYTE *pPatternData = &((UBYTE*)mt_mod)[sizeof(tModFileHeader)];
+	UBYTE *pPatternData = mt_mod->pPatterns;
 	UBYTE *pArrangement = mt_mod->pArrangement;
 	UBYTE ubPatternIdx = pArrangement[mt_SongPos];
 	UBYTE *pCurrentPattern = &pPatternData[ubPatternIdx * 1024];
@@ -2630,35 +2619,81 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	LONG lSize = fileGetSize(szPath);
 	if(lSize == -1) {
 		logWrite("ERR: File doesn't exist!\n");
-	}
-	else {
-		pMod = memAllocFast(sizeof(*pMod));
-		if(pMod) {
-			pMod->ulSize = lSize;
-			pMod->pData = memAllocChip(pMod->ulSize);
-			if(pMod->pData) {
-				tFile *pFileMod = fileOpen(szPath, "rb");
-				fileRead(pFileMod, pMod->pData, pMod->ulSize);
-				fileClose(pFileMod);
-			}
-			else {
-				logWrite("ERR: Couldn't allocate memory!");
-				memFree(pMod, sizeof(*pMod));
-				pMod = 0;
-			}
-		}
+		return 0;
 	}
 
-	// TODO: move some stuff from ptplayerLoadMod
+	pMod = memAllocFastClear(sizeof(*pMod));
+	if(!pMod) {
+		return 0;
+	}
+
+	// Read header
+	tFile *pFileMod = fileOpen(szPath, "rb");
+	fileRead(pFileMod, pMod->szSongName, sizeof(pMod->szSongName));
+	// TODO: read samples data field by field for portability
+	fileRead(pFileMod, pMod->pSampleHeaders, sizeof(pMod->pSampleHeaders));
+	fileRead(pFileMod, &pMod->ubArrangementLength, sizeof(pMod->ubArrangementLength));
+	fileRead(pFileMod, &pMod->ubSongEndPos, sizeof(pMod->ubSongEndPos));
+	fileRead(pFileMod, pMod->pArrangement, sizeof(pMod->pArrangement));
+	fileRead(pFileMod, pMod->pFileFormatTag, sizeof(pMod->pFileFormatTag));
+
+	// Get number of highest pattern
+	UBYTE ubLastPattern = 0;
+	for(UBYTE i = 0; i < 127; ++i) {
+		if(pMod->pArrangement[i] > ubLastPattern) {
+			ubLastPattern = pMod->pArrangement[i];
+		}
+	}
+	UBYTE ubPatternCount = ubLastPattern + 1;
+	logWrite("Pattern count: %hhu\n", ubPatternCount);
+
+	// Read pattern data
+	pMod->ulPatternsSize = (ubPatternCount * MOD_PATTERN_LENGTH);
+	pMod->pPatterns = memAllocFast(pMod->ulPatternsSize);
+	if(!pMod->pPatterns) {
+		logWrite("ERR: Couldn't allocate memory for pattern data!");
+		goto fail;
+	}
+	fileRead(pFileMod, pMod->pPatterns, pMod->ulPatternsSize);
+
+	// Read sample data
+	pMod->ulSamplesSize = lSize - fileGetPos(pFileMod);
+	if(pMod->ulSamplesSize) {
+		pMod->pSamples = memAllocChip(pMod->ulSamplesSize);
+		if(!pMod->pSamples) {
+			logWrite("ERR: Couldn't allocate memory for sample data!");
+			goto fail;
+		}
+		fileRead(pFileMod, pMod->pSamples, pMod->ulSamplesSize);
+	}
+	else {
+		logWrite("MOD has no samples - be sure to pass sample pack to ptplayer!\n");
+	}
+
+	fileClose(pFileMod);
 	logBlockEnd("ptplayerModCreate()");
 	return pMod;
+fail:
+	if(pMod->pPatterns) {
+		memFree(pMod->pPatterns, pMod->ulPatternsSize);
+	}
+	if(pMod->pSamples) {
+		memFree(pMod->pSamples, pMod->ulSamplesSize);
+	}
+	if(pMod) {
+		memFree(pMod, sizeof(*pMod));
+	}
+	return 0;
 }
 
 void ptplayerModDestroy(tPtplayerMod *pMod) {
 	if(s_pModCurr == pMod) {
 		ptplayerStop();
 	}
-	memFree(pMod->pData, pMod->ulSize);
+	memFree(pMod->pPatterns, pMod->ulPatternsSize);
+	if(pMod->pSamples) {
+		memFree(pMod->pSamples, pMod->ulSamplesSize);
+	}
 	memFree(pMod, sizeof(*pMod));
 }
 
@@ -2798,7 +2833,7 @@ void ptplayerSfxPlay(
 		mt_chan[3].n_freecnt = 0;
 
 		// get pattern pointer
-		UBYTE *pPatterns = (UBYTE*)mt_mod + sizeof(tModFileHeader);
+		UBYTE *pPatterns = mt_mod->pPatterns;
 
 		UBYTE ubSongPos = mt_SongPos;
 		UWORD uwPatternPos = mt_PatternPos;

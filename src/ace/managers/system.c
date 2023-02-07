@@ -51,6 +51,10 @@ typedef struct _tAceInterrupt {
 
 //---------------------------------------------------------------------- GLOBALS
 
+// Store VBR query code in .text so that it plays nice with instruction cache
+__attribute__((section("text")))
+static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
+
 // Saved regs
 static UWORD s_uwOsIntEna;
 static UWORD s_uwOsDmaCon;
@@ -448,8 +452,12 @@ static void systemFlushIo() {
 }
 
 void systemKill(const char *szMsg) {
-	printf("ERR: SYSKILL: '%s'", szMsg);
-	logWrite("ERR: SYSKILL: '%s'", szMsg);
+	logWrite("ERR: ACE SYSKILL: '%s'", szMsg);
+	if(DOSBase) {
+		BPTR lOut = Output();
+		Write(lOut, "ERR: ACE SYSKILL: ", sizeof("ERR: ACE SYSKILL: "));
+		Write(lOut, (char*)szMsg, strlen(szMsg));
+	}
 
 	if(GfxBase) {
 		CloseLibrary((struct Library *) GfxBase);
@@ -466,26 +474,28 @@ void systemCreate(void) {
 	SysBase = *((struct ExecBase**)4UL);
 #endif
 
-	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
-	if (!GfxBase) {
-		systemKill("Can't open Gfx Library!\n");
-		return;
-	}
-
 	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
 	if (!DOSBase) {
 		systemKill("Can't open DOS Library!\n");
 		return;
 	}
 
+	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
+	if (!GfxBase) {
+		systemKill("Can't open Gfx Library!\n");
+		return;
+	}
+
   // Determine original stack size
   s_pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
+#if defined(ACE_DEBUG)
 	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
 	if(s_pProcess->pr_CLI) {
 		ulStackSize = *(ULONG *)s_pProcess->pr_ReturnAddr;
 	}
 	logWrite("Stack size: %lu\n", ulStackSize);
+#endif
 	*pStackLower = SYSTEM_STACK_CANARY;
 
 	// Reserve all audio channels - apparantly this allows for int flag polling
@@ -508,8 +518,7 @@ void systemCreate(void) {
 	// get VBR location on 68010+ machine
 	// http://eab.abime.net/showthread.php?t=65430&page=3
 	if (SysBase->AttnFlags & AFF_68010) {
-		UWORD pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
-		s_pHwVectors = (tHwIntVector *)Supervisor((void *)pGetVbrCode);
+		s_pHwVectors = (tHwIntVector *)Supervisor((void *)s_pGetVbrCode);
 	}
 
 	// Finish disk activity
@@ -580,6 +589,7 @@ void systemDestroy(void) {
 void systemUnuse(void) {
 	--s_wSystemUses;
 	if(!s_wSystemUses) {
+		logWrite("Turning off the system...\n");
 		if(g_pCustom->dmaconr & DMAF_DISK) {
 			// Flush disk activity if it was used
 			// This 'if' is here because otherwise systemUnuse() called
@@ -668,6 +678,7 @@ void systemUnuse(void) {
 
 void systemUse(void) {
 	if(!s_wSystemUses) {
+		logWrite("Turning on the system...\n");
 		// Disable app interrupts/dma, keep display-related DMA
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;

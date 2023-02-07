@@ -55,7 +55,7 @@ void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel)
  */
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
 
-void paletteDump(UWORD *pPalette, FUBYTE fubColorCnt, char *szPath);
+void paletteDump(UWORD *pPalette, UBYTE fubColorCnt, char *szPath);
 
 #ifdef __cplusplus
 }

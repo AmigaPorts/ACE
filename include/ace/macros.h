@@ -67,6 +67,7 @@ static inline ULONG ror32(ULONG ulIn, UBYTE ubRot) {
 #define MAX(x,y) ((x)>(y)? (x): (y))
 #define CLAMP(x, min, max) ((x) < (min)? (min) : ((x) > (max) ? (max) : (x)))
 #define ROUND_TO_MULTIPLE(x, m) ((((x) + (m) - 1) / (m)) * (m))
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /**
  * Bit value macro - useful for setting & testing bits.

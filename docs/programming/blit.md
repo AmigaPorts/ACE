@@ -103,7 +103,7 @@ static tSimpleBufferManager *s_pMainBuffer;
 
 void gameGsCreate(void) {
   s_pView = viewCreate(0,
-    TAG_VIEW_GLOBAL_CLUT, 1,
+    TAG_VIEW_GLOBAL_PALETTE, 1,
   TAG_END);
 
   // Viewport for score bar - on top of screen
@@ -143,7 +143,7 @@ void gameGsCreate(void) {
 
   // Draw wall on the bottom of main VPort
   blitRect(
-    s_pScoreBuffer->pBack,
+    s_pMainBuffer->pBack,
     0, s_pVpMain->uwHeight - WALL_HEIGHT,
     s_pVpMain->uwWidth, WALL_HEIGHT, WALL_COLOR
   );
