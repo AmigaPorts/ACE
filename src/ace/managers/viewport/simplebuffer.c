@@ -6,11 +6,9 @@
 #include <proto/exec.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/extview.h>
-
+#include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #ifdef AMIGA
 
-// 0xDC is sufficient wait pos for EHB to be ready just before bitplane display.
-#define COPPER_WAIT_X 0xDC
 
 // Flags for internal usage.
 #define SIMPLEBUFFER_FLAG_X_SCROLLABLE 1
@@ -66,7 +64,7 @@ static void simpleBufferInitializeCopperList(
 			"Setting copperlist %p at offs %u\n",
 			pCopList->pBackBfr, pManager->uwCopperOffset
 		);
-		copSetWait(&pCmdList[0].sWait, COPPER_WAIT_X, (
+		copSetWait(&pCmdList[0].sWait, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBPP], (
 			pManager->sCommon.pVPort->uwOffsY +
 			pManager->sCommon.pVPort->pView->ubPosY -1
 		));
@@ -209,7 +207,8 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 			pCopList, simpleBufferGetRawCopperlistInstructionCount(pVPort->ubBPP) - 1,
 			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			COPPER_WAIT_X, pVPort->uwOffsY + pVPort->pView->ubPosY - 1
+			s_pCopperWaitXByBitplanes[pVPort->ubBPP],
+			 pVPort->uwOffsY + pVPort->pView->ubPosY - 1
 		);
 	}
 	else {
