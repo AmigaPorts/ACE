@@ -39,6 +39,7 @@ extern "C" {
 // TODO: Test and find the most optional values.
 // TODO: Figure out if this is more related to fetchmodes for AGA. 
 static s_pCopperWaitXByBitplanes[8] = {0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xC6, 0xC6};
+
 #ifdef __cplusplus
 }
 #endif
