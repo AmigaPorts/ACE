@@ -38,7 +38,7 @@ extern "C" {
 //  The original value of 0xe2-(7*4), worked for the AGA modes, which equates out to 0xC6, so I'll set it to that for 7bpp and 8bpp. 
 // TODO: Test and find the most optional values.
 // TODO: Figure out if this is more related to fetchmodes for AGA. 
-static s_pCopperWaitXByBitplanes[8] = {0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xC6, 0xC6};
+const static s_pCopperWaitXByBitplanes[8] = {0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xC6, 0xC6};
 
 #ifdef __cplusplus
 }
