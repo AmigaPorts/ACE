@@ -50,6 +50,12 @@ void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel)
 	}
 }
 
+void paletteDimAGA(ULONG *pSource, ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
+	for(UBYTE c = 0; c != ubColorCount; ++c) {
+		pDest[c] = paletteColorDimAGA(pSource[c],  ubLevel) ;
+	}
+}
+
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 	UBYTE r,g,b;
 
@@ -64,6 +70,22 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 
 	// Output
 	return (r << 8) | (g << 4) | b;
+}
+
+ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel) {
+	UBYTE r,g,b;
+
+	r = (ulFullColor >> 16) & 0xFF;
+	g = (ulFullColor >> 8) & 0xFF;
+	b = (ulFullColor)      & 0xFF;
+
+	// Dim color
+	r = ((r * ubLevel)/255) & 0xFF;
+	g = ((g * ubLevel)/255) & 0xFF;
+	b = ((b * ubLevel)/255) & 0xFF;
+
+	// Output
+	return (r << 16) | (g << 8) | b;
 }
 
 void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {

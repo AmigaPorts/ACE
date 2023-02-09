@@ -47,6 +47,7 @@ void paletteLoadFromMem(const UBYTE *pData , UWORD *pPalette, UBYTE ubMaxLength)
  *  @param ubLevel      Brightness level - 15 for no dim, 0 for total blackness.
  */
 void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel);
+void paletteDimAGA(ULONG *pSource, ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel);
 
 /**
  *  @brief Dims a single input color to given brightness level.
@@ -54,6 +55,7 @@ void paletteDim(UWORD *pSource, UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel)
  *  @param ubLevel      Brightness level - 15 for no dim, 0 for total blackness.
  */
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
+ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
 
 void paletteDump(UWORD *pPalette, UBYTE fubColorCnt, char *szPath);
 
