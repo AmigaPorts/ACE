@@ -34,4 +34,8 @@ static inline int vsprintf(char *restrict buffer, const char *restrict format, v
 	return vsnprintf(buffer, 65535, format, vlist);
 }
 
+int rename(const char *szSource, const char *szDestination);
+
+int remove(const char* szFilePath);
+
 #endif // _MINI_STD_STDIO_H_
