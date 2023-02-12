@@ -94,3 +94,11 @@ int feof(UNUSED_ARG FILE *pStream) {
 	// FIXME: implement
 	while(1) {}
 }
+
+int rename(const char *szSource, const char *szDestination) {
+	return Rename((CONST_STRPTR)szSource, (CONST_STRPTR)szDestination) != 0;
+}
+
+int remove(const char* szFilePath) {
+	return DeleteFile((CONST_STRPTR)szFilePath) != 0;
+}

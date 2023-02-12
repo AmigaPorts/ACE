@@ -4,8 +4,6 @@
 
 #include <ace/utils/file.h>
 #include <stdarg.h>
-#include <dos/dos.h>
-#include <clib/dos_protos.h>
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
 
@@ -173,4 +171,22 @@ UBYTE fileExists(const char *szPath) {
 	systemUnuse();
 
 	return isExisting;
+}
+
+UBYTE fileDelete(const char *szFilePath) {
+	systemUse();
+	systemReleaseBlitterToOs();
+	UBYTE isSuccess = remove(szFilePath);
+	systemGetBlitterFromOs();
+	systemUnuse();
+	return isSuccess;
+}
+
+UBYTE fileMove(const char *szSource, const char *szDest) {
+	systemUse();
+	systemReleaseBlitterToOs();
+	UBYTE isSuccess = rename(szSource, szDest);
+	systemGetBlitterFromOs();
+	systemUnuse();
+	return isSuccess;
 }
