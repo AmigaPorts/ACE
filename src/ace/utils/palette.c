@@ -76,7 +76,7 @@ void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
 		++ubBpp;
 	}
 	tBitMap *pBm = bitmapCreate(
-		ROUND_TO_MULTIPLE((1+8)*ubColorCnt + 1, 16), 10, ubBpp, BMF_CLEAR
+		SNAP_UP((1+8)*ubColorCnt + 1, 16), 10, ubBpp, BMF_CLEAR
 	);
 	for(UBYTE i = 0; i <= ubColorCnt; ++i) {
 		blitRect(pBm, 1+(8+1)*i, 1, 8, 8, i);
