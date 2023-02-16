@@ -92,7 +92,7 @@ long ftell(FILE *pStream) {
 
 int feof(UNUSED_ARG FILE *pStream) {
 	// FIXME: implement
-	while(1) {}
+	while(1) continue;
 }
 
 int rename(const char *szSource, const char *szDestination) {

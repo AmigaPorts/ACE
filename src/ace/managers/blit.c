@@ -102,7 +102,7 @@ UBYTE _blitCheck(
 #endif // defined(ACE_DEBUG)
 
 void blitWait(void) {
-	while(!blitIsIdle()) {}
+	while(!blitIsIdle()) continue;
 }
 
 /**

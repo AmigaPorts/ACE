@@ -115,5 +115,5 @@ void timerWaitUs(UWORD uwUsCnt) {
 	// timerGetPrec(): One tick equals: PAL - 0.40us, NTSC - 0.45us
 	ULONG ulStart = timerGetPrec();
 	UWORD uwTickCnt = uwUsCnt*2/5;
-	while(timerGetPrec() - ulStart < uwTickCnt) {}
+	while(timerGetPrec() - ulStart < uwTickCnt) continue;
 }
