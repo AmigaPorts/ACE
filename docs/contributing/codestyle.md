@@ -11,8 +11,8 @@ void someFn(void) {
 
   }
 
-  // the only case when both braces are in same line
-  while(someEvent()) {}
+  // the only case when control statement body is in same line
+  while(someEvent()) continue;
 
   do {
     // stuff

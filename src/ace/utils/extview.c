@@ -16,7 +16,7 @@ tView *viewCreate(void *pTags, ...) {
 
 	s_isPAL = systemIsPal();
 
-	
+
 	// Create view stub
 	tView *pView = memAllocFastClear(sizeof(tView));
 	logWrite("created %s viewport addr: %p\n", s_isPAL ? "PAL" : "NTSC", pView);
@@ -61,7 +61,7 @@ tView *viewCreate(void *pTags, ...) {
 		else{
 			pView->ubPosY = SCREEN_NTSC_YOFFSET + (SCREEN_NTSC_HEIGHT - uwHeight) / 2;
 		}
-		
+
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY != ubDefaultPosY) {
 		// Only Y pos is passed - calculate height as the remaining area of PAL display
@@ -72,7 +72,7 @@ tView *viewCreate(void *pTags, ...) {
 		else{
 			pView->uwHeight = SCREEN_NTSC_YOFFSET + SCREEN_NTSC_HEIGHT - ubPosY;
 		}
-		
+
 	}
 	else if(uwHeight == uwDefaultHeight && ubPosY == ubDefaultPosY) {
 		// All default - use PAL
@@ -163,10 +163,10 @@ void viewLoad(tView *pView) {
 	s_isPAL = systemIsPal();
 	UWORD uwWaitPos = (s_isPAL == 1) ? 300 : 260;
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < uwWaitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) continue;
 #if defined(AMIGA)
 	if(!pView) {
-		
+
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->bplcon3 = 0; // AGA fix
@@ -180,7 +180,7 @@ void viewLoad(tView *pView) {
 	else {
 #if defined(ACE_DEBUG)
 		{
-		
+
 			// Check if view size matches size of last vport
 			tVPort *pVp = pView->pFirstVPort;
 			while(pVp->pNext) {
@@ -214,7 +214,7 @@ void viewLoad(tView *pView) {
 	systemSetDmaBit(DMAB_RASTER, pView != 0);
 
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < uwWaitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) continue;
 
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
@@ -390,10 +390,10 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 
 	if(isExact) {
 		// If current beam pos is on or past end pos, wait for start of next frame
-		while (getRayPos().bfPosY >= uwEndPos) {}
+		while (getRayPos().bfPosY >= uwEndPos) continue;
 	}
 	// If current beam pos is before end pos, wait for it
-	while (getRayPos().bfPosY < uwEndPos) {}
+	while (getRayPos().bfPosY < uwEndPos) continue;
 #endif // AMIGA
 }
 

@@ -537,7 +537,7 @@ void systemCreate(void) {
 
 	// Disable all DMA - only once
 	// Wait for vbl before disabling sprite DMA
-	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 
 	// Unuse system so that it gets backed up once and then re-enable
@@ -556,7 +556,7 @@ void systemDestroy(void) {
 	g_pCustom->intreq = 0x7FFF;
 
 	// Wait for vbl before disabling sprite DMA
-	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 	g_pCustom->intreq = 0x7FFF;
 
@@ -652,7 +652,7 @@ void systemUnuse(void) {
 
 		// Game's bitplanes & copperlists are still used so don't disable them
 		// Wait for vbl before disabling sprite DMA
-		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 		g_pCustom->dmacon = s_uwOsMinDma;
 
 		// Save OS interrupt vectors and enable ACE's
@@ -683,7 +683,7 @@ void systemUse(void) {
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 		g_pCustom->dmacon = s_uwOsMinDma;
-		while(!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while(!(g_pCustom->intreqr & INTF_VERTB)) continue;
 
 		// Disable CIA interrupts
 		g_pCia[CIA_A]->icr = 0x7F;

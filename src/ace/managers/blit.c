@@ -105,7 +105,7 @@ UBYTE _blitCheck(
 }
 
 void blitWait(void) {
-	while(!blitIsIdle()) {}
+	while(!blitIsIdle()) continue;
 }
 
 /**
