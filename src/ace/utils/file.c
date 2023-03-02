@@ -22,6 +22,10 @@ LONG fileGetSize(const char *szPath) {
 	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
 	FILE *pFile = fopen(szPath, "r");
 	if(!pFile) {
+		logWrite("ERR: File doesn't exist");
+		logBlockEnd("fileGetSize()");
+		systemGetBlitterFromOs();
+		systemUnuse();
 		return -1;
 	}
 	fseek(pFile, 0, SEEK_END);
@@ -52,7 +56,6 @@ void fileClose(tFile *pFile) {
 	fclose(pFile);
 	systemGetBlitterFromOs();
 	systemUnuse();
-
 }
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {

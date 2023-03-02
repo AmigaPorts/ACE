@@ -11,6 +11,9 @@
 // Globals
 tLogManager g_sLogManager = {0};
 
+// This can't be created on stack because it's only 10k by default under ks1.3.
+static char s_szMsg[1024];
+
 #ifdef ACE_DEBUG_UAE
 
 	#if defined(BARTMAN_GCC)
@@ -69,28 +72,33 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 		return;
 	}
 
+	// Prevent triggering logging by other log msg (e.g. turn on OS msg with
+	// logging to file) due to static nature of the buffer.
+	++g_sLogManager.ubShutUp;
+
 	// Bartman's UAE logger appends newline to each print, so the message must
 	// be emitted in one print with indentation.
-	char szMsg[1024];
 	UWORD uwOffs = 0;
 	g_sLogManager.isBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
 		while (ubLogIndent--) {
-			szMsg[uwOffs++] = '\t';
+			s_szMsg[uwOffs++] = '\t';
 		}
 	}
 
 	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
 
-	vsprintf(&szMsg[uwOffs], szFormat, vaArgs);
-	uaeWrite(szMsg);
+	vsprintf(&s_szMsg[uwOffs], szFormat, vaArgs);
+	uaeWrite(s_szMsg);
 	if(isWritingToFileAllowed()) {
 		systemUse();
-		fileWrite(g_sLogManager.pFile, szMsg, strlen(szMsg));
+		fileWrite(g_sLogManager.pFile, s_szMsg, strlen(s_szMsg));
 		fileFlush(g_sLogManager.pFile);
 		systemUnuse();
 	}
+
+	--g_sLogManager.ubShutUp;
 }
 
 void _logClose(void) {
