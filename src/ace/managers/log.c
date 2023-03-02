@@ -69,6 +69,10 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 		return;
 	}
 
+	// Prevent triggering logging by other log msg (e.g. turn on OS msg with
+	// logging to file) due to static nature of the buffer.
+	++g_sLogManager.ubShutUp;
+
 	// Bartman's UAE logger appends newline to each print, so the message must
 	// be emitted in one print with indentation.
 	char szMsg[1024];
@@ -91,6 +95,8 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 		fileFlush(g_sLogManager.pFile);
 		systemUnuse();
 	}
+
+	--g_sLogManager.ubShutUp;
 }
 
 void _logClose(void) {
