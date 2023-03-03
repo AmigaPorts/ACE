@@ -43,18 +43,34 @@ set(
 	${HEADERS_ACE_MANAGERS} ${HEADERS_ACE_MANAGERS_VP} ${HEADERS_FIXMATH}
 )
 
+# External options
+set(ACE_LIBRARY_KIND OBJECT CACHE STRING "Build kind: static library or bunch of .o files. OBJECT allows for more link-time optimizations.")
+set(ACE_LIBRARY_KINDS "OBJECT" "STATIC")
+set_property(CACHE ACE_LIBRARY_KIND PROPERTY STRINGS ${ACE_LIBRARY_KINDS})
+set(ACE_DEBUG OFF CACHE BOOL "Build with ACE-specific debug/safety functionality.")
+set(ACE_DEBUG_UAE OFF CACHE BOOL "With ACE_DEBUG enabled, output log to UAE console.")
+message(STATUS "[ACE] ACE_LIBRARY_KIND: '${ACE_LIBRARY_KIND}'")
+message(STATUS "[ACE] ACE_DEBUG: '${ACE_DEBUG}'")
+message(STATUS "[ACE] ACE_DEBUG_UAE: '${ACE_DEBUG_UAE}'")
+
 # Linux/other UNIX get a lower-case binary name
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
-add_library(${TARGET_NAME} OBJECT ${SOURCES} ${HEADERS})
+
+add_library(${TARGET_NAME} ${ACE_LIBRARY_KIND} ${SOURCES} ${HEADERS})
 
 set(CMAKE_C_STANDARD 11)
 target_compile_definitions(${TARGET_NAME} PUBLIC AMIGA)
 target_compile_options(${TARGET_NAME} PRIVATE $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-Wall -Wextra>)
 target_compile_options(${TARGET_NAME} PUBLIC $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-fomit-frame-pointer>)
+
 if(ACE_DEBUG)
-	# Add ACE debugging features to release build
 	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG)
 endif()
+
+if(ACE_DEBUG_UAE)
+	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG_UAE)
+endif()
+
 if(M68K_COMPILER MATCHES "Bartman")
 	target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/bartman)
 	file(GLOB SOURCES_BARTMAN src/mini_std/*.c src/bartman/*.c src/bartman/*.s)
