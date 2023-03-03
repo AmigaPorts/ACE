@@ -4,7 +4,15 @@ project(ACE
 	DESCRIPTION "Amiga C Engine"
 	HOMEPAGE_URL "https://github.com/AmigaPorts/ACE"
 )
-set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE) # needed for helper fns
+
+# TODO: replace with PROJECT_IS_TOP_LEVEL with cmake 3.21+
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+	# needed for helper fns
+	set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE)
+else()
+	set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR})
+endif()
 
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
