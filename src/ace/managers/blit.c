@@ -25,9 +25,7 @@ void blitManagerDestroy(void) {
 	logBlockEnd("blitManagerDestroy");
 }
 
-/**
- * Checks if blit is allowable at coords at given source and destination
- */
+#if defined(ACE_DEBUG)
 UBYTE _blitCheck(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	const tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
@@ -101,6 +99,7 @@ UBYTE _blitCheck(
 
 	return 1;
 }
+#endif // defined(ACE_DEBUG)
 
 void blitWait(void) {
 	while(!blitIsIdle()) {}
@@ -398,7 +397,7 @@ UBYTE blitUnsafeCopyMask(
 			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
 		}
 	}
-	#endif // AMIGA
+#endif // AMIGA
 	return 1;
 }
 
@@ -420,24 +419,11 @@ UBYTE blitSafeCopyMask(
 	return blitUnsafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk);
 }
 
-/**
- * Fills rectangular area with selected color
- * A - rectangle mask, read disabled
- * C - destination read
- * D - destination write
- * Each bitplane has minterm depending if rectangular area should be filled or erased:
- * 	- fill: D = A+C
- * - erase: D = (~A)*C
- */
-UBYTE _blitRect(
+UBYTE blitUnsafeRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubColor, UWORD uwLine, const char *szFile
+	UBYTE ubColor
 ) {
-	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
-		return 0;
-	}
 #ifdef AMIGA
-
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulDstOffs;
@@ -469,7 +455,8 @@ UBYTE _blitRect(
 	ubPlane = 0;
 
 	do {
-		ubMinterm = (ubColor & 1) ? 0xFA : 0x0A;
+		// Assign minterm depending if bitplane area should be filled or erased
+		ubMinterm = (ubColor & 1) ? MINTERM_A_OR_C : MINTERM_NA_AND_C;
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!
@@ -482,6 +469,17 @@ UBYTE _blitRect(
 
 #endif // AMIGA
 	return 1;
+}
+
+UBYTE blitSafeRect(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubColor, UWORD uwLine, const char *szFile
+) {
+	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
+		return 0;
+	}
+
+	return blitUnsafeRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor);
 }
 
 void blitLine(
