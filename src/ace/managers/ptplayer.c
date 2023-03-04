@@ -34,17 +34,17 @@
 /**
  * @brief Minimum safe CIA timer ticks count after which Paula channel regs can
  * be set for next sample.
- * 
+ *
  * A raster line has a DMA slot for each audio channel. Depending on the current
  * AUDxPER of the audio channel some of these DMA slots are not used.
  * For example: when playing a very high frequency the DMA might have to read
  * a new sample every line. But when playing a very low frequency there might be
  * 10 or more raster lines without DMA activity for this channel.
- * 
+ *
  * The problem is that changes like DMA-on/off, or setting a new sample-pointer
  * in AUDxLC, are only recognized by Paula when the next sample data are read
  * from Chip-RAM.
- * 
+ *
  * So we have to be prepared for the worst case, which means that
  * up to 11 raster lines may pass without DMA-activity (reading a new sample),
  * when playing the lowest note from the lowest Protracker octave.
@@ -966,7 +966,7 @@ static void clearAudioDone(void) {
 #endif
 }
 
-static void setAudioDone(tChannelStatus *pChannelData) {
+static void setAudioDone(UNUSED_ARG tChannelStatus *pChannelData) {
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 	pChannelData->pDoneBit = 1;
 #endif
@@ -987,7 +987,7 @@ static UBYTE isChannelDone(tChannelStatus *pChannelData) {
 #endif
 }
 
-static void printVoices(const tModVoice *pVoices) {
+static void printVoices(UNUSED_ARG const tModVoice *pVoices) {
 #if defined(ACE_DEBUG_PTPLAYER)
 	typedef struct _tPeriodNote {
 		UWORD uwPeriod;
@@ -1310,7 +1310,7 @@ static void mt_checkfx(
 static void mt_sfxonly(void);
 static void mt_music(void);
 
-static void intPlay(volatile tCustom *pCustom) {
+static void intPlay(UNUSED_ARG volatile tCustom *pCustom) {
 	// it was a TA interrupt, do music when enabled
 	if(mt_Enable) {
 		mt_music();
@@ -1405,7 +1405,7 @@ static void mt_TimerBsetrep(
 #endif
 }
 
-static void intDmaOn(volatile tCustom *pCustom) {
+static void intDmaOn(UNUSED_ARG volatile tCustom *pCustom) {
 	// pCustom->color[0] = 0x00F;
 	// Restart timer to set repeat, enable DMA
 	systemSetCiaCr(CIA_B, 1, CIACRB_LOAD | CIACRB_RUNMODE | CIACRB_START);
