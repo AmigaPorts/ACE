@@ -43,14 +43,7 @@ extern "C" {
 #define MINTERM_COPY 0xC0
 
 /**
- * Blit manager struct
  */
-typedef struct {
-	FUBYTE fubDummy;
-} tBlitManager;
-
-extern tBlitManager g_sBlitManager;
-
 void blitManagerCreate(void);
 void blitManagerDestroy(void);
 

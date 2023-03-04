@@ -9,8 +9,6 @@
 #define BLIT_LINE_XOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define BLIT_LINE_ERASE ((NABC | NANBC | ANBC) | (SRCA | SRCC | DEST))
 
-tBlitManager g_sBlitManager = {0};
-
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 #if defined(AMIGA)
