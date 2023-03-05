@@ -5,13 +5,8 @@
 #ifndef _ACE_MANAGERS_SPRITE_H_
 #define _ACE_MANAGERS_SPRITE_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @file sprite.h
- *
  * @brief The basic sprite manager. Sets up the chained sprite list for each
  * of hardware sprite channels.
  *
@@ -22,6 +17,10 @@ extern "C" {
  * @todo Make allocations optional, allow using spriteInit(tSprite *) instead of Create/Destroy
  * @todo Allow using fragments of bitmap (specified Y offset) for sprite tiles support. How to solve metadata writing?
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <ace/utils/bitmap.h>
 #include <ace/utils/extview.h>
