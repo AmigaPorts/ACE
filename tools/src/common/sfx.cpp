@@ -4,6 +4,7 @@
 
 #include "sfx.h"
 #include <fstream>
+#include <algorithm>
 #include "logging.h"
 #include "endian.h"
 
