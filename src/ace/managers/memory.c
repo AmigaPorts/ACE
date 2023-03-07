@@ -214,11 +214,13 @@ void *_memAllocDbg(
 void _memFreeDbg(
 	void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile
 ) {
+	systemUse();
 	_memCheckIntegrity(uwLine, szFile);
 	ulSize = _memEntryDelete(pMem, ulSize, uwLine, szFile);
 	if(ulSize) {
 		_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
 	}
+	systemUnuse();
 }
 
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {

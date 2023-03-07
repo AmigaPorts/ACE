@@ -36,7 +36,7 @@ tMenuList *menuListCreate(
 
 	for(UBYTE i = 0; i < ubMaxCount; ++i) {
 		pList->pEntries[i].pBitMap = fontCreateTextBitMap(
-			200, pList->pFont->uwHeight
+			192, pList->pFont->uwHeight
 		);
 	}
 

@@ -68,6 +68,7 @@ static inline ULONG ror32(ULONG ulIn, UBYTE ubRot) {
 #define CLAMP(x, min, max) ((x) < (min)? (min) : ((x) > (max) ? (max) : (x)))
 #define SNAP_UP(x, m) ((((x) + (m) - 1) / (m)) * (m))
 #define SNAP_DOWN(x, m) (((x) / (m)) * (m))
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /**
  * Bit value macro - useful for setting & testing bits.

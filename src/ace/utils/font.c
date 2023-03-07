@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <proto/graphics.h> // Bartman's compiler needs this
+#include <ace/macros.h>
 #include <ace/managers/system.h>
 #include <ace/utils/font.h>
 #include <ace/utils/file.h>
@@ -200,7 +201,9 @@ tTextBitMap *fontCreateTextBitMapFromStr(const tFont *pFont, const char *szText)
 	tUwCoordYX sBounds = fontMeasureText(pFont, szText);
 	// If bitmap is too tight then blitter goes nuts with bltXdat caching when
 	// going into next line of blit
-	tTextBitMap *pTextBitMap = fontCreateTextBitMap(sBounds.uwX + 16, sBounds.uwY);
+	tTextBitMap *pTextBitMap = fontCreateTextBitMap(
+		(blockCountCeil(sBounds.uwX, 16) + 1) * 16, sBounds.uwY
+	);
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	logBlockEnd("fontCreateTextBitMapFromStr()");
 	return pTextBitMap;

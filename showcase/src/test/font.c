@@ -25,7 +25,7 @@ static UBYTE s_ubPage;
 void gsTestFontCreate(void) {
 	// Prepare view & viewport
 	s_pTestFontView = viewCreate(0,
-		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_VIEW_GLOBAL_PALETTE, 1,
 		TAG_DONE
 	);
 	s_pTestFontVPort = vPortCreate(0,
@@ -47,8 +47,8 @@ void gsTestFontCreate(void) {
 	// Load fonts
 	s_pFontUI = fontCreate("data/fonts/silkscreen.fnt");
 	s_pGlyph = 0;
-	s_pGlyph = fontCreateTextBitMap(100, s_pFontUI->uwHeight);
-	s_pGlyphCode = fontCreateTextBitMap(100, s_pFontUI->uwHeight);
+	s_pGlyph = fontCreateTextBitMap(96, s_pFontUI->uwHeight);
+	s_pGlyphCode = fontCreateTextBitMap(96, s_pFontUI->uwHeight);
 
 	// Loop vars
 	s_ubPage = 0;

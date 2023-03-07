@@ -49,6 +49,7 @@ In alphabetical order:
 - [AMIner](https://github.com/Last-Minute-Creations/AMIner)
 - [Atarenium Falcon](https://github.com/Last-Minute-Creations/AtareniumFalcon)
 - CastleHack
+- [Chaos Arena](https://github.com/Last-Minute-Creations/chaosArena)
 - [Impsbru](https://github.com/approxit/impsbru)
 - [OpenFire](https://github.com/Last-Minute-Creations/openFire)
 - [GermZ](https://github.com/Last-Minute-Creations/germz)

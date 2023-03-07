@@ -28,7 +28,7 @@ void gsMenuCreate(void) {
 	logBlockBegin("gsMenuCreate");
 	// Prepare view & viewport
 	s_pMenuView = viewCreate(0,
-		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_VIEW_GLOBAL_PALETTE, 1,
 		TAG_DONE
 	);
 	s_pMenuVPort = vPortCreate(0,

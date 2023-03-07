@@ -4,6 +4,7 @@
 
 #include "bitmap.h"
 #include <fstream>
+#include <algorithm>
 #include "../common/logging.h"
 #include "../common/lodepng.h"
 #include "../common/endian.h"

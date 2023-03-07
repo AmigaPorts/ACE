@@ -24,8 +24,9 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	}
 	else {
 		fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
-		logWrite("Color count: %u\n", ubPaletteLength);
-		fileRead(pFile, pPalette, sizeof(UWORD) * MIN(ubPaletteLength, ubMaxLength));
+		UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
+		logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
+		fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
 		fileClose(pFile);
 	}
 
@@ -68,13 +69,15 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 }
 
 void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
-	UBYTE fubLastColor = ubColorCnt -1;
-	UBYTE fubBpp = 0;
-	while(fubLastColor) {
-		fubLastColor >>= 1;
-		++fubBpp;
+	UBYTE ubLastColor = ubColorCnt -1;
+	UBYTE ubBpp = 0;
+	while(ubLastColor) {
+		ubLastColor >>= 1;
+		++ubBpp;
 	}
-	tBitMap *pBm = bitmapCreate((1+8)*ubColorCnt + 1, 10, fubBpp, BMF_CLEAR);
+	tBitMap *pBm = bitmapCreate(
+		SNAP_UP((1+8)*ubColorCnt + 1, 16), 10, ubBpp, BMF_CLEAR
+	);
 	for(UBYTE i = 0; i <= ubColorCnt; ++i) {
 		blitRect(pBm, 1+(8+1)*i, 1, 8, 8, i);
 	}

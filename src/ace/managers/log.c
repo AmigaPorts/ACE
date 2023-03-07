@@ -11,6 +11,9 @@
 // Globals
 tLogManager g_sLogManager = {0};
 
+// This can't be created on stack because it's only 10k by default under ks1.3.
+static char s_szMsg[1024];
+
 #ifdef ACE_DEBUG_UAE
 
 	#if defined(BARTMAN_GCC)
@@ -32,6 +35,10 @@ static inline void uaeWrite(const char *szMsg) {
 #endif
 
 // Functions
+
+static UBYTE isWritingToFileAllowed(void) {
+	return g_sLogManager.pFile && !g_sLogManager.wInterruptDepth;
+}
 
 /**
  * Base debug functions
@@ -65,26 +72,33 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 		return;
 	}
 
+	// Prevent triggering logging by other log msg (e.g. turn on OS msg with
+	// logging to file) due to static nature of the buffer.
+	++g_sLogManager.ubShutUp;
+
 	// Bartman's UAE logger appends newline to each print, so the message must
 	// be emitted in one print with indentation.
-	char szMsg[1024];
 	UWORD uwOffs = 0;
 	g_sLogManager.isBlockEmpty = 0;
 	if (!g_sLogManager.wasLastInline) {
 		UBYTE ubLogIndent = g_sLogManager.ubIndent;
 		while (ubLogIndent--) {
-			szMsg[uwOffs++] = '\t';
+			s_szMsg[uwOffs++] = '\t';
 		}
 	}
 
 	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
 
-	vsprintf(&szMsg[uwOffs], szFormat, vaArgs);
-	uaeWrite(szMsg);
-	if(g_sLogManager.pFile && !g_sLogManager.wIntDepth) {
-		fileWrite(g_sLogManager.pFile, szMsg, strlen(szMsg));
+	vsprintf(&s_szMsg[uwOffs], szFormat, vaArgs);
+	uaeWrite(s_szMsg);
+	if(isWritingToFileAllowed()) {
+		systemUse();
+		fileWrite(g_sLogManager.pFile, s_szMsg, strlen(s_szMsg));
 		fileFlush(g_sLogManager.pFile);
+		systemUnuse();
 	}
+
+	--g_sLogManager.ubShutUp;
 }
 
 void _logClose(void) {
@@ -104,7 +118,9 @@ void _logBlockBegin(char *szBlockName, ...) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
-	systemUse();
+	if(isWritingToFileAllowed()) {
+		systemUse();
+	}
 
 	logWrite("Block begin: ");
 	va_list vaArgs;
@@ -117,14 +133,20 @@ void _logBlockBegin(char *szBlockName, ...) {
 	logPushIndent();
 	g_sLogManager.isBlockEmpty = 1;
 	memCheckIntegrity();
-	systemUnuse();
+
+	if(isWritingToFileAllowed()) {
+		systemUnuse();
+	}
 }
 
 void _logBlockEnd(char *szBlockName) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
-	systemUse();
+	if(isWritingToFileAllowed()) {
+		systemUse();
+	}
+
 	memCheckIntegrity();
 	logPopIndent();
 	timerFormatPrec(
@@ -146,7 +168,9 @@ void _logBlockEnd(char *szBlockName) {
 		logWrite("Block end: %s, time: %s\n", szBlockName, g_sLogManager.szTimeBfr);
 	}
 	g_sLogManager.isBlockEmpty = 0;
-	systemUnuse();
+	if(isWritingToFileAllowed()) {
+		systemUnuse();
+	}
 }
 
 // Average logging
@@ -215,11 +239,11 @@ void _logAvgWrite(tAvg *pAvg) {
 }
 
 void _logPushInt(void) {
-	++g_sLogManager.wIntDepth;
+	++g_sLogManager.wInterruptDepth;
 }
 
 void _logPopInt(void) {
-	if(--g_sLogManager.wIntDepth < 0) {
+	if(--g_sLogManager.wInterruptDepth < 0) {
 		logWrite("ERR: INT DEPTH NEGATIVE!\n");
 	}
 }

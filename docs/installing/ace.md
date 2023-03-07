@@ -28,7 +28,7 @@ add_subdirectory(deps/ace)
 target_link_libraries(myGame ace)
 ```
 
-### Building standalone library
+### Building standalone ACE library
 
 ``` sh
 mkdir build && cd build
@@ -43,8 +43,11 @@ Some notes:
 - If you want to enable debug build (e.g. to have logs and better sanity checks), pass `-DCMAKE_BUILD_TYPE=Debug`.
 - If you really want to depend on standalone-built ACE library, be sure to take note of the commit you've built it from.
   ACE breaks things very often and it's almost certain that after some time you won't be able to build your game with latest ACE version.
+- By default, ACE is built as a bunch of .o files which are then linked to your executable using powers of CMake.
+  This allows for better link-time optimization.
+  If that's not what you need, add `-DACE_BUILD_KIND=STATIC` to produce `libace.a` for classic link scenarios.
 
-After building, you should have `libace.a` in your build folder.
+After building, you should have a bunch of `.o` files or `libace.a` in your build folder.
 Be sure to link it to your game.
 
 ## Building older versions using GNU Make

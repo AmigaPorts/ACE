@@ -51,6 +51,10 @@ typedef struct _tAceInterrupt {
 
 //---------------------------------------------------------------------- GLOBALS
 
+// Store VBR query code in .text so that it plays nice with instruction cache
+__attribute__((section("text")))
+static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
+
 // Saved regs
 static UWORD s_uwOsIntEna;
 static UWORD s_uwOsDmaCon;
@@ -449,8 +453,12 @@ static void systemFlushIo() {
 }
 
 void systemKill(const char *szMsg) {
-	printf("ERR: SYSKILL: '%s'", szMsg);
-	logWrite("ERR: SYSKILL: '%s'", szMsg);
+	logWrite("ERR: ACE SYSKILL: '%s'", szMsg);
+	if(DOSBase) {
+		BPTR lOut = Output();
+		Write(lOut, "ERR: ACE SYSKILL: ", sizeof("ERR: ACE SYSKILL: "));
+		Write(lOut, (char*)szMsg, strlen(szMsg));
+	}
 
 	if(GfxBase) {
 		CloseLibrary((struct Library *) GfxBase);
@@ -467,15 +475,15 @@ void systemCreate(void) {
 	SysBase = *((struct ExecBase**)4UL);
 #endif
 
-	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
-	if (!GfxBase) {
-		systemKill("Can't open Gfx Library!\n");
-		return;
-	}
-
 	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
 	if (!DOSBase) {
 		systemKill("Can't open DOS Library!\n");
+		return;
+	}
+
+	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
+	if (!GfxBase) {
+		systemKill("Can't open Gfx Library!\n");
 		return;
 	}
 
@@ -519,8 +527,7 @@ void systemCreate(void) {
 	// get VBR location on 68010+ machine
 	// http://eab.abime.net/showthread.php?t=65430&page=3
 	if (SysBase->AttnFlags & AFF_68010) {
-		UWORD pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
-		s_pHwVectors = (tHwIntVector *)Supervisor((void *)pGetVbrCode);
+		s_pHwVectors = (tHwIntVector *)Supervisor((void *)s_pGetVbrCode);
 	}
 
 	// Finish disk activity
@@ -589,6 +596,11 @@ void systemDestroy(void) {
 }
 
 void systemUnuse(void) {
+	if(s_wSystemUses == 1) {
+		// Do before counter is decreased, otherwise it'll fall into infinite loop!
+		logWrite("Turning off the system...\n");
+	}
+
 	--s_wSystemUses;
 	if(!s_wSystemUses) {
 		if(g_pCustom->dmaconr & DMAF_DISK) {
@@ -727,6 +739,11 @@ void systemUse(void) {
 		keyReset();
 	}
 	++s_wSystemUses;
+
+	if(s_wSystemUses == 1) {
+		// It should be "turned" but I prefer the message being consistent.
+		logWrite("Turning on the system...\n");
+	}
 }
 
 UBYTE systemIsUsed(void) {
@@ -768,14 +785,14 @@ void systemSetInt(
 
 	// Re-enable handler or disable it if 0 was passed
 	if(pHandler == 0) {
-		g_pCustom->dmacon = BV(ubIntNumber);
+		g_pCustom->intena = BV(ubIntNumber);
 		s_uwAceIntEna &= ~BV(ubIntNumber);
 	}
 	else {
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		g_pCustom->intena = DMAF_SETCLR | BV(ubIntNumber);
+		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
 	}
 }
 

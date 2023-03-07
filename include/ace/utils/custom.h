@@ -16,6 +16,7 @@ extern "C" {
 #include <hardware/custom.h> // Custom chip register addresses
 
 #define REGPTR volatile * const
+#define HARDWARE_SPRITE_CHANNEL_COUNT 8
 
 typedef struct Custom tCustom;
 
@@ -80,6 +81,34 @@ typedef struct _tCia {
 	volatile UBYTE crb;
 	volatile UBYTE _f[0xff];
 } tCia;
+
+/**
+ * @brief The hardware sprite header. Used to prepare values for sprxpos/sprxctl
+ * registers and sprite list headers.
+ */
+typedef union tHardwareSpriteHeader {
+	struct {
+		union {
+			struct {
+				UBYTE ubStartYLo; ///< Y start position, bits 7..0.
+				UBYTE ubStartXHi; ///< Upper bits of X start position, bits 8..1.
+			};
+			UWORD uwRawPos; ///< Sprite's "position" word.
+		};
+		union {
+			BITFIELD_STRUCT {
+				unsigned bfStopY: 8; ///< Y stop position, bits 7..0.
+				unsigned bfAttach: 1; ///< Set to 1 for attached sprites. Odd sprites only!
+				unsigned bfReserved: 4;
+				unsigned bfStartYHi: 1; ///< Y start position, bit 8.
+				unsigned bfStopYHi: 1; ///< Y stop position, bit 8.
+				unsigned bfStartXLo: 1; ///< X start position, bit 0.
+			};
+			UWORD uwRawCtl; ///< Sprite's "control" word.
+		};
+	};
+	ULONG ulRaw;
+} tHardwareSpriteHeader;
 
 /**
  * CIA defines.

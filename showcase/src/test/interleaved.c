@@ -16,7 +16,7 @@ static tSimpleBufferManager *s_pTestInterleavedBfr;
 
 void gsTestInterleavedCreate(void) {
 	s_pTestInterleavedView = viewCreate(0,
-		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_VIEW_GLOBAL_PALETTE, 1,
 		TAG_DONE
 	);
 	s_pTestInterleavedVPort = vPortCreate(0,
