@@ -22,10 +22,10 @@ This is recommended approach by [Last Minute Creations](https://github.com/Last-
 The latest versions of Bartman's plugin support Windows, Linux, and macOS for development.
 This setup works on each of these platforms.
 
-On Windows, you need either the MinGW GCC compiler toolchain (e.g. [7.3.0-i686-posix-dwarf](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/7.3.0/threads-posix/dwarf/i686-7.3.0-release-posix-dwarf-rt_v5-rev0.7z/download)) or MSVC.
-If using MinGW, make sure the directory containing the `mingw32-make` executable is in the system PATH.
-Also download and install [CMake](https://cmake.org) if you haven't already.
-Be sure its executable directory is in your PATH or you'll have to configure vscode extension with it manually.
+- On Windows, you need recent version of either the MinGW GCC compiler toolchain (e.g. [winlibs-x86_64-posix-seh-gcc-12.2.0-llvm-15.0.7-mingw-w64ucrt-10.0.0-r4](https://github.com/brechtsanders/winlibs_mingw/releases/download/12.2.0-15.0.7-10.0.0-ucrt-r4/winlibs-x86_64-posix-seh-gcc-12.2.0-llvm-15.0.7-mingw-w64ucrt-10.0.0-r4.7z)) or MSVC.
+- If using MinGW, make sure the directory containing the `mingw32-make` executable is in the system PATH (you can check it using `where mingw32-make` command in terminal window).
+- Also, download and install [CMake](https://cmake.org) if you don't have it already.
+- Be sure `cmake`'s executable directory is in your PATH or you'll have to configure vscode extension with it manually (again check using terminal command).
 
 On Linux or macOS, make sure you have CMake and Make installed and on the PATH.
 
@@ -80,8 +80,9 @@ To do so on a per-project basis:
     }
   ]
   ```
-  - Create empty CMakeLists.txt file **and restart the editor** so that it can discover that you're inside CMake-based project.
-    (You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".)
+
+Next, create empty CMakeLists.txt file in the base directory of your project **and restart the editor** so that it can discover that you're inside CMake-based project.
+(You can do this via command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) and typing "Reload Window".)
 
 After this you should be good to go.
 You can check in the `.vscode/cmake-kits.json` file, as long as you keep `AmigaCMakeCrossToolchains` in the same relative path to the project.
@@ -96,12 +97,12 @@ To mitigate this, you need to invoke `elf2hunk` bundled with Bartman's toolchain
 You may want to look at how its made in CMakeLists of some other projects (e.g. [GermZ](https://github.com/tehKaiN/germz)) to see how ACE is included and the debugger is invoked there.
 Also, you may want to further investigate `CMakeLists.txt` there and `.vscode/launch.json` to see how debugger is set up, as well as `.vscode/c_cpp_properties.json` to get auto-completion working.
 
-You may also want to set up the CMake kit once on your local machine instead of per-project basis.
+You may also want to set up the CMake compiler kit once on your local machine instead of per-project basis.
 To do so, follow the steps below:
 
 - From command palette, launch "CMake: Scan for Kits" command to generate the kit configurations for your user.
 - Access your user's CMake kit config by using the "CMake: Edit User-Local CMake Kits" command.
-- Insert the toolchain definitions above to tweak the json configuration file and make Bartman's toolchain available for all your projects.
+- Insert the toolchain definitions listed above to tweak the json configuration file and make Bartman's toolchain available for all your projects.
 
 ### Integrating ACE into Bartman's sample project
 
@@ -109,6 +110,42 @@ TBD
 
 The Bartman plugin comes with a command to bootstrap the makefile-based sample project.
 A dirty way is to copy src/inc files from ACE to the base project.
+
+### Setting up the debugger
+
+- By default, your project will be built in newly created `build` folder.
+  After first successful build, take note of the executable's name.
+- Inside `.vscode` folder, create `launch.json` file and paste in following contents, replacing following with your information:
+  - `myGame` with your executable name, without the extension
+  - `/path/to/kick13.rom` and `/path/to/kick31.rom` with valid paths to kickstart ROM files.
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "amiga",
+      "request": "launch",
+      "name": "Amiga 500",
+      "config": "A500",
+      "program": "${workspaceFolder}/build/myGame",
+      "kickstart": "/path/to/kick13.rom",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "amiga",
+      "request": "launch",
+      "name": "Amiga 1200",
+      "config": "A1200",
+      "program": "${workspaceFolder}/build/myGame",
+      "kickstart": "/path/to/kick31.rom",
+      "internalConsoleOptions": "openOnSessionStart"
+    }
+  ]
+}
+```
+
+You can also add `chipmem` and `fastmem` parameters to tweak the emulator's configuration.
 
 ## Bebbo's toolchain
 
