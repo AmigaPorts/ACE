@@ -62,12 +62,11 @@ if(GAME_DEBUG)
 endif()
 
 # ACE
-# If you cloned ACE into subdirectory, e.g. to `deps/ace` folder, use following:
 add_subdirectory(deps/ace ace)
 include_directories(deps/ace/include)
-# If you built standalone and installed ACE, use following:
-find_package(ace REQUIRED)
-include_directories(${ace_INCLUDE_DIRS})
+# If you built standalone and installed ACE, use following instead:
+# find_package(ace REQUIRED)
+# include_directories(${ace_INCLUDE_DIRS})
 
 # Force lower-case binary name for Linux etc.
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
