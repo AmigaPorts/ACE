@@ -1,6 +1,7 @@
 # Building ACE
 
-Historically, ACE could be built using make, ace-cli and CMake. Currently, only CMake is supported.
+Older versions of ACE could be built using make, ace-cli and CMake.
+Currently, only CMake is supported.
 
 ## Building using CMake
 

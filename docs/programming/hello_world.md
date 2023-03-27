@@ -100,7 +100,7 @@ cmake .. \
   -DCMAKE_TOOLCHAIN_FILE=/path/to/AmigaCMakeCrossToolchains/m68k.cmake \
   -DM68K_TOOLCHAIN_PATH=/path/to/toolchain \
   -DM68K_CPU=68000 -DM68K_FPU=soft -DACE_DEBUG=ON
-make
+cmake --build .
 ```
 
 Put your executable in UAE or real hardware and launch it.
