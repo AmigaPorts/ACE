@@ -33,12 +33,18 @@ Now for the VSCode setup:
 
 - In VSCode, install the `twxs.cmake`, `ms-vscode.cmake-tools`, `ms-vscode.cpptools` and `BartmanAbyss.amiga-debug` extensions.
 - Also in VSCode, open any directory which will contain your project.
-- Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo either next to your project folder or as a submodule inside of it.
-- Create a folder .vscode in your project
-- Create a file .vscode/cmake-kits.json with the following content.
-  Adapt the path to `AmigaCMakeCrossToolchains` to match where you cloned that repository.
+- Clone the [AmigaCMakeCrossToolchains](https://github.com/AmigaPorts/AmigaCMakeCrossToolchains) repo either as a submodule inside of it or anywhere outside project if you plan to use it globally.
 
-  ```json5
+You now need to set up the compiler for VSCode's CMake extension.
+To do so on a per-project basis:
+
+- Create a folder `.vscode` in your project
+- Create a file `.vscode/cmake-kits.json` with content as follows.
+  - The only reason there are two entries in configuration file is because PATH on Windows needs `;` as separator, and on Unix it's `:`. If you intend to build your project on a single platform, you can skip the unneeded entry.
+  - Adapt the path to `AmigaCMakeCrossToolchains` to match where you cloned that repository.
+  - You may want to replace `preferredGenerator` to `ninja` if you're more used to it.
+
+  ```json
   [
     {
       "name": "GCC Bartman m68k Win32",
@@ -47,7 +53,7 @@ Now for the VSCode setup:
         "PATH": "${command:amiga.bin-path}/opt/bin;${command:amiga.bin-path};${command:amiga.bin-path}/opt/m68k-amiga-elf/bin;${env:PATH}"
       },
       "preferredGenerator": {
-        "name": "Ninja"
+        "name": "MinGW Makefiles"
       },
       "cmakeSettings": {
         "M68K_CPU": "68000",
