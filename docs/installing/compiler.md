@@ -40,7 +40,6 @@ Now for the VSCode setup:
 
   ```json5
   [
-    // Sigh... the only reason we need two entries is because PATH on Windows needs ';' as separator, and on Unix it's ':'
     {
       "name": "GCC Bartman m68k Win32",
       "toolchainFile": "${workspaceFolder}/../AmigaCMakeCrossToolchains/m68k-bartman.cmake",
