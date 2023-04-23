@@ -15,7 +15,11 @@ public:
 
 	bool toSfx(const std::string &szPath) const;
 
-	bool isEmpty(void);
+	bool isEmpty(void) const;
+
+	void normalize(void);
+
+	void divideAmplitude(uint8_t ubDivisor);
 
 private:
 	uint32_t m_ulFreq;

@@ -6,10 +6,13 @@
 void printUsage(const std::string &szAppName) {
 	using fmt::print;
 	print("Usage:\n\t{} inPath [extraOpts]\n\n", szAppName);
-	print("inPath\t- path to supported file format\n");
-	print("extraOpts:\n");
-	print("\t-o outPath\tSpecify output file path. If ommited, it will perform default conversion\n");
-	print("\t-strict\tTreat warinings as errors (recommended)\n");
+	print("Required arguments:\n");
+	print("\tinPath      Path to supported file format\n");
+	print("Extra options:\n");
+	print("\t-o outPath  Specify output file path. If ommited, it will perform default conversion\n");
+	print("\t-div N      Specify amplitude division. Needed for some audio-mixing libraries\n");
+	print("\t-strict     Treat warinings as errors (recommended)\n");
+	print("\t-n          Normalize audio files\n");
 	print("Default conversions:\n");
 	print("\t.wav -> .sfx\n");
 	print("\t.sfx -> .wav\n");
@@ -25,11 +28,23 @@ int main(int lArgCount, const char *pArgs[]) {
 	}
 
 	bool isStrict = false;
+	bool isNormalizing = false;
+	uint8_t ubDivisor = 1;
 	std::string szInput(pArgs[1]);
 	std::string szOutput("");
 	for(auto ArgIndex = 2; ArgIndex < lArgCount; ++ArgIndex) {
 		if(pArgs[ArgIndex] == std::string("-o") && ArgIndex < lArgCount -1) {
 			szOutput = pArgs[++ArgIndex];
+		}
+		else if(pArgs[ArgIndex] == std::string("-div") && ArgIndex < lArgCount -1) {
+			ubDivisor = uint8_t(std::stoul(pArgs[++ArgIndex]));
+			if(ubDivisor == 0) {
+				nLog::error("Illegal divisor value: '{}'", ubDivisor);
+				return EXIT_FAILURE;
+			}
+		}
+		else if(pArgs[ArgIndex] == std::string("-n")) {
+			isNormalizing = true;
 		}
 		else if(pArgs[ArgIndex] == std::string("-strict")) {
 			isStrict = true;
@@ -74,6 +89,13 @@ int main(int lArgCount, const char *pArgs[]) {
 	else {
 		nLog::error("Input file type not supported: {}", szInExt);
 		return EXIT_FAILURE;
+	}
+
+	if(isNormalizing) {
+		In.normalize();
+	}
+	if(ubDivisor != 1) {
+		In.divideAmplitude(ubDivisor);
 	}
 
 	// Save to output
