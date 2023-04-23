@@ -102,3 +102,13 @@ void tSfx::divideAmplitude(uint8_t ubDivisor)
 		Sample /= ubDivisor;
 	}
 }
+
+bool tSfx::isFittingMaxAmplitude(int8_t bMaxAmplitude) const
+{
+	for(auto &Sample: m_vData) {
+		if(Sample > bMaxAmplitude) {
+			return false;
+		}
+	}
+	return true;
+}

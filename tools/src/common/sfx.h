@@ -21,6 +21,8 @@ public:
 
 	void divideAmplitude(uint8_t ubDivisor);
 
+	bool isFittingMaxAmplitude(int8_t bMaxAmplitude) const;
+
 private:
 	uint32_t m_ulFreq;
 	std::vector<int8_t> m_vData;

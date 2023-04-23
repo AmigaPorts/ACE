@@ -10,7 +10,8 @@ void printUsage(const std::string &szAppName) {
 	print("\tinPath      Path to supported file format\n");
 	print("Extra options:\n");
 	print("\t-o outPath  Specify output file path. If ommited, it will perform default conversion\n");
-	print("\t-div N      Specify amplitude division. Needed for some audio-mixing libraries\n");
+	print("\t-d N        Specify amplitude division. Useful for some audio-mixing libraries\n");
+	print("\t-fd N       Ensure that sound effect fits max amplitude divided by specified factor. Useful for some audio-mixing libraries\n");
 	print("\t-strict     Treat warinings as errors (recommended)\n");
 	print("\t-n          Normalize audio files\n");
 	print("Default conversions:\n");
@@ -30,16 +31,24 @@ int main(int lArgCount, const char *pArgs[]) {
 	bool isStrict = false;
 	bool isNormalizing = false;
 	uint8_t ubDivisor = 1;
+	uint8_t ubFitDivisor = 1;
 	std::string szInput(pArgs[1]);
 	std::string szOutput("");
 	for(auto ArgIndex = 2; ArgIndex < lArgCount; ++ArgIndex) {
 		if(pArgs[ArgIndex] == std::string("-o") && ArgIndex < lArgCount -1) {
 			szOutput = pArgs[++ArgIndex];
 		}
-		else if(pArgs[ArgIndex] == std::string("-div") && ArgIndex < lArgCount -1) {
+		else if(pArgs[ArgIndex] == std::string("-d") && ArgIndex < lArgCount -1) {
 			ubDivisor = uint8_t(std::stoul(pArgs[++ArgIndex]));
 			if(ubDivisor == 0) {
-				nLog::error("Illegal divisor value: '{}'", ubDivisor);
+				nLog::error("Illegal -d value: '{}'", ubDivisor);
+				return EXIT_FAILURE;
+			}
+		}
+		else if(pArgs[ArgIndex] == std::string("-fd") && ArgIndex < lArgCount -1) {
+			ubFitDivisor = uint8_t(std::stoul(pArgs[++ArgIndex]));
+			if(ubFitDivisor == 0) {
+				nLog::error("Illegal -fd value: '{}'", ubFitDivisor);
 				return EXIT_FAILURE;
 			}
 		}
@@ -96,6 +105,14 @@ int main(int lArgCount, const char *pArgs[]) {
 	}
 	if(ubDivisor != 1) {
 		In.divideAmplitude(ubDivisor);
+	}
+
+	int8_t bMaxAmplitude = std::numeric_limits<int8_t>::max() / ubFitDivisor;
+	if(!In.isFittingMaxAmplitude(bMaxAmplitude)) {
+		nLog::error(
+			"Sound effect doesn't fit the amplitude divisor {}, max amplitude: {}",
+			ubFitDivisor, bMaxAmplitude
+		);
 	}
 
 	// Save to output
