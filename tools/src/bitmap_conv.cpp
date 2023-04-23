@@ -43,31 +43,31 @@ int main(int lArgCount, const char *pArgs[])
 	bool isMaskColor = false;
 	tRgb MaskColor;
 
-	for(uint8_t i = ubMandatoryArgCnt + 1; i < lArgCount; ++i) {
-		if(pArgs[i] == std::string("-o")) {
-			auto &Value = pArgs[++i];
+	for(auto ArgIndex = ubMandatoryArgCnt + 1; ArgIndex < lArgCount; ++ArgIndex) {
+		if(pArgs[ArgIndex] == std::string("-o")) {
+			auto &Value = pArgs[++ArgIndex];
 			szOutput = Value;
 		}
-		else if(pArgs[i] == std::string("-i")) {
+		else if(pArgs[ArgIndex] == std::string("-i")) {
 			isWriteInterleaved = true;
 		}
-		else if(pArgs[i] == std::string("-mc") && i < lArgCount - 1) {
+		else if(pArgs[ArgIndex] == std::string("-mc") && ArgIndex < lArgCount - 1) {
 			isMaskColor = true;
-			auto &Value = pArgs[++i];
+			auto &Value = pArgs[++ArgIndex];
 			MaskColor = tRgb(Value);
 		}
-		else if(pArgs[i] == std::string("-mf") && i < lArgCount - 1) {
-			auto &Value = pArgs[++i];
+		else if(pArgs[ArgIndex] == std::string("-mf") && ArgIndex < lArgCount - 1) {
+			auto &Value = pArgs[++ArgIndex];
 			szMask = Value;
 		}
-		else if(pArgs[i] == std::string("-nmo")) {
+		else if(pArgs[ArgIndex] == std::string("-nmo")) {
 			isEnabledOutputMask = false;
 		}
-		else if(pArgs[i] == std::string("-no")) {
+		else if(pArgs[ArgIndex] == std::string("-no")) {
 			isEnabledOutput = false;
 		}
 		else {
-			nLog::error("Unknown arg or missing value: '{}'", pArgs[i]);
+			nLog::error("Unknown arg or missing value: '{}'", pArgs[ArgIndex]);
 			printUsage(pArgs[0]);
 			return EXIT_FAILURE;
 		}

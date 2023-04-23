@@ -19,15 +19,15 @@ int main(int lArgCount, const char *pArgs[])
 	std::string szSamplePackPath;
 	bool isStripSamples = true;
 
-	for(int i = 0; i < lArgCount; ++i) {
-		if(pArgs[i] == std::string("-i")) {
-			vModsIn.push_back(std::make_shared<tMod>(pArgs[++i]));
+	for(auto ArgIndex = 0; ArgIndex < lArgCount; ++ArgIndex) {
+		if(pArgs[ArgIndex] == std::string("-i")) {
+			vModsIn.push_back(std::make_shared<tMod>(pArgs[++ArgIndex]));
 		}
-		else if(pArgs[i] == std::string("-o")) {
-			vOutNames.push_back(pArgs[++i]);
+		else if(pArgs[ArgIndex] == std::string("-o")) {
+			vOutNames.push_back(pArgs[++ArgIndex]);
 		}
-		else if(pArgs[i] == std::string("-sp")) {
-			szSamplePackPath = pArgs[++i];
+		else if(pArgs[ArgIndex] == std::string("-sp")) {
+			szSamplePackPath = pArgs[++ArgIndex];
 		}
 	}
 
@@ -89,7 +89,7 @@ int main(int lArgCount, const char *pArgs[])
 						return isSame;
 					}
 				);
-				ubIdxNew = std::distance(vMergedSamples.begin(), SampleNew);
+				ubIdxNew = uint8_t(std::distance(vMergedSamples.begin(), SampleNew));
 			}
 			vReorder.push_back(ubIdxNew);
 		}

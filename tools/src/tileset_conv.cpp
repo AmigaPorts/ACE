@@ -43,30 +43,30 @@ tConfig::tConfig(const std::vector<const char*> &vArgs)
 	m_isVaryingHeight = false;
 	m_isHeightOverride = false;
 
-	for(uint8_t i = 4; i < ArgCount; ++i) {
-		if(vArgs[i] == std::string("-i")) {
+	for(auto ArgIndex = 4; ArgIndex < ArgCount; ++ArgIndex) {
+		if(vArgs[ArgIndex] == std::string("-i")) {
 			m_isInterleaved = true;
 		}
-		else if(vArgs[i] == std::string("-vh")) {
+		else if(vArgs[ArgIndex] == std::string("-vh")) {
 			fmt::print("VARIABLE HEIGHT ON\n\n\n\n");
 			m_isVaryingHeight = true;
 		}
-		else if(vArgs[i] == std::string("-plt") && i < ArgCount - 1) {
-			++i;
-			m_szPalettePath = vArgs[i];
+		else if(vArgs[ArgIndex] == std::string("-plt") && ArgIndex < ArgCount - 1) {
+			++ArgIndex;
+			m_szPalettePath = vArgs[ArgIndex];
 		}
-		else if(vArgs[i] == std::string("-cols") && i < ArgCount - 1) {
-			++i;
-			if(!nParse::toInt32(vArgs[i], "-cols", m_lColumns)) {
+		else if(vArgs[ArgIndex] == std::string("-cols") && ArgIndex < ArgCount - 1) {
+			++ArgIndex;
+			if(!nParse::toInt32(vArgs[ArgIndex], "-cols", m_lColumns)) {
 				throw std::runtime_error(nullptr); // error message inside parsing fn
 			}
 			if(m_lColumns <= 0) {
 				throw std::runtime_error("-cols value must be positive");
 			}
 		}
-		else if(vArgs[i] == std::string("-h") && i < ArgCount - 1) {
-			++i;
-			if(!nParse::toInt32(vArgs[i], "-h", m_lTileHeight)) {
+		else if(vArgs[ArgIndex] == std::string("-h") && ArgIndex < ArgCount - 1) {
+			++ArgIndex;
+			if(!nParse::toInt32(vArgs[ArgIndex], "-h", m_lTileHeight)) {
 				throw std::runtime_error(nullptr);
 			}
 			if(m_lTileHeight <= 0) {
@@ -199,8 +199,8 @@ static void saveTiles(
 		std::optional<tChunkyBitmap> Out;
 		if(Config.m_lColumns != 1) {
 			Out = std::make_optional<tChunkyBitmap>(
-				Config.m_lTileSize * Config.m_lColumns,
-				roundToMultipleOf(TileCount, Config.m_lColumns) * Config.m_lTileHeight,
+				uint16_t(Config.m_lTileSize * Config.m_lColumns),
+				uint16_t(snapUp(TileCount, Config.m_lColumns) * Config.m_lTileHeight),
 				Bg
 			);
 
@@ -228,7 +228,7 @@ static void saveTiles(
 				}
 			}
 			else {
-				uwTilesetHeight = Config.m_lTileHeight * TileCount;
+				uwTilesetHeight = uint16_t(Config.m_lTileHeight * TileCount);
 			}
 
 			Out = std::make_optional<tChunkyBitmap>(

@@ -15,7 +15,6 @@ void printUsage(const std::string &szAppName) {
 	print("\t.sfx -> .wav\n");
 }
 
-
 int main(int lArgCount, const char *pArgs[]) {
 	uint8_t ubMandatoryArgCnt = 2;
 
@@ -28,15 +27,15 @@ int main(int lArgCount, const char *pArgs[]) {
 	bool isStrict = false;
 	std::string szInput(pArgs[1]);
 	std::string szOutput("");
-	for(uint32_t i = 2; i < lArgCount; ++i) {
-		if(pArgs[i] == std::string("-o") && i < lArgCount -1) {
-			szOutput = pArgs[++i];
+	for(auto ArgIndex = 2; ArgIndex < lArgCount; ++ArgIndex) {
+		if(pArgs[ArgIndex] == std::string("-o") && ArgIndex < lArgCount -1) {
+			szOutput = pArgs[++ArgIndex];
 		}
-		else if(pArgs[i] == std::string("-strict")) {
+		else if(pArgs[ArgIndex] == std::string("-strict")) {
 			isStrict = true;
 		}
 		else {
-			nLog::error("Unknown arg or missing value: '{}'", pArgs[i]);
+			nLog::error("Unknown arg or missing value: '{}'", pArgs[ArgIndex]);
 			printUsage(pArgs[0]);
 			return EXIT_FAILURE;
 		}
