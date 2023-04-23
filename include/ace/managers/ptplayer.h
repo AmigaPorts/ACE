@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Protracker V2.3B Playroutine Version 6.2
-// Original written in assembly by Frank Wille in 2013, 2016-2022.
+// Protracker V2.3B Playroutine Version 6.3
+// Original written in assembly by Frank Wille in 2013, 2016-2023.
 // Rewritten for ACE usage to C.
 
 #ifndef _ACE_MANAGERS_PTPLAYER_H_
