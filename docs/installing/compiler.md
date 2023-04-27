@@ -42,7 +42,7 @@ To do so on a per-project basis:
 - Create a file `.vscode/cmake-kits.json` with content as follows.
   - The only reason there are two entries in configuration file is because PATH on Windows needs `;` as separator, and on Unix it's `:`. If you intend to build your project on a single platform, you can skip the unneeded entry.
   - Adapt the path to `AmigaCMakeCrossToolchains` to match where you cloned that repository.
-  - You may want to replace `preferredGenerator` to `ninja` if you're more used to it.
+  - Note that this configuration assumes that you have MinGW toolchain installed. You may want to replace `preferredGenerator` with `ninja` if you run into problems with it, use non-GCC compiler for native programs or you want faster building times. In this case, download Ninja from [its releases page](https://github.com/ninja-build/ninja/releases), point your system PATH to its directory and restart vscode before proceeding.
 
   ```json
   [
