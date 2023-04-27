@@ -780,19 +780,23 @@ UBYTE systemBlitterIsUsed(void) {
 void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
 ) {
-	// Disable ACE handler during data swap to ensure atomic op
-	s_pAceInterrupts[ubIntNumber].pHandler = 0;
-
-	// Re-enable handler or disable it if 0 was passed
-	if(pHandler == 0) {
+	// Disable interrupt during data swap to not get stuck inside ACE's ISR
+	if(!s_wSystemUses) {
 		g_pCustom->intena = BV(ubIntNumber);
+	}
+
+	// Disable handler or re-enable it if 0 was passed
+	if(pHandler == 0) {
+		s_pAceInterrupts[ubIntNumber].pHandler = 0;
 		s_uwAceIntEna &= ~BV(ubIntNumber);
 	}
 	else {
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		if(!s_wSystemUses) {
+			g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		}
 	}
 }
 
