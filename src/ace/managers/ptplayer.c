@@ -2845,9 +2845,9 @@ void ptplayerModDestroy(tPtplayerMod *pMod) {
 
 //-------------------------------------------------------------------------- SFX
 
-tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
+tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 	systemUse();
-	logBlockBegin("ptplayerSfxCreateFromFile(szPath: '%s')", szPath);
+	logBlockBegin("ptplayerSfxCreateFromFile(szPath: '%s', isFast: %hhu)", szPath, isFast);
 	tFile *pFileSfx = fileOpen(szPath, "rb");
 	tPtplayerSfx *pSfx = 0;
 	if(!pFileSfx) {
@@ -2868,8 +2868,9 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath) {
 		UWORD uwSampleRateHz;
 		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
 		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
+		logWrite("Length: %lu, sample rate: %hu, period: %hu\n", ulByteSize, uwSampleRateHz, pSfx->uwPeriod);
 
-		pSfx->pData = memAllocChip(ulByteSize);
+		pSfx->pData = isFast ? memAllocFast(ulByteSize) : memAllocChip(ulByteSize);
 		if(!pSfx->pData) {
 			goto fail;
 		}
@@ -2970,6 +2971,9 @@ void ptplayerSfxStopOnChannel(UBYTE ubChannel) {
 void ptplayerSfxPlayLooped(
 	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
 ) {
+	if(memType(pSfx->pData) == MEMF_FAST) {
+		logWrite("ERR: ptplayer only supports samples located in CHIP mem\n");
+	}
 	g_pCustom->intena = INTF_INTEN;
 	tChannelStatus *pChannel = &mt_chan[ubChannel];
 	channelSetSfx(pChannel, pSfx, ubVolume, SFX_PRIORITY_LOOPED);
@@ -2979,6 +2983,9 @@ void ptplayerSfxPlayLooped(
 void ptplayerSfxPlay(
 	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
 ) {
+	if(memType(pSfx->pData) == MEMF_FAST) {
+		logWrite("ERR: ptplayer only supports samples located in CHIP mem\n");
+	}
 	g_pCustom->intena = INTF_INTEN;
 	if(ubChannel != PTPLAYER_SFX_CHANNEL_ANY) {
 		// Use fixed channel for effect

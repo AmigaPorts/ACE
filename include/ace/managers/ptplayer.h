@@ -204,18 +204,20 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume);
 
 /**
  * @brief Loads SFX from given file.
- * Note that this function sets sfx period based on currently set PAL/NTSC video
- * mode. If you plan to change it after loading sfx, be sure to adjust
+ * Note that this function sets SFX period based on currently set PAL/NTSC video
+ * mode. If you plan to change it after loading SFX, be sure to adjust
  * the period value for new mode.
  * @note This function may use OS.
  *
  * @param szPath Path to .sfx file.
+ * @param isFast Set to 1 if you wish to load SFX to FAST memory.
+ * Useful for software-based audio-mixing, unusable with ptplayer.
  * @return Newly loaded SFX.
  *
  * @see ptplayerSfxDestroy()
  * @see ptplayerSfxPlay()
  */
-tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath);
+tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast);
 
 /**
  * @brief Destroys given SFX, freeing its resources to OS.
@@ -237,7 +239,7 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
  * The chosen channel is blocked for music until the effect has completely
  * been replayed.
  *
- * @param pSfx Sfx sample to be played.
+ * @param pSfx SFX sample to be played. Must be allocated in CHIP memory.
  * @param bChannel Selected replay channel (0..3), PTPLAYER_SFX_CHANNEL_ANY
  * selects best channel.
  * @param ubVolume Playback volume 0..64, unaffected by the song's master volume.
@@ -254,7 +256,7 @@ void ptplayerSfxPlay(
 /**
  * @brief Request playing of a looped external sound effect, on a fixed channel.
  *
- * @param pSfx Sfx sample to be played.
+ * @param pSfx Sfx sample to be played. Must be allocated in CHIP memory.
  * @param ubChannel Selected replay channel (0..3).
  * @param ubVolume Playback volume 0..64, unaffected by the song's master volume.
  *
