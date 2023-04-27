@@ -15,7 +15,7 @@ git clone https://github.com/AmigaPorts/AmigaCMakeCrossToolchains
 ```
 
 Notably, this toolchain file allows you to set `M68K_CPU` and `M68K_FPU` variables to your liking, allowing you to optimize code for FPU and/or specific CPU version.
-By default, for most comatibility, 68000 and soft-FPU is used.
+By default, for most compatibility, 68000 and soft-FPU is used.
 
 ### Using ACE as submodule dependency in your project
 
