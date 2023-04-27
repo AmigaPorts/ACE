@@ -1,6 +1,5 @@
 # Building ACE
 
-Older versions of ACE could be built using make, ace-cli and CMake.
 Currently, only CMake is supported.
 
 ## Building using CMake
@@ -58,25 +57,3 @@ Some notes:
 
 After building, you should have a bunch of `.o` files or `libace.a` in your build folder.
 Be sure to link it to your game.
-
-## Building older versions using GNU Make
-
-The following will build `.o` files:
-
-``` sh
-cd path/to/ace
-make all [OPTIONS]
-```
-
-You can build ace by passing several additional options using `OPTION=VALUE`
-syntax:
-
-- `ACE_CC` - specify compiler. Currently, supported is `vc` (VBCC) and
-  `m68k-amigaos-gcc` (Bebbo's GCC).
-- `TARGET` - enable or disable ACE's debug features. Set to `debug` or `release`.
-
-## Building older versions using ACE CLI
-
-@approxit has made his own [simple build tool](https://github.com/approxit/ace-cli/).
-To use it, you must have Python installed.
-Refer to further instructions on the project's repository.
