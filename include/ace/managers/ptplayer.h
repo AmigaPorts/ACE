@@ -156,11 +156,11 @@ void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
 void ptplayerSetMasterVolume(UBYTE ubMasterVolume);
 
 /**
- * @brief Define which music channels are muted. Set bit 0 for channel 0, etc.
+ * @brief Define which channels are used for the player. Set bit 0 for channel 0, etc.
  *
- * @param ubChannelMask Bit mask of music channels to be muted. Uses bits 0..3.
+ * @param ubChannelMask Bit mask of music channels to be used. Uses bits 0..3.
  */
-void ptplayerMuteMusicChannels(UBYTE ubChannelMask);
+void ptplayerSetChannelsForPlayer(UBYTE ubChannelMask);
 
 /**
  * @brief Enables or disables music playback.

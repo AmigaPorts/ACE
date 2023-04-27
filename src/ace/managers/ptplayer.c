@@ -18,7 +18,8 @@
 
 //----------------------------------------------------------------------- CONFIG
 
-// If set, uses VBL interrupt for processing playback, otherwise uses CIA timer
+// If set, uses VBL interrupt for processing playback, otherwise uses CIA timer.
+// Buggy!
 // #define PTPLAYER_USE_VBL
 
 // If set, interrupts are as short as possible, rest is done
@@ -1233,6 +1234,9 @@ static void mt_playvoice(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg,
 	const tModVoice *pVoice
 ) {
+	if(!pChannelData->isEnabledForPlayer) {
+		return;
+	}
 	if(pChannelData->ubSfxPriority) {
 		// Channel is blocked by external sound effect
 		if(pChannelData->uwSfxWordLength) {
@@ -1316,7 +1320,7 @@ static void mt_playvoice(
 		pChannelData->n_length = uwSampleLength;
 		pChannelData->n_loopstart = pSampleStart;
 		pChannelData->n_wavestart = (UBYTE*)pSampleStart;
-		pChannelReg->ac_vol = mt_MasterVolTab[pSampleDef->ubVolume] & pChannelData->isEnabledForPlayer;
+		pChannelReg->ac_vol = mt_MasterVolTab[pSampleDef->ubVolume];
 	}
 
 	// inlined set_regs function here:
@@ -1341,6 +1345,9 @@ static void mt_playvoice(
 static void mt_checkfx(
 	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
+	if(!pChannelData->isEnabledForPlayer) {
+		return;
+	}
 	if(pChannelData->ubSfxPriority) {
 		UWORD uwLen = pChannelData->uwSfxWordLength;
 		if(uwLen) {
@@ -1641,18 +1648,17 @@ static void resetChannel(tChannelStatus *pChannel) {
 	pChannel->ubSfxPriority = 0;
 	pChannel->isLooped = 0;
 	pChannel->n_gliss = 0;
-	pChannel->isOnlyForMusic = 0;
-	pChannel->isEnabledForPlayer = 0xFF;
 }
 
 // Stop playing current module.
 void ptplayerStop(void) {
 	ptplayerEnableMusic(0);
-	resetChannel(&mt_chan[0]);
-	resetChannel(&mt_chan[1]);
-	resetChannel(&mt_chan[2]);
-	resetChannel(&mt_chan[3]);
-	systemSetDmaMask(DMAF_AUDIO, 0);
+	for(UBYTE i = 0; i < 4; ++i) {
+		if(mt_chan[i].isEnabledForPlayer) {
+			systemSetDmaMask(mt_chan[i].uwDmaFlag, 0);
+		}
+		resetChannel(&mt_chan[i]);
+	}
 	s_pModCurr = 0;
 
 	// Free the channels taken by SFX.
@@ -1780,6 +1786,9 @@ void ptplayerCreate(UBYTE isPal) {
 
 	ptplayerSetPal(isPal);
 	mt_MasterVolTab = MasterVolTab[64];
+	for(UBYTE i = 0; i < 4; ++i) {
+		mt_chan[i].isEnabledForPlayer = 1;
+	}
 	mt_reset();
 }
 
@@ -1862,17 +1871,17 @@ void ptplayerSetMusicChannelMask(UBYTE ChannelMask) {
 
 static void setAllVolumes(void) {
 	// Only set volume for channels used in MOD playback.
-	if (!mt_chan[0].ubSfxPriority) {
-		g_pCustom->aud[0].ac_vol = mt_MasterVolTab[mt_chan[0].uwVolume] & mt_chan[0].isEnabledForPlayer;
+	if (!mt_chan[0].ubSfxPriority && mt_chan[0].isEnabledForPlayer) {
+		g_pCustom->aud[0].ac_vol = mt_MasterVolTab[mt_chan[0].uwVolume];
 	}
-	if (!mt_chan[1].ubSfxPriority) {
-		g_pCustom->aud[1].ac_vol = mt_MasterVolTab[mt_chan[1].uwVolume] & mt_chan[1].isEnabledForPlayer;
+	if (!mt_chan[1].ubSfxPriority && mt_chan[1].isEnabledForPlayer) {
+		g_pCustom->aud[1].ac_vol = mt_MasterVolTab[mt_chan[1].uwVolume];
 	}
-	if (!mt_chan[2].ubSfxPriority) {
-		g_pCustom->aud[2].ac_vol = mt_MasterVolTab[mt_chan[2].uwVolume] & mt_chan[2].isEnabledForPlayer;
+	if (!mt_chan[2].ubSfxPriority && mt_chan[2].isEnabledForPlayer) {
+		g_pCustom->aud[2].ac_vol = mt_MasterVolTab[mt_chan[2].uwVolume];
 	}
-	if (!mt_chan[3].ubSfxPriority) {
-		g_pCustom->aud[3].ac_vol = mt_MasterVolTab[mt_chan[3].uwVolume] & mt_chan[3].isEnabledForPlayer;
+	if (!mt_chan[3].ubSfxPriority && mt_chan[3].isEnabledForPlayer) {
+		g_pCustom->aud[3].ac_vol = mt_MasterVolTab[mt_chan[3].uwVolume];
 	}
 }
 
@@ -1888,12 +1897,12 @@ void ptplayerSetMasterVolume(UBYTE ubMasterVolume) {
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
 
-void ptplayerMuteMusicChannels(UBYTE ubChannelMask) {
+void ptplayerSetChannelsForPlayer(UBYTE ubChannelMask) {
 	g_pCustom->intena = INTF_INTEN;
-	mt_chan[0].isEnabledForPlayer = BTST(ubChannelMask, 0) ? 0 : 0xFF;
-	mt_chan[1].isEnabledForPlayer = BTST(ubChannelMask, 1) ? 0 : 0xFF;
-	mt_chan[2].isEnabledForPlayer = BTST(ubChannelMask, 2) ? 0 : 0xFF;
-	mt_chan[3].isEnabledForPlayer = BTST(ubChannelMask, 3) ? 0 : 0xFF;
+	mt_chan[0].isEnabledForPlayer = BTST(ubChannelMask, 0);
+	mt_chan[1].isEnabledForPlayer = BTST(ubChannelMask, 1);
+	mt_chan[2].isEnabledForPlayer = BTST(ubChannelMask, 2);
+	mt_chan[3].isEnabledForPlayer = BTST(ubChannelMask, 3);
 	setAllVolumes();
 	g_pCustom->intena = INTF_SETCLR | INTF_INTEN;
 }
@@ -2079,7 +2088,7 @@ static void ptVolSlide(
 	bVolNew = CLAMP(bVolNew, 0, 64);
 	pChannelData->uwVolume = bVolNew;
 	pChannelReg->ac_per = pChannelData->uwPeriod;
-	pChannelReg->ac_vol = mt_MasterVolTab[bVolNew] & pChannelData->isEnabledForPlayer;
+	pChannelReg->ac_vol = mt_MasterVolTab[bVolNew];
 }
 
 static void mt_volumeslide(
@@ -2171,7 +2180,7 @@ static void mt_tremolo(
 	wNewVol = CLAMP(wNewVol, 0, 64);
 
 	pChannelReg->ac_per = pChannelData->uwPeriod;
-	pChannelReg->ac_vol = wNewVol & pChannelData->isEnabledForPlayer;
+	pChannelReg->ac_vol = wNewVol;
 
 	// increase tremolopos by speed
 	pChannelData->n_tremolopos += ubSpeed;
@@ -2297,7 +2306,7 @@ static void mt_volchange(
 	if(ubNewVolume > 64) {
 		ubNewVolume = 64;
 	}
-	pChannelReg->ac_vol = mt_MasterVolTab[ubNewVolume] & pChannelData->isEnabledForPlayer;
+	pChannelReg->ac_vol = mt_MasterVolTab[ubNewVolume];
 }
 
 static void mt_sampleoffset(
