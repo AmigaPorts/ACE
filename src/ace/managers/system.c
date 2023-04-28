@@ -45,8 +45,8 @@
 typedef void (*tHwIntVector)(void);
 
 typedef struct _tAceInterrupt {
-	volatile tAceIntHandler pHandler;
-	volatile void *pData;
+	tAceIntHandler pHandler;
+	void *pData;
 } tAceInterrupt;
 
 //---------------------------------------------------------------------- GLOBALS
@@ -81,11 +81,11 @@ static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int1Handler, int2Handler, int3Handler, int4Handler,
 	int5Handler, int6Handler, int7Handler
 };
-static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static volatile tHwIntVector * s_pHwVectors = 0;
-static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
-static volatile tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static volatile UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
+static tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
+static tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
+static tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
+static UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
 
 // Manager logic vars
 static WORD s_wSystemUses;
@@ -778,7 +778,7 @@ UBYTE systemBlitterIsUsed(void) {
 }
 
 void systemSetInt(
-	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData
 ) {
 	// Disable interrupt during data swap to not get stuck inside ACE's ISR
 	if(!s_wSystemUses) {
@@ -801,7 +801,7 @@ void systemSetInt(
 }
 
 void systemSetCiaInt(
-	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, void *pIntData
 ) {
 	// Disable ACE handler during data swap to ensure atomic op
 	s_pAceCiaInterrupts[ubCia][ubIntBit].pHandler = 0;
