@@ -283,6 +283,10 @@ UBYTE blitSafeCopyMask(
  * - C: destination read
  * - D: destination write
  *
+ * @note This can't be used for large blits - OCS blitter limits apply.
+ * Maximum blit size is 1024x1024 pixels. For interleaved bitmaps, divide
+ * max height by bitmap's depth.
+ *
  * @param pDst Destination bitmap.
  * @param wDstX Destination rectangle top-left position's X-coordinate.
  * @param wDstY Destination rectangle top-left position's Y-coordinate.
@@ -311,6 +315,10 @@ UBYTE blitUnsafeRect(
  *
  * @note This function is slower than blitUnsafeRect() - it is recommended
  * to use blitRect() for extra checks only when compiling in ACE_DEBUG mode.
+ *
+ * @note This can't be used for large blits - OCS blitter limits apply.
+ * Maximum blit size is 1024x1024 pixels. For interleaved bitmaps, divide
+ * max height by bitmap's depth.
  *
  * @param pDst Destination bitmap.
  * @param wDstX Destination rectangle top-left position's X-coordinate.
