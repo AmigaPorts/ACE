@@ -108,6 +108,12 @@ struct ExecBase *SysBase = 0;
 
 // All interrupt handlers should clear their flags twice
 // http://eab.abime.net/showthread.php?p=834185#post834185
+// Skipping null-check for int handler is possible whenever setting it updates
+// s_uwAceIntEna directly.
+// TODO: Add some handler-counting mechanism for cia interrupts and set
+// s_uwAceIntEna's INTF_PORTS and INTF_EXTER accordingly to speed up int2 and 6.
+// TODO: Find a way to register multiple handlers on single int to do the same
+// optimization on int3 handler.
 
 FN_HOTSPOT
 void HWINTERRUPT int1Handler(void) {
@@ -119,7 +125,7 @@ void HWINTERRUPT int1Handler(void) {
 FN_HOTSPOT
 void HWINTERRUPT int2Handler(void) {
 	logPushInt();
-	UWORD uwIntReq = g_pCustom->intreqr;
+	UWORD uwIntReq = g_pCustom->intreqr & s_uwAceIntEna;
 	if(uwIntReq & INTF_PORTS) {
 		// CIA A interrupt - Parallel, keyboard
 		UBYTE ubIcr = g_pCia[CIA_A]->icr; // Read clears interrupt flags
@@ -168,7 +174,7 @@ void HWINTERRUPT int3Handler(void) {
 	// Vertical blanking
 	if(uwIntReq & INTF_VERTB) {
 		// Do ACE-specific stuff
-		// TODO when ACE gets ported to C++ this could be constexpr if'ed
+		// TODO this should be handled as a chain of interrupts
 		timerOnInterrupt();
 
 		// Process handlers
@@ -203,38 +209,34 @@ void HWINTERRUPT int3Handler(void) {
 FN_HOTSPOT
 void HWINTERRUPT int4Handler(void) {
 	logPushInt();
-	UWORD uwIntReq = g_pCustom->intreqr;
+	UWORD uwIntReq = g_pCustom->intreqr & s_uwAceIntEna;
 	UWORD uwReqClr = 0;
 
 	// Audio channel 0
-	if((uwIntReq & INTF_AUD0) && s_pAceInterrupts[INTB_AUD0].pHandler) {
-		s_pAceInterrupts[INTB_AUD0].pHandler(
-			g_pCustom, s_pAceInterrupts[INTB_AUD0].pData
-		);
+	tAceInterrupt *pInt = &s_pAceInterrupts[INTB_AUD0];
+	if((uwIntReq & INTF_AUD0)) {
+		pInt->pHandler(g_pCustom, pInt->pData);
 		uwReqClr |= INTF_AUD0;
 	}
 
 	// Audio channel 1
-	if((uwIntReq & INTF_AUD1) && s_pAceInterrupts[INTB_AUD1].pHandler) {
-		s_pAceInterrupts[INTB_AUD1].pHandler(
-			g_pCustom, s_pAceInterrupts[INTB_AUD1].pData
-		);
+	pInt = &s_pAceInterrupts[INTB_AUD1];
+	if((uwIntReq & INTF_AUD1)) {
+		pInt->pHandler(g_pCustom, pInt->pData);
 		uwReqClr |= INTF_AUD1;
 	}
 
 	// Audio channel 2
-	if((uwIntReq & INTF_AUD2) && s_pAceInterrupts[INTB_AUD2].pHandler) {
-		s_pAceInterrupts[INTB_AUD2].pHandler(
-			g_pCustom, s_pAceInterrupts[INTB_AUD2].pData
-		);
+	pInt = &s_pAceInterrupts[INTB_AUD2];
+	if((uwIntReq & INTF_AUD2)) {
+		pInt->pHandler(g_pCustom, pInt->pData);
 		uwReqClr |= INTF_AUD2;
 	}
 
 	// Audio channel 3
-	if((uwIntReq & INTF_AUD3) && s_pAceInterrupts[INTB_AUD3].pHandler) {
-		s_pAceInterrupts[INTB_AUD3].pHandler(
-			g_pCustom, s_pAceInterrupts[INTB_AUD3].pData
-		);
+	pInt = &s_pAceInterrupts[INTB_AUD3];
+	if((uwIntReq & INTF_AUD3)) {
+		pInt->pHandler(g_pCustom, pInt->pData);
 		uwReqClr |= INTF_AUD3;
 	}
 	logPopInt();
