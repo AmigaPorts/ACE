@@ -2,8 +2,6 @@
 #include <proto/exec.h>
 extern struct ExecBase* SysBase;
 
-char *g_pStartStackPos; // ACE CHANGES
-
 unsigned long strlen(const char* s)
 {
 	unsigned long t=0;
@@ -86,8 +84,6 @@ extern void (*__fini_array_start[])() __attribute__((weak));
 extern void (*__fini_array_end[])() __attribute__((weak));
 
 __attribute__((used)) __attribute__((section(".text.unlikely"))) void _start() {
-	register char *pCurrentStackPos __asm("sp"); // ACE CHANGES
-	g_pStartStackPos = pCurrentStackPos;          // ACE CHANGES
 	// initialize globals, ctors etc.
 	unsigned long count;
 	unsigned long i;

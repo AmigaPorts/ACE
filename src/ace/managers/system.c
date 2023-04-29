@@ -38,7 +38,7 @@
 #define SYSTEM_INT_VECTOR_FIRST (0x64/4)
 #define SYSTEM_INT_VECTOR_COUNT 7
 #define SYSTEM_INT_HANDLER_COUNT 15
-#define SYSTEM_STACK_CANARY 0xBA
+#define SYSTEM_STACK_CANARY '\xBA'
 
 //------------------------------------------------------------------------ TYPES
 
@@ -97,7 +97,6 @@ static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 static struct IOAudio s_sIoAudio = {0};
 static struct Library *s_pCiaResource[CIA_COUNT];
 static struct Process *s_pProcess;
-static UBYTE *s_pStackUpper, *s_pStackLower;
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -108,12 +107,6 @@ struct ExecBase *SysBase = 0;
 
 // All interrupt handlers should clear their flags twice
 // http://eab.abime.net/showthread.php?p=834185#post834185
-// Skipping null-check for int handler is possible whenever setting it updates
-// s_uwAceIntEna directly.
-// TODO: Add some handler-counting mechanism for cia interrupts and set
-// s_uwAceIntEna's INTF_PORTS and INTF_EXTER accordingly to speed up int2 and 6.
-// TODO: Find a way to register multiple handlers on single int to do the same
-// optimization on int3 handler.
 
 FN_HOTSPOT
 void HWINTERRUPT int1Handler(void) {
@@ -125,7 +118,7 @@ void HWINTERRUPT int1Handler(void) {
 FN_HOTSPOT
 void HWINTERRUPT int2Handler(void) {
 	logPushInt();
-	UWORD uwIntReq = g_pCustom->intreqr & s_uwAceIntEna;
+	UWORD uwIntReq = g_pCustom->intreqr;
 	if(uwIntReq & INTF_PORTS) {
 		// CIA A interrupt - Parallel, keyboard
 		UBYTE ubIcr = g_pCia[CIA_A]->icr; // Read clears interrupt flags
@@ -174,7 +167,7 @@ void HWINTERRUPT int3Handler(void) {
 	// Vertical blanking
 	if(uwIntReq & INTF_VERTB) {
 		// Do ACE-specific stuff
-		// TODO this should be handled as a chain of interrupts
+		// TODO when ACE gets ported to C++ this could be constexpr if'ed
 		timerOnInterrupt();
 
 		// Process handlers
@@ -209,34 +202,38 @@ void HWINTERRUPT int3Handler(void) {
 FN_HOTSPOT
 void HWINTERRUPT int4Handler(void) {
 	logPushInt();
-	UWORD uwIntReq = g_pCustom->intreqr & s_uwAceIntEna;
+	UWORD uwIntReq = g_pCustom->intreqr;
 	UWORD uwReqClr = 0;
 
 	// Audio channel 0
-	tAceInterrupt *pInt = &s_pAceInterrupts[INTB_AUD0];
-	if((uwIntReq & INTF_AUD0)) {
-		pInt->pHandler(g_pCustom, pInt->pData);
+	if((uwIntReq & INTF_AUD0) && s_pAceInterrupts[INTB_AUD0].pHandler) {
+		s_pAceInterrupts[INTB_AUD0].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD0].pData
+		);
 		uwReqClr |= INTF_AUD0;
 	}
 
 	// Audio channel 1
-	pInt = &s_pAceInterrupts[INTB_AUD1];
-	if((uwIntReq & INTF_AUD1)) {
-		pInt->pHandler(g_pCustom, pInt->pData);
+	if((uwIntReq & INTF_AUD1) && s_pAceInterrupts[INTB_AUD1].pHandler) {
+		s_pAceInterrupts[INTB_AUD1].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD1].pData
+		);
 		uwReqClr |= INTF_AUD1;
 	}
 
 	// Audio channel 2
-	pInt = &s_pAceInterrupts[INTB_AUD2];
-	if((uwIntReq & INTF_AUD2)) {
-		pInt->pHandler(g_pCustom, pInt->pData);
+	if((uwIntReq & INTF_AUD2) && s_pAceInterrupts[INTB_AUD2].pHandler) {
+		s_pAceInterrupts[INTB_AUD2].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD2].pData
+		);
 		uwReqClr |= INTF_AUD2;
 	}
 
 	// Audio channel 3
-	pInt = &s_pAceInterrupts[INTB_AUD3];
-	if((uwIntReq & INTF_AUD3)) {
-		pInt->pHandler(g_pCustom, pInt->pData);
+	if((uwIntReq & INTF_AUD3) && s_pAceInterrupts[INTB_AUD3].pHandler) {
+		s_pAceInterrupts[INTB_AUD3].pHandler(
+			g_pCustom, s_pAceInterrupts[INTB_AUD3].pData
+		);
 		uwReqClr |= INTF_AUD3;
 	}
 	logPopInt();
@@ -491,23 +488,13 @@ void systemCreate(void) {
 
   // Determine original stack size
   s_pProcess = (struct Process *)FindTask(NULL);
-	ULONG ulStackSize;
-	if(!s_pProcess->pr_CLI) {
-		s_pStackUpper = (UBYTE*)s_pProcess->pr_Task.tc_SPUpper;
-		s_pStackLower = (UBYTE*)s_pProcess->pr_Task.tc_SPLower;
-		ulStackSize = s_pStackUpper - s_pStackLower;
-	}
-	else {
-		// Process ran from CLI - process struct points to CLI stack instead of application's
-		// TODO: fix getting start of stack
-		s_pStackUpper = (UBYTE*)g_pStartStackPos;
+	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
+	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
+	if(s_pProcess->pr_CLI) {
 		ulStackSize = *(ULONG *)s_pProcess->pr_ReturnAddr;
-		s_pStackLower = s_pStackUpper - ulStackSize;
 	}
-	logWrite("Stack size: %lu (%p-%p)\n", ulStackSize, s_pStackLower, s_pStackUpper);
-
-	// TODO: Re-enable when getting stack bounds when running from CLI is fixed
-	// *s_pStackLower = SYSTEM_STACK_CANARY;
+	logWrite("Stack size: %lu\n", ulStackSize);
+	*pStackLower = SYSTEM_STACK_CANARY;
 
 	// Reserve all audio channels - apparantly this allows for int flag polling
 	// From https://gist.github.com/johngirvin/8fb0c4bb83b7c80427e2f439bb074e95
@@ -925,22 +912,16 @@ UBYTE systemIsPal(void) {
 }
 
 void systemCheckStack(void) {
+	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
 	register ULONG *pCurrentStackPos __asm("sp");
 
-	// TODO: Re-enable when getting stack bounds when running from CLI is fixed
-	// if(*s_pStackLower != SYSTEM_STACK_CANARY) {
-	// 	logWrite("ERR: Stack has probably overflown!");
-	// 	while(1) {}
-	// }
+	if(*pStackLower != SYSTEM_STACK_CANARY) {
+		logWrite("ERR: Stack has probably overflown!");
+		while(1) {}
+	}
 
-	if(
-		(ULONG)pCurrentStackPos < (ULONG)(s_pStackLower) ||
-		(ULONG)s_pStackUpper < (ULONG) pCurrentStackPos
-	) {
-		logWrite(
-			"ERR: out of stack bounds %p-%p at pos %p!\n",
-			s_pStackLower, s_pStackUpper, pCurrentStackPos
-		);
+	if((ULONG)pCurrentStackPos < (ULONG)(pStackLower)) {
+		logWrite("ERR: out of stack bounds!\n");
 		while(1) {}
 	}
 }
