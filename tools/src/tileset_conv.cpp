@@ -200,7 +200,7 @@ static void saveTiles(
 		if(Config.m_lColumns != 1) {
 			Out = std::make_optional<tChunkyBitmap>(
 				uint16_t(Config.m_lTileSize * Config.m_lColumns),
-				uint16_t(snapUp(TileCount, Config.m_lColumns) * Config.m_lTileHeight),
+				uint16_t(ceilToFactor(TileCount, Config.m_lColumns) * Config.m_lTileHeight),
 				Bg
 			);
 

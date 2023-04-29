@@ -6,9 +6,9 @@
 #define _ACE_TOOLS_COMMON_MATH_H_
 
 #if defined(_MSC_VER) && _MSC_VER < 1930
-auto snapUp(uint64_t Value, int64_t Multiple) {
+auto ceilToFactor(uint64_t Value, int64_t Multiple) {
 #else
-auto snapUp(auto Value, auto Multiple) {
+auto ceilToFactor(auto Value, auto Multiple) {
 #endif
 	auto Rounded = ((Value + Multiple - 1) / Multiple) * Multiple;
 	return Rounded;
