@@ -3,7 +3,7 @@
 First, create folder for your project. Then, create src folder for keeping your
 .c files. Let's start with `src/main.c`:
 
-``` c
+```c
 // Use this only if you want to enable logging to file instead of UAE console (heavy performance hit, not recommended)
 #define GENERIC_MAIN_LOG_PATH "game.log"
 
@@ -26,19 +26,11 @@ void genericDestroy(void) {
 }
 ```
 
-As you may suspect, this code will print two lines into log file. To build it
-you'll need a basic makefile or CMakeLists. You can base it on one found
-in `showcase` directory or something like this:
+As you may suspect, this code will print two lines into log file.
+To build it, create a CMakeLists.txt file in the base directory of your project.
+You can base it on one found in `showcase` directory or use one added below.
 
-Makefile:
-
-``` makefile
- # TODO
-```
-
-CMake:
-
-``` cmake
+```cmake
 cmake_minimum_required(VERSION 3.14.0)
 project(hello LANGUAGES C)
 
@@ -62,12 +54,11 @@ if(GAME_DEBUG)
 endif()
 
 # ACE
-# If you cloned ACE into subdirectory, e.g. to `deps/ace` folder, use following:
 add_subdirectory(deps/ace ace)
 include_directories(deps/ace/include)
-# If you built standalone and installed ACE, use following:
-find_package(ace REQUIRED)
-include_directories(${ace_INCLUDE_DIRS})
+# If you built standalone and installed ACE, use following instead:
+# find_package(ace REQUIRED)
+# include_directories(${ace_INCLUDE_DIRS})
 
 # Force lower-case binary name for Linux etc.
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
@@ -91,7 +82,21 @@ endif()
 target_link_libraries(${GAME_LINKED} ace)
 ```
 
-Once you have that done, compile it. For CMake:
+Once you have that done, compile it.
+
+Using Visual Studio Code:
+
+- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> to invoke command palette.
+- Start typing and select the `CMake: Configure` command.
+  This configures the project for subsequent builds.
+- If asked to choose the compiler, select the Bartman/Bebbo Amiga compiler.
+- To turn on ACE's extra debugging features:
+  - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>.
+  - Select `CMake: Edit CMake Cache (UI)`.
+  - Select `ACE_DEBUG` and optionally `ACE_DEBUG_UAE` for better debugging under UAE.
+- Press <kbd>F7</kbd> to build your game.
+
+Using terminal commands:
 
 ```sh
 mkdir build && cd build
@@ -100,7 +105,7 @@ cmake .. \
   -DCMAKE_TOOLCHAIN_FILE=/path/to/AmigaCMakeCrossToolchains/m68k.cmake \
   -DM68K_TOOLCHAIN_PATH=/path/to/toolchain \
   -DM68K_CPU=68000 -DM68K_FPU=soft -DACE_DEBUG=ON
-make
+cmake --build .
 ```
 
 Put your executable in UAE or real hardware and launch it.

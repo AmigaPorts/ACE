@@ -69,14 +69,14 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 }
 
 void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
-	UBYTE ubLastColor = ubColorCnt -1;
+	UBYTE ubLastColor = ubColorCnt - 1;
 	UBYTE ubBpp = 0;
 	while(ubLastColor) {
 		ubLastColor >>= 1;
 		++ubBpp;
 	}
 	tBitMap *pBm = bitmapCreate(
-		SNAP_UP((1+8)*ubColorCnt + 1, 16), 10, ubBpp, BMF_CLEAR
+		CEIL_TO_FACTOR((1+8)*ubColorCnt + 1, 16), 10, ubBpp, BMF_CLEAR
 	);
 	for(UBYTE i = 0; i <= ubColorCnt; ++i) {
 		blitRect(pBm, 1+(8+1)*i, 1, 8, 8, i);
