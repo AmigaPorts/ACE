@@ -97,7 +97,7 @@ uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 __attribute__((noreturn))
 void __stack_chk_fail(void) {
 	logWrite("ERR: STACK SMASHED\n");
-	while(1) {}
+	while(1) continue;
 }
 #endif
 

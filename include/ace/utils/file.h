@@ -62,6 +62,23 @@ void fileWriteStr(tFile *pFile, const char *szLine);
  */
 UBYTE fileExists(const char *szPath);
 
+/**
+ * @brief Deletes the selected file.
+ *
+ * @param szPath Path to file to be deleted.
+ * @return 1 on success, otherwise 0, including if file does not exist.
+ */
+UBYTE fileDelete(const char *szPath);
+
+/**
+ * @brief Moves or renames selected file into another file.
+ *
+ * @param szSource Path to source file to be moved.
+ * @param szDest Path to new file destination.
+ * @return 1 on success, otherwise 0, including if source file doesn't exist or destination path is already occupied.
+ */
+UBYTE fileMove(const char *szSource, const char *szDest);
+
 #ifdef __cplusplus
 }
 #endif

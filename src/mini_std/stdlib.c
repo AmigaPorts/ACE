@@ -9,7 +9,7 @@ void exit(int exit_code) {
 	// This is what Bartman's project template uses.
 
 	Exit(exit_code);
-	while(1) {}
+	while(1) continue;
 }
 
 int qsortEmu(const void *_a, const void *_b, __attribute__((unused)) void *_arg) {
