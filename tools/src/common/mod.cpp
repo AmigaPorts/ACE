@@ -8,6 +8,8 @@
 #include <fmt/format.h>
 #include "endian.h"
 
+#define SAMPLE_NAME_SIZE 22
+
 tMod::tMod(const std::string &szFileName)
 {
 	std::ifstream FileIn;
@@ -26,7 +28,7 @@ tMod::tMod(const std::string &szFileName)
 	// Read sample info
 	uint32_t ulTotalSampleSize = 0;
 	for(uint8_t i = 0; i < 31; ++i) {
-		char szSampleNameRaw[22];
+		char szSampleNameRaw[SAMPLE_NAME_SIZE];
 		uint16_t uwSampleLen, uwSampleRepeatOffs, uwSampleRepeatLength;
 		uint8_t ubSampleFineTune, ubSampleLinearVolume;
 
@@ -55,6 +57,11 @@ tMod::tMod(const std::string &szFileName)
 
 		// Data read successfully, fill sample info
 		tSample Sample;
+		for (uint8_t ubCharIndex = 0; ubCharIndex < SAMPLE_NAME_SIZE; ++ubCharIndex){
+			// sample name to uppercase, to avoid duplicates
+			// will be reworked to: comparison between samples on temporarily uppercased copies
+			szSampleNameRaw[ubCharIndex] = std::toupper(szSampleNameRaw[ubCharIndex]); 
+		}
 		Sample.m_szName = szSampleNameRaw;
 		Sample.m_ubFineTune = ubSampleFineTune;
 		Sample.m_ubVolume = ubSampleLinearVolume;
@@ -228,9 +235,12 @@ void tMod::reorderSamples(const std::vector<uint8_t> vNewOrder)
 
 	// Replace sample index in patterns
 	for(auto &Pattern: m_vPatterns) {
-		for(auto Row: Pattern) {
-			for(auto Channel: Row) {
-				Channel.ubInstrument = vNewOrder[Channel.ubInstrument];
+		for(auto &Row: Pattern) {
+			for(auto &Channel: Row) {
+				if(Channel.ubInstrument) {
+					// instruments are starting with 1, zero means "none"
+					Channel.ubInstrument = vNewOrder[Channel.ubInstrument - 1] + 1;
+				}
 			}
 		}
 	}

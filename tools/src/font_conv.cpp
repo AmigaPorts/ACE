@@ -106,46 +106,46 @@ int main(int lArgCount, const char *pArgs[])
 	int32_t lSize = -1;
 
 	// Search for optional args
-	for(auto i = ubMandatoryArgCnt+1; i < lArgCount; ++i) {
-		if(pArgs[i] == std::string("-chars") && i < lArgCount - 1) {
-			++i;
-			szCharset += pArgs[i];
+	for(auto ArgIndex = ubMandatoryArgCnt+1; ArgIndex < lArgCount; ++ArgIndex) {
+		if(pArgs[ArgIndex] == std::string("-chars") && ArgIndex < lArgCount - 1) {
+			++ArgIndex;
+			szCharset += pArgs[ArgIndex];
 		}
-		else if(pArgs[i] == std::string("-out") && i < lArgCount - 1) {
-			++i;
-			szOutPath = pArgs[i];
+		else if(pArgs[ArgIndex] == std::string("-out") && ArgIndex < lArgCount - 1) {
+			++ArgIndex;
+			szOutPath = pArgs[ArgIndex];
 		}
-		else if(pArgs[i] == std::string("-fc") && i < lArgCount - 1) {
-			++i;
+		else if(pArgs[ArgIndex] == std::string("-fc") && ArgIndex < lArgCount - 1) {
+			++ArgIndex;
 			try {
-				ubFirstChar = std::stoul(pArgs[i]);
+				ubFirstChar = uint8_t(std::stoul(pArgs[ArgIndex]));
 			}
 			catch(std::exception Ex) {
 				nLog::error(
-					"Couldn't parse 'first char' param: '{}', expected number", pArgs[i]
+					"Couldn't parse 'first char' param: '{}', expected number", pArgs[ArgIndex]
 				);
 				return EXIT_FAILURE;
 			}
 		}
-		else if(pArgs[i] == std::string("-charFile") && i < lArgCount - 1) {
-			++i;
-			auto File = std::ifstream(pArgs[i], std::ios::binary);
+		else if(pArgs[ArgIndex] == std::string("-charFile") && ArgIndex < lArgCount - 1) {
+			++ArgIndex;
+			auto File = std::ifstream(pArgs[ArgIndex], std::ios::binary);
 			while(!File.eof()) {
 				char c;
 				File.read(&c, 1);
 				szCharset += c;
 			}
 		}
-		else if(pArgs[i] == std::string("-size") && i < lArgCount - 1) {
-			++i;
-			lSize = std::stol(pArgs[i]);
+		else if(pArgs[ArgIndex] == std::string("-size") && ArgIndex < lArgCount - 1) {
+			++ArgIndex;
+			lSize = std::stol(pArgs[ArgIndex]);
 		}
-		else if(pArgs[i] == std::string("-remap") && i < lArgCount - 1) {
-			++i;
-			szRemapPath = pArgs[i];
+		else if(pArgs[ArgIndex] == std::string("-remap") && ArgIndex < lArgCount - 1) {
+			++ArgIndex;
+			szRemapPath = pArgs[ArgIndex];
 		}
 		else {
-			nLog::error("Unknown arg or missing value: '{}'", pArgs[i]);
+			nLog::error("Unknown arg or missing value: '{}'", pArgs[ArgIndex]);
 			printUsage(pArgs[0]);
 			return EXIT_FAILURE;
 		}

@@ -35,8 +35,8 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 			return;
 		}
 		nLog::warn("Resampling data - may result in poor results!");
-		uint32_t ulDataSize = vWavData.size();
-		for(uint32_t i = 0; i < ulDataSize; i += 2) {
+		auto DataSize = vWavData.size();
+		for(uint32_t i = 0; i < DataSize; i += 2) {
 			uint16_t uwRawSample = vWavData[i + 0] | (vWavData[i + 1] << 8);
 			auto *pAsSigned = reinterpret_cast<int16_t *>(&uwRawSample);
 			m_vData.push_back(*pAsSigned / 256);
@@ -63,7 +63,7 @@ bool tSfx::toSfx(const std::string &szPath) const {
 	std::ofstream FileOut(szPath, std::ios::binary);
 
 	const uint8_t ubVersion = 1;
-	const uint16_t uwWordLength = nEndian::toBig16(m_vData.size() / 2);
+	const uint16_t uwWordLength = nEndian::toBig16(uint16_t(m_vData.size() / 2));
 	const uint16_t uwSampleReateHz = nEndian::toBig16(m_ulFreq);
 
 	FileOut.write(reinterpret_cast<const char*>(&ubVersion), sizeof(ubVersion));
@@ -74,7 +74,41 @@ bool tSfx::toSfx(const std::string &szPath) const {
 	return true;
 }
 
-bool tSfx::isEmpty(void)
+bool tSfx::isEmpty(void) const
 {
 	return m_vData.empty();
+}
+
+void tSfx::normalize(void)
+{
+	// Get the biggest amplitude - negative or positive
+	int8_t bMaxAmplitude = 0;
+	for(const auto &Sample: m_vData) {
+		auto Amplitude = abs(Sample);
+		if(Amplitude > bMaxAmplitude) {
+			bMaxAmplitude = int8_t(Amplitude);
+		}
+	}
+
+	// Scale samples
+	for(auto &Sample: m_vData) {
+		Sample = (Sample * std::numeric_limits<int8_t>::max()) / bMaxAmplitude;
+	}
+}
+
+void tSfx::divideAmplitude(uint8_t ubDivisor)
+{
+	for(auto &Sample: m_vData) {
+		Sample /= ubDivisor;
+	}
+}
+
+bool tSfx::isFittingMaxAmplitude(int8_t bMaxAmplitude) const
+{
+	for(auto &Sample: m_vData) {
+		if(Sample > bMaxAmplitude) {
+			return false;
+		}
+	}
+	return true;
 }

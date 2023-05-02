@@ -45,8 +45,8 @@
 typedef void (*tHwIntVector)(void);
 
 typedef struct _tAceInterrupt {
-	volatile tAceIntHandler pHandler;
-	volatile void *pData;
+	tAceIntHandler pHandler;
+	void *pData;
 } tAceInterrupt;
 
 //---------------------------------------------------------------------- GLOBALS
@@ -81,11 +81,11 @@ static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int1Handler, int2Handler, int3Handler, int4Handler,
 	int5Handler, int6Handler, int7Handler
 };
-static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static volatile tHwIntVector * s_pHwVectors = 0;
-static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
-static volatile tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static volatile UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
+static tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
+static tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
+static tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
+static UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
 
 // Manager logic vars
 static WORD s_wSystemUses;
@@ -489,13 +489,11 @@ void systemCreate(void) {
   // Determine original stack size
   s_pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
-#if defined(ACE_DEBUG)
 	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
 	if(s_pProcess->pr_CLI) {
 		ulStackSize = *(ULONG *)s_pProcess->pr_ReturnAddr;
 	}
 	logWrite("Stack size: %lu\n", ulStackSize);
-#endif
 	*pStackLower = SYSTEM_STACK_CANARY;
 
 	// Reserve all audio channels - apparantly this allows for int flag polling
@@ -769,26 +767,30 @@ UBYTE systemBlitterIsUsed(void) {
 }
 
 void systemSetInt(
-	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData
 ) {
-	// Disable ACE handler during data swap to ensure atomic op
-	s_pAceInterrupts[ubIntNumber].pHandler = 0;
-
-	// Re-enable handler or disable it if 0 was passed
-	if(pHandler == 0) {
+	// Disable interrupt during data swap to not get stuck inside ACE's ISR
+	if(!s_wSystemUses) {
 		g_pCustom->intena = BV(ubIntNumber);
+	}
+
+	// Disable handler or re-enable it if 0 was passed
+	if(pHandler == 0) {
+		s_pAceInterrupts[ubIntNumber].pHandler = 0;
 		s_uwAceIntEna &= ~BV(ubIntNumber);
 	}
 	else {
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		if(!s_wSystemUses) {
+			g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		}
 	}
 }
 
 void systemSetCiaInt(
-	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, void *pIntData
 ) {
 	// Disable ACE handler during data swap to ensure atomic op
 	s_pAceCiaInterrupts[ubCia][ubIntBit].pHandler = 0;
