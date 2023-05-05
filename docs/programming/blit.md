@@ -1,4 +1,4 @@
-# Blitter & basic animation
+# Blitter
 
 We still don't have anything except black screen - in this step we're going
 to use some colors. This tutorial will at first aim to recreate classic Pong
@@ -183,6 +183,7 @@ void gameGsLoop(void) {
       (s_pVpMain->uwHeight - BALL_WIDTH) / 2,
       BALL_WIDTH, BALL_WIDTH, BALL_COLOR
     );
+    vPortWaitForEnd(s_pVpMain); // Wait for end of frame
 //---------------------------------------------------------------- NEW STUFF END
   }
 }
