@@ -133,7 +133,7 @@ void gameGsCreate(void) {
   s_pVpScore->pPalette[3] = 0x0008; // Blue - same brightness as red
 
 //-------------------------------------------------------------- NEW STUFF START
-  // Draw line separating score VPort and main VPort
+  // Draw line separating score VPort and main VPort, leave one line blank after it
   blitLine(
     s_pScoreBuffer->pBack,
     0, s_pVpScore->uwHeight - 2,

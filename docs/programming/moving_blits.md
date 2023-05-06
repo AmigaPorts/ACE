@@ -13,7 +13,7 @@ To visualize this problem, slightly modify your game.c code and add ability to m
 #define WALL_COLOR 1
 //-------------------------------------------------------------- NEW STUFF START
 #define PLAYFIELD_HEIGHT (256-32)
-#define PADDLE_MAX_POS_Y (PLAYFIELD_HEIGHT - PADDLE_HEIGHT - 2)
+#define PADDLE_MAX_POS_Y (PLAYFIELD_HEIGHT - PADDLE_HEIGHT - 1)
 #define PADDLE_SPEED 4
 //---------------------------------------------------------------- NEW STUFF END
 
@@ -123,7 +123,7 @@ The following code correctly moves paddles up and down without any kind of trail
 #define WALL_COLOR 1
 //-------------------------------------------------------------- NEW STUFF START
 #define PLAYFIELD_HEIGHT (256-32)
-#define PADDLE_MAX_POS_Y (PLAYFIELD_HEIGHT - PADDLE_HEIGHT - 2)
+#define PADDLE_MAX_POS_Y (PLAYFIELD_HEIGHT - PADDLE_HEIGHT - 1)
 #define PADDLE_SPEED 4
 //---------------------------------------------------------------- NEW STUFF END
 
@@ -169,7 +169,7 @@ void gameGsCreate(void) {
   s_pVpScore->pPalette[2] = 0x0800; // Red - not max, a bit dark
   s_pVpScore->pPalette[3] = 0x0008; // Blue - same brightness as red
 
-  // Draw line separating score VPort and main VPort
+  // Draw line separating score VPort and main VPort, leave one line blank after it
   blitLine(
     s_pScoreBuffer->pBack,
     0, s_pVpScore->uwHeight - 2,

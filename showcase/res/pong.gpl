@@ -1,0 +1,16 @@
+GIMP Palette
+Name: pong
+Columns: 4
+#
+  0  17  34	Index 0
+255 255 255	Index 1
+ 68   0  34	Index 2
+136   0  34	Index 3
+ 34  51  68	Index 4
+  0  68  85	Index 5
+221  34  51	Index 6
+ 17 153 170	Index 7
+102 136 136	Index 8
+255 102  85	Index 9
+187 187 187	Index 10
+119 221 187	Index 11

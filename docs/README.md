@@ -8,6 +8,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 
 - [Compiler setup](installing/compiler.md)
 - [Building ACE](installing/ace.md)
+- [Building tools](installing/tools.md)
 
 ## Tutorial
 
@@ -16,7 +17,9 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [View & viewports explained](programming/view.md)
 1. [Blitter](programming/blit.md)
 1. [Moving blitted objects](programming/moving_blits.md)
-1. Loading images, using masks
+1. [Loading images and displaying background](programming/loading_images.md)
+1. Properly handling blitted object undraw
+1. Blitting with masks
 1. Fonts
 1. Debugging memory leaks
 1. Organizing your project
