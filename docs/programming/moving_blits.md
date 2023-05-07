@@ -146,7 +146,7 @@ void gameGsCreate(void) {
   // Viewport for score bar - on top of screen
   s_pVpScore = vPortCreate(0,
     TAG_VPORT_VIEW, s_pView,
-    TAG_VPORT_BPP, 2,
+    TAG_VPORT_BPP, 4,
     TAG_VPORT_HEIGHT, 32,
   TAG_END);
   s_pScoreBuffer = simpleBufferCreate(0,

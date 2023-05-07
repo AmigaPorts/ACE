@@ -51,6 +51,9 @@ Now that files are converted, it's time to load them in-game and draw the backgr
 Replace the old palette-setting code with new one, as well as add the background from loaded tile.
 
 ```c
+// At the top of the file, near other includes
+#include <ace/utils/palette.h>
+
 void gameGsCreate(void) {
   // ...old stuff here...
 

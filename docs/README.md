@@ -18,14 +18,16 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Blitter](programming/blit.md)
 1. [Moving blitted objects](programming/moving_blits.md)
 1. [Loading images and displaying background](programming/loading_images.md)
-1. Properly handling blitted object undraw
+1. [Handling blitted object undraw](programming/blit_undraw.md)
 1. Blitting with masks
+1. Optimizing blits
 1. Fonts
+1. Audio
 1. Debugging memory leaks
 1. Organizing your project
 1. Copperlists
+1. Double buffering
 1. [Sprites](programming/sprites.md)
-1. Audio
 1. [Working with and without OS](programming/os.md)
 1. DMA usage
 
