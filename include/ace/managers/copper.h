@@ -5,10 +5,6 @@
 #ifndef _ACE_MANAGERS_COPPER_H_
 #define _ACE_MANAGERS_COPPER_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @file copper.h
  * @brief Double-buffered copper manager - one to rule them all.
@@ -29,6 +25,10 @@ extern "C" {
  * unusable without them. Some things you'll have to implement by yourself.
  * You have been warned.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef AMIGA
 #include <hardware/dmabits.h> // DMAF defines

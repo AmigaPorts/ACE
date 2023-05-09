@@ -84,7 +84,7 @@ void gameGsCreate(void) {
   // Viewport for score bar - on top of screen
   s_pVpScore = vPortCreate(0,
     TAG_VPORT_VIEW, s_pView, // Required: specify parent view
-    TAG_VPORT_BPP, 2, // Optional: 2 bits per pixel, 4 colors
+    TAG_VPORT_BPP, 4, // Optional: 4 bits per pixel, 16 colors
     TAG_VPORT_HEIGHT, 32, // Optional: let's make it 32px high
   TAG_END); // same syntax as view creation
 
@@ -99,7 +99,7 @@ void gameGsCreate(void) {
   // Now let's do the same for main playfield
   s_pVpMain = vPortCreate(0,
     TAG_VPORT_VIEW, s_pView,
-    TAG_VPORT_BPP, 2, // 2 bits per pixel, 4 colors
+    TAG_VPORT_BPP, 4, // 4 bits per pixel, 16 colors
     // We won't specify height here - viewport will take remaining space.
   TAG_END);
   s_pMainBuffer = simpleBufferCreate(0,

@@ -1,4 +1,4 @@
-# Blitter & basic animation
+# Blitter
 
 We still don't have anything except black screen - in this step we're going
 to use some colors. This tutorial will at first aim to recreate classic Pong
@@ -109,7 +109,7 @@ void gameGsCreate(void) {
   // Viewport for score bar - on top of screen
   s_pVpScore = vPortCreate(0,
     TAG_VPORT_VIEW, s_pView,
-    TAG_VPORT_BPP, 2,
+    TAG_VPORT_BPP, 4,
     TAG_VPORT_HEIGHT, 32,
   TAG_END);
   s_pScoreBuffer = simpleBufferCreate(0,
@@ -133,7 +133,7 @@ void gameGsCreate(void) {
   s_pVpScore->pPalette[3] = 0x0008; // Blue - same brightness as red
 
 //-------------------------------------------------------------- NEW STUFF START
-  // Draw line separating score VPort and main VPort
+  // Draw line separating score VPort and main VPort, leave one line blank after it
   blitLine(
     s_pScoreBuffer->pBack,
     0, s_pVpScore->uwHeight - 2,
@@ -183,6 +183,7 @@ void gameGsLoop(void) {
       (s_pVpMain->uwHeight - BALL_WIDTH) / 2,
       BALL_WIDTH, BALL_WIDTH, BALL_COLOR
     );
+    vPortWaitForEnd(s_pVpMain); // Wait for end of frame
 //---------------------------------------------------------------- NEW STUFF END
   }
 }

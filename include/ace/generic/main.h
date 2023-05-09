@@ -5,6 +5,19 @@
 #ifndef _ACE_GENERIC_MAIN_H_
 #define _ACE_GENERIC_MAIN_H_
 
+/**
+ * @file main.h
+ * @brief Implements generic way of starting ACE project, allowing to avoid
+ * excess boilerplate.
+ *
+ * This module is based around Arduino's setup/loop idiom: the idea is to have
+ * unified way of setting up stuff that almost every project will use,
+ * and moving management of everything else to dedicated callbacks.
+ *
+ * You can always skip including this file if you prefer to have custom main()
+ * and program flow.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,10 +37,11 @@ extern "C" {
 #endif
 
 //--------------------------------------------------------- USER FUNCTIONS BEGIN
-// Those functions must be defined by the user!
+// Those functions must be defined by the user in some other file (e.g. main.c)!
 
 /**
  * @brief User initialization code.
+ *
  * This is called once ACE is mostly set up, before calling genericProcess.
  * Use it to initialize additional ACE modules or set up your game.
  *
@@ -38,6 +52,7 @@ void genericCreate(void);
 
 /**
  * @brief Main loop code.
+ *
  * This is called while GENERIC_MAIN_LOOP_CONDITION is true.
  * Use it to process things every frame, e.g. current game state,
  * or additional ACE modules.
@@ -49,6 +64,7 @@ void genericProcess(void);
 
 /**
  * @brief User deinitialization code.
+ *
  * This is called once GENERIC_MAIN_LOOP_CONDITION returns false.
  * After executing this function, app will deinitialize and return to OS.
  * Use it to clean up after things you've set up in genericCreate.
@@ -81,7 +97,7 @@ uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 __attribute__((noreturn))
 void __stack_chk_fail(void) {
 	logWrite("ERR: STACK SMASHED\n");
-	while(1) {}
+	while(1) continue;
 }
 #endif
 

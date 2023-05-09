@@ -161,7 +161,7 @@ void viewLoad(tView *pView) {
 	s_isPAL = systemIsPal();
 	UWORD uwWaitPos = (s_isPAL == 1) ? 300 : 260;
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < uwWaitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) continue;
 #if defined(AMIGA)
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
@@ -210,7 +210,7 @@ void viewLoad(tView *pView) {
 	systemSetDmaBit(DMAB_RASTER, pView != 0);
 
 	// if we are setting a NULL viewport we need to know if pal/NTSC
-	while(getRayPos().bfPosY < uwWaitPos) {}
+	while(getRayPos().bfPosY < uwWaitPos) continue;
 
 #endif // AMIGA
 	logBlockEnd("viewLoad()");
@@ -386,10 +386,10 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 
 	if(isExact) {
 		// If current beam pos is on or past end pos, wait for start of next frame
-		while (getRayPos().bfPosY >= uwEndPos) {}
+		while (getRayPos().bfPosY >= uwEndPos) continue;
 	}
 	// If current beam pos is before end pos, wait for it
-	while (getRayPos().bfPosY < uwEndPos) {}
+	while (getRayPos().bfPosY < uwEndPos) continue;
 #endif // AMIGA
 }
 

@@ -45,8 +45,8 @@
 typedef void (*tHwIntVector)(void);
 
 typedef struct _tAceInterrupt {
-	volatile tAceIntHandler pHandler;
-	volatile void *pData;
+	tAceIntHandler pHandler;
+	void *pData;
 } tAceInterrupt;
 
 //---------------------------------------------------------------------- GLOBALS
@@ -81,11 +81,11 @@ static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int1Handler, int2Handler, int3Handler, int4Handler,
 	int5Handler, int6Handler, int7Handler
 };
-static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static volatile tHwIntVector * s_pHwVectors = 0;
-static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
-static volatile tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static volatile UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
+static tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
+static tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
+static tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
+static UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
 
 // Manager logic vars
 static WORD s_wSystemUses;
@@ -489,13 +489,11 @@ void systemCreate(void) {
   // Determine original stack size
   s_pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
-#if defined(ACE_DEBUG)
 	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
 	if(s_pProcess->pr_CLI) {
 		ulStackSize = *(ULONG *)s_pProcess->pr_ReturnAddr;
 	}
 	logWrite("Stack size: %lu\n", ulStackSize);
-#endif
 	*pStackLower = SYSTEM_STACK_CANARY;
 
 	// Reserve all audio channels - apparantly this allows for int flag polling
@@ -535,7 +533,7 @@ void systemCreate(void) {
 
 	// Disable all DMA - only once
 	// Wait for vbl before disabling sprite DMA
-	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 
 	// Unuse system so that it gets backed up once and then re-enable
@@ -554,7 +552,7 @@ void systemDestroy(void) {
 	g_pCustom->intreq = 0x7FFF;
 
 	// Wait for vbl before disabling sprite DMA
-	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 	g_pCustom->intreq = 0x7FFF;
 
@@ -587,9 +585,13 @@ void systemDestroy(void) {
 }
 
 void systemUnuse(void) {
+	if(s_wSystemUses == 1) {
+		// Do before counter is decreased, otherwise it'll fall into infinite loop!
+		logWrite("Turning off the system...\n");
+	}
+
 	--s_wSystemUses;
 	if(!s_wSystemUses) {
-		logWrite("Turning off the system...\n");
 		if(g_pCustom->dmaconr & DMAF_DISK) {
 			// Flush disk activity if it was used
 			// This 'if' is here because otherwise systemUnuse() called
@@ -651,7 +653,7 @@ void systemUnuse(void) {
 
 		// Game's bitplanes & copperlists are still used so don't disable them
 		// Wait for vbl before disabling sprite DMA
-		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 		g_pCustom->dmacon = s_uwOsMinDma;
 
 		// Save OS interrupt vectors and enable ACE's
@@ -678,12 +680,11 @@ void systemUnuse(void) {
 
 void systemUse(void) {
 	if(!s_wSystemUses) {
-		logWrite("Turning on the system...\n");
 		// Disable app interrupts/dma, keep display-related DMA
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 		g_pCustom->dmacon = s_uwOsMinDma;
-		while(!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while(!(g_pCustom->intreqr & INTF_VERTB)) continue;
 
 		// Disable CIA interrupts
 		g_pCia[CIA_A]->icr = 0x7F;
@@ -727,6 +728,11 @@ void systemUse(void) {
 		keyReset();
 	}
 	++s_wSystemUses;
+
+	if(s_wSystemUses == 1) {
+		// It should be "turned" but I prefer the message being consistent.
+		logWrite("Turning on the system...\n");
+	}
 }
 
 UBYTE systemIsUsed(void) {
@@ -761,26 +767,30 @@ UBYTE systemBlitterIsUsed(void) {
 }
 
 void systemSetInt(
-	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData
 ) {
-	// Disable ACE handler during data swap to ensure atomic op
-	s_pAceInterrupts[ubIntNumber].pHandler = 0;
-
-	// Re-enable handler or disable it if 0 was passed
-	if(pHandler == 0) {
+	// Disable interrupt during data swap to not get stuck inside ACE's ISR
+	if(!s_wSystemUses) {
 		g_pCustom->intena = BV(ubIntNumber);
+	}
+
+	// Disable handler or re-enable it if 0 was passed
+	if(pHandler == 0) {
+		s_pAceInterrupts[ubIntNumber].pHandler = 0;
 		s_uwAceIntEna &= ~BV(ubIntNumber);
 	}
 	else {
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		if(!s_wSystemUses) {
+			g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		}
 	}
 }
 
 void systemSetCiaInt(
-	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, void *pIntData
 ) {
 	// Disable ACE handler during data swap to ensure atomic op
 	s_pAceCiaInterrupts[ubCia][ubIntBit].pHandler = 0;

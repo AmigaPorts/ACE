@@ -32,6 +32,13 @@ typedef int16_t WORD;
 typedef int32_t LONG;
 #endif // AMIGA
 
+// Potential collision with stdio
+#if !defined(ULONG_MAX)
+#define ULONG_MAX 0xFFFFFFFFu
+#endif
+#define UWORD_MAX 0xFFFFu
+#define UBYTE_MAX 0xFFu
+
 #if defined(__CODE_CHECKER__) || defined(__INTELLISENSE__)
 // My realtime source checker has problems with GCC asm() expanded from REGARG()
 // being in fn arg list, so I just use blank defines for it
