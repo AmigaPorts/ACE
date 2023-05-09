@@ -158,12 +158,12 @@ extern const UBYTE g_pToAscii[];
 //-------------------------------------------------------------------- FUNCTIONS
 
 /**
- * Initializes mouse manager.
+ * Initializes Keyboard manager.
  */
 void keyCreate(void);
 
 /**
- * Cleans up after mouse manager.
+ * Cleans up after Keyboard manager.
  */
 void keyDestroy(void);
 
