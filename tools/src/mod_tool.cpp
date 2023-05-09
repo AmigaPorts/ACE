@@ -19,15 +19,15 @@ int main(int lArgCount, const char *pArgs[])
 	std::string szSamplePackPath;
 	bool isStripSamples = true;
 
-	for(int i = 0; i < lArgCount; ++i) {
-		if(pArgs[i] == std::string("-i")) {
-			vModsIn.push_back(std::make_shared<tMod>(pArgs[++i]));
+	for(auto ArgIndex = 0; ArgIndex < lArgCount; ++ArgIndex) {
+		if(pArgs[ArgIndex] == std::string("-i")) {
+			vModsIn.push_back(std::make_shared<tMod>(pArgs[++ArgIndex]));
 		}
-		else if(pArgs[i] == std::string("-o")) {
-			vOutNames.push_back(pArgs[++i]);
+		else if(pArgs[ArgIndex] == std::string("-o")) {
+			vOutNames.push_back(pArgs[++ArgIndex]);
 		}
-		else if(pArgs[i] == std::string("-sp")) {
-			szSamplePackPath = pArgs[++i];
+		else if(pArgs[ArgIndex] == std::string("-sp")) {
+			szSamplePackPath = pArgs[++ArgIndex];
 		}
 	}
 
@@ -44,6 +44,10 @@ int main(int lArgCount, const char *pArgs[])
 	for(const auto &pMod: vModsIn) {
 		const auto &ModSamples = pMod->getSamples();
 		for(const auto &ModSample: ModSamples) {
+			if(ModSample.m_vData.empty()) {
+				continue;
+			}
+
 			// Check if sample is on the list
 			auto FoundMergedSample = std::find_if(
 				vMergedSamples.begin(), vMergedSamples.end(),
@@ -54,6 +58,7 @@ int main(int lArgCount, const char *pArgs[])
 			);
 			if(FoundMergedSample == vMergedSamples.end()) {
 				// Sample not on the list - add it
+				fmt::print(FMT_STRING("Adding sample '{}' at index {}\n"), ModSample.m_szName, vMergedSamples.size());
 				vMergedSamples.push_back(ModSample);
 			}
 			else {
@@ -84,7 +89,7 @@ int main(int lArgCount, const char *pArgs[])
 						return isSame;
 					}
 				);
-				ubIdxNew = std::distance(vMergedSamples.begin(), SampleNew);
+				ubIdxNew = uint8_t(std::distance(vMergedSamples.begin(), SampleNew));
 			}
 			vReorder.push_back(ubIdxNew);
 		}

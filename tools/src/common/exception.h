@@ -13,4 +13,4 @@ void exceptionHandle(
 	const std::exception &Ex, const std::string &szOperation
 );
 
-#endif _ACE_TOOLS_COMMON_EXCEPTION_H_
+#endif // _ACE_TOOLS_COMMON_EXCEPTION_H_

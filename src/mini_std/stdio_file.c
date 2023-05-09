@@ -92,6 +92,7 @@ long ftell(FILE *pStream) {
 
 int feof(UNUSED_ARG FILE *pStream) {
 	// FIXME: implement
+
 	LONG lPos = Seek((BPTR)pStream, 0L, OFFSET_CURRENT);
 	Seek((BPTR)pStream, 0L, OFFSET_END);
 

@@ -40,16 +40,6 @@ void systemDestroy(void);
 
 void systemKill(const char *szMsg);
 
-void systemSetInt(
-	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
-);
-
-void systemSetCiaInt(
-	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
-);
-
-void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue);
-
 void systemUse(void);
 
 void systemUnuse(void);
@@ -64,9 +54,13 @@ UBYTE systemBlitterIsUsed(void);
 
 void systemDump(void);
 
-void systemSetInt(
-	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
+void systemSetInt(UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData);
+
+void systemSetCiaInt(
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, void *pIntData
 );
+
+void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue);
 
 void systemSetDmaBit(UBYTE ubDmaBit, UBYTE isEnabled);
 

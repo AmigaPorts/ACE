@@ -5,15 +5,15 @@
 #ifndef _ACE_UTILS_SPRITE_H_
 #define _ACE_UTILS_SPRITE_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @file sprite.h
  * @brief Useful utilities for sprite management if you don't intend to use the
  * ACE's sprite manager.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <ace/managers/copper.h>
 
