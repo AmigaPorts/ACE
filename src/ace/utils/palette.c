@@ -52,7 +52,7 @@ void paletteDim(
 	}
 }
 
-void paletteDimAGA(ULONG *pSource, ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
+void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
 	for(UBYTE c = 0; c != ubColorCount; ++c) {
 		pDest[c] = paletteColorDimAGA(pSource[c],  ubLevel) ;
 	}
