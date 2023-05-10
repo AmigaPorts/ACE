@@ -19,9 +19,9 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Moving blitted objects](programming/moving_blits.md)
 1. [Loading images and displaying background](programming/loading_images.md)
 1. [Handling blitted object undraw](programming/blit_undraw.md)
-1. Blitting with masks
-1. Optimizing blits
+1. [Blitting with masks](programming/blits_with_mask.md)
 1. Fonts
+1. Optimizing blits
 1. Audio
 1. Debugging memory leaks
 1. Organizing your project
