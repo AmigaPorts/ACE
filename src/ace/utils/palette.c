@@ -24,9 +24,26 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	}
 	else {
 		fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
-		UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
+		UWORD uwColorsRead = MIN(ubPaletteLength, ubMaxLength);
+		if(uwColorsRead ==255)
+			uwColorsRead = 256;
 		logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
-		fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
+		if (uwColorsRead > 32)
+		{
+			// for(int c=0; c<ubColorsRead; ++c) {
+			// 	UBYTE ubR, ubG, ubB;
+			// 	fileRead(pFile, &ubR, sizeof(UBYTE));
+			// 	fileRead(pFile, &ubG, sizeof(UBYTE));
+			// 	fileRead(pFile, &ubB, sizeof(UBYTE));
+
+			// 	pPalette[c] = (ubR << 16) | (ubG << 8) | ubB;
+			// }
+			fileRead(pFile, pPalette, sizeof(ULONG) * uwColorsRead);
+		}
+		else
+		{
+			fileRead(pFile, pPalette, sizeof(UWORD) * uwColorsRead);
+		}
 		fileClose(pFile);
 	}
 
@@ -53,7 +70,7 @@ void paletteDim(
 }
 
 void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
-	for(UBYTE c = 0; c != ubColorCount; ++c) {
+	for(UWORD c = 0; c <= ubColorCount; ++c) {
 		pDest[c] = paletteColorDimAGA(pSource[c],  ubLevel) ;
 	}
 }
