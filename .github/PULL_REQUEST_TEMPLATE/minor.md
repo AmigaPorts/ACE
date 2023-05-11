@@ -1,7 +1,7 @@
 <!--- Use this only if you've made non-breaking improvements or bugfixes -->
 
 ## Description
-<!--- Describe your changes in few words/sentences.  If your pull request is related to an issue, please put `Closes #issueNumber` or `Related to #issueNumber` sentence here -->
+<!--- Describe your changes in few words/sentences. If your pull request is related to an issue, please put `Closes #issueNumber` or `Related to #issueNumber` sentence here. -->
 
 ## Checklist
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
