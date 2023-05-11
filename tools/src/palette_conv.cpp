@@ -7,7 +7,7 @@
 #include "common/palette.h"
 #include "common/bitmap.h"
 
-void printUsage(const std::string &szAppName) {
+void printUsage(const std::string& szAppName) {
 	using fmt::print;
 	fmt::print("Usage:\n\t{} inPath.ext [outPath.ext]\n", szAppName);
 	print("\ninPath\t- path to supported input palette file\n");
@@ -20,11 +20,11 @@ void printUsage(const std::string &szAppName) {
 	print("\tpng\tPalette preview\n");
 }
 
-int main(int lArgCount, const char *pArgs[])
+int main(int lArgCount, const char* pArgs[])
 {
 	const uint8_t ubMandatoryArgCnt = 1;
 	// Mandatory args
-	if(lArgCount - 1 < ubMandatoryArgCnt) {
+	if (lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
@@ -36,13 +36,13 @@ int main(int lArgCount, const char *pArgs[])
 	std::string szPathOut = nFs::trimExt(szPathIn) + ".gpl";
 
 	// Search for optional args
-	if(lArgCount - 1 > 1) {
+	if (lArgCount - 1 > 1) {
 		szPathOut = pArgs[2];
 	}
 
 	// Load input palette
 	auto Palette = tPalette::fromFile(szPathIn);
-	if(Palette.m_vColors.empty()) {
+	if (Palette.m_vColors.empty()) {
 		nLog::error("Invalid input path or palette is empty: '{}'", szPathIn);
 		return 1;
 	}
@@ -51,29 +51,29 @@ int main(int lArgCount, const char *pArgs[])
 	// Generate output palette
 	std::string szExtOut = nFs::getExt(szPathOut);
 	bool isOk = false;
-	if(nFs::getExt(szPathIn) == szExtOut) {
+	if (nFs::getExt(szPathIn) == szExtOut) {
 		nLog::error("Input and output extensions are the same");
 		return EXIT_FAILURE;
 	}
 
 	try {
-		if(szExtOut == "gpl") {
+		if (szExtOut == "gpl") {
 			isOk = Palette.toGpl(szPathOut);
 		}
-		else if(szExtOut == "act") {
+		else if (szExtOut == "act") {
 			isOk = Palette.toAct(szPathOut);
 		}
-		else if(szExtOut == "pal") {
+		else if (szExtOut == "pal") {
 			isOk = Palette.toPromotionPal(szPathOut);
 		}
-		else if(szExtOut == "plt") {
-			isOk = Palette.toPlt(szPathOut, true);
+		else if (szExtOut == "plt") {
+			isOk = Palette.toPlt(szPathOut, false);
 		}
-		else if(szExtOut == "png") {
+		else if (szExtOut == "png") {
 			auto ColorCount = Palette.m_vColors.size();
 			tChunkyBitmap PltPreview(ColorCount * 32, 16);
-			for(uint8_t i = 0; i < ColorCount; ++i) {
-				const auto &Color = Palette.m_vColors[i];
+			for (uint8_t i = 0; i < ColorCount; ++i) {
+				const auto& Color = Palette.m_vColors[i];
 				PltPreview.fillRect(i * 32, 0, 32, 16, Color);
 				isOk = PltPreview.toPng(szPathOut);
 			}
@@ -84,11 +84,11 @@ int main(int lArgCount, const char *pArgs[])
 			return EXIT_FAILURE;
 		}
 	}
-	catch(const std::exception &Exc) {
+	catch (const std::exception& Exc) {
 		nLog::error("Writing palette failed: {}", Exc.what());
 	}
 
-	if(!isOk) {
+	if (!isOk) {
 		nLog::error("Couldn't write to '{}'", szPathOut);
 		return EXIT_FAILURE;
 	}
