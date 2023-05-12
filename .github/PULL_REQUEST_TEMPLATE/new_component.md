@@ -5,7 +5,6 @@
 
 ## Motivation and Context
 <!--- Why is this change required? What problem does it solve? -->
-<!--- If it fixes an open issue, please link to the issue here. -->
 
 ## ACE inclusion self-assesment
 <!--- It's most likely that we'll include your code in ACE's codebase anyway, however please take a few minutes to answer following questions, which will allow making more conscious decision. -->
