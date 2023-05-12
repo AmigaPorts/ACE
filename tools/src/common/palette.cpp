@@ -207,7 +207,7 @@ bool tPalette::toPlt(const std::string& szPath, bool isForceOcs)
 			Dest.write(reinterpret_cast<char*>(&ubXR), 1);
 			Dest.write(reinterpret_cast<char*>(&ubGB), 1);
 		}
-		else {
+		else { // AGA Palette
 			uint8_t alpha = 0;
 			Dest.write(reinterpret_cast<const char*>(&alpha), 1);
 			Dest.write(reinterpret_cast<const char*>(&Color.ubR), 1);
