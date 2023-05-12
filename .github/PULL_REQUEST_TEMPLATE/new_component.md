@@ -6,7 +6,7 @@
 ## Motivation and Context
 <!--- Why is this change required? What problem does it solve? -->
 
-## ACE inclusion self-assesment
+## ACE inclusion self-assessment
 <!--- It's most likely that we'll include your code in ACE's codebase anyway, however please take a few minutes to answer following questions, which will allow making more conscious decision. -->
 
 **Are there significantly different solutions to same problem? If so, is it the most common/generic one?**
