@@ -8,8 +8,13 @@
 #include <ace/managers/blit.h>
 #include <ace/utils/custom.h>
 
+#if !defined(ACE_NO_BOB_WRAP_Y)
 // Enables support for Y-wrapping of bobs. Required for scroll- and tileBuffer.
-// #define BOB_WRAP_Y
+// Disable for extra performance in simplebuffer scenarios.
+// Making it a runtime flag wasn't giving enough performance boost,
+// needs to be define-driven/constexpr.
+#define BOB_WRAP_Y
+#endif
 
 // Undraw stack must be accessible during adding new bobs, so the most safe
 // approach is to have two lists - undraw list gets populated after draw
@@ -301,8 +306,8 @@ UBYTE bobProcessNext(void) {
 }
 
 static void bobCheckGood(const tBitMap *pBack) {
-#if defined(ACE_DEBUG)
 	if(s_pQueues[s_ubBufferCurr].pDst != pBack) {
+#if defined(ACE_DEBUG)
 		logWrite(
 			"ERR: bob manager operates on wrong buffer! Proper current: %p (%hhu), Other: %p, Arg: %p\n",
 			s_pQueues[s_ubBufferCurr].pDst, s_ubBufferCurr, s_pQueues[!s_ubBufferCurr].pDst, pBack
@@ -311,8 +316,8 @@ static void bobCheckGood(const tBitMap *pBack) {
 			logWrite("ERR: Wrong bob buffer as curr!\n");
 			s_ubBufferCurr = !s_ubBufferCurr;
 		}
-	}
 #endif
+	}
 }
 
 void bobBegin(tBitMap *pBuffer) {
