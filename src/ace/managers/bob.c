@@ -144,8 +144,10 @@ void bobInit(
 	pBob->sPos.uwY = uwY;
 	pBob->pOldPositions[0].uwX = uwX;
 	pBob->pOldPositions[0].uwY = uwY;
+	pBob->_pOldDrawOffs[0] = 0;
 	pBob->pOldPositions[1].uwX = uwX;
 	pBob->pOldPositions[1].uwY = uwY;
+	pBob->_pOldDrawOffs[1] = 0;
 
 	s_uwBgBufferLength += uwBlitWords * uwHeight * s_ubBpp;
 	++s_ubMaxBobCount;
@@ -178,14 +180,17 @@ UBYTE bobProcessNext(void) {
 			g_pCustom->bltdmod = 0;
 			g_pCustom->bltdpt = pQueue->pBg->Planes[0];
 		}
-		const tBob *pBob = pQueue->pBobs[s_ubBobsSaved];
+		tBob *pBob = pQueue->pBobs[s_ubBobsSaved];
 		++s_ubBobsSaved;
+
+		ULONG ulSrcOffs = (
+			pQueue->pDst->BytesPerRow * (pBob->sPos.uwY & (s_uwAvailHeight-1)) +
+			pBob->sPos.uwX / 8
+		);
+		UBYTE *pA = &pQueue->pDst->Planes[0][ulSrcOffs];
+		pBob->_pOldDrawOffs[s_ubBufferCurr] = pA;
+
 		if(pBob->isUndrawRequired) {
-			ULONG ulSrcOffs = (
-				pQueue->pDst->BytesPerRow * (pBob->sPos.uwY & (s_uwAvailHeight-1)) +
-				pBob->sPos.uwX / 8
-			);
-			UBYTE *pA = &pQueue->pDst->Planes[0][ulSrcOffs];
 			g_pCustom->bltamod = pBob->_wModuloUndrawSave;
 			g_pCustom->bltapt = (APTR)pA;
 			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
@@ -229,13 +234,10 @@ UBYTE bobProcessNext(void) {
 				// TODO setting B & C regs isn't necessary - few write cycles less
 				uwBltCon0 = uwBltCon1 | USEB|USED | MINTERM_B;
 			}
-			ULONG ulDstOffs = (
-				pQueue->pDst->BytesPerRow * (pPos->uwY & (s_uwAvailHeight-1)) + pPos->uwX / 8
-			);
 
 			WORD wDstModulo = s_uwDestByteWidth - (uwBlitWords<<1);
 			UBYTE *pB = pBob->pFrameData;
-			UBYTE *pCD = &pQueue->pDst->Planes[0][ulDstOffs];
+			UBYTE *pCD = pBob->_pOldDrawOffs[s_ubBufferCurr];
 
 			g_pCustom->bltcon0 = uwBltCon0;
 			g_pCustom->bltcon1 = uwBltCon1;
@@ -313,11 +315,7 @@ void bobBegin(tBitMap *pBuffer) {
 		const tBob *pBob = pQueue->pBobs[i];
 		if(pBob->isUndrawRequired) {
 			// Undraw next
-			ULONG ulDstOffs = (
-				pQueue->pDst->BytesPerRow * (pBob->pOldPositions[s_ubBufferCurr].uwY & (s_uwAvailHeight-1)) +
-				pBob->pOldPositions[s_ubBufferCurr].uwX / 8
-			);
-			UBYTE *pD = &pQueue->pDst->Planes[0][ulDstOffs];
+			UBYTE *pD = pBob->_pOldDrawOffs[s_ubBufferCurr];
 			blitWait();
 			g_pCustom->bltdmod = pBob->_wModuloUndrawSave;
 			g_pCustom->bltdpt = (APTR)pD;

@@ -63,6 +63,7 @@ typedef struct tBob {
 	// Platform-dependent private fields. Don't rely on them externally.
 	UWORD _uwBlitSize;
 	WORD _wModuloUndrawSave;
+	UBYTE *_pOldDrawOffs[2];
 } tBob;
 
 /**
