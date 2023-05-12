@@ -31,6 +31,7 @@ static UBYTE s_ubBobsDrawn;
 static UBYTE s_ubBobsSaved;
 static UWORD s_uwAvailHeight;
 static UWORD s_uwBgBufferLength;
+static UWORD s_uwDestByteWidth;
 
 tBobQueue s_pQueues[2];
 
@@ -90,6 +91,7 @@ void bobManagerCreate(
 	bobManagerReset();
 	s_ubBufferCurr = 0;
 	s_uwAvailHeight = uwAvailHeight;
+	s_uwDestByteWidth = bitmapGetByteWidth(pBack);
 
 	s_pQueues[0].pBg = 0;
 	s_pQueues[1].pBg = 0;
@@ -135,7 +137,7 @@ void bobInit(
 	pBob->isUndrawRequired = isUndrawRequired;
 	UWORD uwBlitWords = (uwWidth+15) / 16 + 1; // One word more for aligned copy
 	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << 6) | uwBlitWords;
-	pBob->_wModuloUndrawSave = bitmapGetByteWidth(s_pQueues[0].pDst) - uwBlitWords*2;
+	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords*2;
 	bobSetFrame(pBob, pFrameData, pMaskData);
 
 	pBob->sPos.uwX = uwX;
@@ -231,7 +233,7 @@ UBYTE bobProcessNext(void) {
 				pQueue->pDst->BytesPerRow * (pPos->uwY & (s_uwAvailHeight-1)) + pPos->uwX / 8
 			);
 
-			WORD wDstModulo = bitmapGetByteWidth(pQueue->pDst) - (uwBlitWords<<1);
+			WORD wDstModulo = s_uwDestByteWidth - (uwBlitWords<<1);
 			UBYTE *pB = pBob->pFrameData;
 			UBYTE *pCD = &pQueue->pDst->Planes[0][ulDstOffs];
 
