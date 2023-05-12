@@ -172,6 +172,7 @@ UBYTE bobProcessNext(void) {
 			// I tried to change A->D to C->D bug afwm/alwm need to be set
 			// for mask-copying bobs, so there's no perf to be gained.
 			UWORD uwBltCon0 = USEA|USED | MINTERM_A;
+			blitWait();
 			g_pCustom->bltcon0 = uwBltCon0;
 			g_pCustom->bltcon1 = 0;
 			g_pCustom->bltafwm = 0xFFFF;
@@ -191,6 +192,7 @@ UBYTE bobProcessNext(void) {
 		pBob->_pOldDrawOffs[s_ubBufferCurr] = pA;
 
 		if(pBob->isUndrawRequired) {
+			blitWait();
 			g_pCustom->bltamod = pBob->_wModuloUndrawSave;
 			g_pCustom->bltapt = (APTR)pA;
 			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
@@ -239,6 +241,7 @@ UBYTE bobProcessNext(void) {
 			UBYTE *pB = pBob->pFrameData;
 			UBYTE *pCD = pBob->_pOldDrawOffs[s_ubBufferCurr];
 
+			blitWait();
 			g_pCustom->bltcon0 = uwBltCon0;
 			g_pCustom->bltcon1 = uwBltCon1;
 
@@ -316,10 +319,10 @@ void bobBegin(tBitMap *pBuffer) {
 		if(pBob->isUndrawRequired) {
 			// Undraw next
 			UBYTE *pD = pBob->_pOldDrawOffs[s_ubBufferCurr];
+			UWORD uwPartHeight = s_uwAvailHeight - (pBob->pOldPositions[s_ubBufferCurr].uwY & (s_uwAvailHeight-1));
 			blitWait();
 			g_pCustom->bltdmod = pBob->_wModuloUndrawSave;
 			g_pCustom->bltdpt = (APTR)pD;
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->pOldPositions[s_ubBufferCurr].uwY & (s_uwAvailHeight-1));
 			if(uwPartHeight >= pBob->uwHeight) {
 				g_pCustom->bltsize = pBob->_uwBlitSize;
 			}
@@ -359,9 +362,7 @@ void bobPushingDone(void) {
 
 void bobEnd(void) {
 	bobPushingDone();
-	do {
-		blitWait();
-	} while(bobProcessNext());
+	while(bobProcessNext()) continue;
 	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_ubBobsPushed;
 	s_ubBufferCurr = !s_ubBufferCurr;
 }
