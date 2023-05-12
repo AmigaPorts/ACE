@@ -8,6 +8,9 @@
 #include <ace/managers/blit.h>
 #include <ace/utils/custom.h>
 
+// Enables support for Y-wrapping of bobs. Required for scroll- and tileBuffer.
+// #define BOB_WRAP_Y
+
 // Undraw stack must be accessible during adding new bobs, so the most safe
 // approach is to have two lists - undraw list gets populated after draw
 // and depopulated during undraw
@@ -184,18 +187,27 @@ UBYTE bobProcessNext(void) {
 		tBob *pBob = pQueue->pBobs[s_ubBobsSaved];
 		++s_ubBobsSaved;
 
+		// TODO: for BOB_WRAP_Y and ACE_DEBUG check if bob blit fits s_uwAvailHeight
 		ULONG ulSrcOffs = (
-			pQueue->pDst->BytesPerRow * (pBob->sPos.uwY & (s_uwAvailHeight-1)) +
-			pBob->sPos.uwX / 8
+			pQueue->pDst->BytesPerRow * (
+#if defined(BOB_WRAP_Y)
+				pBob->sPos.uwY & (s_uwAvailHeight - 1)
+#else
+				pBob->sPos.uwY
+#endif
+			) + pBob->sPos.uwX / 8
 		);
 		UBYTE *pA = &pQueue->pDst->Planes[0][ulSrcOffs];
 		pBob->_pOldDrawOffs[s_ubBufferCurr] = pA;
 
 		if(pBob->isUndrawRequired) {
+#if defined(BOB_WRAP_Y)
+			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+#endif
 			blitWait();
 			g_pCustom->bltamod = pBob->_wModuloUndrawSave;
 			g_pCustom->bltapt = (APTR)pA;
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+#if defined(BOB_WRAP_Y)
 			if(uwPartHeight >= pBob->uwHeight) {
 				g_pCustom->bltsize = pBob->_uwBlitSize;
 			}
@@ -207,6 +219,9 @@ UBYTE bobProcessNext(void) {
 				g_pCustom->bltapt = pA;
 				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
 			}
+#else
+			g_pCustom->bltsize = pBob->_uwBlitSize;
+#endif
 		}
 		return 1;
 	}
@@ -240,6 +255,9 @@ UBYTE bobProcessNext(void) {
 			WORD wDstModulo = s_uwDestByteWidth - (uwBlitWords<<1);
 			UBYTE *pB = pBob->pFrameData;
 			UBYTE *pCD = pBob->_pOldDrawOffs[s_ubBufferCurr];
+#if defined(BOB_WRAP_Y)
+			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+#endif
 
 			blitWait();
 			g_pCustom->bltcon0 = uwBltCon0;
@@ -260,7 +278,7 @@ UBYTE bobProcessNext(void) {
 			g_pCustom->bltbpt = (APTR)pB;
 			g_pCustom->bltcpt = (APTR)pCD;
 			g_pCustom->bltdpt = (APTR)pCD;
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+#if defined(BOB_WRAP_Y)
 			if(uwPartHeight >= pBob->uwHeight) {
 				g_pCustom->bltsize = uwBlitSize;
 			}
@@ -272,9 +290,10 @@ UBYTE bobProcessNext(void) {
 				g_pCustom->bltdpt = (APTR)pCD;
 				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
 			}
-
+#else
+			g_pCustom->bltsize = uwBlitSize;
+#endif
 			pBob->pOldPositions[s_ubBufferCurr].ulYX = pPos->ulYX;
-
 			return 1;
 		}
 	}
@@ -301,14 +320,13 @@ void bobBegin(tBitMap *pBuffer) {
 	tBobQueue *pQueue = &s_pQueues[s_ubBufferCurr];
 
 	// Prepare for undraw
+	UBYTE *pA = pQueue->pBg->Planes[0];
 	blitWait();
-	UWORD uwBltCon0 = USEA|USED | MINTERM_A;
-	g_pCustom->bltcon0 = uwBltCon0;
+	g_pCustom->bltcon0 = USEA|USED | MINTERM_A;
 	g_pCustom->bltcon1 = 0;
 	g_pCustom->bltafwm = 0xFFFF;
 	g_pCustom->bltalwm = 0xFFFF;
 	g_pCustom->bltamod = 0;
-	UBYTE *pA = pQueue->pBg->Planes[0];
 	g_pCustom->bltapt = pA;
 #ifdef GAME_DEBUG
 	UWORD uwDrawnHeight = 0;
@@ -319,10 +337,13 @@ void bobBegin(tBitMap *pBuffer) {
 		if(pBob->isUndrawRequired) {
 			// Undraw next
 			UBYTE *pD = pBob->_pOldDrawOffs[s_ubBufferCurr];
+#if defined(BOB_WRAP_Y)
 			UWORD uwPartHeight = s_uwAvailHeight - (pBob->pOldPositions[s_ubBufferCurr].uwY & (s_uwAvailHeight-1));
+#endif
 			blitWait();
 			g_pCustom->bltdmod = pBob->_wModuloUndrawSave;
 			g_pCustom->bltdpt = (APTR)pD;
+#if defined(BOB_WRAP_Y)
 			if(uwPartHeight >= pBob->uwHeight) {
 				g_pCustom->bltsize = pBob->_uwBlitSize;
 			}
@@ -334,6 +355,9 @@ void bobBegin(tBitMap *pBuffer) {
 				g_pCustom->bltdpt = pD;
 				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
 			}
+#else
+			g_pCustom->bltsize = pBob->_uwBlitSize;
+#endif
 
 #ifdef GAME_DEBUG
 			UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
@@ -362,7 +386,8 @@ void bobPushingDone(void) {
 
 void bobEnd(void) {
 	bobPushingDone();
-	while(bobProcessNext()) continue;
+	do {
+	} while(bobProcessNext());
 	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_ubBobsPushed;
 	s_ubBufferCurr = !s_ubBufferCurr;
 }
