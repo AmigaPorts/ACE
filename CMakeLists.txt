@@ -176,7 +176,11 @@ function(convertBitmaps)
 		list(GET convertBitmaps_SOURCES ${bitmap_idx} bitmapPath)
 		toAbsolute(bitmapPath)
 		list(GET convertBitmaps_DESTINATIONS ${bitmap_idx} outPath)
-		toAbsolute(outPath)
+		if("${outPath}" STREQUAL "NONE")
+			set(outPath "")
+		else()
+			toAbsolute(outPath)
+		endif()
 		if(${maskCount} GREATER 0)
 			list(GET convertBitmaps_MASKS ${bitmap_idx} maskPath)
 			if("${maskPath}" STREQUAL "NONE")
@@ -187,6 +191,11 @@ function(convertBitmaps)
 		endif()
 
 		set(extraFlagsPerFile ${extraFlags})
+		if("${outPath} " STREQUAL " ")
+			list(APPEND extraFlagsPerFile -no)
+		else()
+			list(APPEND extraFlagsPerFile -o ${outPath})
+		endif()
 		if(NOT "${convertBitmaps_MASK_COLOR} " STREQUAL " ")
 			list(APPEND extraFlagsPerFile -mc "\"${convertBitmaps_MASK_COLOR}\"")
 			if("${maskPath} " STREQUAL " ")
@@ -195,9 +204,10 @@ function(convertBitmaps)
 				list(APPEND extraFlagsPerFile -mf ${maskPath})
 			endif()
 		endif()
+
 		add_custom_command(
 			OUTPUT ${outPath} ${maskPath}
-			COMMAND ${TOOL_BITMAP_CONV} ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlagsPerFile}
+			COMMAND ${TOOL_BITMAP_CONV} ${convertBitmaps_PALETTE} ${bitmapPath} ${extraFlagsPerFile}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			DEPENDS ${convertBitmaps_PALETTE} ${bitmapPath}
 		)
