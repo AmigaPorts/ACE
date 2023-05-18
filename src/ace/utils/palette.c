@@ -27,7 +27,7 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 		UWORD uwColorsRead = MIN(ubPaletteLength, ubMaxLength);
 		if(uwColorsRead ==255)
 			uwColorsRead = 256;
-		logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
+		logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, uwColorsRead);
 		if (uwColorsRead > 32)
 		{
 			// for(int c=0; c<ubColorsRead; ++c) {
