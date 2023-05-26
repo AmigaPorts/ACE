@@ -39,6 +39,25 @@ int main(int lArgCount, const char *pArgs[])
 		return EXIT_FAILURE;
 	}
 
+	for(const auto &pMod: vModsIn) {
+		const auto &ModSamples = pMod->getSamples();
+		const auto SampleCount = ModSamples.size();
+		for(auto SampleIndex = 0; SampleIndex < SampleCount; ++SampleIndex) {
+			for(auto OtherIndex = SampleIndex + 1; OtherIndex < SampleCount; ++OtherIndex) {
+				if(
+					!ModSamples[SampleIndex].m_szName.empty() &&
+					ModSamples[SampleIndex].m_szName == ModSamples[OtherIndex].m_szName
+				) {
+					fmt::print(
+						"ERR: Mod '{}' has duplicate sample name: '{}'\n",
+						pMod->getSongName(), ModSamples[SampleIndex].m_szName
+					);
+					return EXIT_FAILURE;
+				}
+			}
+		}
+	}
+
 	// Get the collection of unique samples
 	std::vector<tSample> vMergedSamples;
 	for(const auto &pMod: vModsIn) {
