@@ -33,6 +33,7 @@ typedef struct tSprite {
 	UBYTE ubChannelIndex;
 	UBYTE isEnabled;
 	UBYTE isHeaderToBeUpdated;
+	UBYTE isAttached; // Odd Sprites Only.
 } tSprite;
 
 /**
@@ -159,6 +160,18 @@ void spriteProcess(tSprite *pSprite);
  * @see spriteProcess()
  */
 void spriteProcessChannel(UBYTE ubChannelIndex);
+
+
+/**
+ * @brief Sets whether the sprite is an attached sprite.
+ * Attached sprites are only available on odd sprite channels.
+ *
+ * 
+ * @param isAttached Set to 1 to enable sprite attachment, otherwise set to 0.
+ *
+ * @see spriteProcess()
+ */
+void spriteSetAttached(tSprite *pSprite, UBYTE isAttached);
 
 #ifdef __cplusplus
 }

@@ -218,10 +218,16 @@ void spriteProcess(tSprite *pSprite) {
 	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
 	pHeader->uwRawCtl = (UWORD) (
 		(uwVStop << 8) |
+		((pSprite->ubChannelIndex % 2 ==1 ? pSprite->isAttached : 0) <<7)|
 		(BTST(uwVStart, 8) << 2) |
 		(BTST(uwVStop, 8) << 1) |
 		BTST(uwHStart, 0)
 	);
+	
+	// if (pSprite->ubChannelIndex  % 2 == 1) {
+	// 	pHeader->bfAttach = pSprite->isAttached;	
+	// }
+	
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
@@ -238,5 +244,20 @@ void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
 #endif
 
 	pSprite->uwHeight = uwHeight;
+	pSprite->isHeaderToBeUpdated = 1;
+}
+
+
+void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
+#if defined(ACE_DEBUG)
+	if(pSprite->ubChannelIndex % 2 == 0) {
+		logWrite(
+			"ERR: Invalid sprite %hhu is not an odd sprite\n",
+			pSprite->ubChannelIndex
+		);
+		isAttached = 0;
+	}
+#endif	
+	pSprite->isAttached = isAttached;
 	pSprite->isHeaderToBeUpdated = 1;
 }
