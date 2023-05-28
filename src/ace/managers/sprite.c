@@ -223,11 +223,7 @@ void spriteProcess(tSprite *pSprite) {
 		(BTST(uwVStop, 8) << 1) |
 		BTST(uwHStart, 0)
 	);
-	
-	// if (pSprite->ubChannelIndex  % 2 == 1) {
-	// 	pHeader->bfAttach = pSprite->isAttached;	
-	// }
-	
+
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
