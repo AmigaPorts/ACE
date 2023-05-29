@@ -134,7 +134,6 @@ void spriteSetEnabled(tSprite *pSprite, UBYTE isEnabled) {
 	s_pChannelsData[pSprite->ubChannelIndex].ubCopperRegenCount = 2; // for front/back buffers
 }
 
-
 void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
 #if defined(ACE_DEBUG)
 	if(pSprite->ubChannelIndex % 2 == 0) {
@@ -148,7 +147,6 @@ void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
 	pSprite->isAttached = isAttached;
 	pSprite->isHeaderToBeUpdated = 1;
 }
-
 
 void spriteRequestMetadataUpdate(tSprite *pSprite) {
 	pSprite->isHeaderToBeUpdated = 1;
@@ -267,4 +265,3 @@ void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
 	pSprite->uwHeight = uwHeight;
 	pSprite->isHeaderToBeUpdated = 1;
 }
-
