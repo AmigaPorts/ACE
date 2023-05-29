@@ -134,6 +134,20 @@ void spriteSetEnabled(tSprite *pSprite, UBYTE isEnabled) {
 	s_pChannelsData[pSprite->ubChannelIndex].ubCopperRegenCount = 2; // for front/back buffers
 }
 
+void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
+#if defined(ACE_DEBUG)
+	if(pSprite->ubChannelIndex % 2 == 0) {
+		logWrite(
+			"ERR: Invalid sprite to set attachment on. %hhu is not an odd sprite\n",
+			pSprite->ubChannelIndex
+		);
+		isAttached = 0;
+	}
+#endif	
+	pSprite->isAttached = isAttached;
+	pSprite->isHeaderToBeUpdated = 1;
+}
+
 void spriteRequestMetadataUpdate(tSprite *pSprite) {
 	pSprite->isHeaderToBeUpdated = 1;
 }
@@ -206,7 +220,16 @@ void spriteProcess(tSprite *pSprite) {
 	if(!pSprite->isHeaderToBeUpdated) {
 		return;
 	}
-
+	UBYTE isAttached = pSprite->isAttached;
+	#if defined(ACE_DEBUG)
+		if(pSprite->ubChannelIndex % 2 == 0 && pSprite->isAttached) {
+			logWrite(
+				"ERR: Invalid sprite to set attachment on. %hhu is not an odd sprite\n",
+				pSprite->ubChannelIndex
+			);
+			isAttached = 0;
+		}
+	#endif
 	// Sprite in list mode has 2-word header before and after data, each
 	// occupies 1 line of the bitmap.
 	// TODO: get rid of hardcoded 128 X offset in reasonable way.
@@ -218,12 +241,12 @@ void spriteProcess(tSprite *pSprite) {
 	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
 	pHeader->uwRawCtl = (UWORD) (
 		(uwVStop << 8) |
-		((pSprite->ubChannelIndex % 2 ==1 ? pSprite->isAttached : 0) <<7)|
+		(isAttached << 7) |
 		(BTST(uwVStart, 8) << 2) |
 		(BTST(uwVStop, 8) << 1) |
 		BTST(uwHStart, 0)
 	);
-
+	
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
