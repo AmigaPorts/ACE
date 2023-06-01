@@ -328,7 +328,7 @@ UBYTE blitUnsafeCopyMask(
 
 	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
 	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
-	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
+	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst) && pSrc->Depth == pDst->Depth) {
 		wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 		wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
 		wHeight *= pSrc->Depth;
