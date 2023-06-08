@@ -218,9 +218,9 @@ tUwCoordYX fontDrawStr1bpp(
 	UWORD uwBoundX = 0;
 	for(const char *p = szText; *p; ++p) {
 		if(*p == '\n') {
+			uwBoundX = MAX(uwBoundX, uwX);
 			uwX = uwStartX;
 			uwY += pFont->uwHeight;
-			uwBoundX = MAX(uwBoundX, uwX);
 		}
 		else {
 			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
