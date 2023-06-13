@@ -89,6 +89,15 @@ void bobManagerCreate(
 		"bobManagerCreate(pFront: %p, pBack: %p, uwAvailHeight: %hu)",
 		pFront, pBack, uwAvailHeight
 	);
+
+	if(!bitmapIsInterleaved(pFront)) {
+		logWrite("ERR: front buffer bitmap %p isn't interleaved\n", pFront);
+	}
+
+	if(!bitmapIsInterleaved(pBack)) {
+		logWrite("ERR: back buffer bitmap %p isn't interleaved\n", pBack);
+	}
+
 	s_ubBpp = pFront->Depth;
 	s_pQueues[0].pDst = pBack;
 	s_pQueues[1].pDst = pFront;
