@@ -46,7 +46,7 @@ typedef struct tSprite {
  * since one may want to control it with joy, keyboard or in other kind of way.
  *
  * @param pView View used for displaying sprites.
- * @param uwRawCopPos In block mode, specifies an offset on where
+ * @param uwRawCopPos In raw mode, specifies an offset on where
  * the sprite commands should reside. Requires space of 16 copper commands.
  *
  * @see copBlockDisableSprites()

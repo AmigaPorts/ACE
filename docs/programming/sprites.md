@@ -45,17 +45,39 @@ The manager works in block, as well as raw copperlist mode.
 
 ```c
 // Somewhere in your gamestate creation:
-spriteManagerCreate(s_pView, 0); // For raw copper mode, pass position on
-                                 // copperlist for sprite initialization.
-systemSetDmaBit(DMAB_SPRITE, 1); // Enable sprite DMA.
+void myGsCreate(void) {
+  // Some stuff goes here...
+
+  spriteManagerCreate(s_pView, 0); // For raw copper mode, pass position on
+                                   // copperlist for sprite initialization.
+  systemSetDmaBit(DMAB_SPRITE, 1); // Enable sprite DMA.
+
+  // Stuff continues...
+}
 
 // Somewhere in your gamestate destruction:
-systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
-spriteManagerDestroy();
+void myGsDestroy(void) {
+  // Some stuff goes here...
 
-// Somewhere in gamestate loop, before you call copProcessBlocks()
-spriteProcessChannel(0); // Process first sprite channel...
-spriteProcessChannel(3); // ...and the fourth one.
+  systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
+  spriteManagerDestroy();
+
+  // Stuff continues...
+}
+
+// Somewhere in gamestate loop
+void myGsLoop(void) {
+  // Some stuff goes here...
+
+  // Before you call copProcessBlocks():
+  spriteProcessChannel(0); // Process first sprite channel...
+  spriteProcessChannel(3); // ...and the fourth one.
+
+  // Stuff continues...
+
+  copProcessBlocks(); // Be sure to call it or sprite-related copper commands won't work!
+  vPortWaitForEnd(s_pVp);
+}
 ```
 
 Note that each channel's processing must be called separately.
