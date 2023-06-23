@@ -298,7 +298,7 @@ function(convertTileset)
 	cmake_parse_arguments(
 		args
 		"INTERLEAVED;VARIABLE_HEIGHT"
-		"TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE"
+		"TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE;COLUMN_WIDTH"
 		"TILE_PATHS" ${ARGN}
 	)
 
@@ -324,6 +324,10 @@ function(convertTileset)
 
 	if(DEFINED args_PALETTE)
 		SET(argsOptional ${argsOptional} -plt ${args_PALETTE})
+	endif()
+
+	if(DEFINED args_COLUMN_WIDTH)
+		SET(argsOptional ${argsOptional} -cw ${args_COLUMN_WIDTH})
 	endif()
 
 	add_custom_command(
