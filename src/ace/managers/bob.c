@@ -150,12 +150,12 @@ void bobInit(
 	UBYTE *pFrameData, UBYTE *pMaskData, UWORD uwX, UWORD uwY
 ) {
 	pBob->uwWidth = uwWidth;
-	pBob->uwHeight = uwHeight;
+	pBob->_uwOriginalHeight = uwHeight;
 	pBob->isUndrawRequired = isUndrawRequired;
 	UWORD uwBlitWords = (uwWidth+15) / 16 + 1; // One word more for aligned copy
-	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << 6) | uwBlitWords;
 	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords*2;
 	bobSetFrame(pBob, pFrameData, pMaskData);
+	bobSetHeight(pBob, uwHeight);
 
 	pBob->sPos.uwX = uwX;
 	pBob->sPos.uwY = uwY;
@@ -166,7 +166,9 @@ void bobInit(
 	pBob->pOldPositions[1].uwY = uwY;
 	pBob->_pOldDrawOffs[1] = 0;
 
-	s_uwBgBufferLength += uwBlitWords * uwHeight * s_ubBpp;
+	if(isUndrawRequired) {
+		s_uwBgBufferLength += uwBlitWords * uwHeight * s_ubBpp;
+	}
 	++s_ubMaxBobCount;
 	// logWrite("Added bob, now max: %hhu\n", s_ubMaxBobCount);
 }
@@ -174,6 +176,22 @@ void bobInit(
 void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData) {
 	pBob->pFrameData = pFrameData;
 	pBob->pMaskData = pMaskData;
+}
+
+void bobSetHeight(tBob *pBob, UWORD uwHeight)
+{
+	if(pBob->isUndrawRequired && uwHeight > pBob->_uwOriginalHeight) {
+		// NOTE: that could be valid behavior when other bobs get smaller in the same time
+		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
+		// Update bg buffer desired length so that next realloc can accomodate to changed sizes
+		s_uwBgBufferLength += uwHeight - pBob->_uwOriginalHeight;
+		// Change original height so that this warning gets issued only once
+		pBob->_uwOriginalHeight = uwHeight;
+	}
+
+	pBob->uwHeight = uwHeight;
+	UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1; // One word more for aligned copy
+	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << 6) | uwBlitWords;
 }
 
 UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY) {
