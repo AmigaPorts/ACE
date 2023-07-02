@@ -190,8 +190,7 @@ void bobSetHeight(tBob *pBob, UWORD uwHeight)
 	}
 
 	pBob->uwHeight = uwHeight;
-	UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1; // One word more for aligned copy
-	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << 6) | uwBlitWords;
+	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << HSIZEBITS) | (pBob->_uwBlitSize & HSIZEMASK);
 }
 
 UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY) {
