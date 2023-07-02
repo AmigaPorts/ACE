@@ -244,11 +244,11 @@ UBYTE bobProcessNext(void) {
 			}
 			else {
 				UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
-				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 				pA = &pQueue->pDst->Planes[0][pBob->sPos.uwX / 8];
 				blitWait();
 				g_pCustom->bltapt = pA;
-				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			}
 #else
 			g_pCustom->bltsize = pBob->_uwBlitSize;
@@ -270,7 +270,7 @@ UBYTE bobProcessNext(void) {
 			UBYTE ubDstOffs = pPos->uwX & 0xF;
 			UWORD uwBlitWidth = (pBob->uwWidth + ubDstOffs + 15) & 0xFFF0;
 			UWORD uwBlitWords = uwBlitWidth >> 4;
-			UWORD uwBlitSize = ((pBob->uwHeight * s_ubBpp) << 6) | uwBlitWords;
+			UWORD uwBlitSize = ((pBob->uwHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			WORD wSrcModulo = (pBob->uwWidth >> 3) - (uwBlitWords<<1);
 			UWORD uwBltCon1 = ubDstOffs << BSHIFTSHIFT;
 			UWORD uwBltCon0;
@@ -314,12 +314,12 @@ UBYTE bobProcessNext(void) {
 				g_pCustom->bltsize = uwBlitSize;
 			}
 			else {
-				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 				pCD = &pQueue->pDst->Planes[0][pBob->sPos.uwX / 8];
 				blitWait();
 				g_pCustom->bltcpt = (APTR)pCD;
 				g_pCustom->bltdpt = (APTR)pCD;
-				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			}
 #else
 			g_pCustom->bltsize = uwBlitSize;
@@ -380,11 +380,11 @@ void bobBegin(tBitMap *pBuffer) {
 			}
 			else {
 				UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
-				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 				pD = &pQueue->pDst->Planes[0][pBob->pOldPositions[s_ubBufferCurr].uwX / 8];
 				blitWait();
 				g_pCustom->bltdpt = pD;
-				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			}
 #else
 			g_pCustom->bltsize = pBob->_uwBlitSize;
