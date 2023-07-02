@@ -120,6 +120,15 @@ void bobManagerCreate(
 void bobReallocateBgBuffers(void) {
 	systemUse();
 	logBlockBegin("bobReallocateBgBuffers()");
+
+	if(s_pQueues[0].pBg) {
+		bitmapDestroy(s_pQueues[0].pBg);
+	}
+
+	if(s_pQueues[1].pBg) {
+		bitmapDestroy(s_pQueues[1].pBg);
+	}
+
 	s_pQueues[0].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 	s_pQueues[1].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 	s_pQueues[0].pBg = bitmapCreate(16, s_uwBgBufferLength, s_ubBpp, BMF_INTERLEAVED);
@@ -149,12 +158,14 @@ void bobInit(
 	tBob *pBob, UWORD uwWidth, UWORD uwHeight, UBYTE isUndrawRequired,
 	UBYTE *pFrameData, UBYTE *pMaskData, UWORD uwX, UWORD uwY
 ) {
-	pBob->uwWidth = uwWidth;
+	pBob->_uwOriginalWidth = uwWidth;
 	pBob->_uwOriginalHeight = uwHeight;
 	pBob->isUndrawRequired = isUndrawRequired;
 	UWORD uwBlitWords = (uwWidth+15) / 16 + 1; // One word more for aligned copy
-	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords*2;
+	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords * 2;
+	pBob->_uwBlitSize = uwBlitWords; // Height compontent is set later on
 	bobSetFrame(pBob, pFrameData, pMaskData);
+	bobSetWidth(pBob, uwWidth);
 	bobSetHeight(pBob, uwHeight);
 
 	pBob->sPos.uwX = uwX;
@@ -178,13 +189,34 @@ void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData) {
 	pBob->pMaskData = pMaskData;
 }
 
+void bobSetWidth(tBob *pBob, UWORD uwWidth)
+{
+	UWORD uwBlitWords = (uwWidth + 15) / 16 + 1; // One word more for aligned copy
+
+	if(pBob->isUndrawRequired && uwWidth > pBob->_uwOriginalWidth) {
+		// NOTE: that could be valid behavior when other bobs get smaller in the same time
+		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
+
+		// Update bg buffer desired length so that next realloc can accomodate to changed sizes
+		UWORD uwOldBlitWords = pBob->_uwBlitSize & HSIZEMASK;
+		s_uwBgBufferLength += pBob->uwHeight * (uwBlitWords - uwOldBlitWords);
+
+		// Change original width so that this warning gets issued only once
+		pBob->_uwOriginalWidth = uwWidth;
+	}
+
+	pBob->uwWidth = uwWidth;
+	pBob->_uwBlitSize = (pBob->_uwBlitSize & VSIZEMASK) | uwBlitWords;
+}
+
 void bobSetHeight(tBob *pBob, UWORD uwHeight)
 {
 	if(pBob->isUndrawRequired && uwHeight > pBob->_uwOriginalHeight) {
 		// NOTE: that could be valid behavior when other bobs get smaller in the same time
 		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
 		// Update bg buffer desired length so that next realloc can accomodate to changed sizes
-		s_uwBgBufferLength += uwHeight - pBob->_uwOriginalHeight;
+		UWORD uwBlitWords = (pBob->uwWidth + 15) / 16 + 1; // One word more for aligned copy
+		s_uwBgBufferLength += uwBlitWords * (uwHeight - pBob->_uwOriginalHeight);
 		// Change original height so that this warning gets issued only once
 		pBob->_uwOriginalHeight = uwHeight;
 	}
