@@ -158,8 +158,10 @@ void bobInit(
 	tBob *pBob, UWORD uwWidth, UWORD uwHeight, UBYTE isUndrawRequired,
 	UBYTE *pFrameData, UBYTE *pMaskData, UWORD uwX, UWORD uwY
 ) {
+#if defined(ACE_DEBUG)
 	pBob->_uwOriginalWidth = uwWidth;
 	pBob->_uwOriginalHeight = uwHeight;
+#endif
 	pBob->isUndrawRequired = isUndrawRequired;
 	UWORD uwBlitWords = (uwWidth+15) / 16 + 1; // One word more for aligned copy
 	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords * 2;
@@ -191,35 +193,30 @@ void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData) {
 
 void bobSetWidth(tBob *pBob, UWORD uwWidth)
 {
-	UWORD uwBlitWords = (uwWidth + 15) / 16 + 1; // One word more for aligned copy
-
+#if defined(ACE_DEBUG)
 	if(pBob->isUndrawRequired && uwWidth > pBob->_uwOriginalWidth) {
 		// NOTE: that could be valid behavior when other bobs get smaller in the same time
 		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
-
-		// Update bg buffer desired length so that next realloc can accomodate to changed sizes
-		UWORD uwOldBlitWords = pBob->_uwBlitSize & HSIZEMASK;
-		s_uwBgBufferLength += pBob->uwHeight * (uwBlitWords - uwOldBlitWords);
-
 		// Change original width so that this warning gets issued only once
 		pBob->_uwOriginalWidth = uwWidth;
 	}
+#endif
 
 	pBob->uwWidth = uwWidth;
+	UWORD uwBlitWords = (uwWidth + 15) / 16 + 1; // One word more for aligned copy
 	pBob->_uwBlitSize = (pBob->_uwBlitSize & VSIZEMASK) | uwBlitWords;
 }
 
 void bobSetHeight(tBob *pBob, UWORD uwHeight)
 {
+#if defined(ACE_DEBUG)
 	if(pBob->isUndrawRequired && uwHeight > pBob->_uwOriginalHeight) {
 		// NOTE: that could be valid behavior when other bobs get smaller in the same time
 		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
-		// Update bg buffer desired length so that next realloc can accomodate to changed sizes
-		UWORD uwBlitWords = (pBob->uwWidth + 15) / 16 + 1; // One word more for aligned copy
-		s_uwBgBufferLength += uwBlitWords * (uwHeight - pBob->_uwOriginalHeight);
 		// Change original height so that this warning gets issued only once
 		pBob->_uwOriginalHeight = uwHeight;
 	}
+#endif
 
 	pBob->uwHeight = uwHeight;
 	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << HSIZEBITS) | (pBob->_uwBlitSize & HSIZEMASK);

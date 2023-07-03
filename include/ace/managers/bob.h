@@ -61,8 +61,10 @@ typedef struct tBob {
 	UWORD uwHeight;
 	UBYTE isUndrawRequired;
 	// Platform-dependent private fields. Don't rely on them externally.
+#if defined(ACE_DEBUG)
 	UWORD _uwOriginalWidth;
 	UWORD _uwOriginalHeight;
+#endif
 	UWORD _uwBlitSize;
 	WORD _wModuloUndrawSave;
 	UBYTE *_pOldDrawOffs[2];
@@ -136,8 +138,8 @@ void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData);
  * @brief Changes bob's width.
  *
  * @warning When using BG restore for bob, Watch out for BG buffer size
- * calculations - be sure to either reallocate it or set initial bob's width
- * to maximum value. Otherwise, you're risking memory corruption!
+ * calculations - be sure to set initial bob's width to maximum value.
+ * Otherwise, you're risking memory corruption!
  *
  * @param pBob Bob which width is to be resized.
  * @param uwWidth New width.
@@ -148,8 +150,8 @@ void bobSetWidth(tBob *pBob, UWORD uwWidth);
  * @brief Changes bob's height.
  *
  * @warning When using BG restore for bob, Watch out for BG buffer size
- * calculations - be sure to either reallocate it or set initial bob's height
- * to maximum value. Otherwise, you're risking memory corruption!
+ * calculations - be sure to set initial bob's height to maximum value.
+ * Otherwise, you're risking memory corruption!
  *
  * @param pBob Bob which height is to be resized.
  * @param uwHeight New height.
