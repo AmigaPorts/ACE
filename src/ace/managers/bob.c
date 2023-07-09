@@ -120,6 +120,15 @@ void bobManagerCreate(
 void bobReallocateBgBuffers(void) {
 	systemUse();
 	logBlockBegin("bobReallocateBgBuffers()");
+
+	if(s_pQueues[0].pBg) {
+		bitmapDestroy(s_pQueues[0].pBg);
+	}
+
+	if(s_pQueues[1].pBg) {
+		bitmapDestroy(s_pQueues[1].pBg);
+	}
+
 	s_pQueues[0].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 	s_pQueues[1].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 	s_pQueues[0].pBg = bitmapCreate(16, s_uwBgBufferLength, s_ubBpp, BMF_INTERLEAVED);
@@ -149,13 +158,17 @@ void bobInit(
 	tBob *pBob, UWORD uwWidth, UWORD uwHeight, UBYTE isUndrawRequired,
 	UBYTE *pFrameData, UBYTE *pMaskData, UWORD uwX, UWORD uwY
 ) {
-	pBob->uwWidth = uwWidth;
-	pBob->uwHeight = uwHeight;
+#if defined(ACE_DEBUG)
+	pBob->_uwOriginalWidth = uwWidth;
+	pBob->_uwOriginalHeight = uwHeight;
+#endif
 	pBob->isUndrawRequired = isUndrawRequired;
 	UWORD uwBlitWords = (uwWidth+15) / 16 + 1; // One word more for aligned copy
-	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << 6) | uwBlitWords;
-	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords*2;
+	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords * 2;
+	pBob->_uwBlitSize = uwBlitWords; // Height compontent is set later on
 	bobSetFrame(pBob, pFrameData, pMaskData);
+	bobSetWidth(pBob, uwWidth);
+	bobSetHeight(pBob, uwHeight);
 
 	pBob->sPos.uwX = uwX;
 	pBob->sPos.uwY = uwY;
@@ -166,7 +179,9 @@ void bobInit(
 	pBob->pOldPositions[1].uwY = uwY;
 	pBob->_pOldDrawOffs[1] = 0;
 
-	s_uwBgBufferLength += uwBlitWords * uwHeight * s_ubBpp;
+	if(isUndrawRequired) {
+		s_uwBgBufferLength += uwBlitWords * uwHeight * s_ubBpp;
+	}
 	++s_ubMaxBobCount;
 	// logWrite("Added bob, now max: %hhu\n", s_ubMaxBobCount);
 }
@@ -174,6 +189,37 @@ void bobInit(
 void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData) {
 	pBob->pFrameData = pFrameData;
 	pBob->pMaskData = pMaskData;
+}
+
+void bobSetWidth(tBob *pBob, UWORD uwWidth)
+{
+#if defined(ACE_DEBUG)
+	if(pBob->isUndrawRequired && uwWidth > pBob->_uwOriginalWidth) {
+		// NOTE: that could be valid behavior when other bobs get smaller in the same time
+		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
+		// Change original width so that this warning gets issued only once
+		pBob->_uwOriginalWidth = uwWidth;
+	}
+#endif
+
+	pBob->uwWidth = uwWidth;
+	UWORD uwBlitWords = (uwWidth + 15) / 16 + 1; // One word more for aligned copy
+	pBob->_uwBlitSize = (pBob->_uwBlitSize & VSIZEMASK) | uwBlitWords;
+}
+
+void bobSetHeight(tBob *pBob, UWORD uwHeight)
+{
+#if defined(ACE_DEBUG)
+	if(pBob->isUndrawRequired && uwHeight > pBob->_uwOriginalHeight) {
+		// NOTE: that could be valid behavior when other bobs get smaller in the same time
+		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
+		// Change original height so that this warning gets issued only once
+		pBob->_uwOriginalHeight = uwHeight;
+	}
+#endif
+
+	pBob->uwHeight = uwHeight;
+	pBob->_uwBlitSize = ((uwHeight*s_ubBpp) << HSIZEBITS) | (pBob->_uwBlitSize & HSIZEMASK);
 }
 
 UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY) {
@@ -227,11 +273,11 @@ UBYTE bobProcessNext(void) {
 			}
 			else {
 				UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
-				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 				pA = &pQueue->pDst->Planes[0][pBob->sPos.uwX / 8];
 				blitWait();
 				g_pCustom->bltapt = pA;
-				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			}
 #else
 			g_pCustom->bltsize = pBob->_uwBlitSize;
@@ -253,7 +299,7 @@ UBYTE bobProcessNext(void) {
 			UBYTE ubDstOffs = pPos->uwX & 0xF;
 			UWORD uwBlitWidth = (pBob->uwWidth + ubDstOffs + 15) & 0xFFF0;
 			UWORD uwBlitWords = uwBlitWidth >> 4;
-			UWORD uwBlitSize = ((pBob->uwHeight * s_ubBpp) << 6) | uwBlitWords;
+			UWORD uwBlitSize = ((pBob->uwHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			WORD wSrcModulo = (pBob->uwWidth >> 3) - (uwBlitWords<<1);
 			UWORD uwBltCon1 = ubDstOffs << BSHIFTSHIFT;
 			UWORD uwBltCon0;
@@ -297,12 +343,12 @@ UBYTE bobProcessNext(void) {
 				g_pCustom->bltsize = uwBlitSize;
 			}
 			else {
-				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 				pCD = &pQueue->pDst->Planes[0][pBob->sPos.uwX / 8];
 				blitWait();
 				g_pCustom->bltcpt = (APTR)pCD;
 				g_pCustom->bltdpt = (APTR)pCD;
-				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			}
 #else
 			g_pCustom->bltsize = uwBlitSize;
@@ -363,11 +409,11 @@ void bobBegin(tBitMap *pBuffer) {
 			}
 			else {
 				UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
-				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =((uwPartHeight * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 				pD = &pQueue->pDst->Planes[0][pBob->pOldPositions[s_ubBufferCurr].uwX / 8];
 				blitWait();
 				g_pCustom->bltdpt = pD;
-				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << 6) | uwBlitWords;
+				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * s_ubBpp) << HSIZEBITS) | uwBlitWords;
 			}
 #else
 			g_pCustom->bltsize = pBob->_uwBlitSize;
