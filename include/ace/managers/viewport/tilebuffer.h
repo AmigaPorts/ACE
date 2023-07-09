@@ -218,6 +218,16 @@ void tileBufferInvalidateTile(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 );
 
+/**
+ * @brief Checks if given tiles is in on currently valid part of bitmap buffer.
+ * This excludes potentially dirty outer redraw margin,
+ * but includes the valid single-tile inner margin.
+ *
+ * @param pManager The tile manager to be used.
+ * @param uwTileX The X coordinate of tile, in tile-space.
+ * @param uwTileY The Y coordinate of tile, in tile-space.
+ * @return 1 if tile is on valid part of bitmap buffer, otherwise zero.
+ */
 UBYTE tileBufferIsTileOnBuffer(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 );
