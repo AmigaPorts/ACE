@@ -9,8 +9,6 @@
 #define BLIT_LINE_XOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define BLIT_LINE_ERASE ((NABC | NANBC | ANBC) | (SRCA | SRCC | DEST))
 
-tBlitManager g_sBlitManager = {0};
-
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 #if defined(AMIGA)
@@ -27,9 +25,7 @@ void blitManagerDestroy(void) {
 	logBlockEnd("blitManagerDestroy");
 }
 
-/**
- * Checks if blit is allowable at coords at given source and destination
- */
+#if defined(ACE_DEBUG)
 UBYTE _blitCheck(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	const tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
@@ -103,9 +99,10 @@ UBYTE _blitCheck(
 
 	return 1;
 }
+#endif // defined(ACE_DEBUG)
 
 void blitWait(void) {
-	while(!blitIsIdle()) {}
+	while(!blitIsIdle()) continue;
 }
 
 /**
@@ -125,21 +122,6 @@ UBYTE blitIsIdle(void) {
 	#endif // AMIGA
 }
 
-/**
- * Blit without mask - BltBitMap equivalent, but less safe
- * Channels:
- * 	A: mask const, read disabled
- * 	B: src read
- * 	C: dest read
- * 	D: dest write
- * Descending mode is used under 2 cases:
- * 	- Blit needs shifting to left with previous data coming from right (ubSrcDelta > ubDstDelta)
- * 	- Ascending right mask shifted more than 16 bits
- * Source and destination regions should not overlap.
- * Function is slightly slower (~0.5 - 1.5ms) than bltBitMap:
- * 	- Pre-loop calculations take ~50us on ASC mode, ~80us on DESC mode
- * 	- Rewriting to assembly could speed things up a bit
- */
 UBYTE blitUnsafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
@@ -213,7 +195,7 @@ UBYTE blitUnsafeCopy(
 		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
 		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
 
-		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
+		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 	}
 #endif // AMIGA
 	return 1;
@@ -266,7 +248,7 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltcpt = pSrc->Planes[0] + ulSrcOffs;
 		g_pCustom->bltdpt = pDst->Planes[0] + ulDstOffs;
 
-		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
+		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 	}
 	else {
 		UBYTE ubPlane;
@@ -292,7 +274,7 @@ UBYTE blitUnsafeCopyAligned(
 			blitWait();
 			g_pCustom->bltcpt = pSrc->Planes[ubPlane] + ulSrcOffs;
 			g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
-			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
+			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 		}
 	}
 #endif // AMIGA
@@ -305,7 +287,7 @@ UBYTE blitSafeCopyAligned(
 	UWORD uwLine, const char *szFile
 ) {
 	if((wSrcX | wDstX | wWidth) & 0x000F) {
-		logWrite("Dimensions are not divisible by 16!\n");
+		logWrite("ERR: Dimensions are not divisible by 16\n");
 		return 0;
 	}
 	if(!blitCheck(
@@ -319,7 +301,7 @@ UBYTE blitSafeCopyAligned(
 /**
  * Copies source data to destination over mask
  * Optimizations require following conditions:
- * - wSrcX < wDstX (shifts to right)
+ * - wSrcX <= wDstX (shifts to right)
  * - mask must have same dimensions as source bitplane
  */
 UBYTE blitUnsafeCopyMask(
@@ -365,7 +347,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltcpt = pDst->Planes[0] + ulDstOffs;
 		g_pCustom->bltdpt = pDst->Planes[0] + ulDstOffs;
 
-		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
+		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 	}
 	else {
 #ifdef ACE_DEBUG
@@ -395,10 +377,10 @@ UBYTE blitUnsafeCopyMask(
 			g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
 			g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
 
-			g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
+			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 		}
 	}
-	#endif // AMIGA
+#endif // AMIGA
 	return 1;
 }
 
@@ -407,30 +389,24 @@ UBYTE blitSafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk, UWORD uwLine, const char *szFile
 ) {
+	if(wSrcX > wDstX) {
+		logWrite(
+			"ERR: wSrcX %hd must be smaller than or equal to wDstX %hd\n",
+			wSrcX, wDstX
+		);
+		return 0;
+	}
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
 	}
 	return blitUnsafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk);
 }
 
-/**
- * Fills rectangular area with selected color
- * A - rectangle mask, read disabled
- * C - destination read
- * D - destination write
- * Each bitplane has minterm depending if rectangular area should be filled or erased:
- * 	- fill: D = A+C
- * - erase: D = (~A)*C
- */
-UBYTE _blitRect(
+UBYTE blitUnsafeRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UBYTE ubColor, UWORD uwLine, const char *szFile
+	UBYTE ubColor
 ) {
-	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
-		return 0;
-	}
 #ifdef AMIGA
-
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulDstOffs;
@@ -462,19 +438,31 @@ UBYTE _blitRect(
 	ubPlane = 0;
 
 	do {
-		ubMinterm = (ubColor & 1) ? 0xFA : 0x0A;
+		// Assign minterm depending if bitplane area should be filled or erased
+		ubMinterm = (ubColor & 1) ? MINTERM_A_OR_C : MINTERM_NA_AND_C;
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!
 		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
 		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
-		g_pCustom->bltsize = (wHeight << 6) | uwBlitWords;
+		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 		ubColor >>= 1;
 		++ubPlane;
 	}	while(ubPlane < pDst->Depth);
 
 #endif // AMIGA
 	return 1;
+}
+
+UBYTE blitSafeRect(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubColor, UWORD uwLine, const char *szFile
+) {
+	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
+		return 0;
+	}
+
+	return blitUnsafeRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor);
 }
 
 void blitLine(
@@ -525,7 +513,7 @@ void blitLine(
 		uwBltCon1 |= SIGNFLAG;
 	}
 
-	UWORD uwBltSize = (wDx << 6) + 66;
+	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
 	blitWait(); // Don't modify registers when other blit is in progress

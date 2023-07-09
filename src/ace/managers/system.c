@@ -45,11 +45,15 @@
 typedef void (*tHwIntVector)(void);
 
 typedef struct _tAceInterrupt {
-	volatile tAceIntHandler pHandler;
-	volatile void *pData;
+	tAceIntHandler pHandler;
+	void *pData;
 } tAceInterrupt;
 
 //---------------------------------------------------------------------- GLOBALS
+
+// Store VBR query code in .text so that it plays nice with instruction cache
+__attribute__((section("text")))
+static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
 
 // Saved regs
 static UWORD s_uwOsIntEna;
@@ -77,11 +81,11 @@ static const tHwIntVector s_pAceHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {
 	int1Handler, int2Handler, int3Handler, int4Handler,
 	int5Handler, int6Handler, int7Handler
 };
-static volatile tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static volatile tHwIntVector * s_pHwVectors = 0;
-static volatile tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
-static volatile tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static volatile UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
+static tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
+static tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
+static tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
+static UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
 
 // Manager logic vars
 static WORD s_wSystemUses;
@@ -448,8 +452,12 @@ static void systemFlushIo() {
 }
 
 void systemKill(const char *szMsg) {
-	printf("ERR: SYSKILL: '%s'", szMsg);
-	logWrite("ERR: SYSKILL: '%s'", szMsg);
+	logWrite("ERR: ACE SYSKILL: '%s'", szMsg);
+	if(DOSBase) {
+		BPTR lOut = Output();
+		Write(lOut, "ERR: ACE SYSKILL: ", sizeof("ERR: ACE SYSKILL: "));
+		Write(lOut, (char*)szMsg, strlen(szMsg));
+	}
 
 	if(GfxBase) {
 		CloseLibrary((struct Library *) GfxBase);
@@ -466,15 +474,15 @@ void systemCreate(void) {
 	SysBase = *((struct ExecBase**)4UL);
 #endif
 
-	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
-	if (!GfxBase) {
-		systemKill("Can't open Gfx Library!\n");
-		return;
-	}
-
 	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
 	if (!DOSBase) {
 		systemKill("Can't open DOS Library!\n");
+		return;
+	}
+
+	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
+	if (!GfxBase) {
+		systemKill("Can't open Gfx Library!\n");
 		return;
 	}
 
@@ -508,8 +516,7 @@ void systemCreate(void) {
 	// get VBR location on 68010+ machine
 	// http://eab.abime.net/showthread.php?t=65430&page=3
 	if (SysBase->AttnFlags & AFF_68010) {
-		UWORD pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
-		s_pHwVectors = (tHwIntVector *)Supervisor((void *)pGetVbrCode);
+		s_pHwVectors = (tHwIntVector *)Supervisor((void *)s_pGetVbrCode);
 	}
 
 	// Finish disk activity
@@ -526,7 +533,7 @@ void systemCreate(void) {
 
 	// Disable all DMA - only once
 	// Wait for vbl before disabling sprite DMA
-	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 
 	// Unuse system so that it gets backed up once and then re-enable
@@ -545,7 +552,7 @@ void systemDestroy(void) {
 	g_pCustom->intreq = 0x7FFF;
 
 	// Wait for vbl before disabling sprite DMA
-	while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 	g_pCustom->intreq = 0x7FFF;
 
@@ -578,6 +585,11 @@ void systemDestroy(void) {
 }
 
 void systemUnuse(void) {
+	if(s_wSystemUses == 1) {
+		// Do before counter is decreased, otherwise it'll fall into infinite loop!
+		logWrite("Turning off the system...\n");
+	}
+
 	--s_wSystemUses;
 	if(!s_wSystemUses) {
 		if(g_pCustom->dmaconr & DMAF_DISK) {
@@ -641,7 +653,7 @@ void systemUnuse(void) {
 
 		// Game's bitplanes & copperlists are still used so don't disable them
 		// Wait for vbl before disabling sprite DMA
-		while (!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 		g_pCustom->dmacon = s_uwOsMinDma;
 
 		// Save OS interrupt vectors and enable ACE's
@@ -672,7 +684,7 @@ void systemUse(void) {
 		g_pCustom->intena = 0x7FFF;
 		g_pCustom->intreq = 0x7FFF;
 		g_pCustom->dmacon = s_uwOsMinDma;
-		while(!(g_pCustom->intreqr & INTF_VERTB)) {}
+		while(!(g_pCustom->intreqr & INTF_VERTB)) continue;
 
 		// Disable CIA interrupts
 		g_pCia[CIA_A]->icr = 0x7F;
@@ -716,6 +728,11 @@ void systemUse(void) {
 		keyReset();
 	}
 	++s_wSystemUses;
+
+	if(s_wSystemUses == 1) {
+		// It should be "turned" but I prefer the message being consistent.
+		logWrite("Turning on the system...\n");
+	}
 }
 
 UBYTE systemIsUsed(void) {
@@ -750,26 +767,30 @@ UBYTE systemBlitterIsUsed(void) {
 }
 
 void systemSetInt(
-	UBYTE ubIntNumber, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData
 ) {
-	// Disable ACE handler during data swap to ensure atomic op
-	s_pAceInterrupts[ubIntNumber].pHandler = 0;
-
-	// Re-enable handler or disable it if 0 was passed
-	if(pHandler == 0) {
+	// Disable interrupt during data swap to not get stuck inside ACE's ISR
+	if(!s_wSystemUses) {
 		g_pCustom->intena = BV(ubIntNumber);
+	}
+
+	// Disable handler or re-enable it if 0 was passed
+	if(pHandler == 0) {
+		s_pAceInterrupts[ubIntNumber].pHandler = 0;
 		s_uwAceIntEna &= ~BV(ubIntNumber);
 	}
 	else {
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		if(!s_wSystemUses) {
+			g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
+		}
 	}
 }
 
 void systemSetCiaInt(
-	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, volatile void *pIntData
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, void *pIntData
 ) {
 	// Disable ACE handler during data swap to ensure atomic op
 	s_pAceCiaInterrupts[ubCia][ubIntBit].pHandler = 0;

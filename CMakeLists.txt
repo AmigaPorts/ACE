@@ -4,7 +4,15 @@ project(ACE
 	DESCRIPTION "Amiga C Engine"
 	HOMEPAGE_URL "https://github.com/AmigaPorts/ACE"
 )
-set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE) # needed for helper fns
+
+# TODO: replace with PROJECT_IS_TOP_LEVEL with cmake 3.21+
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+	# needed for helper fns
+	set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE)
+else()
+	set(ACE_DIR ${CMAKE_CURRENT_LIST_DIR})
+endif()
 
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
@@ -35,18 +43,40 @@ set(
 	${HEADERS_ACE_MANAGERS} ${HEADERS_ACE_MANAGERS_VP} ${HEADERS_FIXMATH}
 )
 
+# External options
+set(ACE_LIBRARY_KIND OBJECT CACHE STRING "Build kind: static library or bunch of .o files. OBJECT allows for more link-time optimizations.")
+set(ACE_LIBRARY_KINDS "OBJECT" "STATIC")
+set_property(CACHE ACE_LIBRARY_KIND PROPERTY STRINGS ${ACE_LIBRARY_KINDS})
+set(ACE_DEBUG OFF CACHE BOOL "Build with ACE-specific debug/safety functionality.")
+set(ACE_DEBUG_UAE OFF CACHE BOOL "With ACE_DEBUG enabled, output log to UAE console.")
+set(ACE_BOB_WRAP_Y ON CACHE BOOL "Conrols Y-wrapping support in bob manager. Disable for extra performance in simple buffer scenarios.")
+message(STATUS "[ACE] ACE_LIBRARY_KIND: '${ACE_LIBRARY_KIND}'")
+message(STATUS "[ACE] ACE_DEBUG: '${ACE_DEBUG}'")
+message(STATUS "[ACE] ACE_DEBUG_UAE: '${ACE_DEBUG_UAE}'")
+message(STATUS "[ACE] ACE_BOB_WRAP_Y: '${ACE_BOB_WRAP_Y}'")
+
 # Linux/other UNIX get a lower-case binary name
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
-add_library(${TARGET_NAME} OBJECT ${SOURCES} ${HEADERS})
+
+add_library(${TARGET_NAME} ${ACE_LIBRARY_KIND} ${SOURCES} ${HEADERS})
 
 set(CMAKE_C_STANDARD 11)
 target_compile_definitions(${TARGET_NAME} PUBLIC AMIGA)
 target_compile_options(${TARGET_NAME} PRIVATE $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-Wall -Wextra>)
 target_compile_options(${TARGET_NAME} PUBLIC $<$<OR:$<COMPILE_LANGUAGE:CXX>,$<COMPILE_LANGUAGE:C>>:-fomit-frame-pointer>)
+
 if(ACE_DEBUG)
-	# Add ACE debugging features to release build
 	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG)
 endif()
+
+if(ACE_DEBUG_UAE)
+	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_DEBUG_UAE)
+endif()
+
+if(NOT ACE_BOB_WRAP_Y)
+	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_NO_BOB_WRAP_Y)
+endif()
+
 if(M68K_COMPILER MATCHES "Bartman")
 	target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/bartman)
 	file(GLOB SOURCES_BARTMAN src/mini_std/*.c src/bartman/*.c src/bartman/*.s)
@@ -152,7 +182,11 @@ function(convertBitmaps)
 		list(GET convertBitmaps_SOURCES ${bitmap_idx} bitmapPath)
 		toAbsolute(bitmapPath)
 		list(GET convertBitmaps_DESTINATIONS ${bitmap_idx} outPath)
-		toAbsolute(outPath)
+		if("${outPath}" STREQUAL "NONE")
+			set(outPath "")
+		else()
+			toAbsolute(outPath)
+		endif()
 		if(${maskCount} GREATER 0)
 			list(GET convertBitmaps_MASKS ${bitmap_idx} maskPath)
 			if("${maskPath}" STREQUAL "NONE")
@@ -163,6 +197,11 @@ function(convertBitmaps)
 		endif()
 
 		set(extraFlagsPerFile ${extraFlags})
+		if("${outPath} " STREQUAL " ")
+			list(APPEND extraFlagsPerFile -no)
+		else()
+			list(APPEND extraFlagsPerFile -o ${outPath})
+		endif()
 		if(NOT "${convertBitmaps_MASK_COLOR} " STREQUAL " ")
 			list(APPEND extraFlagsPerFile -mc "\"${convertBitmaps_MASK_COLOR}\"")
 			if("${maskPath} " STREQUAL " ")
@@ -171,9 +210,10 @@ function(convertBitmaps)
 				list(APPEND extraFlagsPerFile -mf ${maskPath})
 			endif()
 		endif()
+
 		add_custom_command(
 			OUTPUT ${outPath} ${maskPath}
-			COMMAND ${TOOL_BITMAP_CONV} ${convertBitmaps_PALETTE} ${bitmapPath} -o ${outPath} ${extraFlagsPerFile}
+			COMMAND ${TOOL_BITMAP_CONV} ${convertBitmaps_PALETTE} ${bitmapPath} ${extraFlagsPerFile}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			DEPENDS ${convertBitmaps_PALETTE} ${bitmapPath}
 		)
@@ -258,7 +298,7 @@ function(convertTileset)
 	cmake_parse_arguments(
 		args
 		"INTERLEAVED;VARIABLE_HEIGHT"
-		"TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE"
+		"TARGET;SIZE;SOURCE;DESTINATION;HEIGHT;PALETTE;COLUMN_WIDTH"
 		"TILE_PATHS" ${ARGN}
 	)
 
@@ -284,6 +324,10 @@ function(convertTileset)
 
 	if(DEFINED args_PALETTE)
 		SET(argsOptional ${argsOptional} -plt ${args_PALETTE})
+	endif()
+
+	if(DEFINED args_COLUMN_WIDTH)
+		SET(argsOptional ${argsOptional} -cw ${args_COLUMN_WIDTH})
 	endif()
 
 	add_custom_command(

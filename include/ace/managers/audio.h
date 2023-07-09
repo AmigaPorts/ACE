@@ -1,6 +1,14 @@
 #ifndef _ACE_MANAGERS_AUDIO_H_
 #define _ACE_MANAGERS_AUDIO_H_
 
+/**
+ * @file audio.h
+ * @brief Basic audio manager. Allows for playback of single and repeated sounds.
+ *
+ * @warning This module is deprecated and most probably will be removed.
+ * Use ptplayer module if possible.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

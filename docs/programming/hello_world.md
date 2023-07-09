@@ -3,7 +3,10 @@
 First, create folder for your project. Then, create src folder for keeping your
 .c files. Let's start with `src/main.c`:
 
-``` c
+```c
+// Use this only if you want to enable logging to file instead of UAE console (heavy performance hit, not recommended)
+#define GENERIC_MAIN_LOG_PATH "game.log"
+
 #include <ace/generic/main.h>
 
 void genericCreate(void) {
@@ -23,22 +26,13 @@ void genericDestroy(void) {
 }
 ```
 
-As you may suspect, this code will print two lines into log file. To build it
-you'll need a basic makefile or CMakeLists. You can base it on one found
-in `showcase` directory or something like this:
+As you may suspect, this code will print two lines into log file.
+To build it, create a CMakeLists.txt file in the base directory of your project.
+You can base it on one found in `showcase` directory or use one added below.
 
-Makefile:
-
-``` makefile
- # TODO
-```
-
-CMake:
-
-``` cmake
-cmake_minimum_required(VERSION 2.8.5)
-project(hello)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+```cmake
+cmake_minimum_required(VERSION 3.14.0)
+project(hello LANGUAGES C)
 
 # Lowercase project name for binaries and packaging
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
@@ -49,30 +43,24 @@ endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAMIGA -Wall -Wextra -fomit-frame-pointer")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DACE_DEBUG")
 file(GLOB_RECURSE SOURCES src/*.c)
 file(GLOB_RECURSE HEADERS src/*.h)
 
-include_directories(
-	${PROJECT_SOURCE_DIR}/src
-)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
+# Debugging flag exposed via CMake specifically for your game code
 if(GAME_DEBUG)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAME_DEBUG")
 endif()
-if(ACE_DEBUG)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACE_DEBUG") # For ACE headers with ifdefs
-endif()
 
 # ACE
-# If you cloned ACE into subdirectory, e.g. to `deps/ace` folder, use following:
 add_subdirectory(deps/ace ace)
 include_directories(deps/ace/include)
-# If you installed ACE, use following:
-find_package(ace REQUIRED)
-include_directories(${ace_INCLUDE_DIRS})
+# If you built standalone and installed ACE, use following instead:
+# find_package(ace REQUIRED)
+# include_directories(${ace_INCLUDE_DIRS})
 
-# Linux/other UNIX get a lower-case binary name
+# Force lower-case binary name for Linux etc.
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
 
 if(ELF2HUNK)
@@ -94,11 +82,37 @@ endif()
 target_link_libraries(${GAME_LINKED} ace)
 ```
 
-Once you have that done, compile it. Put your executable in UAE or real hardware
-and launch it. Observe that `game.log` has been created in the same directory
-as executable - it has lots of lines showing things done by the engine,
-among them two lines specified by you with `logWrite`. If `game.log` has not been
-created, you've not enabled debug build. On CMake add `-DCMAKE_BUILD_TYPE=Debug`.
+Once you have that done, compile it.
+
+Using Visual Studio Code:
+
+- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> to invoke command palette.
+- Start typing and select the `CMake: Configure` command.
+  This configures the project for subsequent builds.
+- If asked to choose the compiler, select the Bartman/Bebbo Amiga compiler.
+- To turn on ACE's extra debugging features:
+  - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>.
+  - Select `CMake: Edit CMake Cache (UI)`.
+  - Select `ACE_DEBUG` and optionally `ACE_DEBUG_UAE` for better debugging under UAE.
+- Press <kbd>F7</kbd> to build your game.
+
+Using terminal commands:
+
+```sh
+mkdir build && cd build
+# Add optional -DACE_DEBUG_UAE=ON for better debugging experience under emulator
+cmake .. \
+  -DCMAKE_TOOLCHAIN_FILE=/path/to/AmigaCMakeCrossToolchains/m68k.cmake \
+  -DM68K_TOOLCHAIN_PATH=/path/to/toolchain \
+  -DM68K_CPU=68000 -DM68K_FPU=soft -DACE_DEBUG=ON
+cmake --build .
+```
+
+Put your executable in UAE or real hardware and launch it.
+If you've enabled `GENERIC_MAIN_LOG_PATH`, observe that `game.log` has been created in the same directory as executable - it has lots of lines showing things done by the engine, among them two lines specified by you with `logWrite`.
+Alternatively, logs should appear inside UAE / VSCode debugging console.
+
+If `game.log` has not been created, you've not enabled ACE debugging: on CMake call, add `-DACE_DEBUG=ON` and optionally `-DACE_DEBUG_UAE=ON`.
 You may need to remove `CMakeCache.txt` to enforce whole project rebuild.
 
 ## First gamestate
@@ -165,6 +179,9 @@ only once - regardless of number of inclusions in other files.
 Now let's add this gamestate along with updating keyboard state to `main.c`:
 
 ``` c
+// Use this only if you want to enable logging to file instead of UAE console (heavy performance hit, not recommended)
+#define GENERIC_MAIN_LOG_PATH "game.log"
+
 #include <ace/generic/main.h>
 #include <ace/managers/key.h>
 #include <ace/managers/state.h>

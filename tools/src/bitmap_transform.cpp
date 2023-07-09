@@ -74,22 +74,22 @@ int main(int lArgCount, char *pArgs[])
 
 	std::vector<std::unique_ptr<tOp>> vOps;
 
-	for(auto ArgIdx = 3; ArgIdx < lArgCount; ++ArgIdx) {
-		const std::string_view szOp = pArgs[ArgIdx];
+	for(auto ArgIndex = 3; ArgIndex < lArgCount; ++ArgIndex) {
+		const std::string_view szOp = pArgs[ArgIndex];
 		if(szOp == "-extract") {
-			if(ArgIdx + 4 >= lArgCount) {
+			if(ArgIndex + 4 >= lArgCount) {
 				nLog::error(
 					"Too few args for {} - first arg at pos {}, arg count: {}",
-					szOp, ArgIdx + 1, lArgCount
+					szOp, ArgIndex + 1, lArgCount
 				);
 				return EXIT_FAILURE;
 			}
-			auto ArgStart = ArgIdx + 1;
+			auto ArgStart = ArgIndex + 1;
 			try {
-				auto X = std::stoul(pArgs[++ArgIdx]);
-				auto Y = std::stoul(pArgs[++ArgIdx]);
-				auto W = std::stoul(pArgs[++ArgIdx]);
-				auto H = std::stoul(pArgs[++ArgIdx]);
+				auto X = uint16_t(std::stoul(pArgs[++ArgIndex]));
+				auto Y = uint16_t(std::stoul(pArgs[++ArgIndex]));
+				auto W = uint16_t(std::stoul(pArgs[++ArgIndex]));
+				auto H = uint16_t(std::stoul(pArgs[++ArgIndex]));
 				vOps.push_back(std::make_unique<tOpExtract>(X, Y, W, H));
 			}
 			catch(std::exception Ex) {
@@ -102,29 +102,29 @@ int main(int lArgCount, char *pArgs[])
 			}
 		}
 		else if(szOp == "-rotate") {
-			if(ArgIdx + 2 >= lArgCount) {
+			if(ArgIndex + 2 >= lArgCount) {
 				nLog::error(
 					"Too few args for {} - first arg at pos {}, arg count: {}",
-					szOp, ArgIdx + 1, lArgCount
+					szOp, ArgIndex + 1, lArgCount
 				);
 				return EXIT_FAILURE;
 			}
 			try {
-				auto Deg = std::stod(pArgs[++ArgIdx]);
-				auto Bg = tRgb(pArgs[++ArgIdx]);
+				auto Deg = std::stod(pArgs[++ArgIndex]);
+				auto Bg = tRgb(pArgs[++ArgIndex]);
 				vOps.push_back(std::make_unique<tOpRotate>(Deg, Bg));
 			}
 			catch(std::exception Ex) {
-				nLog::error("Couldn't parse rotate degrees: '{}'", pArgs[ArgIdx]);
+				nLog::error("Couldn't parse rotate degrees: '{}'", pArgs[ArgIndex]);
 				return EXIT_FAILURE;
 			}
 		}
 		else if(szOp == "-mirror") {
-			if(ArgIdx + 1 >= lArgCount) {
+			if(ArgIndex + 1 >= lArgCount) {
 				nLog::error("Too few args for {}", szOp);
 				return EXIT_FAILURE;
 			}
-			std::string_view szAxis = pArgs[++ArgIdx];
+			std::string_view szAxis = pArgs[++ArgIndex];
 			if(szAxis != "x" && szAxis != "y") {
 				nLog::error("Unknown mirror axis specified: '{}'", szAxis);
 				return EXIT_FAILURE;
@@ -242,8 +242,8 @@ tChunkyBitmap tOpRotate::execute(const tChunkyBitmap &Source) {
 		auto Dy = Y - CenterY;
 		for(auto X = 0; X < Dst.m_uwWidth; ++X) {
 			auto Dx = X - CenterX;
-			auto U = round(CalcCos * Dx + CalcSin * Dy + (CenterX));
-			auto V = round(-CalcSin * Dx + CalcCos * Dy + (CenterY));
+			auto U = uint16_t(round(CalcCos * Dx + CalcSin * Dy + (CenterX)));
+			auto V = uint16_t(round(-CalcSin * Dx + CalcCos * Dy + (CenterY)));
 
 			if(U < 0 || V < 0 || U >= Dst.m_uwWidth || V >= Dst.m_uwHeight) {
 				// fmt::print("can't sample for {:2d},{:2d} from {:.1f},{:.1f}\n", X, Y, U, V);

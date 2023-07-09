@@ -11,8 +11,8 @@ void someFn(void) {
 
   }
 
-  // the only case when both braces are in same line
-  while(someEvent()) {}
+  // the only case when control statement body is in same line
+  while(someEvent()) continue;
 
   do {
     // stuff
@@ -122,3 +122,10 @@ Example for main.c:
 #include "menu/menu.h"
 #include "input.h"
 ```
+
+## Doxygen
+
+- Use javadoc (`@section` instead of `\section`) style.
+- Always put `@file` doxy comment right after include guard.
+- Always document each globally-visible function in .h file.
+- Document `static` functions in .c files.

@@ -734,13 +734,11 @@ UBYTE tileBufferIsTileOnBuffer(
 	UWORD uwStartY = MAX(0, (pManager->pCamera->uPos.uwY >> ubTileShift) -1);
 	UWORD uwEndY = uwStartY + ((pManager->uwMarginedHeight >> ubTileShift) - 2);
 
-	if(
-		uwStartX <= uwTileX && uwTileX <= uwEndX && uwTileX &&
-		uwStartY <= uwTileY && uwTileY <= uwEndY && uwTileY
-	) {
-		return 1;
-	}
-	return 0;
+	UBYTE isOnBuffer = (
+		uwStartX <= uwTileX && uwTileX <= uwEndX &&
+		uwStartY <= uwTileY && uwTileY <= uwEndY
+	);
+	return isOnBuffer;
 }
 
 void tileBufferSetTile(

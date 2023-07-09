@@ -78,7 +78,7 @@ void gsTestCopperCreate(void) {
 	}
 
 	s_pTestCopperView = viewCreate(0,
-		TAG_VIEW_GLOBAL_CLUT, 1,
+		TAG_VIEW_GLOBAL_PALETTE, 1,
 		TAG_VIEW_COPLIST_MODE, ulMode,         // <-- This is important in RAW mode
 		TAG_VIEW_COPLIST_RAW_COUNT, ulRawSize, // <-- This is important in RAW mode
 		TAG_DONE

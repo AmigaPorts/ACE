@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Protracker V2.3B Playroutine Version 5.1
-// Written by Frank Wille in 2013, 2016, 2017, 2018.
-// Rewritten to C by KaiN for ACE
+// Protracker V2.3B Playroutine Version 6.3
+// Original written in assembly by Frank Wille in 2013, 2016-2023.
+// Rewritten for ACE usage to C.
 
 #ifndef _ACE_MANAGERS_PTPLAYER_H_
 #define _ACE_MANAGERS_PTPLAYER_H_
@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #define PTPLAYER_VOLUME_MAX 64
+#define PTPLAYER_SFX_CHANNEL_ANY 0xFF
 
 #include <ace/types.h>
 #include <ace/utils/bitmap.h>
@@ -29,11 +30,38 @@ typedef struct _tPtplayerSfx {
 	UWORD uwPeriod;     ///< Hardware replay period for sample.
 } tPtplayerSfx;
 
+typedef struct _tPtplayerSampleHeader {
+	char szName[22];
+	UWORD uwLength; ///< Sample data length, in words.
+	UBYTE ubFineTune; ///< Finetune. Only lower nibble is used.
+	                  ///  Values translate to finetune: {0..7, -8..-1}
+	UBYTE ubVolume; ///< Sample volume. 0..64
+	UWORD uwRepeatOffs; ///< In words.
+	UWORD uwRepeatLength; ///< In words.
+} tPtplayerSampleHeader;
+
 typedef struct _tPtplayerMod {
-	UBYTE *pData;
-	ULONG ulSize;
-	// TODO: move some vars from ptplayer here
+	char szSongName[20];
+	tPtplayerSampleHeader pSampleHeaders[31];
+	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
+	                           /// pattern count in file. Max 128.
+	UBYTE ubSongEndPos;
+	UBYTE pArrangement[128]; ///< song arrangmenet list (pattern Table).
+	                         /// These list up to 128 pattern numbers
+	                         /// and the order they should be played in.
+	char pFileFormatTag[4];  ///< Should be "M.K." for 31-sample format.
+	// MOD pattern/sample data follows
+
+	UBYTE *pPatterns;
+	ULONG ulPatternsSize;
+	UWORD *pSamples;
+	ULONG ulSamplesSize;
 } tPtplayerMod;
+
+typedef struct tPtplayerSamplePack {
+	ULONG ulSize;
+	UWORD *pData;
+} tPtplayerSamplePack;
 
 typedef void (*tPtplayerCbSongEnd)(void);
 
@@ -63,6 +91,7 @@ void ptplayerSetPal(UBYTE isPal);
 
 /**
  * @brief Loads new MOD from file.
+ * @note This function may use OS.
  *
  * @param szPath Path to .mod file.
  * @return Pointer to new MOD structure, initialized with file contents.
@@ -70,7 +99,8 @@ void ptplayerSetPal(UBYTE isPal);
 tPtplayerMod *ptplayerModCreate(const char *szPath);
 
 /**
- * @brief Frees given MOD structure from memory.
+ * @brief Frees given MOD from memory.
+ * @note This function may use OS.
  *
  * @param pMod MOD struct to be destroyed.
  */
@@ -84,14 +114,14 @@ void ptplayerModDestroy(tPtplayerMod *pMod);
  *
  * @param pMod Pointer to MOD struct.
  * @param pSamples When set to 0, the samples are assumed to be stored inside
- *                 the MOD, after the patterns.
+ * the MOD, after the patterns. Otherwise, uses samples from given samplepack.
  * @param uwInitialSongPos
  *
  * @see ptplayerEnableMusic()
  * @see ptplayerStop()
  */
 void ptplayerLoadMod(
-	tPtplayerMod *pMod, UWORD *pSampleData, UWORD uwInitialSongPos
+	tPtplayerMod *pMod, tPtplayerSamplePack *pSamples, UWORD uwInitialSongPos
 );
 
 /**
@@ -104,14 +134,14 @@ void ptplayerStop(void);
 
 /**
  * @brief Set bits in the mask define which specific channels are reserved
- *        for music only.
+ * for music only.
  *
  * When calling ptplayerSfxPlay with automatic channel selection
  * (sfx_cha=-1) then these masked channels will never be picked.
  * The mask defaults to 0.
  *
  * @param ubChannelMask Mask of channels reserved for playing music. Set bit 0
- *                      for channel 0, bit 1 for channel 1, etc.
+ * for channel 0, bit 1 for channel 1, etc.
  * @see ptplayerSfxPlay()
  */
 void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
@@ -124,6 +154,13 @@ void ptplayerSetMusicChannelMask(UBYTE ubChannelMask);
  * @param ubMasterVolume Value between 0 and 64. Bigger is louder.
  */
 void ptplayerSetMasterVolume(UBYTE ubMasterVolume);
+
+/**
+ * @brief Define which channels are used for the player. Set bit 0 for channel 0, etc.
+ *
+ * @param ubChannelMask Bit mask of music channels to be used. Uses bits 0..3.
+ */
+void ptplayerSetChannelsForPlayer(UBYTE ubChannelMask);
 
 /**
  * @brief Enables or disables music playback.
@@ -153,24 +190,38 @@ UBYTE ptplayerGetE8(void);
  */
 void ptplayerReserveChannelsForMusic(UBYTE ubChannelCount);
 
+/**
+ * @brief Redefine a sample's volume on currently played MOD.
+ * May also be done while the song is playing. This change is persistent and can
+ * only be reverted by setting volume to previous value or reloading the MOD.
+ *
+ * @param ubSampleIndex Sample number (0-31).
+ * @param ubVolume Volume (0-64).
+ */
+void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume);
+
 //-------------------------------------------------------------------------- SFX
 
 /**
  * @brief Loads SFX from given file.
- * Note that this function sets sfx period based on currently set PAL/NTSC video
- * mode. If you plan to change it after loading sfx, be sure to adjust
+ * Note that this function sets SFX period based on currently set PAL/NTSC video
+ * mode. If you plan to change it after loading SFX, be sure to adjust
  * the period value for new mode.
+ * @note This function may use OS.
  *
  * @param szPath Path to .sfx file.
+ * @param isFast Set to 1 if you wish to load SFX to FAST memory.
+ * Useful for software-based audio-mixing, unusable with ptplayer.
  * @return Newly loaded SFX.
  *
  * @see ptplayerSfxDestroy()
  * @see ptplayerSfxPlay()
  */
-tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath);
+tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast);
 
 /**
  * @brief Destroys given SFX, freeing its resources to OS.
+ * @note This function may use OS.
  *
  * @param pSfx SFX to be destroyed.
  *
@@ -180,7 +231,7 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
 
 /**
  * @brief Request playing of a prioritized external sound effect, either on a
- *        fixed channel or on the most unused one.
+ * fixed channel or on the most unused one.
  *
  * When multiple samples are assigned to the same channel the lower priority
  * sample will be replaced. When priorities are the same, then the older sample
@@ -188,17 +239,39 @@ void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
  * The chosen channel is blocked for music until the effect has completely
  * been replayed.
  *
- * @param pSfx Sfx sample to be played.
- * @param bChannel Selected replay channel (0..3), -1 selects best channel.
+ * @param pSfx SFX sample to be played. Must be allocated in CHIP memory.
+ * @param bChannel Selected replay channel (0..3), PTPLAYER_SFX_CHANNEL_ANY
+ * selects best channel.
  * @param ubVolume Playback volume 0..64, unaffected by the song's master volume.
  * @param ubPriority Playback priority. The bigger the value, the higher
- *                   the priority. Must be non-zero.
+ * the priority. Must be non-zero.
  *
- * @see ptplayerSetMusicChannelMask
+ * @see ptplayerSetMusicChannelMask()
+ * @see ptplayerSfxPlayLooped()
  */
 void ptplayerSfxPlay(
-	const tPtplayerSfx *pSfx, BYTE bChannel, UBYTE ubVolume, UBYTE ubPriority
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
 );
+
+/**
+ * @brief Request playing of a looped external sound effect, on a fixed channel.
+ *
+ * @param pSfx Sfx sample to be played. Must be allocated in CHIP memory.
+ * @param ubChannel Selected replay channel (0..3).
+ * @param ubVolume Playback volume 0..64, unaffected by the song's master volume.
+ *
+ * @see ptplayerSfxPlay()
+ */
+void ptplayerSfxPlayLooped(
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
+);
+
+/**
+ * @brief Stops SFX played on given channel.
+ *
+ * @param ubChannel Selected SFX channel (0..3).
+ */
+void ptplayerSfxStopOnChannel(UBYTE ubChannel);
 
 /**
  * @brief Configure behavior on song being played to the end.
@@ -218,6 +291,23 @@ void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd);
 void ptplayerWaitForSfx(void);
 
 UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx);
+
+/**
+ * @brief Loads MOD sample pack from file at given path.
+ * @note This function may use OS.
+ *
+ * @param szPath Path to sample pack to be loaded.
+ * @return Pointer to newly allocated sample pack, zero on failure.
+ */
+tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath);
+
+/**
+ * @brief Destroys given sample pack, freeing its resources to OS.
+ * @note This function may use OS.
+ *
+ * @param pSamplePack Sample pack to be destroyed.
+ */
+void ptplayerSamplePackDestroy(tPtplayerSamplePack *pSamplePack);
 
 #ifdef __cplusplus
 }

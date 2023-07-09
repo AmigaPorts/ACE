@@ -18,6 +18,7 @@ struct tConfig {
 	std::string m_szPalettePath;
 	bool m_isInterleaved;
 	int32_t m_lColumns;
+	std::optional<int32_t> m_lColumnWidth;
 	bool m_isVaryingHeight;
 	bool m_isHeightOverride;
 
@@ -43,30 +44,41 @@ tConfig::tConfig(const std::vector<const char*> &vArgs)
 	m_isVaryingHeight = false;
 	m_isHeightOverride = false;
 
-	for(uint8_t i = 4; i < ArgCount; ++i) {
-		if(vArgs[i] == std::string("-i")) {
+	for(auto ArgIndex = 4; ArgIndex < ArgCount; ++ArgIndex) {
+		if(vArgs[ArgIndex] == std::string("-i")) {
 			m_isInterleaved = true;
 		}
-		else if(vArgs[i] == std::string("-vh")) {
+		else if(vArgs[ArgIndex] == std::string("-vh")) {
 			fmt::print("VARIABLE HEIGHT ON\n\n\n\n");
 			m_isVaryingHeight = true;
 		}
-		else if(vArgs[i] == std::string("-plt") && i < ArgCount - 1) {
-			++i;
-			m_szPalettePath = vArgs[i];
+		else if(vArgs[ArgIndex] == std::string("-plt") && ArgIndex < ArgCount - 1) {
+			++ArgIndex;
+			m_szPalettePath = vArgs[ArgIndex];
 		}
-		else if(vArgs[i] == std::string("-cols") && i < ArgCount - 1) {
-			++i;
-			if(!nParse::toInt32(vArgs[i], "-cols", m_lColumns)) {
+		else if(vArgs[ArgIndex] == std::string("-cols") && ArgIndex < ArgCount - 1) {
+			++ArgIndex;
+			if(!nParse::toInt32(vArgs[ArgIndex], "-cols", m_lColumns)) {
 				throw std::runtime_error(nullptr); // error message inside parsing fn
 			}
 			if(m_lColumns <= 0) {
 				throw std::runtime_error("-cols value must be positive");
 			}
 		}
-		else if(vArgs[i] == std::string("-h") && i < ArgCount - 1) {
-			++i;
-			if(!nParse::toInt32(vArgs[i], "-h", m_lTileHeight)) {
+		else if(vArgs[ArgIndex] == std::string("-cw") && ArgIndex < ArgCount - 1) {
+			++ArgIndex;
+			int32_t lColumnWidth;
+			if(!nParse::toInt32(vArgs[ArgIndex], "-cw", lColumnWidth)) {
+				throw std::runtime_error(nullptr); // error message inside parsing fn
+			}
+			if(lColumnWidth <= 0) {
+				throw std::runtime_error("-cw value must be positive");
+			}
+			m_lColumnWidth = lColumnWidth;
+		}
+		else if(vArgs[ArgIndex] == std::string("-h") && ArgIndex < ArgCount - 1) {
+			++ArgIndex;
+			if(!nParse::toInt32(vArgs[ArgIndex], "-h", m_lTileHeight)) {
 				throw std::runtime_error(nullptr);
 			}
 			if(m_lTileHeight <= 0) {
@@ -100,6 +112,7 @@ static void printUsage(const std::string &szAppName)
 	print("-plt palettePath\t- use following palette\n");
 	print("\nAdditional options:\n");
 	print("-cols        \t- number of columns to use in output (default: 1)\n");
+	print("-cw          \t- override tile column width, useful for tiles of width not equal to multiple of 16px\n");
 	print("-h tileHeight\t- override height for rectangular tiles\n");
 	print("-vh          \t- enable varying height (can't be used with -h and -cols)\n");
 }
@@ -120,6 +133,7 @@ static std::vector<tChunkyBitmap> readTiles(
 	std::string szInExt = nFs::getExt(Config.m_szInPath);
 	if(szInExt == "png" || szInExt == "bm") {
 		tChunkyBitmap In;
+		auto ColumnWidth = Config.m_lColumnWidth.has_value() ? Config.m_lColumnWidth.value() : Config.m_lTileSize;
 		if(szInExt == "png") {
 			In = tChunkyBitmap::fromPng(Config.m_szInPath);
 		}
@@ -144,7 +158,7 @@ static std::vector<tChunkyBitmap> readTiles(
 			throw std::runtime_error(fmt::format("Input bitmap width is not divisible by {}", Config.m_lTileSize));
 		}
 
-		uint16_t TileCountHoriz = In.m_uwWidth / Config.m_lTileSize;
+		uint16_t TileCountHoriz = In.m_uwWidth / ColumnWidth;
 		uint16_t TileCountVert = In.m_uwHeight / Config.m_lTileHeight;
 
 		vTiles.reserve(TileCountHoriz * TileCountVert);
@@ -152,7 +166,7 @@ static std::vector<tChunkyBitmap> readTiles(
 			for(uint16_t x = 0; x < TileCountHoriz; ++x) {
 				tChunkyBitmap Tile(Config.m_lTileSize, Config.m_lTileHeight);
 				In.copyRect(
-					x * Config.m_lTileSize, y * Config.m_lTileHeight, Tile, 0, 0,
+					x * ColumnWidth, y * Config.m_lTileHeight, Tile, 0, 0,
 					Config.m_lTileSize, Config.m_lTileHeight
 				);
 				vTiles.push_back(std::move(Tile));
@@ -197,10 +211,11 @@ static void saveTiles(
 		fmt::print("Using color for bg: #{:02X}{:02X}{:02X}\n", Bg.ubR, Bg.ubG, Bg.ubB);
 
 		std::optional<tChunkyBitmap> Out;
+		auto ColumnWidth = Config.m_lColumnWidth.has_value() ? Config.m_lColumnWidth.value() : Config.m_lTileSize;
 		if(Config.m_lColumns != 1) {
 			Out = std::make_optional<tChunkyBitmap>(
-				Config.m_lTileSize * Config.m_lColumns,
-				roundToMultipleOf(TileCount, Config.m_lColumns) * Config.m_lTileHeight,
+				uint16_t(ColumnWidth * Config.m_lColumns),
+				uint16_t(ceilToFactor(TileCount, Config.m_lColumns) * Config.m_lTileHeight),
 				Bg
 			);
 
@@ -209,7 +224,7 @@ static void saveTiles(
 				if(Tile.m_uwHeight != 0) {
 					Tile.copyRect(
 						0, 0, Out.value(),
-						(i % Config.m_lColumns) * Config.m_lTileSize,
+						(i % Config.m_lColumns) * ColumnWidth,
 						Config.m_lTileHeight * (i / Config.m_lColumns),
 						Config.m_lTileSize, Config.m_lTileHeight
 					);
@@ -228,11 +243,11 @@ static void saveTiles(
 				}
 			}
 			else {
-				uwTilesetHeight = Config.m_lTileHeight * TileCount;
+				uwTilesetHeight = uint16_t(Config.m_lTileHeight * TileCount);
 			}
 
 			Out = std::make_optional<tChunkyBitmap>(
-				Config.m_lTileSize, uwTilesetHeight, Bg
+				ColumnWidth, uwTilesetHeight, Bg
 			);
 
 			uint16_t uwOffsY = 0;

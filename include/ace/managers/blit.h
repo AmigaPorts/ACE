@@ -5,15 +5,21 @@
 #ifndef _ACE_MANAGERS_BLIT_H_
 #define _ACE_MANAGERS_BLIT_H_
 
+/**
+ * @file "blit.h"
+ * @brief The blitter manager. Provides the basic abstraction layer for common
+ * blitter operations.
+ *
+ * @note Earlier versions of blitter manager implemented blit queues driven
+ * by blitter interrupt. However, it yielded worse performance than manual
+ * blitting and was removed.
+ *
+ * @todo Some convenience for async blitting - state machine?
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * The mighty blitter manager
- * There was a queue mechanism, it's gone now.
- * @todo Some convenience for async - state machine?
- */
 
 #ifdef AMIGA
 #include <exec/interrupts.h>  // struct Interrupt
@@ -38,39 +44,100 @@ extern "C" {
 #define MINTERM_B 0xCC
 #define MINTERM_C 0xAA
 #define MINTERM_A_OR_C 0xFA
+#define MINTERM_NA_AND_C 0x0A
 #define MINTERM_COOKIE 0xCA
+#define MINTERM_REVERSE_COOKIE 0xAC
 #define MINTERM_COPY 0xC0
 
 /**
- * Blit manager struct
+ * @brief Creates and initializes the blitter manager.
+ *
+ * Call this function before you use any other blitter-related one.
  */
-typedef struct {
-	FUBYTE fubDummy;
-} tBlitManager;
-
-extern tBlitManager g_sBlitManager;
-
 void blitManagerCreate(void);
+
+/**
+ * @brief Cleans up and destroys the blitter manager.
+ *
+ * Call this function after you have finished using the blitter, e.g. when game
+ * closes.
+ */
 void blitManagerDestroy(void);
 
 /**
- * Checks if blitter is idle
- * Polls 2 times - A1000 Agnus bug workaround
+ * @brief Checks if blitter is idle.
+ *
+ * Polls 2 times, taing A1000 Agnus bug workaround into account.
+ *
+ * @return 1 if blitter is idle, otherwise 0.
+ *
+ * @see blitWait()
  */
 UBYTE blitIsIdle(void);
 
 /**
- * Waits until blitter finishes its work.
- * In the meantime, BLITHOG bit is set.
+ * @brief Waits until blitter finishes its work.
+ *
+ * @todo Investigate if autosetting BLITHOG inside it is beneficial.
+ *
+ * @see blitIsIdle()
  */
 void blitWait(void);
 
+/**
+ * @brief Performs the rectangular copy between two bitmap regions,
+ * without any safety checks.
+ *
+ * @note The data regions should not overlap.
+ *
+ * @param pSrc Source bitmap.
+ * @param wSrcX Source rectangle top-left position's X-coordinate.
+ * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param pDst Destination bitmap. Can be same as pSrc.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param ubMinterm Minterm to be used for blitter operation, usually MINTERM_COOKIE.
+ * @return Always 1.
+ *
+ * @see blitCopyAligned()
+ * @see blitSafeCopy()
+ * @see blitCopy()
+ */
 UBYTE blitUnsafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, UBYTE ubMinterm
 );
 
+/**
+ * @brief Performs the safe version of the rectangular copy between two bitmap
+ * regions.
+ *
+ * The safety comes from extra blitCheck() call within.
+ *
+ * @note This function is slower than blitUnsafeCopy() - it is recommended
+ * to use blitCopy() for extra checks only when compiling in ACE_DEBUG mode.
+ *
+ * @param pSrc Source bitmap.
+ * @param wSrcX Source rectangle top-left position's X-coordinate.
+ * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param pDst Destination bitmap. Can be same as pSrc.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param ubMinterm Minterm to be used for blitter operation, usually MINTERM_COOKIE.
+ * @param uwLine Source code line for error message. Use blitCopy() for auto-fill.
+ * @param szFile Source code file for error message. Use blitCopy() for auto-fill.
+ * @return 1 if blit was successful, otherwise 0.
+ *
+ * @see blitCopyAligned()
+ * @see blitUnsafeCopy()
+ * @see blitCopy()
+ * @see blitCheck()
+ */
 UBYTE blitSafeCopy(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
@@ -78,27 +145,63 @@ UBYTE blitSafeCopy(
 	UWORD uwLine, const char *szFile
 );
 
-#ifdef ACE_DEBUG
-
-UBYTE _blitCheck(
-	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
-	const tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
-	UWORD uwLine, const char *szFile
-);
-
-# define blitCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm) blitSafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, __LINE__, __FILE__)
-#define blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile) _blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)
-#else
-# define blitCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm) blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm)
-#define blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile) 1
-#endif
-
+/**
+ * @brief Performs the optimized rectangular copy between two bitmap regions,
+ * without any safety checks.
+ *
+ * @note This function requires that X-coordinates of copy regions as well
+ * as width are multiples of 16. If you need more generic blit, use blitCopy()
+ * instead.
+ *
+ * @param pSrc Source bitmap.
+ * @param wSrcX Source rectangle top-left position's X-coordinate.
+ * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param pDst Destination bitmap. Can be same as pSrc.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @return Always 1.
+ *
+ * @see blitSafeCopyAligned()
+ * @see blitCopyAligned()
+ * @see blitCopy()
+ */
 UBYTE blitUnsafeCopyAligned(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight
 );
 
+/**
+ * @brief Performs the safe version of optimized rectangular copy between
+ * two bitmap regions.
+ *
+ * @note This function requires that X-coordinates of copy regions as well
+ * as width are multiples of 16. If you need more generic blit, use blitCopy()
+ * instead.
+ *
+ * The safety comes from extra blitCheck() call within.
+ *
+ * @note This function is slower than blitUnsafeCopyAligned() - it is recommended
+ * to use blitCopyAligned() for extra checks only when compiling in ACE_DEBUG mode.
+ *
+ * @param pSrc Source bitmap.
+ * @param wSrcX Source rectangle top-left position's X-coordinate.
+ * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param pDst Destination bitmap. Can be same as pSrc.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param uwLine Source code line for error message. Use blitCopyAligned() for auto-fill.
+ * @param szFile Source code file for error message. Use blitCopyAligned() for auto-fill.
+ * @return 1 if blit was successful, otherwise 0.
+ *
+ * @see blitUnsafeCopyAligned()
+ * @see blitCopyAligned()
+ * @see blitCopy()
+ */
 UBYTE blitSafeCopyAligned(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
@@ -106,18 +209,65 @@ UBYTE blitSafeCopyAligned(
 	UWORD uwLine, const char *szFile
 );
 
-#ifdef ACE_DEBUG
-#define blitCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight) blitSafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, __LINE__, __FILE__)
-#else
-#define blitCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight) blitUnsafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight)
-#endif
-
+/**
+ * @brief Performs the rectangular copy between two bitmap regions using
+ * the mask data.
+ *
+ * @note For regular bitmaps, mask data represents an alpha channel for single
+ * bitplane of pSrc.
+ * For interleaved blits, the mask must also have the interleaved format,
+ * repeating its data for each line of each bitplane.
+ *
+ * @param pSrc Source bitmap.
+ * @param wSrcX Source rectangle top-left position's X-coordinate.
+ * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param pDst Destination bitmap. Can be same as pSrc.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param pMsk Raw mask bitplane data.
+ * @return Always 1.
+ *
+ * @see blitSafeCopyMask()
+ * @see blitCopyMask()
+ */
 UBYTE blitUnsafeCopyMask(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk
 );
 
+/**
+ * @brief Performs the safe version of rectangular copy between two bitmap
+ * regions using the mask data.
+ *
+ * The safety comes from extra blitCheck() call within.
+ *
+ * @note This function is slower than blitUnsafeCopyMask() - it is recommended
+ * to use blitCopyMask() for extra checks only when compiling in ACE_DEBUG mode.
+ *
+ * @note For regular bitmaps, mask data represents an alpha channel for single
+ * bitplane of pSrc.
+ * For interleaved blits, the mask must also have the interleaved format,
+ * repeating its data for each line of each bitplane.
+ *
+ * @param pSrc Source bitmap.
+ * @param wSrcX Source rectangle top-left position's X-coordinate.
+ * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param pDst Destination bitmap. Can be same as pSrc.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param pMsk Raw mask bitplane data.
+ * @param uwLine Source code line for error message. Use blitCopyMask() for auto-fill.
+ * @param szFile Source code file for error message. Use blitCopyMask() for auto-fill.
+ * @return 1 if blit was successful, otherwise 0.
+ *
+ * @see blitUnsafeCopyMask()
+ * @see blitCopyMask()
+ */
 UBYTE blitSafeCopyMask(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
@@ -125,32 +275,81 @@ UBYTE blitSafeCopyMask(
 	UWORD uwLine, const char *szFile
 );
 
-#ifdef ACE_DEBUG
-# define blitCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk) blitSafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk, __LINE__, __FILE__)
-#else
-# define blitCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk) blitUnsafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk)
-#endif
-
-UBYTE _blitRect(
-	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight, UBYTE ubColor,
-	UWORD uwLine, const char *szFile
+/**
+ * @brief Performs the rectangular fill with selected color.
+ *
+ * The blit is configured bitplane-by-bitplane as follows:
+ * - A: rectangle mask, memory read disabled
+ * - C: destination read
+ * - D: destination write
+ *
+ * @note This can't be used for large blits - OCS blitter limits apply.
+ * Maximum blit size is 1024x1024 pixels. For interleaved bitmaps, divide
+ * max height by bitmap's depth.
+ *
+ * @param pDst Destination bitmap.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param ubColor Target color index.
+ * @return Always 1.
+ *
+ * @see blitSafeRect()
+ * @see blitRect()
+ */
+UBYTE blitUnsafeRect(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubColor
 );
 
-#define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \
-	_blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor, __LINE__, __FILE__)
+/**
+ * @brief Performs the safe version of rectangular fill with selected color.
+ *
+ * The blit is configured bitplane-by-bitplane as follows:
+ * - A: rectangle mask, memory read disabled
+ * - C: destination read
+ * - D: destination write
+ *
+ * The safety comes from extra blitCheck() call within.
+ *
+ * @note This function is slower than blitUnsafeRect() - it is recommended
+ * to use blitRect() for extra checks only when compiling in ACE_DEBUG mode.
+ *
+ * @note This can't be used for large blits - OCS blitter limits apply.
+ * Maximum blit size is 1024x1024 pixels. For interleaved bitmaps, divide
+ * max height by bitmap's depth.
+ *
+ * @param pDst Destination bitmap.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param ubColor Target color index.
+ * @param uwLine Source code line for error message. Use blitRect() for auto-fill.
+ * @param szFile Source code file for error message. Use blitRect() for auto-fill.
+ * @return 1 if blit was successful, otherwise 0.
+ *
+ * @see blitUnsafeRect()
+ * @see blitRect()
+ */
+UBYTE blitSafeRect(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubColor, UWORD uwLine, const char *szFile
+);
 
 /**
  * @brief Draws line of given color between two points.
+ *
  * This function writes through all bitmap's bitplanes, so it's quite slow.
  * You can speed up your lines by drawing on only single bitplane - that's what
  * most demos do.
  *
  * @param pDst: Destination bitmap.
- * @param x1: Line start position's X coordinate.
- * @param y1: Line start position's Y coordinate.
- * @param x2: Line end position's X coordinate.
- * @param y2: Line end position's Y coordinate.
+ * @param x1: Line start position's X-coordinate.
+ * @param y1: Line start position's Y-coordinate.
+ * @param x2: Line end position's X-coordinate.
+ * @param y2: Line end position's Y-coordinate.
  * @param ubColor: Line's color index.
  * @param uwPattern: 16-bit pattern to be used. 1: filled pixel, 0: omitted.
  * @param isOneDot: If set to 1, draws fill-friendly lines.
@@ -159,6 +358,55 @@ void blitLine(
 	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 );
+
+#ifdef ACE_DEBUG
+
+/**
+ * @brief Checks if blit is legal at coords at given source and destination.
+ *
+ * @param pSrc Source bitmap.
+ * @param wSrcX Source rectangle top-left position's X-coordinate.
+ * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param pDst Destination bitmap. Can be same as pSrc.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param uwLine Source code line for error message. Use blitCheck() for auto-fill.
+ * @param szFile Source code file for error message. Use blitCheck() for auto-fill.
+ * @return 1 if blit can safely be made, otherwise 0.
+ */
+UBYTE _blitCheck(
+	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
+	const tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UWORD uwLine, const char *szFile
+);
+
+#define blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile) \
+	_blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)
+#define blitCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm) \
+	blitSafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm, __LINE__, __FILE__)
+#define blitCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight) \
+	blitSafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, __LINE__, __FILE__)
+#define blitCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk) \
+	blitSafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk, __LINE__, __FILE__)
+#define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \
+	blitSafeRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor, __LINE__, __FILE__)
+
+#else
+
+#define blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile) \
+	({(void)(uwLine); (void)(szFile); 1;})
+#define blitCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm) \
+	blitUnsafeCopy(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, ubMinterm)
+#define blitCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight) \
+	blitUnsafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight)
+#define blitCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk) \
+	blitUnsafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk)
+#define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \
+	blitUnsafeRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor)
+
+#endif // ACE_DEBUG
 
 #ifdef __cplusplus
 }
