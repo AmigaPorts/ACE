@@ -382,7 +382,7 @@ static inline void tileBufferContinueTileDraw(
 
 FN_HOTSPOT
 void tileBufferProcess(tTileBufferManager *pManager) {
-	WORD wTileIdxX, wTileIdxY;
+	WORD wMarginXPos, wMarginYPos;
 	UWORD uwTileOffsX, uwTileOffsY;
 	tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
 
@@ -394,19 +394,19 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	if (wDeltaX) {
 		// determine movement direction - right or left
 		if (wDeltaX > 0) {
-			wTileIdxX = ((
+			wMarginXPos = ((
 				pManager->pCamera->uPos.uwX + pManager->sCommon.pVPort->uwWidth
 			) >> ubTileShift) +1; // delete +1 to see redraw
 			pState->pMarginX = &pState->sMarginR;
 			pState->pMarginOppositeX = &pState->sMarginL;
 		}
 		else {
-			wTileIdxX = (pManager->pCamera->uPos.uwX >> ubTileShift) -1;
+			wMarginXPos = (pManager->pCamera->uPos.uwX >> ubTileShift) -1;
 			pState->pMarginX = &pState->sMarginL;
 			pState->pMarginOppositeX = &pState->sMarginR;
 		}
 		// Not redrawing same column on movement side?
-		if (wTileIdxX != pState->pMarginX->wTilePos) {
+		if (wMarginXPos != pState->pMarginX->wTilePos) {
 			// Not finished redrawing all column tiles?
 			if(pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
 				uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) & (pManager->uwMarginedHeight-1);
@@ -458,8 +458,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				pState->pMarginX->wTileCurr = pState->pMarginX->wTileEnd;
 			}
 			// Prepare new column redraw data
-			pState->pMarginX->wTilePos = wTileIdxX;
-			if (wTileIdxX < 0 || wTileIdxX >= pManager->uTileBounds.uwX) {
+			pState->pMarginX->wTilePos = wMarginXPos;
+			if (wMarginXPos < 0 || wMarginXPos >= pManager->uTileBounds.uwX) {
 				// Don't redraw if new column is out of map bounds
 				pState->pMarginX->wTileCurr = 0;
 				pState->pMarginX->wTileEnd = 0;
@@ -498,19 +498,19 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	if (wDeltaY) {
 		// determine redraw row - down or up
 		if (wDeltaY > 0) {
-			wTileIdxY = ((
+			wMarginYPos = ((
 				pManager->pCamera->uPos.uwY + pManager->sCommon.pVPort->uwHeight
 			) >> ubTileShift) + 1; // Delete +1 to see redraw
 			pState->pMarginY = &pState->sMarginD;
 			pState->pMarginOppositeY = &pState->sMarginU;
 		}
 		else {
-			wTileIdxY = (pManager->pCamera->uPos.uwY >> ubTileShift) -1;
+			wMarginYPos = (pManager->pCamera->uPos.uwY >> ubTileShift) -1;
 			pState->pMarginY = &pState->sMarginU;
 			pState->pMarginOppositeY = &pState->sMarginD;
 		}
 		// Not drawing same row?
-		if (wTileIdxY != pState->pMarginY->wTilePos) {
+		if (wMarginYPos != pState->pMarginY->wTilePos) {
 			// Not finished redrawing all row tiles?
 			if(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
 				uwTileOffsY = (pState->pMarginY->wTilePos << ubTileShift) & (pManager->uwMarginedHeight-1);
@@ -543,8 +543,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				pState->pMarginY->wTileCurr = pState->pMarginY->wTileEnd;
 			}
 			// Prepare new row redraw data
-			pState->pMarginY->wTilePos = wTileIdxY;
-			if (wTileIdxY < 0 || wTileIdxY >= pManager->uTileBounds.uwY) {
+			pState->pMarginY->wTilePos = wMarginYPos;
+			if (wMarginYPos < 0 || wMarginYPos >= pManager->uTileBounds.uwY) {
 				// Don't redraw if new row is out of map bounds
 				pState->pMarginY->wTileCurr = 0;
 				pState->pMarginY->wTileEnd = 0;
