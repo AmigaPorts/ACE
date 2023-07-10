@@ -290,7 +290,7 @@ void tileBufferReset(
  * registers that stay constant when blitting multiple tiles
  * quickly. To be followed by a loop of tileBufferContinueTileDraw
  * calls.
- * 
+ *
  * @return bltsize - to use in tileBufferContinueTileDraw
  */
 static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
@@ -737,6 +737,26 @@ UBYTE tileBufferIsTileOnBuffer(
 	UBYTE isOnBuffer = (
 		uwStartX <= uwTileX && uwTileX <= uwEndX &&
 		uwStartY <= uwTileY && uwTileY <= uwEndY
+	);
+	return isOnBuffer;
+}
+
+UBYTE tileBufferIsRectFullyOnBuffer(
+	const tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
+) {
+	UBYTE ubTileShift = pManager->ubTileShift;
+	UWORD uwStartX = MAX(0, pManager->pCamera->uPos.uwX - 1) >> ubTileShift;
+	UWORD uwEndX = (pManager->pCamera->uPos.uwX + pManager->sCommon.pVPort->uwWidth) >> ubTileShift;
+	UWORD uwStartY = MAX(0, pManager->pCamera->uPos.uwY - 1) >> ubTileShift;
+	UWORD uwEndY = (pManager->pCamera->uPos.uwY + pManager->sCommon.pVPort->uwHeight) >> ubTileShift;
+
+	UWORD uwX1 = uwX >> ubTileShift;
+	UWORD uwY1 = uwY >> ubTileShift;
+	UWORD uwX2 = (uwX + uwWidth) >> ubTileShift;
+	UWORD uwY2 = (uwY + uwHeight) >> ubTileShift;
+	UBYTE isOnBuffer = (
+		uwStartX <= uwX1 && uwX2 <= uwEndX &&
+		uwStartY <= uwY1 && uwY2 <= uwEndY
 	);
 	return isOnBuffer;
 }

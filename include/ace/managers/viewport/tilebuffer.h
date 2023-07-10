@@ -232,6 +232,10 @@ UBYTE tileBufferIsTileOnBuffer(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 );
 
+UBYTE tileBufferIsRectFullyOnBuffer(
+	const tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
+);
+
 /**
  * @brief Changes tile at given position to another tile and schedules its
  * redraw using redraw queue.
