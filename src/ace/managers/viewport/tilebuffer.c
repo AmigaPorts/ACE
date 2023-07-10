@@ -729,10 +729,10 @@ UBYTE tileBufferIsTileOnBuffer(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 ) {
 	UBYTE ubTileShift = pManager->ubTileShift;
-	UWORD uwStartX = MAX(0, (pManager->pCamera->uPos.uwX >> ubTileShift) -1);
-	UWORD uwEndX = uwStartX + ((pManager->uwMarginedWidth >> ubTileShift) - 2);
-	UWORD uwStartY = MAX(0, (pManager->pCamera->uPos.uwY >> ubTileShift) -1);
-	UWORD uwEndY = uwStartY + ((pManager->uwMarginedHeight >> ubTileShift) - 2);
+	UWORD uwStartX = MAX(0, pManager->pCamera->uPos.uwX - 1) >> ubTileShift;
+	UWORD uwEndX = (pManager->pCamera->uPos.uwX + pManager->sCommon.pVPort->uwWidth) >> ubTileShift;
+	UWORD uwStartY = MAX(0, pManager->pCamera->uPos.uwY - 1) >> ubTileShift;
+	UWORD uwEndY = (pManager->pCamera->uPos.uwY + pManager->sCommon.pVPort->uwHeight) >> ubTileShift;
 
 	UBYTE isOnBuffer = (
 		uwStartX <= uwTileX && uwTileX <= uwEndX &&
