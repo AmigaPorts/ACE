@@ -5,7 +5,7 @@
 #include "glyph_set.h"
 #include <fstream>
 #include <fmt/format.h>
-#include "../common/FreeTypeAmalgam.h"
+#include <freetype/freetype.h>
 #include "../common/lodepng.h"
 #include "../common/endian.h"
 #include "../common/rgb.h"
