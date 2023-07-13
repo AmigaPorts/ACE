@@ -6,16 +6,12 @@
 #define _ACE_TOOLS_COMMON_ENDIAN_H_
 
 #include <cstdint>
+#include <bit>
 
 namespace nEndian {
 	constexpr bool isBig(void)
 	{
-		// Based on https://stackoverflow.com/questions/1001307/
-		union {
-				uint32_t i;
-				char c[4];
-		} uTest = {0x01020304};
-		return uTest.c[0] == 1;
+		return std::endian::native == std::endian::big;
 	}
 
 	constexpr uint16_t toBig16(uint16_t uwIn)
