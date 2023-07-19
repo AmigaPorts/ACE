@@ -124,6 +124,7 @@ typedef struct _tTileBufferManager {
 	tTileDrawCallback cbTileDraw; ///< Called when tile is redrawn
 	UBYTE **pTileData;            ///< 2D array of tile indices
 	tBitMap *pTileSet;            ///< Tileset - one tile beneath another
+	UBYTE **pTileSetOffsets;      ///< Lookup table for tile offsets in pTileSet
 	// Margin & queue geometry
 	UBYTE ubMarginXLength; ///< Tile number in margins: left & right
 	UBYTE ubMarginYLength; ///< Ditto, up & down
@@ -131,7 +132,6 @@ typedef struct _tTileBufferManager {
 	// Redraw state and double buffering
 	tRedrawState pRedrawStates[2];
 	UBYTE ubStateIdx;
-	UBYTE ubWidthShift;
 } tTileBufferManager;
 
 /* globals */
@@ -230,6 +230,10 @@ void tileBufferInvalidateTile(
  */
 UBYTE tileBufferIsTileOnBuffer(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
+);
+
+UBYTE tileBufferIsRectFullyOnBuffer(
+	const tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
 );
 
 /**
