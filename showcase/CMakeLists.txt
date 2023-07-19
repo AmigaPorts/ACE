@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.5)
+cmake_minimum_required(VERSION 3.14)
 project(showcase)
 
 # Lowercase project name for binaries and packaging
@@ -56,4 +56,4 @@ endif()
 target_link_libraries(${GAME_LINKED} ace)
 
 # Copy example maps files as is
-file(COPY "${RES_DIR}/data" DESTINATION ${DATA_DIR})
+file(COPY "${RES_DIR}/data" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
