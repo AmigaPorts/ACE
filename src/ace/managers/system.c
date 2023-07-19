@@ -306,10 +306,9 @@ void HWINTERRUPT int7Handler(void) {
 	logPopInt();
 }
 
-//-------------------------------------------------------------------- FUNCTIONS
+//------------------------------------------------------------------ OS HANDLERS
 
 static ULONG aceInputHandler(void) {
-	register volatile ULONG regNewEventChain __asm("d0");
 	register volatile ULONG regOldEventChain __asm("a0");
 	// register volatile ULONG regData __asm("a1");
 
@@ -326,10 +325,11 @@ static ULONG aceInputHandler(void) {
 		}
 	}
 
-	// Don't propagate any input events to other stuff - ensure full takeover
-	regNewEventChain = 0;
-	return regNewEventChain;
+	// Don't propagate any input events to other stuff - ensure full takeover by clearing d0
+	return 0;
 }
+
+//-------------------------------------------------------------------- FUNCTIONS
 
 // Messageport creation for KS1.3
 // http://amigadev.elowar.com/read/ADCD_2.1/Libraries_Manual_guide/node02EC.html
@@ -468,7 +468,6 @@ static UBYTE inputHandlerAdd(void) {
 		);
 		goto fail;
 	}
-	logWrite("Registered event handler at %p", aceInputHandler);
 	return 1;
 
 fail:
