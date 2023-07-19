@@ -102,6 +102,7 @@ static struct IOStdReq s_sIoRequestInput = {0};
 static struct Library *s_pCiaResource[CIA_COUNT];
 static struct Process *s_pProcess;
 static struct Interrupt s_sHandlerIo;
+static struct Interrupt s_pCiaIcrHandlers[CIA_COUNT][5];
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -329,6 +330,18 @@ static ULONG aceInputHandler(void) {
 	return 0;
 }
 
+ULONG ciaIcrHandler(void) {
+	register volatile ULONG regData __asm("a1");
+
+	tAceInterrupt *pAceInt = (tAceInterrupt *)regData;
+	if(pAceInt->pHandler) {
+		pAceInt->pHandler(g_pCustom, pAceInt->pData);
+	}
+
+	// set the Z flag
+	return 0;
+}
+
 //-------------------------------------------------------------------- FUNCTIONS
 
 // Messageport creation for KS1.3
@@ -497,6 +510,25 @@ static void inputHandlerRemove(void) {
 	msgPortDelete(pMsgPort);
 }
 
+void ciaIcrHandlerAdd(UBYTE ubCia, UBYTE ubIcrBit) {
+	memset(&s_pCiaIcrHandlers[ubCia][ubIcrBit], 0, sizeof(s_pCiaIcrHandlers[ubCia][ubIcrBit]));
+	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Code = (void(*)(void))ciaIcrHandler;
+	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Data = (void*)&s_pAceCiaInterrupts[ubCia][ubIcrBit];
+	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Name = "ACE CIA ICR handler";
+	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Pri = 127;
+	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Type = NT_INTERRUPT;
+	if(AddICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pCiaIcrHandlers[ubCia][ubIcrBit])) {
+		logWrite("CIA %c ICR %d add failed", CIA_A ? 'A' : 'B', ubIcrBit);
+	}
+
+	// Disable interrupt since AddICRVector auto-enables it
+	// AbleICR(s_pCiaResource[CIA_B], CIAICRF_TIMER_A);
+}
+
+void ciaIcrHandlerRemove(UBYTE ubCia, UBYTE ubIcrBit) {
+	RemICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pCiaIcrHandlers[ubCia][ubIcrBit]);
+}
+
 /**
  * @brief Flushes FDD disk activity.
  * Originally written by Asman in asm, known as osflush
@@ -596,6 +628,9 @@ void systemCreate(void) {
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
 
+	ciaIcrHandlerAdd(CIA_B, CIAICRB_TIMER_A);
+	ciaIcrHandlerAdd(CIA_B, CIAICRB_TIMER_B);
+
 	// Disable as much of OS stuff as possible so that it won't trash stuff when
 	// re-enabled periodically.
 	// Save the system copperlists and flush the view
@@ -661,7 +696,9 @@ void systemDestroy(void) {
 	systemReleaseBlitterToOs();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
-	// Free audio channels
+	ciaIcrHandlerRemove(CIA_B, CIAICRB_TIMER_A);
+	ciaIcrHandlerRemove(CIA_B, CIAICRB_TIMER_B);
+
 	audioChannelFree();
 
 	inputHandlerRemove();
@@ -898,15 +935,13 @@ void systemSetCiaInt(
 void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue) {
 	if(isCrB) {
 		s_pAceCiaCrb[ubCia] = ubCrValue;
-		if(!s_wSystemUses) {
-			g_pCia[ubCia]->crb = ubCrValue;
-		}
+		s_pOsCiaCrb[ubCia] = ubCrValue;
+		g_pCia[ubCia]->crb = ubCrValue;
 	}
 	else {
 		s_pAceCiaCra[ubCia] = ubCrValue;
-		if(!s_wSystemUses) {
-			g_pCia[ubCia]->cra = ubCrValue;
-		}
+		s_pOsCiaCra[ubCia] = ubCrValue;
+		g_pCia[ubCia]->cra = ubCrValue;
 	}
 }
 
