@@ -9,6 +9,8 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 #include <devices/audio.h>
+#include <devices/input.h>
+#include <devices/inputevent.h>
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
@@ -86,6 +88,7 @@ static tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
 static UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
+static tKeyInputHandler s_cbKeyInputHandler;
 
 // Manager logic vars
 static WORD s_wSystemUses;
@@ -95,8 +98,10 @@ struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
 static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 static struct IOAudio s_sIoAudio = {0};
+static struct IOStdReq s_sIoRequestInput = {0};
 static struct Library *s_pCiaResource[CIA_COUNT];
 static struct Process *s_pProcess;
+static struct Interrupt s_sHandlerIo;
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -303,6 +308,29 @@ void HWINTERRUPT int7Handler(void) {
 
 //-------------------------------------------------------------------- FUNCTIONS
 
+static ULONG aceInputHandler(void) {
+	register volatile ULONG regNewEventChain __asm("d0");
+	register volatile ULONG regOldEventChain __asm("a0");
+	// register volatile ULONG regData __asm("a1");
+
+	if(s_cbKeyInputHandler) {
+		struct InputEvent *pEvent = (struct InputEvent *)regOldEventChain;
+		while(pEvent) {
+			if(pEvent->ie_Class == IECLASS_RAWKEY) {
+				// logWrite("OS key event: %hu\n", pEvent->ie_Code);
+				s_cbKeyInputHandler(pEvent->ie_Code);
+			}
+			// TODO: handle IECLASS_DISKREMOVED, IECLASS_DISKINSERTED ?
+
+			pEvent = pEvent->ie_NextEvent;
+		}
+	}
+
+	// Don't propagate any input events to other stuff - ensure full takeover
+	regNewEventChain = 0;
+	return regNewEventChain;
+}
+
 // Messageport creation for KS1.3
 // http://amigadev.elowar.com/read/ADCD_2.1/Libraries_Manual_guide/node02EC.html
 static struct MsgPort *msgPortCreate(char *name, LONG pri) {
@@ -341,42 +369,40 @@ static void msgPortDelete(struct MsgPort *mp) {
 	FreeMem(mp, sizeof(*mp));
 }
 
-static UBYTE audioChannelAlloc(struct IOAudio *pIoAudio) {
-	struct MsgPort *pMsgPort = 0;
-
-	pMsgPort = msgPortCreate("audio alloc", ADALLOC_MAXPREC);
+static UBYTE audioChannelAlloc(void) {
+	struct MsgPort *pMsgPort = msgPortCreate("audio alloc", ADALLOC_MAXPREC);
 	if(!pMsgPort) {
 		logWrite("ERR: Couldn't open message port for audio alloc\n");
 		goto fail;
 	}
 
 	// We don't have CreateIORequest on ks1.3, so do what AROS does
-	memset(pIoAudio, 0, sizeof(*pIoAudio));
-	pIoAudio->ioa_Request.io_Message.mn_Node.ln_Type = NT_MESSAGE;
-	pIoAudio->ioa_Request.io_Message.mn_ReplyPort = pMsgPort;
-	pIoAudio->ioa_Request.io_Message.mn_Length = sizeof(*pIoAudio);
+	memset(&s_sIoAudio, 0, sizeof(s_sIoAudio));
+	s_sIoAudio.ioa_Request.io_Message.mn_Node.ln_Type = NT_MESSAGE;
+	s_sIoAudio.ioa_Request.io_Message.mn_ReplyPort = pMsgPort;
+	s_sIoAudio.ioa_Request.io_Message.mn_Length = sizeof(s_sIoAudio);
 
 	UBYTE isError = OpenDevice(
-		(CONST_STRPTR)"audio.device", 0, (struct IORequest *)pIoAudio, 0
+		(CONST_STRPTR)"audio.device", 0, (struct IORequest *)&s_sIoAudio, 0
 	);
 	if(isError) {
 		logWrite(
 			"ERR: Couldn't alloc Audio channels, code: %d\n",
-			pIoAudio->ioa_Request.io_Error
+			s_sIoAudio.ioa_Request.io_Error
 		);
 		goto fail;
 	}
 
 	UBYTE ubChannelMask = 0b1111; // Allocate all 4 channels.
-	pIoAudio->ioa_Data = &ubChannelMask;
-	pIoAudio->ioa_Length = sizeof(ubChannelMask);
-	pIoAudio->ioa_Request.io_Command = ADCMD_ALLOCATE;
-	pIoAudio->ioa_Request.io_Flags = ADIOF_NOWAIT;
-	isError = DoIO((struct IORequest *)pIoAudio);
+	s_sIoAudio.ioa_Data = &ubChannelMask;
+	s_sIoAudio.ioa_Length = sizeof(ubChannelMask);
+	s_sIoAudio.ioa_Request.io_Command = ADCMD_ALLOCATE;
+	s_sIoAudio.ioa_Request.io_Flags = ADIOF_NOWAIT;
+	isError = DoIO((struct IORequest *)&s_sIoAudio);
 
 	if(isError) {
 		logWrite(
-			"ERR: io audio request fail, code: %d\n", pIoAudio->ioa_Request.io_Error
+			"ERR: io audio request fail, code: %d\n", s_sIoAudio.ioa_Request.io_Error
 		);
 		goto fail;
 	}
@@ -389,20 +415,86 @@ fail:
 	return 0;
 }
 
-void audioChannelFree(struct IOAudio *pIoAudio) {
-	struct MsgPort *pMsgPort = pIoAudio->ioa_Request.io_Message.mn_ReplyPort;
+static void audioChannelFree(void) {
+	struct MsgPort *pMsgPort = s_sIoAudio.ioa_Request.io_Message.mn_ReplyPort;
 
-	pIoAudio->ioa_Request.io_Command = ADCMD_FINISH;
-	pIoAudio->ioa_Request.io_Flags = 0;
-	pIoAudio->ioa_Request.io_Unit = (APTR)1;
-	UBYTE isError = DoIO((struct IORequest *)pIoAudio);
+	s_sIoAudio.ioa_Request.io_Command = ADCMD_FINISH;
+	s_sIoAudio.ioa_Request.io_Flags = 0;
+	s_sIoAudio.ioa_Request.io_Unit = (APTR)1;
+	UBYTE isError = DoIO((struct IORequest *)&s_sIoAudio);
 	if(isError) {
 		logWrite(
-			"ERR: io audio request fail, code: %d\n", pIoAudio->ioa_Request.io_Error
+			"ERR: io audio request fail, code: %d\n", s_sIoAudio.ioa_Request.io_Error
 		);
 	}
 
-	CloseDevice((struct IORequest *)pIoAudio);
+	CloseDevice((struct IORequest *)&s_sIoAudio);
+	msgPortDelete(pMsgPort);
+}
+
+static UBYTE inputHandlerAdd(void) {
+	struct MsgPort *pMsgPort = msgPortCreate("input handler register", ADALLOC_MAXPREC);
+	if(!pMsgPort) {
+		logWrite("ERR: Couldn't open message port for audio alloc\n");
+		goto fail;
+	}
+
+	// We don't have CreateIORequest on ks1.3, so just zero stuff
+	memset(&s_sIoRequestInput, 0, sizeof(s_sIoRequestInput));
+	UBYTE isError = OpenDevice(
+		(CONST_STRPTR)"input.device", 0, (struct IORequest *)&s_sIoRequestInput, 0
+	);
+	if(isError) {
+		logWrite(
+			"ERR: Couldn't open input device, code: %d\n",
+			s_sIoRequestInput.io_Error
+		);
+		goto fail;
+	}
+
+	memset(&s_sHandlerIo, 0, sizeof(s_sHandlerIo));
+	s_sHandlerIo.is_Code = (void(*)(void))aceInputHandler;
+	s_sHandlerIo.is_Data = 0;
+	s_sHandlerIo.is_Node.ln_Pri = 127;
+	s_sHandlerIo.is_Node.ln_Name = "ACE Input handler";
+	s_sIoRequestInput.io_Data = (APTR)&s_sHandlerIo;
+	s_sIoRequestInput.io_Command = IND_ADDHANDLER;
+	s_sIoRequestInput.io_Message.mn_ReplyPort = pMsgPort;
+	isError = DoIO((struct IORequest *)&s_sIoRequestInput);
+
+	if(isError) {
+		logWrite(
+			"ERR: io audio request fail, code: %d\n", s_sIoRequestInput.io_Error
+		);
+		goto fail;
+	}
+	logWrite("Registered event handler at %p", aceInputHandler);
+	return 1;
+
+fail:
+	if(pMsgPort) {
+		msgPortDelete(pMsgPort);
+	}
+	return 0;
+}
+
+static void inputHandlerRemove(void) {
+	// http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_2._guide/node04E2.html
+
+	struct MsgPort *pMsgPort = s_sIoRequestInput.io_Message.mn_ReplyPort;
+
+	s_sIoRequestInput.io_Command = IND_REMHANDLER;
+	s_sIoRequestInput.io_Data=(APTR)&s_sHandlerIo;
+	UBYTE isError = DoIO((struct IORequest *)&s_sIoRequestInput);
+	if(isError) {
+		logWrite(
+			"ERR: io audio request fail, code: %d\n", s_sIoRequestInput.io_Error
+		);
+	}
+
+	// NOTE: IND_REMHANDLER is not immediate
+
+	CloseDevice((struct IORequest *)&s_sIoRequestInput);
 	msgPortDelete(pMsgPort);
 }
 
@@ -498,7 +590,9 @@ void systemCreate(void) {
 
 	// Reserve all audio channels - apparantly this allows for int flag polling
 	// From https://gist.github.com/johngirvin/8fb0c4bb83b7c80427e2f439bb074e95
-	audioChannelAlloc(&s_sIoAudio);
+	audioChannelAlloc();
+
+	inputHandlerAdd();
 
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
@@ -569,7 +663,9 @@ void systemDestroy(void) {
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
 	// Free audio channels
-	audioChannelFree(&s_sIoAudio);
+	audioChannelFree();
+
+	inputHandlerRemove();
 
 	// restore old view
 	WaitTOF();
@@ -764,6 +860,10 @@ void systemReleaseBlitterToOs(void) {
 
 UBYTE systemBlitterIsUsed(void) {
 	return s_wSystemBlitterUses > 0;
+}
+
+void systemSetKeyInputHandler(tKeyInputHandler cbKeyInputHandler) {
+	s_cbKeyInputHandler = cbKeyInputHandler;
 }
 
 void systemSetInt(

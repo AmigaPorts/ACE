@@ -21,6 +21,8 @@ typedef void (*tAceIntHandler)(
 	REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *pData, "a1")
 );
 
+typedef void (*tKeyInputHandler)(UBYTE ubRawKeyCode);
+
 //-------------------------------------------------------------------- FUNCTIONS
 
 /**
@@ -54,10 +56,12 @@ UBYTE systemBlitterIsUsed(void);
 
 void systemDump(void);
 
+void systemSetKeyInputHandler(tKeyInputHandler cbKeyInputHandler);
+
 void systemSetInt(UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData);
 
 void systemSetCiaInt(
-	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, void *pIntData
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler cbHandler, void *pIntData
 );
 
 void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue);
