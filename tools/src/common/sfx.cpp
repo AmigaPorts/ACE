@@ -8,12 +8,6 @@
 #include "logging.h"
 #include "endian.h"
 
-tSfx::tSfx(void):
-	m_ulFreq(0)
-{
-
-}
-
 tSfx::tSfx(const tWav &Wav, bool isStrict):
 	tSfx()
 {
@@ -43,16 +37,6 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 		}
 	}
 
-	// Ptplayer requires first sample word to be zero
-	if(m_vData[0] != 0) {
-		m_vData.push_back(0);
-		std::rotate(m_vData.rbegin(), m_vData.rbegin() + 1, m_vData.rend());
-	}
-	if(m_vData[1] != 0) {
-		m_vData.push_back(0);
-		std::rotate(m_vData.rbegin(), m_vData.rbegin() + 1, m_vData.rend());
-	}
-
 	// Needs even number of bytes - Amiga reads it as words
 	if(m_vData.size() & 1) {
 		m_vData.push_back(0);
@@ -77,6 +61,11 @@ bool tSfx::toSfx(const std::string &szPath) const {
 bool tSfx::isEmpty(void) const
 {
 	return m_vData.empty();
+}
+
+uint32_t tSfx::getLength(void) const
+{
+	return m_vData.size();
 }
 
 void tSfx::normalize(void)
@@ -111,4 +100,36 @@ bool tSfx::isFittingMaxAmplitude(int8_t bMaxAmplitude) const
 		}
 	}
 	return true;
+}
+
+bool tSfx::hasEmptyFirstWord(void) const {
+	return m_vData[0] == 0 && m_vData[1] == 0;
+}
+
+void tSfx::enforceEmptyFirstWord(void) {
+	while(!hasEmptyFirstWord()) {
+		m_vData.push_back(0);
+		std::rotate(m_vData.rbegin(), m_vData.rbegin() + 1, m_vData.rend());
+	}
+}
+
+void tSfx::padContents(uint8_t ubAlignment) {
+		uint8_t ubAddCount = m_vData.size() % ubAlignment;
+		for(uint8_t i = ubAddCount; i--;) {
+			m_vData.push_back(0);
+		}
+}
+
+tSfx tSfx::splitAfter(uint32_t ulSamples) {
+	tSfx Out;
+	if(m_vData.size() <= ulSamples) {
+		return Out;
+	}
+
+	for(std::uint32_t ulPos = ulSamples; ulPos < m_vData.size(); ++ulPos) {
+		Out.m_vData.push_back(m_vData[ulPos]);
+	}
+	Out.m_ulFreq = m_ulFreq;
+	m_vData.resize(ulSamples);
+	return Out;
 }
