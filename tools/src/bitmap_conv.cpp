@@ -85,7 +85,7 @@ int main(int lArgCount, const char *pArgs[])
 		return EXIT_FAILURE;
 	}
 	if(szOutput.empty()) {
-		szOutput = nFs::trimExt(szInput);
+		szOutput = nFs::removeExt(szInput);
 		if(szInExt == "png") {
 			szOutput += ".bm";
 		}
@@ -97,10 +97,10 @@ int main(int lArgCount, const char *pArgs[])
 
 	if(szMask == "" && isMaskColor) {
 		if(szOutExt == "bm") {
-			szMask = nFs::trimExt(szOutput) + "_mask." + szOutExt;
+			szMask = nFs::removeExt(szOutput) + "_mask." + szOutExt;
 		}
 		else if(szInExt == "bm") {
-			szMask = nFs::trimExt(szInput) + "_mask." + szInExt;
+			szMask = nFs::removeExt(szInput) + "_mask." + szInExt;
 		}
 	}
 
@@ -131,7 +131,7 @@ int main(int lArgCount, const char *pArgs[])
 			for(std::uint16_t i = 1; i < 256; ++i) {
 				PaletteMask.m_vColors.push_back(MaskColor);
 			}
-			auto szInMask = nFs::trimExt(szInput) + "_mask." + szInExt;
+			auto szInMask = nFs::removeExt(szInput) + "_mask." + szInExt;
 			auto InMask = tChunkyBitmap(tPlanarBitmap::fromBm(szInMask), PaletteMask);
 			if(!In.mergeWithMask(InMask)) {
 				nLog::error("Mask incompatible with bitmap");
