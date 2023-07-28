@@ -33,7 +33,7 @@ int main(int lArgCount, const char *pArgs[])
 	std::string szPathIn = pArgs[1];
 
 	// Optional args' default values
-	std::string szPathOut = nFs::trimExt(szPathIn) + ".gpl";
+	std::string szPathOut = nFs::removeExt(szPathIn) + ".gpl";
 
 	// Search for optional args
 	if(lArgCount - 1 > 1) {
