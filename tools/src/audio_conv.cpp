@@ -1,7 +1,9 @@
+#include <optional>
 #include "common/logging.h"
 #include "common/fs.h"
 #include "common/sfx.h"
 #include "common/wav.h"
+#include "common/math.h"
 
 void printUsage(const std::string &szAppName) {
 	using fmt::print;
@@ -14,12 +16,17 @@ void printUsage(const std::string &szAppName) {
 	print("\t-fd N       Ensure that sound effect fits max amplitude divided by specified factor. Useful for some audio-mixing libraries\n");
 	print("\t-strict     Treat warinings as errors (recommended)\n");
 	print("\t-n          Normalize audio files\n");
+	print("\t-fpt        Enforce ptplayer-friendly mode: adds empty sample at the beginning, if missing\n");
+	print("\t-fpad N     Force given byte-padding\n");
+	print("\t-sa N       Split sample after every given number of bytes, or kbytes if value ends with k\n");
 	print("Default conversions:\n");
 	print("\t.wav -> .sfx\n");
 	print("\t.sfx -> .wav\n");
 }
 
 int main(int lArgCount, const char *pArgs[]) {
+	using namespace std::string_view_literals;
+
 	uint8_t ubMandatoryArgCnt = 2;
 
 	if(lArgCount < ubMandatoryArgCnt) {
@@ -33,30 +40,54 @@ int main(int lArgCount, const char *pArgs[]) {
 	uint8_t ubDivisor = 1;
 	uint8_t ubFitDivisor = 1;
 	std::string szInput(pArgs[1]);
-	std::string szOutput("");
+	std::string szOutput;
+	bool isForcePt = false;
+	std::optional<uint8_t> oForcePad;
+	std::optional<uint32_t> oSplitAfter;
 	for(auto ArgIndex = 2; ArgIndex < lArgCount; ++ArgIndex) {
-		if(pArgs[ArgIndex] == std::string("-o") && ArgIndex < lArgCount -1) {
+		std::string_view Arg = pArgs[ArgIndex];
+		if(Arg == "-o"sv && ArgIndex < lArgCount -1) {
 			szOutput = pArgs[++ArgIndex];
 		}
-		else if(pArgs[ArgIndex] == std::string("-d") && ArgIndex < lArgCount -1) {
+		else if(Arg == "-d"sv && ArgIndex < lArgCount -1) {
 			ubDivisor = uint8_t(std::stoul(pArgs[++ArgIndex]));
 			if(ubDivisor == 0) {
 				nLog::error("Illegal -d value: '{}'", ubDivisor);
 				return EXIT_FAILURE;
 			}
 		}
-		else if(pArgs[ArgIndex] == std::string("-fd") && ArgIndex < lArgCount -1) {
+		else if(Arg == "-fd"sv && ArgIndex < lArgCount -1) {
 			ubFitDivisor = uint8_t(std::stoul(pArgs[++ArgIndex]));
 			if(ubFitDivisor == 0) {
 				nLog::error("Illegal -fd value: '{}'", ubFitDivisor);
 				return EXIT_FAILURE;
 			}
 		}
-		else if(pArgs[ArgIndex] == std::string("-n")) {
+		else if(Arg == "-n"sv) {
 			isNormalizing = true;
 		}
-		else if(pArgs[ArgIndex] == std::string("-strict")) {
+		else if(Arg == "-strict"sv) {
 			isStrict = true;
+		}
+		else if(Arg == "-fpt"sv) {
+			isForcePt = true;
+			oForcePad = std::min<uint8_t>(oForcePad.value_or(0), 2);
+		}
+		else if(Arg == "-fpad"sv && ArgIndex < lArgCount -1) {
+			oForcePad = uint8_t(std::stoul(pArgs[++ArgIndex]));
+			if(oForcePad.value() < 1 || oForcePad.value() < 4) {
+				nLog::error("Illegal -fpad value: '{}'", oForcePad.value());
+				return EXIT_FAILURE;
+			}
+		}
+		else if(Arg == "-sa"sv && ArgIndex < lArgCount -1) {
+			std::string_view Value(pArgs[++ArgIndex]);
+			std::size_t CharsParsed = 0;
+			auto ValueEnd = Value.end();
+			oSplitAfter = uint32_t(std::stoul(Value.data(), &CharsParsed));
+			if(CharsParsed < Value.size() && Value[CharsParsed] == 'k') {
+				oSplitAfter = oSplitAfter.value() * 1024;
+			}
 		}
 		else {
 			nLog::error("Unknown arg or missing value: '{}'", pArgs[ArgIndex]);
@@ -74,7 +105,7 @@ int main(int lArgCount, const char *pArgs[]) {
 	}
 
 	if(szOutput.empty()) {
-		szOutput = nFs::trimExt(szInput);
+		szOutput = nFs::removeExt(szInput);
 		if(szInExt == "wav") {
 			szOutput += ".sfx";
 		}
@@ -100,6 +131,12 @@ int main(int lArgCount, const char *pArgs[]) {
 		return EXIT_FAILURE;
 	}
 
+	// Ptplayer-like requirements
+	if(isForcePt) {
+		In.enforceEmptyFirstWord();
+	}
+
+	// Mixer-like requirements
 	if(isNormalizing) {
 		In.normalize();
 	}
@@ -115,15 +152,44 @@ int main(int lArgCount, const char *pArgs[]) {
 		);
 	}
 
-	// Save to output
-	fmt::print("Writing to {}...\n", szOutput);
-	if(szOutExt == "sfx") {
-		In.toSfx(szOutput);
+	if(oForcePad.has_value()) {
+		In.padContents(oForcePad.value());
+	}
+
+	if(oSplitAfter.has_value()) {
+		auto PartCount = (In.getLength() + oSplitAfter.value() - 1) / oSplitAfter.value();
+		fmt::print("Splitting to {} parts, {} bytes each\n", PartCount, oSplitAfter.value());
+		uint8_t ubPart = 0;
+		tSfx SfxRemaining;
+		auto BaseOutputPath = nFs::removeExt(szOutput);
+		do {
+			SfxRemaining = In.splitAfter(oSplitAfter.value());
+			auto PartOutPath = fmt::format(FMT_STRING("{}_{}.{}"), BaseOutputPath, ubPart, szOutExt);
+			fmt::print("Writing to {}\n", PartOutPath);
+			if(szOutExt == "sfx") {
+				In.toSfx(PartOutPath);
+			}
+			else {
+				nLog::error("Output file type not supported: {}", szInExt);
+				return EXIT_FAILURE;
+			}
+
+			In = SfxRemaining;
+			++ubPart;
+		} while(!SfxRemaining.isEmpty());
 	}
 	else {
-		nLog::error("Output file type not supported: {}", szInExt);
-		return EXIT_FAILURE;
+		// Save to output
+		fmt::print("Writing to {}...\n", szOutput);
+		if(szOutExt == "sfx") {
+			In.toSfx(szOutput);
+		}
+		else {
+			nLog::error("Output file type not supported: {}", szInExt);
+			return EXIT_FAILURE;
+		}
 	}
+
 
 	fmt::print("All done!\n");
 }
