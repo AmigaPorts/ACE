@@ -59,6 +59,7 @@ static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
 
 // Saved regs
 static UWORD s_uwOsIntEna;
+static UWORD s_uwOsInitialIntEna; ///< Before ACE's OS handlers got installed
 static UWORD s_uwOsDmaCon;
 static UWORD s_uwAceDmaCon = 0;
 static UWORD s_uwOsInitialDma;
@@ -101,8 +102,14 @@ static struct IOAudio s_sIoAudio = {0};
 static struct IOStdReq s_sIoRequestInput = {0};
 static struct Library *s_pCiaResource[CIA_COUNT];
 static struct Process *s_pProcess;
-static struct Interrupt s_sHandlerIo;
-static struct Interrupt s_pCiaIcrHandlers[CIA_COUNT][5];
+static struct Interrupt s_sOsHandlerIo;
+static struct Interrupt s_pOsCiaIcrHandlers[CIA_COUNT][5];
+static struct Interrupt *s_pOsOldInterruptHandlers[14];
+static struct Interrupt s_pOsInterruptHandlers[14];
+static UWORD s_uwOsVectorInts = (
+	INTF_TBE | INTF_DSKBLK | INTF_SOFTINT |
+	INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3 | INTF_RBF | INTF_DSKSYNC
+);
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -342,6 +349,39 @@ ULONG ciaIcrHandler(void) {
 	return 0;
 }
 
+void osIntVector(void) {
+	register volatile ULONG regData __asm("a1");
+
+	UBYTE ubIntBit = regData;
+	if(s_pAceInterrupts[ubIntBit].pHandler) {
+		s_pAceInterrupts[ubIntBit].pHandler(
+			g_pCustom, s_pAceInterrupts[ubIntBit].pData
+		);
+	}
+
+	UWORD uwIntMask = BV(ubIntBit);
+	g_pCustom->intreq = uwIntMask;
+	g_pCustom->intreq = uwIntMask;
+}
+
+ULONG osIntServer(void) {
+	register volatile ULONG regData __asm("a1");
+
+	UBYTE ubIntBit = regData;
+	if(s_pAceInterrupts[ubIntBit].pHandler) {
+		s_pAceInterrupts[ubIntBit].pHandler(
+			g_pCustom, s_pAceInterrupts[ubIntBit].pData
+		);
+	}
+
+	UWORD uwIntMask = BV(ubIntBit);
+	g_pCustom->intreq = uwIntMask;
+	g_pCustom->intreq = uwIntMask;
+
+	// End chain for non-VERTB ints
+	return ubIntBit == INTB_VERTB ? 0 : 1;
+}
+
 //-------------------------------------------------------------------- FUNCTIONS
 
 // Messageport creation for KS1.3
@@ -465,12 +505,12 @@ static UBYTE inputHandlerAdd(void) {
 		goto fail;
 	}
 
-	memset(&s_sHandlerIo, 0, sizeof(s_sHandlerIo));
-	s_sHandlerIo.is_Code = (void(*)(void))aceInputHandler;
-	s_sHandlerIo.is_Data = 0;
-	s_sHandlerIo.is_Node.ln_Pri = 127;
-	s_sHandlerIo.is_Node.ln_Name = "ACE Input handler";
-	s_sIoRequestInput.io_Data = (APTR)&s_sHandlerIo;
+	memset(&s_sOsHandlerIo, 0, sizeof(s_sOsHandlerIo));
+	s_sOsHandlerIo.is_Code = (void(*)(void))aceInputHandler;
+	s_sOsHandlerIo.is_Data = 0;
+	s_sOsHandlerIo.is_Node.ln_Pri = 127;
+	s_sOsHandlerIo.is_Node.ln_Name = "ACE Input handler";
+	s_sIoRequestInput.io_Data = (APTR)&s_sOsHandlerIo;
 	s_sIoRequestInput.io_Command = IND_ADDHANDLER;
 	s_sIoRequestInput.io_Message.mn_ReplyPort = pMsgPort;
 	isError = DoIO((struct IORequest *)&s_sIoRequestInput);
@@ -496,7 +536,7 @@ static void inputHandlerRemove(void) {
 	struct MsgPort *pMsgPort = s_sIoRequestInput.io_Message.mn_ReplyPort;
 
 	s_sIoRequestInput.io_Command = IND_REMHANDLER;
-	s_sIoRequestInput.io_Data=(APTR)&s_sHandlerIo;
+	s_sIoRequestInput.io_Data=(APTR)&s_sOsHandlerIo;
 	UBYTE isError = DoIO((struct IORequest *)&s_sIoRequestInput);
 	if(isError) {
 		logWrite(
@@ -510,14 +550,125 @@ static void inputHandlerRemove(void) {
 	msgPortDelete(pMsgPort);
 }
 
+static void interruptHandlerAdd(UBYTE ubIntBit) {
+	struct Interrupt *pInterrupt = &s_pOsInterruptHandlers[ubIntBit];
+	memset(pInterrupt, 0, sizeof(*pInterrupt));
+	pInterrupt->is_Data = (void*)(ULONG)ubIntBit;
+	pInterrupt->is_Node.ln_Name = "ACE interrupt handler";
+	pInterrupt->is_Node.ln_Type = NT_INTERRUPT;
+	if(BV(ubIntBit) & s_uwOsVectorInts) {
+		pInterrupt->is_Code = osIntVector;
+
+		// Disable interrupt and swap the int vector
+		g_pCustom->intena = BV(ubIntBit);
+		s_pOsOldInterruptHandlers[ubIntBit] = SetIntVector(ubIntBit, pInterrupt);
+	}
+	else {
+		// VERTB servers should always return Z set and can't be sole handler
+		// NOTE: VERTB server with priority of 10 or greater must set a0 to 0xDFF000
+		pInterrupt->is_Code = (void(*)(void))osIntServer;
+		pInterrupt->is_Node.ln_Pri = (ubIntBit == INTB_VERTB) ? 9 : 127;
+		// Auto-enables intena bit if first server is adder
+		AddIntServer(ubIntBit, pInterrupt);
+	}
+}
+
+static void interruptHandlerRemove(UBYTE ubIntBit) {
+	if(BV(ubIntBit) & s_uwOsVectorInts) {
+		// Disable interrupt in case handler is set to null
+		g_pCustom->intena = BV(ubIntBit);
+		SetIntVector(ubIntBit, s_pOsOldInterruptHandlers[ubIntBit]);
+
+		// A 3rd party handler could be installed but be inactive
+		if(s_uwOsInitialIntEna & BV(ubIntBit)) {
+			g_pCustom->intena = INTF_SETCLR | BV(ubIntBit);
+		}
+	}
+	else {
+		// Auto-disables intena bit if sole server is removed
+		RemIntServer(ubIntBit, &s_pOsInterruptHandlers[ubIntBit]);
+	}
+}
+
+static void systemOsDisable(void) {
+		// Disable interrupts (this is the actual "kill system/OS" part)
+		g_pCustom->intena = 0x7FFF;
+		g_pCustom->intreq = 0x7FFF;
+
+		// Query CIA ICR bits set by OS for later CIA takeover restore
+		s_pOsCiaIcr[CIA_A] = AbleICR(s_pCiaResource[CIA_A], 0);
+		s_pOsCiaIcr[CIA_B] = AbleICR(s_pCiaResource[CIA_B], 0);
+
+		// Disable CIA interrupts
+		g_pCia[CIA_A]->icr = 0x7F;
+		g_pCia[CIA_B]->icr = 0x7F;
+
+		// Save CRA bits
+		s_pOsCiaCra[CIA_A] = g_pCia[CIA_A]->cra;
+		s_pOsCiaCrb[CIA_A] = g_pCia[CIA_A]->crb;
+		s_pOsCiaCra[CIA_B] = g_pCia[CIA_B]->cra;
+		s_pOsCiaCrb[CIA_B] = g_pCia[CIA_B]->crb;
+
+		// Disable timers and trigger reload of value to read preset val
+		g_pCia[CIA_A]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
+		g_pCia[CIA_A]->crb = CIACRB_LOAD;
+		g_pCia[CIA_B]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
+		g_pCia[CIA_B]->crb = CIACRB_LOAD;
+
+		// Save OS CIA timer values
+		s_pOsCiaTimerA[CIA_A] = ciaGetTimerA(g_pCia[CIA_A]);
+		s_pOsCiaTimerB[CIA_A] = ciaGetTimerB(g_pCia[CIA_A]);
+		s_pOsCiaTimerA[CIA_B] = ciaGetTimerA(g_pCia[CIA_B]);
+		s_pOsCiaTimerB[CIA_B] = ciaGetTimerB(g_pCia[CIA_B]);
+
+		// set ACE CIA timers
+		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
+		ciaSetTimerB(g_pCia[CIA_A], s_pAceCiaTimerB[CIA_A]);
+		ciaSetTimerA(g_pCia[CIA_B], s_pAceCiaTimerA[CIA_B]);
+		ciaSetTimerB(g_pCia[CIA_B], s_pAceCiaTimerB[CIA_B]);
+
+		// Enable ACE CIA interrupts
+		g_pCia[CIA_A]->icr = (
+			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
+		);
+		g_pCia[CIA_B]->icr = (
+			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
+		);
+
+		// Restore ACE CIA CRA/CRB state
+		g_pCia[CIA_A]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_A];
+		g_pCia[CIA_A]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_A];
+		g_pCia[CIA_B]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_B];
+		g_pCia[CIA_B]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_B];
+
+		// Game's bitplanes & copperlists are still used so don't disable them
+		// Wait for vbl before disabling sprite DMA
+		while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
+		g_pCustom->dmacon = s_uwOsMinDma;
+
+		// Save OS interrupt vectors and enable ACE's
+		g_pCustom->intreq = 0x7FFF;
+		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
+			s_pOsHwInterrupts[i] = s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i];
+			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pAceHwInterrupts[i];
+		}
+
+		// Enable needed DMA (and interrupt) channels
+		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
+		// Everything that's supported by ACE to simplify things for now,
+		// but not audio channels since ptplayer relies on polling them, and I'm not
+		// currently being able to debug audio interrupt handler variant.
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
+}
+
 void ciaIcrHandlerAdd(UBYTE ubCia, UBYTE ubIcrBit) {
-	memset(&s_pCiaIcrHandlers[ubCia][ubIcrBit], 0, sizeof(s_pCiaIcrHandlers[ubCia][ubIcrBit]));
-	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Code = (void(*)(void))ciaIcrHandler;
-	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Data = (void*)&s_pAceCiaInterrupts[ubCia][ubIcrBit];
-	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Name = "ACE CIA ICR handler";
-	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Pri = 127;
-	s_pCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Type = NT_INTERRUPT;
-	if(AddICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pCiaIcrHandlers[ubCia][ubIcrBit])) {
+	memset(&s_pOsCiaIcrHandlers[ubCia][ubIcrBit], 0, sizeof(s_pOsCiaIcrHandlers[ubCia][ubIcrBit]));
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Code = (void(*)(void))ciaIcrHandler;
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Data = (void*)&s_pAceCiaInterrupts[ubCia][ubIcrBit];
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Name = "ACE CIA ICR handler";
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Pri = 127;
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Type = NT_INTERRUPT;
+	if(AddICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pOsCiaIcrHandlers[ubCia][ubIcrBit])) {
 		logWrite("CIA %c ICR %d add failed", CIA_A ? 'A' : 'B', ubIcrBit);
 	}
 
@@ -526,7 +677,7 @@ void ciaIcrHandlerAdd(UBYTE ubCia, UBYTE ubIcrBit) {
 }
 
 void ciaIcrHandlerRemove(UBYTE ubCia, UBYTE ubIcrBit) {
-	RemICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pCiaIcrHandlers[ubCia][ubIcrBit]);
+	RemICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pOsCiaIcrHandlers[ubCia][ubIcrBit]);
 }
 
 /**
@@ -625,6 +776,12 @@ void systemCreate(void) {
 
 	inputHandlerAdd();
 
+	s_uwOsInitialIntEna = g_pCustom->intenar;
+	interruptHandlerAdd(INTB_AUD0);
+	interruptHandlerAdd(INTB_AUD1);
+	interruptHandlerAdd(INTB_AUD2);
+	interruptHandlerAdd(INTB_AUD3);
+
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
 
@@ -664,12 +821,11 @@ void systemCreate(void) {
 	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 
-	// Unuse system so that it gets backed up once and then re-enable
-	// as little as needed
-	s_wSystemUses = 1;
+	// Disable system so that it gets backed up once, skip saving intena from systemUnuse()
+	s_wSystemUses = 0;
 	s_wSystemBlitterUses = 1;
-	systemUnuse();
-	systemUse();
+	systemOsDisable();
+	systemUse(); // Re-enable as little as needed
 
 	systemGetBlitterFromOs();
 }
@@ -703,6 +859,11 @@ void systemDestroy(void) {
 
 	inputHandlerRemove();
 
+	interruptHandlerRemove(INTB_AUD0);
+	interruptHandlerRemove(INTB_AUD1);
+	interruptHandlerRemove(INTB_AUD2);
+	interruptHandlerRemove(INTB_AUD3);
+
 	// restore old view
 	WaitTOF();
 	LoadView(s_pOsView);
@@ -733,74 +894,10 @@ void systemUnuse(void) {
 			systemFlushIo();
 		}
 
-		// Disable interrupts (this is the actual "kill system/OS" part)
-		g_pCustom->intena = 0x7FFF;
-		g_pCustom->intreq = 0x7FFF;
+		// save the state of the hardware registers (INTENA)
+		s_uwOsIntEna = g_pCustom->intenar;
 
-		// Query CIA ICR bits set by OS for later CIA takeover restore
-		s_pOsCiaIcr[CIA_A] = AbleICR(s_pCiaResource[CIA_A], 0);
-		s_pOsCiaIcr[CIA_B] = AbleICR(s_pCiaResource[CIA_B], 0);
-
-		// Disable CIA interrupts
-		g_pCia[CIA_A]->icr = 0x7F;
-		g_pCia[CIA_B]->icr = 0x7F;
-
-		// Save CRA bits
-		s_pOsCiaCra[CIA_A] = g_pCia[CIA_A]->cra;
-		s_pOsCiaCrb[CIA_A] = g_pCia[CIA_A]->crb;
-		s_pOsCiaCra[CIA_B] = g_pCia[CIA_B]->cra;
-		s_pOsCiaCrb[CIA_B] = g_pCia[CIA_B]->crb;
-
-		// Disable timers and trigger reload of value to read preset val
-		g_pCia[CIA_A]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
-		g_pCia[CIA_A]->crb = CIACRB_LOAD;
-		g_pCia[CIA_B]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
-		g_pCia[CIA_B]->crb = CIACRB_LOAD;
-
-		// Save OS CIA timer values
-		s_pOsCiaTimerA[CIA_A] = ciaGetTimerA(g_pCia[CIA_A]);
-		s_pOsCiaTimerB[CIA_A] = ciaGetTimerB(g_pCia[CIA_A]);
-		s_pOsCiaTimerA[CIA_B] = ciaGetTimerA(g_pCia[CIA_B]);
-		s_pOsCiaTimerB[CIA_B] = ciaGetTimerB(g_pCia[CIA_B]);
-
-		// set ACE CIA timers
-		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
-		ciaSetTimerB(g_pCia[CIA_A], s_pAceCiaTimerB[CIA_A]);
-		ciaSetTimerA(g_pCia[CIA_B], s_pAceCiaTimerA[CIA_B]);
-		ciaSetTimerB(g_pCia[CIA_B], s_pAceCiaTimerB[CIA_B]);
-
-		// Enable ACE CIA interrupts
-		g_pCia[CIA_A]->icr = (
-			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
-		);
-		g_pCia[CIA_B]->icr = (
-			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
-		);
-
-		// Restore ACE CIA CRA/CRB state
-		g_pCia[CIA_A]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_A];
-		g_pCia[CIA_A]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_A];
-		g_pCia[CIA_B]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_B];
-		g_pCia[CIA_B]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_B];
-
-		// Game's bitplanes & copperlists are still used so don't disable them
-		// Wait for vbl before disabling sprite DMA
-		while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
-		g_pCustom->dmacon = s_uwOsMinDma;
-
-		// Save OS interrupt vectors and enable ACE's
-		g_pCustom->intreq = 0x7FFF;
-		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
-			s_pOsHwInterrupts[i] = s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i];
-			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pAceHwInterrupts[i];
-		}
-
-		// Enable needed DMA (and interrupt) channels
-		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
-		// Everything that's supported by ACE to simplify things for now,
-		// but not audio channels since ptplayer relies on polling them, and I'm not
-		// currently being able to debug audio interrupt handler variant.
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
+		systemOsDisable();
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
@@ -902,9 +999,7 @@ void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData
 ) {
 	// Disable interrupt during data swap to not get stuck inside ACE's ISR
-	if(!s_wSystemUses) {
-		g_pCustom->intena = BV(ubIntNumber);
-	}
+	g_pCustom->intena = BV(ubIntNumber);
 
 	// Disable handler or re-enable it if 0 was passed
 	if(pHandler == 0) {
@@ -915,9 +1010,7 @@ void systemSetInt(
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		if(!s_wSystemUses) {
-			g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
-		}
+		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
 	}
 }
 
