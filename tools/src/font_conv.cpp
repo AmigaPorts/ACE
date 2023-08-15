@@ -162,7 +162,7 @@ int main(int lArgCount, const char *pArgs[])
 	tGlyphSet mGlyphs;
 	tFontFormat eInType = tFontFormat::INVALID;
 	if(szFontPath.find(".ttf") != std::string::npos) {
-		mGlyphs = tGlyphSet::fromTtf(szFontPath, 20, szCharset, 128);
+		mGlyphs = tGlyphSet::fromTtf(szFontPath, lSize, szCharset, 128);
 		eInType = tFontFormat::TTF;
 	}
 	else if(nFs::isDir(szFontPath)) {
