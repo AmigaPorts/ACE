@@ -48,11 +48,15 @@ public:
 
 private:
 	struct tBitmapGlyph {
-		uint8_t ubBearing;
-		uint8_t ubWidth, ubHeight;
-		std::vector<uint8_t> vData; ///< One byte per pixel, 0 for bg, 0xFF otherwise.
+		uint8_t m_ubBearing;
+		uint8_t m_ubWidth, m_ubHeight;
+		std::vector<uint8_t> m_vData; ///< One byte per pixel, 0 for bg, 0xFF otherwise.
 
 		void trimHorz(bool isRight);
+
+		uint8_t getValueAt(uint8_t ubX, uint8_t ubY);
+		bool isEmpty(void);
+		bool hasEmptyColumn(uint8_t ubX);
 	};
 
 	std::map<uint16_t, tBitmapGlyph> m_mGlyphs;
