@@ -228,4 +228,14 @@ void bobEnd(void);
 
 void bobDiscardUndraw(void);
 
+/**
+ * @brief Sets the current buffer to given bitmap in case it loses sync.
+ * Usually used in tandem with bobDiscardUndraw() when bob system was disabled
+ * for some time.
+ *
+ * @param pCurrent Current buffer to use. Must be same as one of passed
+ * in bobManagerCreate().
+ */
+void bobSetCurrentBuffer(tBitMap *pCurrent);
+
 #endif // _ACE_MANAGERS_BOB_H_

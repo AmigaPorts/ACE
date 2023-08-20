@@ -456,3 +456,9 @@ void bobDiscardUndraw(void) {
 	s_pQueues[0].ubUndrawCount = 0;
 	s_pQueues[1].ubUndrawCount = 0;
 }
+
+void bobSetCurrentBuffer(tBitMap *pCurrent) {
+	if(s_pQueues[!s_ubBufferCurr].pDst == pCurrent) {
+		s_ubBufferCurr = !s_ubBufferCurr;
+	}
+}
