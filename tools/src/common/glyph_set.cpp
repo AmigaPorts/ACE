@@ -320,8 +320,8 @@ void tGlyphSet::tBitmapGlyph::trimHorz(bool isRight)
 	uint8_t ubNewStart;
 	if(isRight) {
 		ubNewStart = 0;
-		for(ubNewWidth = m_ubWidth - 1; ubNewWidth > 0; --ubNewWidth) {
-			if(!hasEmptyColumn(ubNewWidth)) {
+		for(ubNewWidth = m_ubWidth; ubNewWidth > 0; --ubNewWidth) {
+			if(!hasEmptyColumn(ubNewWidth - 1)) {
 				break;
 			}
 		}
