@@ -14,17 +14,19 @@
 extern "C" {
 #endif
 
+#include <ace/types.h>
+#include <ace/macros.h>
+
 #if defined(AMIGA)
 #include <exec/memory.h> // MEMF_CLEAR etc
 #else
-#define MEMF_CHIP    0
-#define MEMF_FAST    1
-#define MEMF_CLEAR   2
-#define MEMF_PUBLIC  4
-#define MEMF_LARGEST 8
+#define MEMF_ANY 0
+#define MEMF_PUBLIC  BV(0)
+#define MEMF_CHIP    BV(1)
+#define MEMF_FAST    BV(2)
+#define MEMF_CLEAR   BV(16)
+#define MEMF_LARGEST BV(17)
 #endif // AMIGA
-
-#include <ace/types.h>
 
 /* Types */
 

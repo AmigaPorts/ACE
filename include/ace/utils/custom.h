@@ -14,6 +14,8 @@ extern "C" {
 #if defined(AMIGA)
 
 #include <hardware/custom.h> // Custom chip register addresses
+#include <hardware/intbits.h> // INTF_*, INTB_* for intena/intreq
+#include <hardware/dmabits.h> // DMAF_*, DMAB_* for dmacon
 
 #define REGPTR volatile * const
 #define HARDWARE_SPRITE_CHANNEL_COUNT 8
@@ -207,6 +209,12 @@ extern tCopperUlong FAR REGPTR g_pCopLc;
 extern tCopperUlong FAR REGPTR g_pCop2Lc;
 
 extern tCia FAR REGPTR g_pCia[CIA_COUNT];
+
+#else
+
+typedef struct tCustom {
+
+} tCustom;
 
 #endif // AMIGA
 

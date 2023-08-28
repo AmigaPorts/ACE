@@ -7,7 +7,7 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
-#include <hardware/intbits.h> // INTB_PORTS
+
 #define KEY_RELEASED_BIT 1
 
 #if defined ACE_DEBUG

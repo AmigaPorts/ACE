@@ -43,7 +43,9 @@ typedef struct _tSimpleBufferManager {
 	// scroll-specific fields
 	tBitMap *pFront;       ///< Currently displayed buffer.
 	tBitMap *pBack;        ///< Buffer for drawing.
+#if defined(AMIGA)
 	tCopBlock *pCopBlock;  ///< CopBlock containing modulo/shift/bitplane cmds
+#endif
 	tUwCoordYX uBfrBounds; ///< Buffer bounds in pixels
 	UBYTE ubFlags;         ///< Read only. See SIMPLEBUFFER_FLAG_*.
 	UWORD uwCopperOffset;  ///< Offset on copperlist in COP_RAW mode.

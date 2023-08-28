@@ -9,7 +9,6 @@
 extern "C" {
 #endif
 
-#include <graphics/gfxbase.h> // Required for GfxBase
 #include <ace/types.h>
 #include <ace/utils/custom.h>
 

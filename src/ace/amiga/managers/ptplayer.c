@@ -13,8 +13,6 @@
 #include <ace/managers/log.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
-#include <hardware/intbits.h>
-#include <hardware/dmabits.h>
 
 //----------------------------------------------------------------------- CONFIG
 

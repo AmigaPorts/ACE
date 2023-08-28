@@ -38,8 +38,8 @@ typedef enum _tTagView {
 } tTagView;
 
 // Values for TAG_VIEW_COPLIST_MODE
-#define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
-#define VIEW_COPLIST_MODE_RAW   COPPER_MODE_RAW
+#define VIEW_COPLIST_MODE_BLOCK 0
+#define VIEW_COPLIST_MODE_RAW   1
 
 typedef enum _tTagVport {
 	// Ptr to parent view
