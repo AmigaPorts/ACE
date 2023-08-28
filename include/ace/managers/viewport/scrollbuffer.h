@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
-
 /**
  * Scrollable buffer manager
  * Uses scrolling-trick from aminet to achieve memory-efficient scroll
@@ -111,8 +109,6 @@ void scrollBufferBlitMask(
 UBYTE scrollBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp);
 
 UBYTE scrollBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp);
-
-#endif // AMIGA
 
 #ifdef __cplusplus
 }

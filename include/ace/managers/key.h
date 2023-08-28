@@ -10,9 +10,6 @@ extern "C" {
 #endif
 
 #include <ace/types.h>
-#ifdef AMIGA
-#include <exec/interrupts.h>  // struct Interrupt
-#endif // AMIGA
 
 //---------------------------------------------------------------------- DEFINES
 

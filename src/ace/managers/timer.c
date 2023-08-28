@@ -28,7 +28,6 @@ void timerOnInterrupt(void) {
 }
 
 ULONG timerGetPrec(void) {
-#ifdef AMIGA
 	// There are 4 cases how measurments may take place:
 	// a) uwFr1, pRay, uwFr2 on frame A
 	// b) uwFr1, pRay on frame A; uwFr2 on frame B
@@ -45,9 +44,8 @@ ULONG timerGetPrec(void) {
 	else {
 		return (uwFr1 * 160 * 313 + sRay.bfPosY * 160 + sRay.bfPosX);
 	}
-#else
+
 	return 0;
-#endif
 }
 
 ULONG timerGetDelta(ULONG ulStart, ULONG ulStop) {

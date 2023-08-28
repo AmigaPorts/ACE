@@ -22,7 +22,7 @@ extern "C" {
 
 /* Types */
 
-#ifdef AMIGA
+#if defined(AMIGA)
 #include <clib/graphics_protos.h> // BitMap etc
 typedef struct BitMap tBitMap;
 #else

@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include <ace/types.h> // Amiga typedefs
+#include <ace/types.h>
 
 /* Functions */
 

@@ -5,8 +5,6 @@
 #include <ace/utils/custom.h>
 #include <stddef.h>
 
-#ifdef AMIGA
-
 #define CUSTOM_BASE 0xDFF000
 
 tCustom FAR REGPTR g_pCustom = (tCustom REGPTR)CUSTOM_BASE;
@@ -75,5 +73,3 @@ tRayPos getRayPos(void) {
 	tRayPos sPos = {.ulValue = (uwHiY2 << 16) | uwLoY};
 	return sPos;
 }
-
-#endif // AMIGA

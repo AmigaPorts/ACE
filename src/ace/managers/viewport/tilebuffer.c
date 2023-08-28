@@ -18,8 +18,6 @@ static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 	return ubPower;
 }
 
-#ifdef AMIGA
-
 #define BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
 
 static void tileBufferResetRedrawState(tRedrawState *pState) {
@@ -767,5 +765,3 @@ void tileBufferSetTile(
  	pManager->pTileData[uwX][uwY] = uwIdx;
 	tileBufferInvalidateTile(pManager, uwX, uwY);
 }
-
-#endif // AMIGA

@@ -8,9 +8,7 @@
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
 
-#ifdef AMIGA
 #include <clib/exec_protos.h> // AvailMem, AllocMem, FreeMem, etc.
-#endif
 
 //------------------------------------------------------------------------ TYPES
 
@@ -194,12 +192,10 @@ void *_memAllocDbg(
 			"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
 			s_ulChipPeakUsage, s_ulFastPeakUsage
 		);
-#ifdef AMIGA
 		logWrite(
 			"[MEM] Largest available chunk of given type: %lu\n",
 			AvailMem(ulFlags | MEMF_LARGEST)
 		);
-#endif // AMIGA
 		return 0;
 	}
 	pAddr += sizeof(ULONG);
@@ -226,7 +222,6 @@ void _memFreeDbg(
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	systemUse();
 	void *pResult;
-	#ifdef AMIGA
 	pResult = AllocMem(ulSize, ulFlags);
 	if(!(ulFlags & MEMF_CHIP) && !pResult) {
 		// No FAST available - allocate CHIP instead
@@ -235,18 +230,15 @@ void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	}
 	#else
 	pResult =  malloc(ulSize);
-	#endif // AMIGA
 	systemUnuse();
 	return pResult;
 }
 
 void _memFreeRls(void *pMem, ULONG ulSize) {
 	systemUse();
-	#ifdef AMIGA
 	FreeMem(pMem, ulSize);
 	#else
 	free(pMem);
-	#endif // AMIGA
 	systemUnuse();
 }
 
@@ -267,7 +259,6 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile) {
 }
 
 UBYTE memType(const void *pMem) {
-#ifdef AMIGA
 	ULONG ulOsType = TypeOfMem((void *)pMem);
 	if(ulOsType & MEMF_FAST) {
 		return MEMF_FAST;
@@ -275,7 +266,6 @@ UBYTE memType(const void *pMem) {
 	return MEMF_CHIP;
 #else
 	return MEMF_FAST;
-#endif // AMIGA
 }
 
 ULONG memGetChipSize(void) {

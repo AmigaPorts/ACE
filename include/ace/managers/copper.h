@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
+#if defined(AMIGA)
 #include <hardware/dmabits.h> // DMAF defines
 
 #include <ace/types.h>

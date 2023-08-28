@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
-
 /**
  *  Buffer with naive scrolling techniques. Uses loadsa CHIP RAM but there
  *  should'nt be any quirks while using it.
@@ -89,8 +87,6 @@ UBYTE simpleBufferIsRectVisible(
 );
 
 UBYTE simpleBufferGetRawCopperlistInstructionCount(UBYTE ubBpp);
-
-#endif // AMIGA
 
 #ifdef __cplusplus
 }

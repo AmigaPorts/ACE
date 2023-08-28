@@ -18,7 +18,7 @@ extern "C" {
 // OS-friendly (old) mode
 // #define CONFIG_SYSTEM_OS_FRIENDLY // TODO: implement
 
-#ifdef AMIGA
+#if defined(AMIGA)
 #include <exec/types.h>
 #else
 #include <stdint.h>
@@ -39,7 +39,7 @@ typedef int32_t LONG;
 #define UWORD_MAX 0xFFFFu
 #define UBYTE_MAX 0xFFu
 
-#if defined(__CODE_CHECKER__) || defined(__INTELLISENSE__)
+#if defined(__CODE_CHECKER__) || defined(__INTELLISENSE__) || !defined(AMIGA)
 // My realtime source checker has problems with GCC asm() expanded from REGARG()
 // being in fn arg list, so I just use blank defines for it
 #define INTERRUPT

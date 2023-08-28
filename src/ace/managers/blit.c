@@ -11,17 +11,13 @@
 
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
-#if defined(AMIGA)
 	systemSetDmaBit(DMAB_BLITTER, 1);
-#endif
 	logBlockEnd("blitManagerCreate");
 }
 
 void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
-#if defined(AMIGA)
 	systemSetDmaBit(DMAB_BLITTER, 0);
-#endif
 	logBlockEnd("blitManagerDestroy");
 }
 
@@ -110,16 +106,12 @@ void blitWait(void) {
  * Polls 2 times - A1000 Agnus bug workaround
  */
 UBYTE blitIsIdle(void) {
-	#ifdef AMIGA
 	if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
 		if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
 			return 1;
 		}
 	}
 	return 0;
-	#else
-		return 1;
-	#endif // AMIGA
 }
 
 UBYTE blitUnsafeCopy(
@@ -127,7 +119,6 @@ UBYTE blitUnsafeCopy(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm
 ) {
-#ifdef AMIGA
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulSrcOffs, ulDstOffs;
@@ -197,7 +188,7 @@ UBYTE blitUnsafeCopy(
 
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 	}
-#endif // AMIGA
+
 	return 1;
 }
 
@@ -222,7 +213,6 @@ UBYTE blitUnsafeCopyAligned(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
-	#ifdef AMIGA
 	UWORD uwBlitWords, uwBltCon0;
 	WORD wDstModulo, wSrcModulo;
 	ULONG ulSrcOffs, ulDstOffs;
@@ -277,7 +267,6 @@ UBYTE blitUnsafeCopyAligned(
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 		}
 	}
-#endif // AMIGA
 	return 1;
 }
 
@@ -309,7 +298,6 @@ UBYTE blitUnsafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk
 ) {
-#ifdef AMIGA
 	WORD wDstModulo, wSrcModulo;
 
 	UBYTE ubSrcOffs = wSrcX & 0xF;
@@ -380,7 +368,6 @@ UBYTE blitUnsafeCopyMask(
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 		}
 	}
-#endif // AMIGA
 	return 1;
 }
 
@@ -406,7 +393,6 @@ UBYTE blitUnsafeRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubColor
 ) {
-#ifdef AMIGA
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulDstOffs;
@@ -450,7 +436,6 @@ UBYTE blitUnsafeRect(
 		++ubPlane;
 	}	while(ubPlane < pDst->Depth);
 
-#endif // AMIGA
 	return 1;
 }
 
@@ -469,7 +454,6 @@ void blitLine(
 	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 ) {
-#ifdef AMIGA
 	// Based on Cahir's function from:
 	// https://github.com/cahirwpz/demoscene/blob/master/a500/base/libsys/blt-line.c
 
@@ -537,7 +521,4 @@ void blitLine(
 		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
 		g_pCustom->bltsize = uwBltSize;
 	}
-#else
-#error "Unimplemented: blitLine()"
-#endif // AMIGa
 }

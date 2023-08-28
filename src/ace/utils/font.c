@@ -51,17 +51,8 @@ tFont *fontCreate(const char *szFontName) {
 	fileRead(pFontFile, pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
-#ifdef AMIGA
 	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
 	fileRead(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
-#else
-	logWrite("ERR: Unimplemented\n");
-	memFree(pFont, sizeof(tFont));
-	fileClose(pFontFile);
-	logBlockEnd("fontCreate()");
-	return 0;
-#endif // AMIGA
-
 	fileClose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return pFont;
@@ -95,15 +86,8 @@ tFont *fontCreateFromMem(const UBYTE* pData) {
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
 
-#ifdef AMIGA
 	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
 	memcpy(pFont->pRawData->Planes[0],&pData[uwCurByte],uwPlaneByteSize);
-#else
-	logWrite("ERR: Unimplemented\n");
-	memFree(pFont, sizeof(tFont));
-	logBlockEnd("fontCreateFromMem()");
-	return 0;
-#endif // AMIGA
 	logBlockEnd("fontCreateFromMem()");
 	return pFont;
 }

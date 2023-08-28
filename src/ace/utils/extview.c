@@ -13,7 +13,6 @@ static UBYTE s_isPAL;
 tView *viewCreate(void *pTags, ...) {
 
 	logBlockBegin("viewCreate(pTags: %p)", pTags);
-#ifdef AMIGA
 
 	s_isPAL = systemIsPal();
 
@@ -99,12 +98,10 @@ tView *viewCreate(void *pTags, ...) {
 #else
 	logBlockEnd("viewCreate()");
 	return 0;
-#endif // AMIGA
 }
 
 void viewDestroy(tView *pView) {
 	logBlockBegin("viewDestroy(pView: %p)", pView);
-#ifdef AMIGA
 	if(g_sCopManager.pCopList == pView->pCopList) {
 		viewLoad(0);
 	}
@@ -118,7 +115,6 @@ void viewDestroy(tView *pView) {
 	logWrite("Freeing copperlists...\n");
 	copListDestroy(pView->pCopList);
 	memFree(pView, sizeof(tView));
-#endif // AMIGA
 	logBlockEnd("viewDestroy()");
 }
 
@@ -139,7 +135,6 @@ void viewProcessManagers(tView *pView) {
 }
 
 void viewUpdateCLUT(tView *pView) {
-#ifdef AMIGA
 	if(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT) {
 		for(UBYTE i = 0; i < 32; ++i) {
 			g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
@@ -148,7 +143,6 @@ void viewUpdateCLUT(tView *pView) {
 	else {
 		// na petli: vPortUpdateCLUT();
 	}
-#endif // AMIGA
 }
 
 /**
@@ -162,7 +156,6 @@ void viewLoad(tView *pView) {
 	UWORD uwWaitPos = (s_isPAL == 1) ? 300 : 260;
 	// if we are setting a NULL viewport we need to know if pal/NTSC
 	while(getRayPos().bfPosY < uwWaitPos) continue;
-#if defined(AMIGA)
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
@@ -212,7 +205,6 @@ void viewLoad(tView *pView) {
 	// if we are setting a NULL viewport we need to know if pal/NTSC
 	while(getRayPos().bfPosY < uwWaitPos) continue;
 
-#endif // AMIGA
 	logBlockEnd("viewLoad()");
 }
 
@@ -220,7 +212,6 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	logBlockBegin("vPortCreate(pTagList: %p)", pTagList);
 	va_list vaTags;
 	va_start(vaTags, pTagList);
-#ifdef AMIGA
 	s_isPAL = systemIsPal();
 
 	tVPort *pVPort = memAllocFastClear(sizeof(tVPort));
@@ -297,7 +288,6 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
-#endif // AMIGA
 fail:
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
@@ -372,7 +362,6 @@ void vPortUpdateCLUT(tVPort *pVPort) {
 }
 
 void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
-#ifdef AMIGA
 	// Determine VPort end position
 	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
 	uwEndPos += pVPort->pView->ubPosY; // Addition from DiWStrt
@@ -390,7 +379,6 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 	}
 	// If current beam pos is before end pos, wait for it
 	while (getRayPos().bfPosY < uwEndPos) continue;
-#endif // AMIGA
 }
 
 void vPortWaitUntilEnd(const tVPort *pVPort) {

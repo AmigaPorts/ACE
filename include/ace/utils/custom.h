@@ -11,7 +11,7 @@ extern "C" {
 
 #include <ace/macros.h>
 
-#ifdef AMIGA
+#if defined(AMIGA)
 
 #include <hardware/custom.h> // Custom chip register addresses
 

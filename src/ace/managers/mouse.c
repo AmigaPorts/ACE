@@ -15,7 +15,6 @@ void mouseCreate(UBYTE ubPortFlags) {
 	memset(&g_sMouseManager, 0, sizeof(tMouseManager));
 	g_sMouseManager.ubPortFlags = ubPortFlags;
 
-#ifdef AMIGA
 	g_sMouseManager.uwPrevPotGo = g_pCustom->potinp;
 	UWORD uwPotMask = 0;
 
@@ -30,7 +29,6 @@ void mouseCreate(UBYTE ubPortFlags) {
 
 	// Amiga Hardware Reference Manual suggests that pos should be polled every
 	// vblank, so there could be some interrupt init.
-#endif // AMIGA
 
 	if(ubPortFlags & MOUSE_PORT_1) {
 		mouseSetBounds(MOUSE_PORT_1, 0, 0, SCREEN_PAL_WIDTH - 1, SCREEN_PAL_HEIGHT - 1);
@@ -43,11 +41,9 @@ void mouseCreate(UBYTE ubPortFlags) {
 }
 
 void mouseDestroy(void) {
-#ifdef AMIGA
 	// Should mouse manager be interrupt driven, interrupt handler deletion will
 	// be here.
 	g_pCustom->potgo = g_sMouseManager.uwPrevPotGo;
-#endif // AMIGA
 }
 
 static void mouseProcessPort(
@@ -97,7 +93,6 @@ static void mouseProcessPort(
 void mouseProcess(void) {
 	// Even if whole Amiga process will be moved to vbl interrupt, other platforms
 	// will prob'ly use this fn anyway
-#ifdef AMIGA
 
 	if(g_sMouseManager.ubPortFlags & MOUSE_PORT_1) {
 		mouseProcessPort(
@@ -112,5 +107,4 @@ void mouseProcess(void) {
 		);
 	}
 
-#endif // AMIGA
 }

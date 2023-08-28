@@ -33,7 +33,7 @@ typedef struct _tMouse {
 	UWORD uwY;
 	UBYTE pButtonStates[3];
 	tUwAbsRect sBounds; ///< Min/max mouse position.
-#ifdef AMIGA
+#if defined(AMIGA)
 	UBYTE ubPrevHwX;
 	UBYTE ubPrevHwY;
 #endif
@@ -42,7 +42,7 @@ typedef struct _tMouse {
 typedef struct _tMouseManager {
 	UBYTE ubPortFlags;
 	tMouse pMice[3]; ///< Zero is pad, faster than subtracting from port code.
-#ifdef AMIGA
+#if defined(AMIGA)
 	UWORD uwPrevPotGo; ///< Previous control port config.
 #endif // AMIGA
 } tMouseManager;

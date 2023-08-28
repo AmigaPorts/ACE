@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
-
 /**
  * Tilemap buffer manager
  * Provides speed- and memory-efficient tilemap buffer
@@ -256,8 +254,6 @@ static inline UBYTE tileBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp)
 static inline UBYTE tileBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp) {
     return scrollBufferGetRawCopperlistInstructionCountBreak(ubBpp);
 }
-
-#endif // AMIGA
 
 #ifdef __cplusplus
 }

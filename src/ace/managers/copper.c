@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/copper.h>
-#ifdef AMIGA
 #include <stdarg.h>
 #include <ace/managers/system.h>
 #include <limits.h>
@@ -579,11 +578,3 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 	pWaitCmd->bfHE            = 0x7F;
 	pWaitCmd->bfIsSkip        = 0;
 }
-
-void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
-	pMoveCmd->bfUnused = 0;
-	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)g_pCustom);
-	copSetMoveVal(pMoveCmd, uwValue);
-}
-
-#endif // AMIGA

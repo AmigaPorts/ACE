@@ -29,7 +29,7 @@ extern "C" {
  *  @see endianIntel32()
  */
 static inline UWORD endianIntel16(UWORD uwIn) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	return (uwIn << 8) | (uwIn >> 8);
 #else
 	return uwIn;
@@ -45,7 +45,7 @@ static inline UWORD endianIntel16(UWORD uwIn) {
  *  @see endianIntel16()
  */
 static inline ULONG endianIntel32(ULONG ulIn) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	return (ulIn << 24) | ((ulIn&0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
 #else
 	return ulIn;

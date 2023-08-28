@@ -7,8 +7,6 @@
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <limits.h>
 
-#ifdef AMIGA
-
 static UWORD nearestPowerOf2(UWORD uwVal) {
 	// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 	// Decrease by one and fill result with ones, then increase by one
@@ -468,5 +466,3 @@ void scrollBufferBlitMask(
 		);
 	}
 }
-
-#endif // AMIGA

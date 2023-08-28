@@ -18,7 +18,6 @@
 tBitMap *bitmapCreate(
 	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
 ) {
-#ifdef AMIGA
 	tBitMap *pBitMap;
 	UBYTE i;
 
@@ -111,10 +110,6 @@ fail:
 	logBlockEnd("bitmapCreate()");
 	systemUnuse();
 	return 0;
-
-#else
-	return 0;
-#endif // AMIGA
 }
 
 void bitmapLoadFromFile(
@@ -377,9 +372,7 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 void bitmapDestroy(tBitMap *pBitMap) {
 	logBlockBegin("bitmapDestroy(pBitMap: %p)", pBitMap);
 	if(pBitMap) {
-#ifdef AMIGA
 		blitWait();
-#endif
 		systemUse();
 		if(bitmapIsInterleaved(pBitMap)) {
 			memFree(pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows);

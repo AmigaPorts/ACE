@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include <ace/types.h> // Amiga typedefs
+#include <ace/types.h>
 
 /* Types */
 
@@ -55,7 +55,7 @@ tStateManager *stateManagerCreate(void);
 
 /**
  * Cleans up after state manager.
- * @param pStateManager: Pointer to state manager previously created 
+ * @param pStateManager: Pointer to state manager previously created
  *        with stateManagerCreate.
  * @see stateManagerCreate()
  */
@@ -86,7 +86,7 @@ void stateDestroy(tState *pState);
 
 /**
  * Pushes given state over current state in given state manager. Calls cbSuspend
- * on old state and cbCreate on new state. Will update pPrev in given state to 
+ * on old state and cbCreate on new state. Will update pPrev in given state to
  * point the old one.
  * @param pStateManager: Pointer to desired state manager where push will happen.
  * @param pState: Pointer to desired state which will be pushed.
@@ -107,7 +107,7 @@ void statePush(tStateManager *pStateManager, tState *pState);
 void statePop(tStateManager *pStateManager);
 
 /**
- * Pops all states from given state manager. Calls cbDestroy on all states 
+ * Pops all states from given state manager. Calls cbDestroy on all states
  * when sets pCurrent to zero.
  * @param pStateManager: Pointer to desired state manager where pop will happen.
  * @see statePop()

@@ -9,12 +9,6 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
-#include <clib/exec_protos.h> // Amiga typedefs
-#include <exec/interrupts.h>  // struct Interrupt
-#include <hardware/intbits.h> // INTB_VERTB
-#endif // AMIGA
-
 #include <ace/types.h>
 #include <ace/managers/memory.h>
 #include <ace/utils/custom.h>

@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
+#if defined(AMIGA)
 #include <exec/interrupts.h>  // struct Interrupt
 #include <hardware/dmabits.h> // DMAF_BLITTER
 #include <hardware/intbits.h> // INTB_BLIT
