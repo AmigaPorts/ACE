@@ -23,10 +23,10 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 		return;
 	}
 	else {
-		fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
+		fileReadBytes(pFile, &ubPaletteLength, 1);
 		UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
 		logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
-		fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
+		fileReadWords(pFile, pPalette, ubColorsRead);
 		fileClose(pFile);
 	}
 

@@ -3,9 +3,87 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/utils/file.h>
+#include <ace/utils/endian.h>
 #include <stdarg.h>
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
+
+//------------------------------------------------------------------ PRIVATE FNS
+
+static ULONG fileReadData(tFile *pFile, void *pDest, UBYTE ubDataSize, ULONG ulCount) {
+#ifdef ACE_DEBUG
+	if(!ulSize) {
+		logWrite("ERR: File read size = 0!\n");
+	}
+#endif
+	systemUse();
+	systemReleaseBlitterToOs();
+	ULONG ulReadCount = fread(pDest, ubDataSize, ulCount, pFile);
+#if defined(ENDIAN_NATIVE_LITTLE)
+	if(ubDataSize == sizeof(UBYTE)) {
+		// no endian swap for bytes
+	}
+	if(ubDataSize == sizeof(UWORD)) {
+		UWORD *pWords = pDest;
+		for(ULONG i = 0; i < ulCount; ++i) {
+			pWords[i] = endianBigToNative16(pWords[i]);
+		}
+	}
+	else if(ubDataSize == sizeof(ULONG)) {
+		UWORD *pLongs = pDest;
+		for(ULONG i = 0; i < ulCount; ++i) {
+			pLongs[i] = endianBigToNative32(pLongs[i]);
+		}
+	}
+	else {
+		logWrite("ERR: Unsupported data size: %hhu\n", ubDataSize);
+	}
+#endif
+	systemGetBlitterFromOs();
+	systemUnuse();
+
+	return ulReadCount;
+}
+
+static ULONG fileWriteData(tFile *pFile, const void *pSource, UBYTE ubDataSize, ULONG ulCount) {
+#ifdef ACE_DEBUG
+	if(!ulSize) {
+		logWrite("ERR: File read size = 0!\n");
+	}
+#endif
+	systemUse();
+	systemReleaseBlitterToOs();
+	ULONG ulWriteCount = 0;
+#if defined(ENDIAN_NATIVE_LITTLE)
+	if(ubDataSize == sizeof(UBYTE)) {
+		// no endian swap for bytes
+		ulWriteCount = fwrite(pSource, ubDataSize, ulCount, pFile);
+	}
+	if(ubDataSize == sizeof(UWORD)) {
+		const UWORD *pWords = pSource;
+		for(ULONG i = 0; i < ulCount; ++i) {
+			UWORD uwReversed = endianBigToNative16(pWords[i]);
+			ulWriteCount += fwrite(&uwReversed, ubDataSize, 1, pFile);
+		}
+	}
+	else if(ubDataSize == sizeof(ULONG)) {
+		const UWORD *pLongs = pSource;
+		for(ULONG i = 0; i < ulCount; ++i) {
+			ULONG ulReversed = endianBigToNative32(pLongs[i]);
+			ulWriteCount += fwrite(&ulReversed, ubDataSize, 1, pFile);
+		}
+	}
+	else {
+		logWrite("ERR: Unsupported data size: %hhu\n", ubDataSize);
+	}
+#endif
+	systemGetBlitterFromOs();
+	systemUnuse();
+
+	return ulWriteCount;
+}
+
+//------------------------------------------------------------------- PUBLIC FNS
 
 LONG fileGetSize(const char *szPath) {
 	// One could use std library to seek to end of file and use ftell,
@@ -56,30 +134,35 @@ void fileClose(tFile *pFile) {
 	systemUnuse();
 }
 
-ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
-#ifdef ACE_DEBUG
-	if(!ulSize) {
-		logWrite("ERR: File read size = 0!\n");
-	}
-#endif
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulReadCount = fread(pDest, ulSize, 1, pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
+ULONG fileReadBytes(tFile *pFile, UBYTE *pDest, ULONG ulSize) {
+	ULONG ulReadCount = fileReadData(pFile, pDest, sizeof(UBYTE), ulSize);
 	return ulReadCount;
 }
 
-ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
-	fflush(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
+ULONG fileReadWords(tFile *pFile, UWORD *pDest, ULONG ulSize) {
+	ULONG ulReadCount = fileReadData(pFile, pDest, sizeof(UWORD), ulSize);
+	return ulReadCount;
+}
 
-	return ulResult;
+ULONG fileReadLongs(tFile *pFile, ULONG *pDest, ULONG ulSize) {
+	ULONG ulReadCount = fileReadData(pFile, pDest, sizeof(ULONG), ulSize);
+	return ulReadCount;
+}
+
+
+ULONG fileWriteBytes(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	ULONG ulWriteCount = fileWriteData(pFile, pSrc, sizeof(UBYTE), ulSize);
+	return ulWriteCount;
+}
+
+ULONG fileWriteWords(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	ULONG ulWriteCount = fileWriteData(pFile, pSrc, sizeof(UWORD), ulSize);
+	return ulWriteCount;
+}
+
+ULONG fileWriteLongs(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	ULONG ulWriteCount = fileWriteData(pFile, pSrc, sizeof(ULONG), ulSize);
+	return ulWriteCount;
 }
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
@@ -158,7 +241,7 @@ void fileFlush(tFile *pFile) {
 }
 
 void fileWriteStr(tFile *pFile, const char *szLine) {
-	fileWrite(pFile, szLine, strlen(szLine));
+	fileWriteBytes(pFile, szLine, strlen(szLine));
 }
 
 UBYTE fileExists(const char *szPath) {

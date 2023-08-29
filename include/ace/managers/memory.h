@@ -38,9 +38,9 @@ extern "C" {
  * @brief Checks whether memory pointer is in CHIP or FAST mem.
  *
  * @param pMem Pointer to memory to be checked.
- * @return MEMF_CHIP or MEMF_FAST.
+ * @return 1 if memory is of CHIP type, otherwise 0.
  */
-UBYTE memType(const void *pMem);
+UBYTE memIsChip(const void *pMem);
 
 ULONG memGetChipSize(void);
 

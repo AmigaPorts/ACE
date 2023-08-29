@@ -93,7 +93,7 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 	uaeWrite(s_szMsg);
 	if(isWritingToFileAllowed()) {
 		systemUse();
-		fileWrite(g_sLogManager.pFile, s_szMsg, strlen(s_szMsg));
+		fileWriteBytes(g_sLogManager.pFile, s_szMsg, strlen(s_szMsg));
 		fileFlush(g_sLogManager.pFile);
 		systemUnuse();
 	}

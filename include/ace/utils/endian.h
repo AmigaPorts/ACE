@@ -18,7 +18,29 @@ extern "C" {
 
 #include <ace/types.h>
 
-// TODO:
+#if defined(AMIGA)
+#define ENDIAN_NATIVE_BIG
+#else
+#define ENDIAN_NATIVE_LITTLE
+#endif
+
+#if defined(ENDIAN_NATIVE_BIG)
+#define endianNativeToBig16(x) (x)
+#define endianNativeToBig32(x) (x)
+#define endianNativeToLittle16(x) endianSwap16(x)
+#define endianNativeToLittle32(x) endianSwap32(x)
+#elif defined(ENDIAN_NATIVE_LITTLE)
+#define endianBigToNative16(x) endianSwap16(x)
+#define endianBigToNative32(x) endianSwap32(x)
+#define endianLittleToNative16(x) (x)
+#define endianLittleToNative32(x) (x)
+#define endianNativeToBig16(x) endianSwap16(x)
+#define endianNativeToBig32(x) endianSwap32(x)
+#define endianNativeToLittle16(x) (x)
+#define endianNativeToLittle32(x) (x)
+#else
+#error "Unknown platform endianness!"
+#endif
 
 /**
  *  @brief Converts _native_ 16-bit to Little (Intel) Endian.
@@ -26,30 +48,22 @@ extern "C" {
  *  @param uwIn 16-bit value to be converted
  *  @return Supplied value, byte-swapped if neccessary.
  *
- *  @see endianIntel32()
+ *  @see endianLittle32()
  */
-static inline UWORD endianIntel16(UWORD uwIn) {
-#if defined(AMIGA)
+static inline UWORD endianSwap16(UWORD uwIn) {
 	return (uwIn << 8) | (uwIn >> 8);
-#else
-	return uwIn;
-#endif // AMIGA
 }
 
 /**
- *  @brief Converts _native_ 32-bit to Little (Intel) Endian.
+ *  @brief Converts 32-bit endian value.
  *
  *  @param ulIn 32-bit value to be converted
- *  @return Supplied value, byte-swapped if neccessary.
+ *  @return Supplied value.
  *
- *  @see endianIntel16()
+ *  @see endianLittle16()
  */
-static inline ULONG endianIntel32(ULONG ulIn) {
-#if defined(AMIGA)
+static inline ULONG endianSwap32(ULONG ulIn) {
 	return (ulIn << 24) | ((ulIn&0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
-#else
-	return ulIn;
-#endif // AMIGA
 }
 
 #ifdef __cplusplus

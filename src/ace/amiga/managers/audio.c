@@ -97,7 +97,7 @@ tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateHz) {
 	UWORD uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
 	tSample *pSample = sampleCreate(lLength, uwPeriod);
 	tFile *pSampleFile = fileOpen(szPath, "rb");
-	fileRead(pSampleFile, pSample->pData, lLength);
+	fileReadWords(pSampleFile, pSample->pData, lLength / sizeof(UWORD));
 	fileClose(pSampleFile);
 	logBlockEnd("sampleCreateFromFile()");
 	systemUnuse();

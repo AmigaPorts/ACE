@@ -15,6 +15,7 @@ extern "C" {
 
 #define PTPLAYER_VOLUME_MAX 64
 #define PTPLAYER_SFX_CHANNEL_ANY 0xFF
+#define PTPLAYER_SAMPLE_HEADER_COUNT 31
 
 #include <ace/types.h>
 #include <ace/utils/bitmap.h>
@@ -42,7 +43,7 @@ typedef struct _tPtplayerSampleHeader {
 
 typedef struct _tPtplayerMod {
 	char szSongName[20];
-	tPtplayerSampleHeader pSampleHeaders[31];
+	tPtplayerSampleHeader pSampleHeaders[PTPLAYER_SAMPLE_HEADER_COUNT];
 	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
 	                           /// pattern count in file. Max 128.
 	UBYTE ubSongEndPos;
@@ -54,13 +55,13 @@ typedef struct _tPtplayerMod {
 
 	UBYTE *pPatterns;
 	ULONG ulPatternsSize;
-	UWORD *pSamples;
+	UWORD *pSamples; ///< Raw data of all samples, next sample data starts directly after previous one.
 	ULONG ulSamplesSize;
 } tPtplayerMod;
 
 typedef struct tPtplayerSamplePack {
 	ULONG ulSize;
-	UWORD *pData;
+	UWORD *pData; ///< Raw data of all samples, next sample data starts directly after previous one.
 } tPtplayerSamplePack;
 
 typedef void (*tPtplayerCbSongEnd)(void);
@@ -299,7 +300,7 @@ UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx);
  * @param szPath Path to sample pack to be loaded.
  * @return Pointer to newly allocated sample pack, zero on failure.
  */
-tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath);
+tPtplayerSamplePack *ptplayerSamplePackCreate(const char *szPath);
 
 /**
  * @brief Destroys given sample pack, freeing its resources to OS.

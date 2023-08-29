@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <proto/graphics.h> // Bartman's compiler needs this
 #include <ace/macros.h>
 #include <ace/managers/system.h>
 #include <ace/utils/font.h>
@@ -39,20 +38,20 @@ tFont *fontCreate(const char *szFontName) {
 		return 0;
 	}
 
-	fileRead(pFontFile, &pFont->uwWidth, sizeof(UWORD));
-	fileRead(pFontFile, &pFont->uwHeight, sizeof(UWORD));
-	fileRead(pFontFile, &pFont->ubChars, sizeof(UBYTE));
+	fileReadWords(pFontFile, &pFont->uwWidth, 1);
+	fileReadWords(pFontFile, &pFont->uwHeight, 1);
+	fileReadBytes(pFontFile, &pFont->ubChars, 1);
 	logWrite(
 		"Addr: %p, data width: %upx, chars: %u, font height: %upx\n",
 		pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight
 	);
 
 	pFont->pCharOffsets = memAllocFast(sizeof(UWORD) * pFont->ubChars);
-	fileRead(pFontFile, pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
+	fileReadWords(pFontFile, pFont->pCharOffsets, pFont->ubChars);
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
-	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
-	fileRead(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
+	UWORD uwPlaneWordSize = ((pFont->uwWidth+15)/16) * pFont->uwHeight;
+	fileReadWords(pFontFile, (UWORD*)pFont->pRawData->Planes[0], uwPlaneWordSize);
 	fileClose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return pFont;
@@ -296,13 +295,9 @@ void fontDrawTextBitMap(
 	}
 
 	// Helper destination bitmap
-#if defined(AMIGA)
 	s_sTmpDest.BytesPerRow = pDest->BytesPerRow;
 	s_sTmpDest.Rows = pDest->Rows;
 	s_sTmpDest.Depth = 1;
-#else
-#error "Something is missing here!"
-#endif
 
 	// Text-drawing loop
 	UBYTE isCookie = ubFlags & FONT_COOKIE;

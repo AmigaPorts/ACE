@@ -2773,13 +2773,18 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 
 	// Read header
 	tFile *pFileMod = fileOpen(szPath, "rb");
-	fileRead(pFileMod, pMod->szSongName, sizeof(pMod->szSongName));
-	// TODO: read samples data field by field for portability
-	fileRead(pFileMod, pMod->pSampleHeaders, sizeof(pMod->pSampleHeaders));
-	fileRead(pFileMod, &pMod->ubArrangementLength, sizeof(pMod->ubArrangementLength));
-	fileRead(pFileMod, &pMod->ubSongEndPos, sizeof(pMod->ubSongEndPos));
-	fileRead(pFileMod, pMod->pArrangement, sizeof(pMod->pArrangement));
-	fileRead(pFileMod, pMod->pFileFormatTag, sizeof(pMod->pFileFormatTag));
+	fileReadBytes(pFileMod, pMod->szSongName, sizeof(pMod->szSongName));
+	for(UBYTE i = 0; i < PTPLAYER_SAMPLE_HEADER_COUNT; ++i) {
+		fileReadWords(pMod->pSampleHeaders[i].uwLength, 1);
+		fileReadBytes(pMod->pSampleHeaders[i].ubFineTune, 1);
+		fileReadBytes(pMod->pSampleHeaders[i].ubVolume, 1);
+		fileReadWords(pMod->pSampleHeaders[i].uwRepeatOffs, 1);
+		fileReadWords(pMod->pSampleHeaders[i].uwRepeatLength, 1);
+	}
+	fileReadBytes(pFileMod, &pMod->ubArrangementLength, 1);
+	fileReadBytes(pFileMod, &pMod->ubSongEndPos, 1);
+	fileReadBytes(pFileMod, pMod->pArrangement, sizeof(pMod->pArrangement));
+	fileReadBytes(pFileMod, pMod->pFileFormatTag, sizeof(pMod->pFileFormatTag));
 
 	// Get number of highest pattern
 	UBYTE ubLastPattern = 0;
@@ -2798,7 +2803,7 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 		logWrite("ERR: Couldn't allocate memory for pattern data!");
 		goto fail;
 	}
-	fileRead(pFileMod, pMod->pPatterns, pMod->ulPatternsSize);
+	fileReadLongs(pFileMod, pMod->pPatterns, pMod->ulPatternsSize / MOD_BYTES_PER_NOTE);
 
 	// Read sample data
 	pMod->ulSamplesSize = lSize - fileGetPos(pFileMod);
@@ -2808,7 +2813,7 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 			logWrite("ERR: Couldn't allocate memory for sample data!");
 			goto fail;
 		}
-		fileRead(pFileMod, pMod->pSamples, pMod->ulSamplesSize);
+		fileReadWords(pFileMod, pMod->pSamples, pMod->ulSamplesSize / sizeof(UWORD));
 	}
 	else {
 		logWrite("MOD has no samples - be sure to pass sample pack to ptplayer!\n");
@@ -2858,13 +2863,13 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 		goto fail;
 	}
 	UBYTE ubVersion;
-	fileRead(pFileSfx, &ubVersion, sizeof(ubVersion));
+	fileReadBytes(pFileSfx, &ubVersion, 1);
 	if(ubVersion == 1) {
-		fileRead(pFileSfx, &pSfx->uwWordLength, sizeof(pSfx->uwWordLength));
+		fileReadWords(pFileSfx, &pSfx->uwWordLength, 1);
 		ULONG ulByteSize = pSfx->uwWordLength * sizeof(UWORD);
 
 		UWORD uwSampleRateHz;
-		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
+		fileReadWords(pFileSfx, &uwSampleRateHz, 1);
 		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
 		logWrite("Length: %lu, sample rate: %hu, period: %hu\n", ulByteSize, uwSampleRateHz, pSfx->uwPeriod);
 
@@ -2872,7 +2877,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 		if(!pSfx->pData) {
 			goto fail;
 		}
-		fileRead(pFileSfx, pSfx->pData, ulByteSize);
+		fileReadWords(pFileSfx, pSfx->pData, pSfx->uwWordLength);
 
 		// Check if pData[0] is zeroed-out - it should be because after sfx playback
 		// ptplayer sets the channel playback to looped first word. This should
@@ -2969,7 +2974,7 @@ void ptplayerSfxStopOnChannel(UBYTE ubChannel) {
 void ptplayerSfxPlayLooped(
 	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
 ) {
-	if(memType(pSfx->pData) == MEMF_FAST) {
+	if(!memIsChip(pSfx->pData)) {
 		logWrite("ERR: ptplayer only supports samples located in CHIP mem\n");
 	}
 	g_pCustom->intena = INTF_INTEN;
@@ -2981,7 +2986,7 @@ void ptplayerSfxPlayLooped(
 void ptplayerSfxPlay(
 	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
 ) {
-	if(memType(pSfx->pData) == MEMF_FAST) {
+	if(!memIsChip(pSfx->pData)) {
 		logWrite("ERR: ptplayer only supports samples located in CHIP mem\n");
 	}
 	g_pCustom->intena = INTF_INTEN;
@@ -3175,9 +3180,9 @@ UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
 	return uwFrameCount;
 }
 
-tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath) {
+tPtplayerSamplePack *ptplayerSamplePackCreate(const char *szPath) {
 	// TODO: add some kind of header for the file, read each sample separately
-	logBlockBegin("ptplayerSampleDataCreate(szPath: '%s')", szPath);
+	logBlockBegin("ptplayerSamplePackCreate(szPath: '%s')", szPath);
 	systemUse();
 	tPtplayerSamplePack *pSamplePack = 0;
 	LONG lSize = fileGetSize(szPath);
@@ -3195,11 +3200,11 @@ tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath) {
 	}
 
 	tFile *pFileSamples = fileOpen(szPath, "rb");
-	fileRead(pFileSamples, pSamplePack->pData, pSamplePack->ulSize);
+	fileReadWords(pFileSamples, pSamplePack->pData, pSamplePack->ulSize / sizeof(UWORD));
 	fileClose(pFileSamples);
 
 	systemUnuse();
-	logBlockEnd("ptplayerSampleDataCreate()");
+	logBlockEnd("ptplayerSamplePackCreate()");
 	return pSamplePack;
 fail:
 	if(pSamplePack) {
@@ -3210,7 +3215,7 @@ fail:
 	}
 
 	systemUnuse();
-	logBlockEnd("ptplayerSampleDataCreate()");
+	logBlockEnd("ptplayerSamplePackCreate()");
 	return 0;
 }
 
