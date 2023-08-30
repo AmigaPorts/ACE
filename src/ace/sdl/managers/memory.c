@@ -3,10 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdlib.h>
-#include <ace/types.h>
+#include <string.h>
+#include <ace/managers/memory.h>
 
-void *_memAllocRls(ULONG ulSize, UNUSED_ARG ULONG ulFlags) {
+void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	void *pResult = malloc(ulSize);
+
+	if(ulFlags & MEMF_CLEAR) {
+		memset(pResult, 0, ulSize);
+	}
+
 	return pResult;
 }
 
