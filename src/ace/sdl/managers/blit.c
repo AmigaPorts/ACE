@@ -52,5 +52,5 @@ void blitLine(
 	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 ) {
-	return 1;
+	return;
 }

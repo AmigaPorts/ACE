@@ -118,6 +118,7 @@ if(ACE_SDL)
 	endif()
 
 	# TODO: make SDL2-static default for windows, non-static `SDL2` everywhere else
+	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_SDL)
 	target_link_libraries(${TARGET_NAME} SDL2-static)
 endif()
 

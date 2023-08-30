@@ -94,6 +94,9 @@ typedef struct _tVpManager {
 	struct _tVpManager *pNext;                      ///< Pointer to next manager.
 	void  (*process)(struct _tVpManager *pManager); ///< Process fn handle.
 	void  (*destroy)(struct _tVpManager *pManager); ///< Destroy fn handle.
+#if defined(ACE_SDL)
+	void (*cbDrawToSurface)(struct _tVpManager *pManager);
+#endif
 	struct _tVPort *pVPort;                         ///< Quick ref to VPort.
 	UBYTE ubId;                                     ///< Manager ID.
 } tVpManager;

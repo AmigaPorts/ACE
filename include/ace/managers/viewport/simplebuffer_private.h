@@ -32,5 +32,8 @@ static inline void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap 
 	logBlockEnd("simplebufferSetFront()");
 }
 
+#if defined(ACE_SDL)
+void simpleBufferDrawToSurface(tSimpleBufferManager *pManager);
+#endif
 
 #endif // _ACE_MANAGERS_VIEWPORT_SIMPLEBUFFER_PRIVATE_H_

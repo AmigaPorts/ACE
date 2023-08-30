@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/viewport/simplebuffer_private.h>
+#include <ace/managers/sdl_private.h>
+#include <ace/managers/blit.h>
 
 tSimpleBufferManager *simpleBufferCreate(void *pTags,	...) {
 	va_list vaTags;
@@ -19,6 +21,9 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags,	...) {
 	pManager = memAllocFastClear(sizeof(tSimpleBufferManager));
 	pManager->sCommon.process = (tVpManagerFn)simpleBufferProcess;
 	pManager->sCommon.destroy = (tVpManagerFn)simpleBufferDestroy;
+#if defined(ACE_SDL)
+	pManager->sCommon.cbDrawToSurface = (tVpManagerFn)simpleBufferDrawToSurface;
+#endif
 	pManager->sCommon.ubId = VPM_SCROLL;
 	logWrite("Addr: %p\n", pManager);
 
@@ -113,4 +118,15 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 
 UBYTE simpleBufferGetRawCopperlistInstructionCount(UBYTE ubBpp) {
 	return 0;
+}
+
+void simpleBufferDrawToSurface(tSimpleBufferManager *pManager) {
+	tBitMap *pDest = sdlGetSurfaceBitmap();
+	tVPort *pVPort = pManager->sCommon.pVPort;
+	blitCopy(
+		pManager->pFront,
+		pManager->pCamera->uPos.uwX, pManager->pCamera->uPos.uwY,
+		pDest, pVPort->uwOffsX, pVPort->uwOffsY, pVPort->uwWidth, pVPort->uwHeight,
+		MINTERM_COOKIE
+	);
 }
