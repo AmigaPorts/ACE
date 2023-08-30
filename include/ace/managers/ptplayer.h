@@ -70,25 +70,12 @@ typedef void (*tPtplayerCbSongEnd)(void);
  * @brief Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
  * The music module is replayed via _mt_music when _mt_Enable is non-zero.
  * Otherwise the interrupt handler calls mt_sfxonly to play sound effects only.
- *
- * @param isPal In CIA mode, Set to 1 on PAL configs, zero on NTSC.
  */
-void ptplayerCreate(UBYTE isPal);
+void ptplayerCreate(void);
 
 void ptplayerDestroy(void);
 
 void ptplayerProcess(void);
-
-/**
- * @brief Sets PAL/NTSC mode. Relevant in CIA-based playback mode.
- *
- * Note that each tSfx stores period calculated for mode which was set during
- * call to ptplayerSfxCreateFromFile(). You may need to correct their values
- * manually.
- *
- * @param isPal In CIA mode, Set to 1 on PAL configs, zero on NTSC.
- */
-void ptplayerSetPal(UBYTE isPal);
 
 /**
  * @brief Loads new MOD from file.
@@ -124,6 +111,8 @@ void ptplayerModDestroy(tPtplayerMod *pMod);
 void ptplayerLoadMod(
 	tPtplayerMod *pMod, tPtplayerSamplePack *pSamples, UWORD uwInitialSongPos
 );
+
+UBYTE ptplayerModIsCurrent(const tPtplayerMod *pMod);
 
 /**
  * @brief Stop playing current module.

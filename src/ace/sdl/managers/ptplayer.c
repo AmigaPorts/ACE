@@ -4,7 +4,7 @@
 
 #include <ace/managers/ptplayer.h>
 
-void ptplayerCreate(UBYTE isPal) {
+void ptplayerCreate(void) {
 
 }
 
@@ -16,22 +16,14 @@ void ptplayerProcess(void) {
 
 }
 
-void ptplayerSetPal(UBYTE isPal) {
-
-}
-
-tPtplayerMod *ptplayerModCreate(const char *szPath) {
-	return 0;
-}
-
-void ptplayerModDestroy(tPtplayerMod *pMod) {
-
-}
-
 void ptplayerLoadMod(
 	tPtplayerMod *pMod, tPtplayerSamplePack *pSamples, UWORD uwInitialSongPos
 ) {
 
+}
+
+UBYTE ptplayerModIsCurrent(const tPtplayerMod *pMod) {
+	return 0;
 }
 
 void ptplayerStop(void) {
@@ -66,26 +58,6 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume) {
 
 }
 
-tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
-	return 0;
-}
-
-void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
-
-}
-
-void ptplayerSfxPlay(
-	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
-) {
-
-}
-
-void ptplayerSfxPlayLooped(
-	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
-) {
-
-}
-
 void ptplayerSfxStopOnChannel(UBYTE ubChannel) {
 
 }
@@ -98,14 +70,28 @@ void ptplayerWaitForSfx(void) {
 
 }
 
-UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
-	return 0;
-}
-
 tPtplayerSamplePack *ptplayerSamplePackCreate(const char *szPath) {
 	return 0;
 }
 
 void ptplayerSamplePackDestroy(tPtplayerSamplePack *pSamplePack) {
+
+}
+
+//-------------------------------------------------------------------------- SFX
+
+void muteChannelsPlayingSfx(const tPtplayerSfx *pSfx) {
+
+}
+
+void ptplayerSfxPlay(
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
+) {
+
+}
+
+void ptplayerSfxPlayLooped(
+	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
+) {
 
 }

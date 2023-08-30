@@ -10,6 +10,7 @@
 // - http://coppershade.org/articles/More!/Topics/Protracker_File_Format/
 
 #include <ace/managers/ptplayer.h>
+#include <ace/managers/ptplayer_private.h>
 #include <ace/managers/log.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
@@ -53,16 +54,6 @@
  * when playing the lowest note from the lowest Protracker octave.
  */
 #define TIMERB_TICKS (576)
-
-// Patterns - each has 64 rows, each row has 4 notes, each note has 4 bytes.
-#define MOD_ROWS_IN_PATTERN 64
-#define MOD_NOTES_PER_ROW 4
-#define MOD_BYTES_PER_NOTE 4
-// Length of single pattern.
-#define MOD_PATTERN_LENGTH (MOD_ROWS_IN_PATTERN * MOD_NOTES_PER_ROW * MOD_BYTES_PER_NOTE)
-
-// Size of period table.
-#define MOD_PERIOD_TABLE_LENGTH 36
 
 /**
  * @brief Delay in CIA-ticks, which guarantees that at least one Audio-DMA
@@ -931,7 +922,6 @@ static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
 static UBYTE s_isRepeat;
 static tPtplayerCbSongEnd s_cbSongEnd;
-static UBYTE s_isPal;
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
 /**
@@ -1648,6 +1638,11 @@ static void resetChannel(tChannelStatus *pChannel) {
 	pChannel->n_gliss = 0;
 }
 
+UBYTE ptplayerModIsCurrent(const tPtplayerMod *pMod) {
+	UBYTE isCurrent = (s_pModCurr == pMod);
+	return isCurrent;
+}
+
 // Stop playing current module.
 void ptplayerStop(void) {
 	ptplayerEnableMusic(0);
@@ -1755,7 +1750,7 @@ void ptplayerDestroy(void) {
 #endif
 }
 
-void ptplayerCreate(UBYTE isPal) {
+void ptplayerCreate(void) {
 	s_isRepeat = 1;
 	s_cbSongEnd = 0;
 	s_pModCurr = 0;
@@ -1782,18 +1777,7 @@ void ptplayerCreate(UBYTE isPal) {
 	systemSetInt(INTB_AUD3, onAudio, (void*)3);
 #endif
 
-	ptplayerSetPal(isPal);
-	mt_MasterVolTab = MasterVolTab[64];
-	for(UBYTE i = 0; i < 4; ++i) {
-		mt_chan[i].isEnabledForPlayer = 1;
-	}
-	mt_reset();
-}
-
-void ptplayerSetPal(UBYTE isPal) {
-	// determine if 02 clock for timers is based on PAL or NTSC
-	s_isPal = isPal;
-	if(s_isPal) {
+	if(systemIsPal()) {
 		// Fcolor = 4.43361825 MHz (PAL color carrier frequency)
 		// CPU Clock = Fcolor * 1.6 = 7.0937892 MHz
 		// CIA Clock = Cpu Clock / 10 = 709.37892 kHz
@@ -1804,6 +1788,12 @@ void ptplayerSetPal(UBYTE isPal) {
 	else {
 		mt_timerval = 1789773;
 	}
+
+	mt_MasterVolTab = MasterVolTab[64];
+	for(UBYTE i = 0; i < 4; ++i) {
+		mt_chan[i].isEnabledForPlayer = 1;
+	}
+	mt_reset();
 }
 
 void ptplayerLoadMod(
@@ -2697,17 +2687,6 @@ static const tPreFx prefx_tab[16] = {
 	[0xA ... 0xF] = set_period,
 };
 
-/**
- * @brief Get the Paula's Clock Constant.
- *
- * http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node00DE.html
- *
- * @return The current clock constant, dependent on PAL/NTSC mode.
- */
-static inline ULONG getClockConstant() {
-	return s_isPal ? 3546895 : 3579545;
-}
-
 void ptplayerProcess(void) {
 #if defined(PTPLAYER_DEFER_INTERRUPTS)
 	if(s_isPendingPlay) {
@@ -2756,177 +2735,17 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume) {
 	mt_mod->pSampleHeaders[ubSampleIndex].ubVolume = ubVolume;
 }
 
-tPtplayerMod *ptplayerModCreate(const char *szPath) {
-	logBlockBegin("ptplayerModCreate(szPath: '%s')", szPath);
-
-	tPtplayerMod *pMod = 0;
-	LONG lSize = fileGetSize(szPath);
-	if(lSize == -1) {
-		logWrite("ERR: File doesn't exist!\n");
-		return 0;
-	}
-
-	pMod = memAllocFastClear(sizeof(*pMod));
-	if(!pMod) {
-		return 0;
-	}
-
-	// Read header
-	tFile *pFileMod = fileOpen(szPath, "rb");
-	fileReadBytes(pFileMod, pMod->szSongName, sizeof(pMod->szSongName));
-	for(UBYTE i = 0; i < PTPLAYER_SAMPLE_HEADER_COUNT; ++i) {
-		fileReadWords(pMod->pSampleHeaders[i].uwLength, 1);
-		fileReadBytes(pMod->pSampleHeaders[i].ubFineTune, 1);
-		fileReadBytes(pMod->pSampleHeaders[i].ubVolume, 1);
-		fileReadWords(pMod->pSampleHeaders[i].uwRepeatOffs, 1);
-		fileReadWords(pMod->pSampleHeaders[i].uwRepeatLength, 1);
-	}
-	fileReadBytes(pFileMod, &pMod->ubArrangementLength, 1);
-	fileReadBytes(pFileMod, &pMod->ubSongEndPos, 1);
-	fileReadBytes(pFileMod, pMod->pArrangement, sizeof(pMod->pArrangement));
-	fileReadBytes(pFileMod, pMod->pFileFormatTag, sizeof(pMod->pFileFormatTag));
-
-	// Get number of highest pattern
-	UBYTE ubLastPattern = 0;
-	for(UBYTE i = 0; i < 127; ++i) {
-		if(pMod->pArrangement[i] > ubLastPattern) {
-			ubLastPattern = pMod->pArrangement[i];
-		}
-	}
-	UBYTE ubPatternCount = ubLastPattern + 1;
-	logWrite("Pattern count: %hhu\n", ubPatternCount);
-
-	// Read pattern data
-	pMod->ulPatternsSize = (ubPatternCount * MOD_PATTERN_LENGTH);
-	pMod->pPatterns = memAllocFast(pMod->ulPatternsSize);
-	if(!pMod->pPatterns) {
-		logWrite("ERR: Couldn't allocate memory for pattern data!");
-		goto fail;
-	}
-	fileReadLongs(pFileMod, pMod->pPatterns, pMod->ulPatternsSize / MOD_BYTES_PER_NOTE);
-
-	// Read sample data
-	pMod->ulSamplesSize = lSize - fileGetPos(pFileMod);
-	if(pMod->ulSamplesSize) {
-		pMod->pSamples = memAllocChip(pMod->ulSamplesSize);
-		if(!pMod->pSamples) {
-			logWrite("ERR: Couldn't allocate memory for sample data!");
-			goto fail;
-		}
-		fileReadWords(pFileMod, pMod->pSamples, pMod->ulSamplesSize / sizeof(UWORD));
-	}
-	else {
-		logWrite("MOD has no samples - be sure to pass sample pack to ptplayer!\n");
-	}
-
-	fileClose(pFileMod);
-	logBlockEnd("ptplayerModCreate()");
-	return pMod;
-fail:
-	if(pMod->pPatterns) {
-		memFree(pMod->pPatterns, pMod->ulPatternsSize);
-	}
-	if(pMod->pSamples) {
-		memFree(pMod->pSamples, pMod->ulSamplesSize);
-	}
-	if(pMod) {
-		memFree(pMod, sizeof(*pMod));
-	}
-	return 0;
-}
-
-void ptplayerModDestroy(tPtplayerMod *pMod) {
-	if(s_pModCurr == pMod) {
-		ptplayerStop();
-	}
-	memFree(pMod->pPatterns, pMod->ulPatternsSize);
-	if(pMod->pSamples) {
-		memFree(pMod->pSamples, pMod->ulSamplesSize);
-	}
-	memFree(pMod, sizeof(*pMod));
-}
-
 //-------------------------------------------------------------------------- SFX
 
-tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
-	systemUse();
-	logBlockBegin("ptplayerSfxCreateFromFile(szPath: '%s', isFast: %hhu)", szPath, isFast);
-	tFile *pFileSfx = fileOpen(szPath, "rb");
-	tPtplayerSfx *pSfx = 0;
-	if(!pFileSfx) {
-		logWrite("ERR: File doesn't exist: '%s'\n", szPath);
-		goto fail;
-	}
-
-	pSfx = memAllocFastClear(sizeof(*pSfx));
-	if(!pSfx) {
-		goto fail;
-	}
-	UBYTE ubVersion;
-	fileReadBytes(pFileSfx, &ubVersion, 1);
-	if(ubVersion == 1) {
-		fileReadWords(pFileSfx, &pSfx->uwWordLength, 1);
-		ULONG ulByteSize = pSfx->uwWordLength * sizeof(UWORD);
-
-		UWORD uwSampleRateHz;
-		fileReadWords(pFileSfx, &uwSampleRateHz, 1);
-		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
-		logWrite("Length: %lu, sample rate: %hu, period: %hu\n", ulByteSize, uwSampleRateHz, pSfx->uwPeriod);
-
-		pSfx->pData = isFast ? memAllocFast(ulByteSize) : memAllocChip(ulByteSize);
-		if(!pSfx->pData) {
-			goto fail;
-		}
-		fileReadWords(pFileSfx, pSfx->pData, pSfx->uwWordLength);
-
-		// Check if pData[0] is zeroed-out - it should be because after sfx playback
-		// ptplayer sets the channel playback to looped first word. This should
-		// be done on sfx converter side. If your samples are humming after playback,
-		// fix your custom conversion tool or use latest ACE tools!
-		if(pSfx->pData[0] != 0) {
-			logWrite("ERR: SFX's first word isn't zeroed-out\n");
+void muteChannelsPlayingSfx(const tPtplayerSfx *pSfx) {
+	for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
+		if(mt_chan[ubChannel].n_sfxptr == pSfx->pData) {
+			// ptplayer doesn't mute its channels after sfx playback to save cycles
+			logWrite("channel %hhu is still using the sample - muting...\n", ubChannel);
+			g_pCustom->aud[ubChannel].ac_vol = 0;
+			break;
 		}
 	}
-	else {
-		logWrite("ERR: Unknown sample format version: %hhu\n", ubVersion);
-		goto fail;
-	}
-
-	fileClose(pFileSfx);
-	logBlockEnd("ptplayerSfxCreateFromFile()");
-	systemUnuse();
-	return pSfx;
-
-fail:
-	if(pFileSfx) {
-		fileClose(pFileSfx);
-	}
-	ptplayerSfxDestroy(pSfx);
-	logBlockEnd("ptplayerSfxCreateFromFile()");
-	systemUnuse();
-	return 0;
-}
-
-void ptplayerSfxDestroy(tPtplayerSfx *pSfx) {
-	logBlockBegin("ptplayerSfxDestroy(pSfx: %p)", pSfx);
-	if(pSfx) {
-		for(UBYTE ubChannel = 0; ubChannel < 4; ++ubChannel) {
-			if(mt_chan[ubChannel].n_sfxptr == pSfx->pData) {
-				// ptplayer doesn't mute its channels after sfx playback to save cycles
-				logWrite("channel %hhu is still using the sample - muting...\n", ubChannel);
-				g_pCustom->aud[ubChannel].ac_vol = 0;
-				break;
-			}
-		}
-
-		systemUse();
-		if(pSfx->pData) {
-			memFree(pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
-		}
-		memFree(pSfx, sizeof(*pSfx));
-		systemUnuse();
-	}
-	logBlockEnd("ptplayerSfxDestroy()");
 }
 
 /**
@@ -3170,14 +2989,6 @@ void ptplayerWaitForSfx(void) {
 void ptplayerConfigureSongRepeat(UBYTE isRepeat, tPtplayerCbSongEnd cbSongEnd) {
 	s_isRepeat = isRepeat;
 	s_cbSongEnd = cbSongEnd;
-}
-
-UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
-	// Get rounded sampling rate.
-	UWORD uwSamplingRateHz = (getClockConstant() + (pSfx->uwPeriod / 2)) / pSfx->uwPeriod;
-	// Get frame count - round it up.
-	UWORD uwFrameCount = (pSfx->uwWordLength * 2 * 50 + uwSamplingRateHz - 1) / uwSamplingRateHz;
-	return uwFrameCount;
 }
 
 tPtplayerSamplePack *ptplayerSamplePackCreate(const char *szPath) {
