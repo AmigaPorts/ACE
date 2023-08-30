@@ -324,18 +324,6 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	}
 }
 
-UBYTE simpleBufferIsRectVisible(
-	tSimpleBufferManager *pManager,
-	UWORD uwX, UWORD uwY, UWORD uwWidth, UWORD uwHeight
-) {
-	return (
-		uwX >= pManager->pCamera->uPos.uwX - uwWidth &&
-		uwX <= pManager->pCamera->uPos.uwX + pManager->sCommon.pVPort->uwWidth &&
-		uwY >= pManager->pCamera->uPos.uwY - uwHeight &&
-		uwY <= pManager->pCamera->uPos.uwY + pManager->sCommon.pVPort->uwHeight
-	);
-}
-
 UBYTE simpleBufferGetRawCopperlistInstructionCount(UBYTE ubBpp) {
 	UBYTE ubInstructionCount = (
 		1 +       // WAIT cmd

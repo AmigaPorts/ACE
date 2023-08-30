@@ -67,18 +67,6 @@ typedef struct _tSimpleBufferManager {
  */
 tSimpleBufferManager *simpleBufferCreate(void *pTags,	...);
 
- /**
- *  @brief Sets new bitmap to be displayed by buffer manager.
- *  If there was buffer created by manager, be sure to intercept & free it.
- *  Also, both buffer bitmaps must have same BPP, as difference would require
- *  copBlock realloc, which is not implemented.
- *  @param pManager The buffer manager, which buffer is to be changed.
- *  @param pBitMap  New bitmap to be used by manager.
- *
- *  @todo Realloc copper buffer to reflect BPP change.
- */
-void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap);
-
 void simpleBufferDestroy(tSimpleBufferManager *pManager);
 
 void simpleBufferProcess(tSimpleBufferManager *pManager);

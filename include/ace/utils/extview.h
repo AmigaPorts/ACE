@@ -186,6 +186,8 @@ void viewUpdateCLUT(tView *pView);
  */
 void viewLoad(tView *pView);
 
+UBYTE viewIsLoaded(const tView *pView);
+
 /*=========================== Viewport functions =============================*/
 
 /**
@@ -279,12 +281,6 @@ void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager);
  *  @return if found, pointer to VPort manager, otherwise zero.
  */
 tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId);
-
-/*=========================== Viewport copperblock functions =================*/
-
-struct UCopList *vPortAddCopperBlock(tVPort *pVPort, UWORD uwLength);
-
-void vPortRmCopperBlock(tVPort *pVPort, struct UCopList *pUCopList);
 
 #ifdef __cplusplus
 }

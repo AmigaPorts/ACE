@@ -28,6 +28,10 @@ UBYTE systemIsUsed(void) {
 	return 1;
 }
 
+UBYTE systemIsPal(void) {
+	return 1;
+}
+
 void systemGetBlitterFromOs(void) {
 
 }

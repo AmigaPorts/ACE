@@ -27,12 +27,6 @@ extern "C" {
 #include <ace/utils/custom.h>
 #include <ace/utils/bitmap.h>
 
-// BltCon0 channel enable bits
-#define USEA 0x800
-#define USEB 0x400
-#define USEC 0x200
-#define USED 0x100
-
 // Minterm presets - OR unfriendly!
 #define MINTERM_A 0xF0
 #define MINTERM_B 0xCC

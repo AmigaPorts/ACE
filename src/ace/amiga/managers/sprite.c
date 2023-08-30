@@ -10,7 +10,6 @@
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
 #include <ace/utils/sprite.h>
-
 #define SPRITE_VPOS_BITS 9
 #define SPRITE_HEIGHT_MAX ((1 << SPRITE_VPOS_BITS) - 1)
 
@@ -143,7 +142,7 @@ void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
 		);
 		isAttached = 0;
 	}
-#endif	
+#endif
 	pSprite->isAttached = isAttached;
 	pSprite->isHeaderToBeUpdated = 1;
 }
@@ -246,7 +245,7 @@ void spriteProcess(tSprite *pSprite) {
 		(BTST(uwVStop, 8) << 1) |
 		BTST(uwHStart, 0)
 	);
-	
+
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {

@@ -70,6 +70,37 @@ typedef struct tBob {
 	UBYTE *_pOldDrawOffs[2];
 } tBob;
 
+// Undraw stack must be accessible during adding new bobs, so the most safe
+// approach is to have two lists - undraw list gets populated after draw
+// and depopulated during undraw
+typedef struct tBobQueue {
+	UBYTE ubUndrawCount;
+	tBob **pBobs;
+	tBitMap *pBg;
+	tBitMap *pDst;
+} tBobQueue;
+
+typedef struct tBobManager {
+	UBYTE ubBufferCurr;
+	UBYTE ubMaxBobCount;
+
+	UBYTE isPushingDone;
+	UBYTE ubBpp;
+
+	// This can't be a decreasing counter such as in toSave/toDraw since after
+	// decrease another bob may be pushed, which would trash bg saving
+	UBYTE ubBobsPushed;
+	UBYTE ubBobsDrawn;
+	UBYTE ubBobsSaved;
+	UWORD uwAvailHeight;
+	UWORD uwBgBufferLength;
+	UWORD uwDestByteWidth;
+
+	tBobQueue pQueues[2];
+} tBobManager;
+
+tBobManager g_sBobManager;
+
 /**
  * @brief Creates bob manager with optional double buffering support.
  * If you use single buffering, pass same pointer in pFront and pBack.
@@ -178,6 +209,8 @@ UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY);
  * @see bobPush()
  */
 void bobBegin(tBitMap *pBuffer);
+
+void bobCheckGood(const tBitMap *pBack);
 
 /**
  * @brief Adds next bob to draw queue.
