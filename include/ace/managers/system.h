@@ -37,6 +37,13 @@ void systemCreate(void);
  */
 void systemDestroy(void);
 
+/**
+ * @brief Processes system-specific things.
+ *
+ * Be sure to call this at the end of your main loop.
+ */
+void systemProcessFinal(void);
+
 void systemKill(const char *szMsg);
 
 void systemUse(void);

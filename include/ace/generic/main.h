@@ -119,6 +119,7 @@ int main(void) {
 	while (GENERIC_MAIN_LOOP_CONDITION) {
 		timerProcess();
 		genericProcess();
+		systemProcessFinal();
 	}
 	genericDestroy();
 

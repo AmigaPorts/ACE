@@ -117,7 +117,8 @@ if(ACE_SDL)
 		add_library(SDL2::SDL2 ALIAS SDL2)
 	endif()
 
-	target_link_libraries(${TARGET_NAME} SDL2)
+	# TODO: make SDL2-static default for windows, non-static `SDL2` everywhere else
+	target_link_libraries(${TARGET_NAME} SDL2-static)
 endif()
 
 target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
