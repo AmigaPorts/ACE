@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <ace/managers/viewport/simplebuffer.h>
+#include <ace/managers/viewport/simplebuffer_private.h>
 #include <proto/exec.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/extview.h>
@@ -104,31 +104,6 @@ static void simpleBufferInitializeCopperList(
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
 	}
-}
-
-static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) {
-#if defined(ACE_DEBUG)
-	if(pManager->pBack && pManager->pBack->Depth != pBack->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
-		return;
-	}
-#endif
-	pManager->pBack = pBack;
-}
-
-void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
-	logBlockBegin(
-		"simpleBufferSetFront(pManager: %p, pFront: %p)",
-		pManager, pFront
-	);
-#if defined(ACE_DEBUG)
-	if(pManager->pFront && pManager->pFront->Depth != pFront->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
-		return;
-	}
-#endif
-	pManager->pFront = pFront;
-	logBlockEnd("simplebufferSetFront()");
 }
 
 tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
