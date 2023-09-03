@@ -197,7 +197,7 @@ void genericCreate(void) {
   keyCreate(); // We'll use keyboard
   // Initialize gamestate
   g_pGameStateManager = stateManagerCreate();
-  g_pGameState = stateCreate(gameGsCreate, gameGsLoop, gameGsDestroy, 0, 0, 0);
+  g_pGameState = stateCreate(gameGsCreate, gameGsLoop, gameGsDestroy, 0, 0);
 
   statePush(g_pGameStateManager, g_pGameState);
 }
