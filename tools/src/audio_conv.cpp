@@ -13,7 +13,7 @@ void printUsage(const std::string &szAppName) {
 	print("Extra options:\n");
 	print("\t-o outPath  Specify output file path. If ommited, it will perform default conversion\n");
 	print("\t-d N        Specify amplitude division. Useful for some audio-mixing libraries\n");
-	print("\t-fd N       Ensure that sound effect fits max amplitude divided by specified factor. Useful for some audio-mixing libraries\n");
+	print("\t-cd N       Ensure that sound effect fits max amplitude divided by specified factor. Useful for some audio-mixing libraries\n");
 	print("\t-strict     Treat warinings as errors (recommended)\n");
 	print("\t-n          Normalize audio files\n");
 	print("\t-fpt        Enforce ptplayer-friendly mode: adds empty sample at the beginning, if missing\n");
@@ -56,10 +56,10 @@ int main(int lArgCount, const char *pArgs[]) {
 				return EXIT_FAILURE;
 			}
 		}
-		else if(Arg == "-fd"sv && ArgIndex < lArgCount -1) {
+		else if(Arg == "-cd"sv && ArgIndex < lArgCount -1) {
 			ubFitDivisor = uint8_t(std::stoul(pArgs[++ArgIndex]));
 			if(ubFitDivisor == 0) {
-				nLog::error("Illegal -fd value: '{}'", ubFitDivisor);
+				nLog::error("Illegal -cd value: '{}'", ubFitDivisor);
 				return EXIT_FAILURE;
 			}
 		}
@@ -105,7 +105,7 @@ int main(int lArgCount, const char *pArgs[]) {
 	}
 
 	if(szOutput.empty()) {
-		szOutput = nFs::removeExt(szInput);
+		szOutput = nFs::trimExt(szInput);
 		if(szInExt == "wav") {
 			szOutput += ".sfx";
 		}
@@ -161,7 +161,7 @@ int main(int lArgCount, const char *pArgs[]) {
 		fmt::print("Splitting to {} parts, {} bytes each\n", PartCount, oSplitAfter.value());
 		uint8_t ubPart = 0;
 		tSfx SfxRemaining;
-		auto BaseOutputPath = nFs::removeExt(szOutput);
+		auto BaseOutputPath = nFs::trimExt(szOutput);
 		do {
 			SfxRemaining = In.splitAfter(oSplitAfter.value());
 			auto PartOutPath = fmt::format(FMT_STRING("{}_{}.{}"), BaseOutputPath, ubPart, szOutExt);
