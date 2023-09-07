@@ -341,10 +341,30 @@ endfunction()
 
 function(convertAudio)
 	getToolPath(audio_conv TOOL_AUDIO_CONV)
-	cmake_parse_arguments(args "STRICT" "TARGET;SOURCE;DESTINATION" "" ${ARGN})
+	cmake_parse_arguments(
+		args
+		"STRICT;PTPLAYER;NORMALIZE;"
+		"TARGET;SOURCE;DESTINATION;PAD_BYTES;DIVIDE_AMPLITUDE;CHECK_DIVIDED_AMPLITUDE"
+		"" ${ARGN}
+	)
 
 	if(${args_STRICT})
-		SET(argsOptional -strict)
+		set(argsOptional ${argsOptional} -strict)
+	endif()
+	if(${args_PTPLAYER})
+		set(argsOptional ${argsOptional} -fpt)
+	endif()
+	if(${args_NORMALIZE})
+		set(argsOptional ${argsOptional} -n)
+	endif()
+	if(${args_PAD_BYTES})
+		set(argsOptional ${argsOptional} -pad ${args_PAD_BYTES})
+	endif()
+
+	if(${args_CHECK_DIVIDED_AMPLITUDE})
+		set(argsOptional ${argsOptional} -cd ${args_CHECK_DIVIDED_AMPLITUDE})
+	elseif(${args_DIVIDE_AMPLITUDE})
+		set(argsOptional ${argsOptional} -d ${args_DIVIDE_AMPLITUDE})
 	endif()
 
 	toAbsolute(args_SOURCE)
