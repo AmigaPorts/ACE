@@ -5,6 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __cplusplus
+#if !defined(restrict)
+#define restrict
+#endif
+extern "C" {
+#endif
+
 /*
 
 sort_r function to be exported.
@@ -317,5 +324,10 @@ static _SORT_R_INLINE void sort_r_simple(void *base, size_t nel, size_t w,
 #undef _SORT_R_WINDOWS
 #undef _SORT_R_LINUX
 #undef _SORT_R_BSD
+
+#ifdef __cplusplus
+}
+#undef restrict
+#endif
 
 #endif /* SORT_R_H_ */

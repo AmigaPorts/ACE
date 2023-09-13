@@ -5,6 +5,13 @@
 #include <stdarg.h>
 #include "printf.h"
 
+#ifdef __cplusplus
+#if !defined(restrict)
+#define restrict
+#endif
+extern "C" {
+#endif
+
 typedef int FILE; // Whatever, it's using pointer anyway
 
 #define SEEK_SET 0
@@ -37,5 +44,10 @@ static inline int vsprintf(char *restrict buffer, const char *restrict format, v
 int rename(const char *szSource, const char *szDestination);
 
 int remove(const char* szFilePath);
+
+#ifdef __cplusplus
+}
+#undef restrict
+#endif
 
 #endif // _MINI_STD_STDIO_H_

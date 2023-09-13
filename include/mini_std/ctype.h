@@ -1,6 +1,13 @@
 #ifndef _DEIDARA_CTYPE
 #define _DEIDARA_CTYPE
 
+#ifdef __cplusplus
+#if !defined(restrict)
+#define restrict
+#endif
+extern "C" {
+#endif
+
 #define _U 0x01   // upper
 #define _L 0x02   // lower
 #define _D 0x04   // digit
@@ -32,5 +39,10 @@ unsigned char __tolower(unsigned char c);
 #define isascii(c) (((unsigned char)(c)) <= 0x7f)
 #define tolower(c) __tolower(c)
 #define toupper(c) __toupper(c)
+
+#ifdef __cplusplus
+}
+#undef restrict
+#endif
 
 #endif
