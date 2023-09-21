@@ -78,6 +78,16 @@ UBYTE systemIsPal(void);
 
 void systemCheckStack(void);
 
+/**
+ * @brief Returns the major system (exec.library) version from the OS.
+ * See https://wiki.amigaos.net/wiki/AmigaOS_Versions to determine to which
+ * kickstart corresponds given number.
+ *
+ * @return Major component of version of running exec.library. Zero if couldn't
+ * be read.
+ */
+UWORD systemGetVersion(void);
+
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;
