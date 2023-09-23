@@ -45,15 +45,15 @@ void genericDestroy(void) {
 
 void createGameStates(void) {
     g_pGameStateManager = stateManagerCreate();
-    
-    g_pGameStates[GAME_STATE_MENU] = stateCreate(gsMenuCreate, gsMenuLoop, gsMenuDestroy, 0, 0, 0);
-    g_pGameStates[GAME_STATE_BLIT] = stateCreate(gsTestBlitCreate, gsTestBlitLoop, gsTestBlitDestroy, 0, 0, 0);
-    g_pGameStates[GAME_STATE_FONT] = stateCreate(gsTestFontCreate, gsTestFontTableLoop, gsTestFontDestroy, 0, 0, 0);
-    g_pGameStates[GAME_STATE_COPPER] = stateCreate(gsTestCopperCreate, gsTestCopperLoop, gsTestCopperDestroy, 0, 0, 0);
-    g_pGameStates[GAME_STATE_LINES] = stateCreate(gsTestLinesCreate, gsTestLinesLoop, gsTestLinesDestroy, 0, 0, 0);
-    g_pGameStates[GAME_STATE_BLIT_SMALL_DEST] = stateCreate(gsTestBlitSmallDestCreate, gsTestBlitSmallDestLoop, gsTestBlitSmallDestDestroy, 0, 0, 0);
-    g_pGameStates[GAME_STATE_INTERLEAVED] = stateCreate(gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy, 0, 0, 0);
-    g_pGameStates[GAME_STATE_BUFFER_SCROLL] = stateCreate(gsTestBufferScrollCreate, gsTestBufferScrollLoop, gsTestBufferScrollDestroy, 0, 0, 0);
+
+    g_pGameStates[GAME_STATE_MENU] = stateCreate(gsMenuCreate, gsMenuLoop, gsMenuDestroy, 0, 0);
+    g_pGameStates[GAME_STATE_BLIT] = stateCreate(gsTestBlitCreate, gsTestBlitLoop, gsTestBlitDestroy, 0, 0);
+    g_pGameStates[GAME_STATE_FONT] = stateCreate(gsTestFontCreate, gsTestFontTableLoop, gsTestFontDestroy, 0, 0);
+    g_pGameStates[GAME_STATE_COPPER] = stateCreate(gsTestCopperCreate, gsTestCopperLoop, gsTestCopperDestroy, 0, 0);
+    g_pGameStates[GAME_STATE_LINES] = stateCreate(gsTestLinesCreate, gsTestLinesLoop, gsTestLinesDestroy, 0, 0);
+    g_pGameStates[GAME_STATE_BLIT_SMALL_DEST] = stateCreate(gsTestBlitSmallDestCreate, gsTestBlitSmallDestLoop, gsTestBlitSmallDestDestroy, 0, 0);
+    g_pGameStates[GAME_STATE_INTERLEAVED] = stateCreate(gsTestInterleavedCreate, gsTestInterleavedLoop, gsTestInterleavedDestroy, 0, 0);
+    g_pGameStates[GAME_STATE_BUFFER_SCROLL] = stateCreate(gsTestBufferScrollCreate, gsTestBufferScrollLoop, gsTestBufferScrollDestroy, 0, 0);
 }
 
 void destroyGameStates(void) {

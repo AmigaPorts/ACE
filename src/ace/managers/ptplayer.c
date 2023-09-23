@@ -2881,7 +2881,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 		// be done on sfx converter side. If your samples are humming after playback,
 		// fix your custom conversion tool or use latest ACE tools!
 		if(pSfx->pData[0] != 0) {
-			logWrite("ERR: SFX's first word isn't zeroed-out\n");
+			logWrite("WARN: SFX's first word isn't zeroed-out - won't work properly with ptplayer!\n");
 		}
 	}
 	else {

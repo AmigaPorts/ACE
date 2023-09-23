@@ -12,7 +12,11 @@ To build your tools, open the terminal, navigate to ACE's `tools` directory, and
 ```shell
 mkdir build && cd build
 
-# When using GCC on Linux or MSVC on Windows:
+# When using MacOS (to avoid Clang) - assuming you have: brew install gcc@13
+export CC=/usr/local/bin/gcc-13
+export CXX=/usr/local/bin/g++-13
+
+# When using GCC on Linux, MacOS or MSVC on Windows:
 cmake ..
 # When using MinGW GCC on Windows:
 cmake .. -G "MinGW Makefiles"

@@ -68,13 +68,13 @@ typedef enum _tTagVport {
 /**
  *  View flags.
  */
-#define VIEW_FLAG_GLOBAL_CLUT 1
+#define VIEW_FLAG_GLOBAL_PALETTE 1
 #define VIEW_FLAG_COPLIST_RAW 2
 
 /**
  * Viewport flags.
  */
-#define VIEWPORT_HAS_OWN_CLUT 1
+#define VIEWPORT_HAS_OWN_PALETTE 1
 
 /**
  *  Viewport manager IDs.
@@ -173,11 +173,11 @@ void viewDestroy(tView *pView);
 void viewProcessManagers(tView *pView);
 
 /**
- *  Updates CLUT for every viewport attached to view.
+ *  Updates palette for every viewport attached to view.
  *
  *  @param pView View to be updated.
  */
-void viewUpdateCLUT(tView *pView);
+void viewUpdatePalette(tView *pView);
 
 /**
  *  Sets given view as current and displays it on screen.
@@ -190,7 +190,7 @@ void viewLoad(tView *pView);
 
 /**
  *  @brief Creates new tVPort inside given view with supplied dimensions and BPP.
- *  Line-spacing shouldn't be required if VPort have common CLUT with predecessor.
+ *  Line-spacing shouldn't be required if VPort has common palette with predecessor.
  *
  *  @param pView    Parent view
  *  @param pTagList Pointer to tag list.
