@@ -54,6 +54,8 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
 
 void _memCheckIntegrity(UWORD uwLine, const char *szFile);
 
+void _memLogPeak(void);
+
 /**
  * Macros for enabling or disabling logging
  */

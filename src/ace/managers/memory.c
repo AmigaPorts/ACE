@@ -263,7 +263,7 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile) {
 	memEntryCheckTrash(pEntry, uwLine, szFile);
 }
 
-void _memLogPeak() {
+void _memLogPeak(void) {
 	logWrite(
 		"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
 		s_ulChipPeakUsage, s_ulFastPeakUsage
