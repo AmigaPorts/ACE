@@ -190,10 +190,7 @@ void *_memAllocDbg(
 			"[MEM] ERR: couldn't allocate %lu bytes! (%s:%u)\n",
 			ulSize, szFile, uwLine
 		);
-		logWrite(
-			"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
-			s_ulChipPeakUsage, s_ulFastPeakUsage
-		);
+		memLogPeak();
 #ifdef AMIGA
 		logWrite(
 			"[MEM] Largest available chunk of given type: %lu\n",
@@ -264,6 +261,13 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile) {
 		return;
 	}
 	memEntryCheckTrash(pEntry, uwLine, szFile);
+}
+
+void _memLogPeak() {
+	logWrite(
+		"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
+		s_ulChipPeakUsage, s_ulFastPeakUsage
+	);
 }
 
 UBYTE memType(const void *pMem) {
