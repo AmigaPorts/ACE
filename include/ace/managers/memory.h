@@ -65,6 +65,7 @@ void _memCheckIntegrity(UWORD uwLine, const char *szFile);
 # define memDestroy() _memDestroy()
 # define memCheckTrashAtAddr(pAddr) _memCheckTrashAtAddr(pAddr, __LINE__, __FILE__)
 # define memCheckIntegrity() _memCheckIntegrity(__LINE__, __FILE__)
+# define memLogPeak() _memLogPeak()
 #else
 # define memAlloc(ulSize, ulFlags) _memAllocRls(ulSize, ulFlags)
 # define memFree(pMem, ulSize) _memFreeRls(pMem, ulSize)
@@ -72,6 +73,7 @@ void _memCheckIntegrity(UWORD uwLine, const char *szFile);
 # define memDestroy()
 # define memCheckTrashAtAddr(pAddr, ulSize)
 # define memCheckIntegrity()
+# define memLogPeak()
 #endif // ACE_DEBUG
 
 // Shorthands
