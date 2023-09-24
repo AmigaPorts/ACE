@@ -782,6 +782,7 @@ void systemCreate(void) {
 	interruptHandlerAdd(INTB_AUD1);
 	interruptHandlerAdd(INTB_AUD2);
 	interruptHandlerAdd(INTB_AUD3);
+	interruptHandlerAdd(INTB_VERTB);
 
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
@@ -864,6 +865,7 @@ void systemDestroy(void) {
 	interruptHandlerRemove(INTB_AUD1);
 	interruptHandlerRemove(INTB_AUD2);
 	interruptHandlerRemove(INTB_AUD3);
+	interruptHandlerRemove(INTB_VERTB);
 
 	// restore old view
 	WaitTOF();
