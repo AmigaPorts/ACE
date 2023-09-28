@@ -105,17 +105,17 @@ void blitWait(void) {
 	// A1000 Blitter done bug:
 	// The solution is to read hardware register before testing the bit.
 	(void)g_pCustom->dmaconr;
-	while(!(g_pCustom->dmaconr & DMAF_BLTDONE)) continue;
+	while(g_pCustom->dmaconr & DMAF_BLTDONE) continue;
 }
 
 UBYTE blitIsIdle(void) {
 	// A1000 Blitter done bug:
 	// The solution is to read hardware register before testing the bit.
 	(void)g_pCustom->dmaconr;
-	if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
-		return 1;
+	if(g_pCustom->dmaconr & DMAF_BLTDONE) {
+		return 0;
 	}
-	return 0;
+	return 1;
 }
 
 UBYTE blitUnsafeCopy(
