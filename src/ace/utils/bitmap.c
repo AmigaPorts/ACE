@@ -133,6 +133,13 @@ void bitmapLoadFromFile(
 		"bitmapLoadFromFile(pBitMap: %p, szFilePath: '%s', uwStartX: %u, uwStartY: %u)",
 		pBitMap, szFilePath, uwStartX, uwStartY
 	);
+
+	if(!pBitMap) {
+		logWrite("ERR: pBitMap is 0\n");
+		systemUnuse();
+		return;
+	}
+
 	// Open source bitmap
 	tFile *pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
