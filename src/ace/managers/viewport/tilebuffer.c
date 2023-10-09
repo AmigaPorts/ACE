@@ -48,11 +48,17 @@ static void tileBufferQueueAdd(
 	}
 #endif
 	tRedrawState *pState = &pManager->pRedrawStates[0];
+	if(pState->ubPendingCount >= pManager->ubQueueSize) {
+		logWrite("ERR: Pending tiles queue overflow!");
+	}
 	pState->pPendingQueue[pState->ubPendingCount].uwX = uwTileX;
 	pState->pPendingQueue[pState->ubPendingCount].uwY = uwTileY;
 	++pState->ubPendingCount;
 
 	pState = &pManager->pRedrawStates[1];
+	if(pState->ubPendingCount >= pManager->ubQueueSize) {
+		logWrite("ERR: Pending tiles queue overflow!");
+	}
 	pState->pPendingQueue[pState->ubPendingCount].uwX = uwTileX;
 	pState->pPendingQueue[pState->ubPendingCount].uwY = uwTileY;
 	++pState->ubPendingCount;
