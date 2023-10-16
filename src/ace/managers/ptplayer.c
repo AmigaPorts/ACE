@@ -2881,7 +2881,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 		// be done on sfx converter side. If your samples are humming after playback,
 		// fix your custom conversion tool or use latest ACE tools!
 		if(pSfx->pData[0] != 0) {
-			logWrite("ERR: SFX's first word isn't zeroed-out\n");
+			logWrite("WARN: SFX's first word isn't zeroed-out - won't work properly with ptplayer!\n");
 		}
 	}
 	else {
@@ -3000,7 +3000,7 @@ void ptplayerSfxPlay(
 	}
 
 	// Did we already calculate the n_freecnt values for all channels?
-	if(!mt_SilCntValid) {
+	if(!mt_SilCntValid && mt_mod) {
 		// Look at the next 8 pattern steps to find the longest sequence
 		// of silence (no new note or instrument).
 		UBYTE ubSteps = 8;
@@ -3068,7 +3068,7 @@ void ptplayerSfxPlay(
 	// Determine which channels are already allocated for sound
 	// effects and check if the limit was reached. In this case only
 	// replace sound effect channels by higher priority.
-	BYTE bFreeChannels = 3 - mt_MusicChannels;
+	BYTE bFreeChannels = 4 - mt_MusicChannels;
 	if(mt_chan[0].ubSfxPriority) {
 		bFreeChannels -= 1;
 	}
@@ -3115,7 +3115,8 @@ void ptplayerSfxPlay(
 		uwIntFlag = INTF_AUD0;
 		for(UBYTE i = 0; i < 4; ++i) {
 			if((uwChannelsToCheck & uwIntFlag) && !mt_chan[i].ubSfxPriority) {
-				if(mt_chan[i].n_freecnt > ubBestFreeCnt) {
+				// When all channels freecnt is 0, use any - otherwise it won't play
+				if(mt_chan[i].n_freecnt >= ubBestFreeCnt) {
 					ubBestFreeCnt = mt_chan[i].n_freecnt;
 					pBestChannel = &mt_chan[i];
 				}

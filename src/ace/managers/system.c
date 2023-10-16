@@ -52,6 +52,7 @@ typedef struct _tAceInterrupt {
 //---------------------------------------------------------------------- GLOBALS
 
 // Store VBR query code in .text so that it plays nice with instruction cache
+// TODO: move to .s file after vasm support gets merged into cmake
 __attribute__((section("text")))
 static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
 
@@ -924,4 +925,8 @@ void systemCheckStack(void) {
 		logWrite("ERR: out of stack bounds!\n");
 		while(1) {}
 	}
+}
+
+UWORD systemGetVersion(void) {
+	return SysBase->LibNode.lib_Version;
 }

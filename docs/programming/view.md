@@ -107,7 +107,7 @@ void gameGsCreate(void) {
     TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
   TAG_END);
 
-  // Since we've set up global CLUT, palette will be loaded from first viewport
+  // Since we've set up global palette, palette will be loaded from first viewport
   // Colors are 0x0RGB, each channel accepts values from 0 to 15 (0 to F).
   s_pVpScore->pPalette[0] = 0x0000; // First color is also border color
   s_pVpScore->pPalette[1] = 0x0888; // Gray
