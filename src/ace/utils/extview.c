@@ -153,7 +153,7 @@ void viewProcessManagers(tView *pView)
 void viewUpdatePalette(tView *pView)
 {
 #ifdef AMIGA
-	if (pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)
+	if (pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE)
 	{
 		// for(UBYTE i = 0; i < 32; ++i) {
 		// 	g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
