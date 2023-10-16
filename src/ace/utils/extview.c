@@ -40,10 +40,10 @@ tView *viewCreate(void *pTags, ...) {
 		pView->pCopList = copListCreate(0, TAG_DONE);
 	}
 
-	// Additional CLUT tags
+	// Additional palette tags
 	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_PALETTE, 0)) {
-		pView->uwFlags |= VIEW_FLAG_GLOBAL_CLUT;
-		logWrite("Global CLUT mode enabled\n");
+		pView->uwFlags |= VIEW_FLAG_GLOBAL_PALETTE;
+		logWrite("Global palette mode enabled\n");
 	}
 
 	// Get the Y pos and height
@@ -150,7 +150,7 @@ void viewProcessManagers(tView *pView)
 	}
 }
 
-void viewUpdateCLUT(tView *pView)
+void viewUpdatePalette(tView *pView)
 {
 #ifdef AMIGA
 	if (pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT)
@@ -260,7 +260,7 @@ void viewLoad(tView *pView)
 			);
 		}
 		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | 0xC1; // HSTOP: 0xC1
-		viewUpdateCLUT(pView);
+		viewUpdatePalette(pView);
 	}
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
@@ -306,8 +306,7 @@ tVPort *vPortCreate(void *pTagList, ...)
 		pVPort->uwOffsY += pPrevVPort->uwHeight;
 		pPrevVPort = pPrevVPort->pNext;
 	}
-	if (pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_CLUT))
-	{
+	if(pVPort->uwOffsY && !(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE)) {
 		pVPort->uwOffsY += 2; // TODO: not always required?
 	}
 	ULONG ulAddOffsY = tagGet(pTagList, vaTags, TAG_VPORT_OFFSET_TOP, 0);
@@ -459,28 +458,26 @@ void vPortDestroy(tVPort *pVPort)
 	logBlockEnd("vPortDestroy()");
 }
 
-void vPortUpdateCLUT(tVPort *pVPort)
-{
-	// TODO: If not same CLUTs on all vports, there are 2 strategies to do them:
+void vPortUpdatePalette(tVPort *pVPort) {
+	// TODO: If not same palettes on all vports, there are 2 strategies to do them:
 	// 1) Using the copperlist (copblock/raw copper instructions)
 	// 2) By using CPU
 	// 1st approach is better since it will always work, doesn't require any waits
 	// So the only problem is implementing it using copblocks or raw copperlist.
 	// Also some viewports which are one after another may use shared pallette, so
-	// adding CLUT copper instructions between them is unnecessary.
+	// adding palette copper instructions between them is unnecessary.
 	// I propose following implementation:
-	// - for quick check, view contains flag VIEW_GLOBAL_CLUT if all viewports use
-	//   same palette
-	// - if VIEW_GLOBAL_CLUT is not found, every vport is checked for
-	// VPORT_HAS_OWN_CLUT and if it's present then cop instructions are created
+	// - for quick check, view contains flag VIEW_GLOBAL_PALETTE if all viewports
+	// use same palette
+	// - if VIEW_GLOBAL_PALETTE is not found, every vport is checked for
+	// VPORT_HAS_OWN_PALETTE and if it's present then cop instructions are created
 	// during vport creation and updated using this fn.
 	// There is a problem that VPorts may change vertical size and position
 	// (like expanding HUD to fullscreen like we did in Goblin Villages).
 	// On copblocks implementing it is somewhat easy, but on raw copperlist
 	// something clever must be done.
-	if (pVPort->uwFlags & VIEWPORT_HAS_OWN_CLUT)
-	{
-		logWrite("TODO: implement vPortUpdateCLUT!\n");
+	if(pVPort->uwFlags & VIEWPORT_HAS_OWN_PALETTE) {
+		logWrite("TODO: implement vPortUpdatePalette!\n");
 	}
 }
 

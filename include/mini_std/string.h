@@ -5,11 +5,11 @@
 #include <../sys-include/string.h>
 
 #ifdef __cplusplus
-#define restrict 
-extern "C" {
-
+#if !defined(restrict)
+#define restrict
 #endif
-
+extern "C" {
+#endif
 
 size_t strlen(const char *str);
 
@@ -32,6 +32,11 @@ int strcmp(const char *szA, const char *szB);
 char *strncpy(char *restrict szDest, const char *restrict szSrc, size_t Count);
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef __cplusplus
+}
+#undef restrict
 #endif
 
 #endif // _MINI_STD_STRING_H_

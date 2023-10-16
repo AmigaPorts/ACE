@@ -4,6 +4,13 @@
 extern "C" {
 #endif
 
+#ifdef __cplusplus
+#if !defined(restrict)
+#define restrict
+#endif
+extern "C" {
+#endif
+
 #define _U 0x01   // upper
 #define _L 0x02   // lower
 #define _D 0x04   // digit
@@ -38,6 +45,7 @@ unsigned char __tolower(unsigned char c);
 
 #ifdef __cplusplus
 }
+#undef restrict
 #endif
 
 #endif

@@ -55,7 +55,7 @@ tStateManager *stateManagerCreate(void);
 
 /**
  * Cleans up after state manager.
- * @param pStateManager: Pointer to state manager previously created 
+ * @param pStateManager: Pointer to state manager previously created
  *        with stateManagerCreate.
  * @see stateManagerCreate()
  */
@@ -68,13 +68,11 @@ void stateManagerDestroy(tStateManager *pStateManager);
  * @param cbDestroy: Callback that fires when state manager exists from this state.
  * @param cbSuspend: Callback that fires when state manager pushes new state over this state.
  * @param cbResume: Callback that fires when state manager pops old state over this state.
- * @param pPrev: Pointer to previous state. Zero if there is no previous state.
  * @see stateDestroy()
  */
 tState *stateCreate(
 	tStateCb cbCreate, tStateCb cbLoop, tStateCb cbDestroy,
-	tStateCb cbSuspend, tStateCb cbResume,
-	tState *pPrev
+	tStateCb cbSuspend, tStateCb cbResume
 );
 
 /**
@@ -86,7 +84,7 @@ void stateDestroy(tState *pState);
 
 /**
  * Pushes given state over current state in given state manager. Calls cbSuspend
- * on old state and cbCreate on new state. Will update pPrev in given state to 
+ * on old state and cbCreate on new state. Will update pPrev in given state to
  * point the old one.
  * @param pStateManager: Pointer to desired state manager where push will happen.
  * @param pState: Pointer to desired state which will be pushed.
@@ -107,7 +105,7 @@ void statePush(tStateManager *pStateManager, tState *pState);
 void statePop(tStateManager *pStateManager);
 
 /**
- * Pops all states from given state manager. Calls cbDestroy on all states 
+ * Pops all states from given state manager. Calls cbDestroy on all states
  * when sets pCurrent to zero.
  * @param pStateManager: Pointer to desired state manager where pop will happen.
  * @see statePop()

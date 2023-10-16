@@ -49,12 +49,11 @@ void stateManagerDestroy(tStateManager *pStateManager) {
 
 tState *stateCreate(
 	tStateCb cbCreate, tStateCb cbLoop, tStateCb cbDestroy,
-	tStateCb cbSuspend, tStateCb cbResume,
-	tState *pPrev
+	tStateCb cbSuspend, tStateCb cbResume
 ) {
 	logBlockBegin(
-		"stateCreate(cbCreate: %p, cbLoop: %p, cbDestroy: %p, cbSuspend: %p, cbResume: %p, pPrev: %p)",
-		cbCreate, cbLoop, cbDestroy, cbSuspend, cbResume, pPrev
+		"stateCreate(cbCreate: %p, cbLoop: %p, cbDestroy: %p, cbSuspend: %p, cbResume: %p)",
+		cbCreate, cbLoop, cbDestroy, cbSuspend, cbResume
 	);
 
 	tState *pState = memAllocFast(sizeof(tState));
@@ -64,7 +63,7 @@ tState *stateCreate(
 	pState->cbDestroy = cbDestroy;
 	pState->cbSuspend = cbSuspend;
 	pState->cbResume = cbResume;
-	pState->pPrev = pPrev;
+	pState->pPrev = 0;
 
 	logBlockEnd("stateCreate()");
 
