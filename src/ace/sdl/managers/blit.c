@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/blit.h>
+#include <ace/utils/endian.h>
 
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
@@ -23,6 +24,61 @@ UBYTE blitUnsafeCopy(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm
 ) {
+	// blitRect(pDst, wDstX, wDstY, wWidth, wHeight, 3);
+
+	UBYTE ubSrcShift = ((UWORD)wSrcX) % 16;
+	UBYTE ubDstShift = ((UWORD)wDstX) % 16;
+
+	if(ubSrcShift < ubDstShift) {
+		// Shifting right
+		UBYTE ubShift = ubDstShift - ubSrcShift;
+		UWORD uwFirstWordCd = wDstX / 16;
+		UWORD uwLastWordCd = ((wDstX + wWidth - 1) / 16);
+		UWORD uwColLast = uwLastWordCd - uwFirstWordCd;
+		UWORD uwFirstWordB = wSrcX / 16;
+		UWORD uwFirstWordMask = 0xFFFF >> ubDstShift;
+		UWORD uwLastWordMask = 0xFFFF << (16 - (((ubDstShift + wWidth - 1) % 16) + 1));
+		for(UBYTE ubPlane = 0; ubPlane < pDst->Depth; ++ubPlane) {
+			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][0]) + uwFirstWordB + (pSrc->BytesPerRow / 2) * wSrcY;
+			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][0]) + uwFirstWordCd + (pDst->BytesPerRow / 2) * wDstY;
+			for(UWORD uwRow = 0; uwRow < wHeight; ++uwRow) {
+				// *pPosCd = 0xFFFF; // debug row start
+				UWORD uwBarrelB = 0;
+				for(UWORD uwCol = 0; uwCol <= uwColLast; ++uwCol) {
+					UWORD uwDataB = (endianBigToNative16(*pPosB) >> ubShift);
+					UWORD uwDataC = endianBigToNative16(*pPosCd);
+					UWORD uwDataA = 0xFFFF;
+					if(uwCol == 0) {
+						uwDataA &= uwFirstWordMask;
+					}
+					if(uwCol == uwColLast) {
+						uwDataB = 0;
+						uwDataA &= uwLastWordMask;
+					}
+					uwDataB |= uwBarrelB;
+					uwBarrelB = endianBigToNative16(*pPosB) << (16 - ubShift);
+
+					switch(ubMinterm) {
+						case MINTERM_COOKIE:
+							*pPosCd = endianNativeToBig16((uwDataA & uwDataB) | (~uwDataA & uwDataC));
+							break;
+						case MINTERM_COPY:
+							*pPosCd = endianNativeToBig16(uwDataB);
+						default:
+							break;
+					}
+					++pPosB;
+					++pPosCd;
+				}
+				// *pPosCd = 0b1010101010101010; // debug row end
+				pPosB += (pSrc->BytesPerRow / 2) - (uwColLast + 1);
+				pPosCd += (pDst->BytesPerRow / 2) - (uwColLast + 1);
+			}
+		}
+	}
+	else {
+		// Shifting left
+	}
 	return 1;
 }
 
