@@ -6,6 +6,7 @@
 #include <ace/managers/log.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/bitmap.h>
+#include <ace/utils/endian.h>
 #include <fixmath/fix16.h>
 
 void chunkyFromPlanar16(
@@ -15,9 +16,12 @@ void chunkyFromPlanar16(
 	UBYTE i, ubPx;
 	memset(pOut, 0, 16*sizeof(*pOut));
 	// From highest to lowest color idx bit
+	UWORD uwWordsPerRow = pBitMap->BytesPerRow / 2;
+	ULONG ulPos = uwWordsPerRow * uwY + (uwX / 16);
 	for(i = pBitMap->Depth; i--;) {
 		// Obtain WORD from bitplane - 16 pixels
-		uwChunk = ((UWORD*)(pBitMap->Planes[i]))[(pBitMap->BytesPerRow>>1)*uwY + (uwX>>4)];
+		UWORD *pPlane = (UWORD*)(&pBitMap->Planes[i][0]);
+		uwChunk = endianBigToNative16(pPlane[ulPos]);
 		uwMask = 0x8000; // Start obtaining pixel values from left
 		for(ubPx = 0; ubPx != 16; ++ubPx) { // Insert read pixel bit to right
 			pOut[ubPx] = (pOut[ubPx] << 1) | ((uwChunk & uwMask) != 0);

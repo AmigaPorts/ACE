@@ -113,7 +113,9 @@ void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 }
 
 void simpleBufferProcess(tSimpleBufferManager *pManager) {
-
+	tBitMap *pTmp = pManager->pBack;
+	pManager->pBack = pManager->pFront;
+	pManager->pFront = pTmp;
 }
 
 UBYTE simpleBufferGetRawCopperlistInstructionCount(UBYTE ubBpp) {
@@ -123,10 +125,13 @@ UBYTE simpleBufferGetRawCopperlistInstructionCount(UBYTE ubBpp) {
 void simpleBufferDrawToSurface(tSimpleBufferManager *pManager) {
 	tBitMap *pDest = sdlGetSurfaceBitmap();
 	tVPort *pVPort = pManager->sCommon.pVPort;
-	blitCopy(
+
+	// TODO: replace with blitCopy() when it's fully implemented
+	blitCopyAligned(
+	// blitCopy(
 		pManager->pFront,
 		pManager->pCamera->uPos.uwX, pManager->pCamera->uPos.uwY,
-		pDest, pVPort->uwOffsX, pVPort->uwOffsY, pVPort->uwWidth, pVPort->uwHeight,
-		MINTERM_COOKIE
+		pDest, pVPort->uwOffsX, pVPort->uwOffsY, pVPort->uwWidth, pVPort->uwHeight
+		// MINTERM_COOKIE
 	);
 }
