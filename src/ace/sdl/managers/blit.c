@@ -29,7 +29,8 @@ UBYTE blitUnsafeCopy(
 	UBYTE ubSrcShift = ((UWORD)wSrcX) % 16;
 	UBYTE ubDstShift = ((UWORD)wDstX) % 16;
 
-	if(ubSrcShift < ubDstShift) {
+	UBYTE ubBpp = MIN(pSrc->Depth, pDst->Depth);
+	if(ubSrcShift <= ubDstShift) {
 		// Shifting right
 		UBYTE ubShift = ubDstShift - ubSrcShift;
 		UWORD uwFirstWordCd = wDstX / 16;
@@ -38,7 +39,7 @@ UBYTE blitUnsafeCopy(
 		UWORD uwFirstWordB = wSrcX / 16;
 		UWORD uwFirstWordMask = 0xFFFF >> ubDstShift;
 		UWORD uwLastWordMask = 0xFFFF << (16 - (((ubDstShift + wWidth - 1) % 16) + 1));
-		for(UBYTE ubPlane = 0; ubPlane < pDst->Depth; ++ubPlane) {
+		for(UBYTE ubPlane = 0; ubPlane < ubBpp; ++ubPlane) {
 			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][0]) + uwFirstWordB + (pSrc->BytesPerRow / 2) * wSrcY;
 			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][0]) + uwFirstWordCd + (pDst->BytesPerRow / 2) * wDstY;
 			for(UWORD uwRow = 0; uwRow < wHeight; ++uwRow) {

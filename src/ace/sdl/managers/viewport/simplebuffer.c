@@ -126,12 +126,10 @@ void simpleBufferDrawToSurface(tSimpleBufferManager *pManager) {
 	tBitMap *pDest = sdlGetSurfaceBitmap();
 	tVPort *pVPort = pManager->sCommon.pVPort;
 
-	// TODO: replace with blitCopy() when it's fully implemented
-	blitCopyAligned(
-	// blitCopy(
+	blitCopy(
 		pManager->pFront,
 		pManager->pCamera->uPos.uwX, pManager->pCamera->uPos.uwY,
-		pDest, pVPort->uwOffsX, pVPort->uwOffsY, pVPort->uwWidth, pVPort->uwHeight
-		// MINTERM_COOKIE
+		pDest, pVPort->uwOffsX, pVPort->uwOffsY, pVPort->uwWidth, pVPort->uwHeight,
+		MINTERM_COOKIE
 	);
 }
