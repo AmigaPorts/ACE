@@ -118,8 +118,6 @@ void bitmapLoadFromFile(
 ) {
 	UWORD uwSrcWidth, uwDstWidth, uwSrcHeight;
 	UBYTE ubSrcFlags, ubSrcBpp, ubSrcVersion;
-	UWORD y;
-	UWORD uwWidth;
 	UBYTE ubPlane;
 
 	systemUse();
@@ -177,7 +175,7 @@ void bitmapLoadFromFile(
 	}
 
 	// Check bitmap dimensions
-	uwDstWidth = bitmapGetByteWidth(pBitMap) / 8;
+	uwDstWidth = bitmapGetByteWidth(pBitMap) * 8;
 	if(
 		FLOOR_TO_FACTOR(uwStartX, 16) + CEIL_TO_FACTOR(uwSrcWidth, 16) > uwDstWidth ||
 		uwStartY + uwSrcHeight > pBitMap->Rows
@@ -195,21 +193,22 @@ void bitmapLoadFromFile(
 	}
 
 	// Read data
-	uwWidth = bitmapGetByteWidth(pBitMap);
-	UWORD uwRowWordSize = (uwSrcWidth + 15) / 16;
+	UWORD uwDstByteWidth = bitmapGetByteWidth(pBitMap);
+	UWORD uwRowByteSize = ((uwSrcWidth + 15) / 16) * 2;
+	UWORD uwByteOffsX = (uwStartX / 16) * 2;
 	if(bitmapIsInterleaved(pBitMap)) {
-		for(y = 0; y != uwSrcHeight; ++y) {
-			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
-				ULONG ulPos = uwWidth * (((uwStartY + y) * pBitMap->Depth) + ubPlane) + ((uwStartX / 16) * 2);
-				fileReadWords(pFile, (UWORD*)&pBitMap->Planes[0][ulPos], uwRowWordSize);
+		for(UWORD uwY = 0; uwY < uwSrcHeight; ++uwY) {
+			for(ubPlane = 0; ubPlane < pBitMap->Depth; ++ubPlane) {
+				ULONG ulPos = uwDstByteWidth * (((uwStartY + uwY) * pBitMap->Depth) + ubPlane) + uwByteOffsX;
+				fileReadBytes(pFile, &pBitMap->Planes[0][ulPos], uwRowByteSize);
 			}
 		}
 	}
 	else {
 		for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
-			for(y = 0; y != uwSrcHeight; ++y) {
-				ULONG ulPos = uwWidth * (uwStartY + y) + ((uwStartX / 16) * 2);
-				fileReadWords(pFile, (UWORD*)&pBitMap->Planes[ubPlane][ulPos], uwRowWordSize);
+			for(UWORD uwY = 0; uwY != uwSrcHeight; ++uwY) {
+				ULONG ulPos = uwDstByteWidth * (uwStartY + uwY) + uwByteOffsX;
+				fileReadBytes(pFile, &pBitMap->Planes[ubPlane][ulPos], uwRowByteSize);
 			}
 		}
 	}
@@ -346,16 +345,17 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	if(isFast) {
 		ubBitmapFlags |= BMF_FASTMEM;
 	}
+	UWORD uwByteWidth = (uwWidth / 16) * 2;
 	if(ubFlags & BITMAP_INTERLEAVED) {
 		pBitMap = bitmapCreate(
 			uwWidth, uwHeight, ubPlaneCount, ubBitmapFlags | BMF_INTERLEAVED
 		);
-		fileReadWords(pFile, (UWORD*)pBitMap->Planes[0], (uwWidth / 16) * uwHeight * ubPlaneCount);
+		fileReadBytes(pFile, pBitMap->Planes[0], uwByteWidth * uwHeight * ubPlaneCount);
 	}
 	else {
 		pBitMap = bitmapCreate(uwWidth, uwHeight, ubPlaneCount, ubBitmapFlags);
 		for (i = 0; i != ubPlaneCount; ++i) {
-			fileReadWords(pFile, (UWORD*)pBitMap->Planes[i], (uwWidth / 16) * uwHeight);
+			fileReadBytes(pFile, pBitMap->Planes[i], uwByteWidth * uwHeight);
 		}
 	}
 	fileClose(pFile);
