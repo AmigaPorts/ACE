@@ -461,6 +461,8 @@ void bitmapSave(const tBitMap *pBitMap, const char *szPath) {
 void bitmapSaveBmp(
 	const tBitMap *pBitMap, const UWORD *pPalette, const char *szFilePath
 ) {
+	// fileWriteLongs/Words do big endian writes,
+	// so use byte writes instead to skip builtin endian conversion.
 	// TODO: EHB support
 
 	systemUse();
@@ -471,48 +473,48 @@ void bitmapSaveBmp(
 	fileWriteBytes(pOut, "BM", 2);
 
 	ULONG ulOut = endianNativeToLittle32((pBitMap->BytesPerRow<<3) * pBitMap->Rows + 14+40+256*4);
-	fileWriteLongs(pOut, &ulOut, 1); // BMP file size
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // BMP file size
 
 	ulOut = 0;
-	fileWriteLongs(pOut, &ulOut, 1); // Reserved
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Reserved
 
 	ulOut = endianNativeToLittle32(14+40+256*4);
-	fileWriteLongs(pOut, &ulOut, 1); // Bitmap data starting addr
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Bitmap data starting addr
 
 
 	// Bitmap info header
 	ulOut = endianNativeToLittle32(40);
-	fileWriteLongs(pOut, &ulOut, 1); // Core header size
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Core header size
 
 	ulOut = endianNativeToLittle32(uwWidth);
-	fileWriteLongs(pOut, &ulOut, 1); // Image width
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Image width
 
 	ulOut = endianNativeToLittle32(pBitMap->Rows);
-	fileWriteLongs(pOut, &ulOut, 1); // Image height
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Image height
 
 	UWORD uwOut = endianNativeToLittle16(1);
-	fileWriteWords(pOut, &uwOut, 1); // Color plane count
+	fileWriteBytes(pOut, &uwOut, sizeof(UWORD)); // Color plane count
 
 	uwOut = endianNativeToLittle16(8);
-	fileWriteWords(pOut, &uwOut, 1); // Image BPP - 8bit indexed
+	fileWriteBytes(pOut, &uwOut, sizeof(UWORD)); // Image BPP - 8bit indexed
 
 	ulOut = endianNativeToLittle32(0);
-	fileWriteLongs(pOut, &ulOut, 1); // Compression method - none
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Compression method - none
 
 	ulOut = endianNativeToLittle32(uwWidth * pBitMap->Rows);
-	fileWriteLongs(pOut, &ulOut, 1); // Image size
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Image size
 
 	ulOut = endianNativeToLittle32(100);
-	fileWriteLongs(pOut, &ulOut, 1); // Horizontal resolution - px/m
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Horizontal resolution - px/m
 
 	ulOut = endianNativeToLittle32(100);
-	fileWriteLongs(pOut, &ulOut, 1); // Vertical resolution - px/m
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Vertical resolution - px/m
 
 	ulOut = endianNativeToLittle32(0);
-	fileWriteLongs(pOut, &ulOut, 1); // Palette length
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Palette length
 
 	ulOut = endianNativeToLittle32(0);
-	fileWriteLongs(pOut, &ulOut, 1); // Number of important colors - all
+	fileWriteBytes(pOut, &ulOut, sizeof(ULONG)); // Number of important colors - all
 
 	// Global palette
 	UWORD c;
@@ -535,7 +537,7 @@ void bitmapSaveBmp(
 	// Dummy fill up to 255 indices
 	ulOut = 0;
 	while(c < 256) {
-		fileWriteLongs(pOut, &ulOut, 1);
+		fileWriteBytes(pOut, &ulOut, sizeof(ULONG));
 		++c;
 	}
 
