@@ -59,7 +59,7 @@ static ULONG fileWriteData(tFile *pFile, const void *pSource, UBYTE ubDataSize, 
 		// no endian swap for bytes
 		ulWriteCount = fwrite(pSource, ubDataSize, ulCount, pFile);
 	}
-	if(ubDataSize == sizeof(UWORD)) {
+	else if(ubDataSize == sizeof(UWORD)) {
 		const UWORD *pWords = pSource;
 		for(ULONG i = 0; i < ulCount; ++i) {
 			UWORD uwReversed = endianBigToNative16(pWords[i]);
