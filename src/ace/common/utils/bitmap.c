@@ -128,7 +128,7 @@ void bitmapLoadFromFile(
 		pBitMap, szFilePath, uwStartX, uwStartY
 	);
 	// Open source bitmap
-	tFile *pFile = fileOpen(szFilePath, "r");
+	tFile *pFile = fileOpen(szFilePath, "rb");
 	if(!pFile) {
 		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapLoadFromFile()");
@@ -319,7 +319,7 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	UBYTE i;
 
 	logBlockBegin("bitmapCreateFromFile(szFilePath: '%s')", szFilePath);
-	pFile = fileOpen(szFilePath, "r");
+	pFile = fileOpen(szFilePath, "rb");
 	if(!pFile) {
 		fileClose(pFile);
 		logWrite("ERR: File does not exist\n");

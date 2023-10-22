@@ -96,7 +96,7 @@ LONG fileGetSize(const char *szPath) {
 	systemUse();
 	systemReleaseBlitterToOs();
 	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
-	FILE *pFile = fopen(szPath, "r");
+	FILE *pFile = fopen(szPath, "rb");
 	if(!pFile) {
 		logWrite("ERR: File doesn't exist");
 		logBlockEnd("fileGetSize()");
@@ -248,7 +248,7 @@ UBYTE fileExists(const char *szPath) {
 	systemUse();
 	systemReleaseBlitterToOs();
 	UBYTE isExisting = 0;
-	tFile *pFile = fileOpen(szPath, "r");
+	tFile *pFile = fileOpen(szPath, "rb");
 	if(pFile) {
 		isExisting = 1;
 		fileClose(pFile);

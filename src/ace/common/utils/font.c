@@ -23,7 +23,7 @@ tFont *fontCreate(const char *szFontName) {
 	tFont *pFont;
 	logBlockBegin("fontCreate(szFontName: '%s')", szFontName);
 
-	pFontFile = fileOpen(szFontName, "r");
+	pFontFile = fileOpen(szFontName, "rb");
 	if (!pFontFile) {
 		logWrite("ERR: Couldn't open file\n");
 		logBlockEnd("fontCreate()");
