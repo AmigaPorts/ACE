@@ -50,8 +50,8 @@ tFont *fontCreate(const char *szFontName) {
 	fileReadWords(pFontFile, pFont->pCharOffsets, pFont->ubChars);
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
-	UWORD uwPlaneWordSize = ((pFont->uwWidth+15)/16) * pFont->uwHeight;
-	fileReadWords(pFontFile, (UWORD*)pFont->pRawData->Planes[0], uwPlaneWordSize);
+	UWORD uwPlaneByteSize = (pFont->uwWidth / 8) * pFont->uwHeight;
+	fileReadBytes(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
 	fileClose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return pFont;
