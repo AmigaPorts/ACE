@@ -32,32 +32,45 @@ UBYTE blitUnsafeCopy(
 	UBYTE ubBpp = MIN(pSrc->Depth, pDst->Depth);
 	if(ubSrcShift <= ubDstShift) {
 		// Shifting right
+		UWORD uwFirstWordMask = 0xFFFF >> ubSrcShift;
+		UWORD uwLastWordMask = 0xFFFF << (16 - (((ubSrcShift + wWidth - 1) % 16) + 1));
 		UBYTE ubShift = ubDstShift - ubSrcShift;
 		UWORD uwFirstWordCd = wDstX / 16;
 		UWORD uwLastWordCd = ((wDstX + wWidth - 1) / 16);
-		UWORD uwColLast = uwLastWordCd - uwFirstWordCd;
 		UWORD uwFirstWordB = wSrcX / 16;
-		UWORD uwFirstWordMask = 0xFFFF >> ubDstShift;
-		UWORD uwLastWordMask = 0xFFFF << (16 - (((ubDstShift + wWidth - 1) % 16) + 1));
+		UWORD uwLastWordB = ((wSrcX + wWidth - 1) / 16);
+		UWORD uwColLast = uwLastWordB - uwFirstWordB;
+		if(uwLastWordCd - uwFirstWordCd > uwColLast) {
+			// e.g. srcx=0, dstx=12, width=5
+			++uwColLast;
+			uwFirstWordMask &= uwLastWordMask;
+			uwLastWordMask = 0;
+		}
 		for(UBYTE ubPlane = 0; ubPlane < ubBpp; ++ubPlane) {
 			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][0]) + uwFirstWordB + (pSrc->BytesPerRow / 2) * wSrcY;
 			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][0]) + uwFirstWordCd + (pDst->BytesPerRow / 2) * wDstY;
 			for(UWORD uwRow = 0; uwRow < wHeight; ++uwRow) {
 				// *pPosCd = 0xFFFF; // debug row start
+				UWORD uwBarrelA = 0;
 				UWORD uwBarrelB = 0;
 				for(UWORD uwCol = 0; uwCol <= uwColLast; ++uwCol) {
-					UWORD uwDataB = (endianBigToNative16(*pPosB) >> ubShift);
-					UWORD uwDataC = endianBigToNative16(*pPosCd);
 					UWORD uwDataA = 0xFFFF;
 					if(uwCol == 0) {
 						uwDataA &= uwFirstWordMask;
 					}
 					if(uwCol == uwColLast) {
-						uwDataB = 0;
 						uwDataA &= uwLastWordMask;
 					}
-					uwDataB |= uwBarrelB;
-					uwBarrelB = endianBigToNative16(*pPosB) << (16 - ubShift);
+					UWORD uwNewBarrel = uwDataA << (16 - ubShift);
+					uwDataA = (uwDataA >> ubShift) | uwBarrelA;
+					uwBarrelA = uwNewBarrel;
+
+					UWORD uwDataB = endianBigToNative16(*pPosB);
+					uwNewBarrel = uwDataB << (16 - ubShift);
+					uwDataB = (uwDataB >> ubShift) | uwBarrelB;
+					uwBarrelB = uwNewBarrel;
+
+					UWORD uwDataC = endianBigToNative16(*pPosCd);
 
 					switch(ubMinterm) {
 						case MINTERM_COOKIE:
@@ -78,7 +91,71 @@ UBYTE blitUnsafeCopy(
 		}
 	}
 	else {
-		// Shifting left
+		// Shifting left - first processed word in row is rightmost
+		UBYTE ubShift = ubSrcShift - ubDstShift;
+		UWORD uwFirstWordCd = ((wDstX + wWidth - 1) / 16);
+		UWORD uwLastWordCd = wDstX / 16;
+		UWORD uwFirstWordB = ((wSrcX + wWidth - 1) / 16);
+		UWORD uwLastWordB = wSrcX / 16;
+		UWORD uwColLast = uwFirstWordCd - uwLastWordCd;
+		if(uwFirstWordB - uwLastWordB > uwColLast) {
+			// e.g. srcx=12, dstx=0, width=6
+			uwFirstWordCd += (uwFirstWordB - uwLastWordB) - uwColLast;
+			uwColLast = uwFirstWordB - uwLastWordB;
+		}
+
+		UWORD uwFirstWordMask = 0xFFFF << (16 - (((ubSrcShift + wWidth - 1) % 16) + 1));
+		UWORD uwLastWordMask = 0xFFFF >> ubSrcShift;
+		for(UBYTE ubPlane = 0; ubPlane < ubBpp; ++ubPlane) {
+			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][0]) + uwFirstWordB + (pSrc->BytesPerRow / 2) * (wSrcY + wHeight - 1);
+			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][0]) + uwFirstWordCd + (pDst->BytesPerRow / 2) * (wDstY + wHeight - 1);
+			for(UWORD uwRow = 0; uwRow < wHeight; ++uwRow) {
+				// *pPosCd |= 0b0101010101010101; // debug row start
+				UWORD uwBarrelB = 0;
+				UWORD uwBarrelA = 0;
+				for(UWORD uwCol = 0; uwCol <= uwColLast; ++uwCol) {
+					UWORD uwDataA = 0xFFFF;
+					if(uwCol == 0) {
+						uwDataA &= uwFirstWordMask;
+					}
+					if(uwCol == uwColLast) {
+						uwDataA &= uwLastWordMask;
+					}
+					UWORD uwNewBarrel = uwDataA >> (16 - ubShift);
+					uwDataA = (uwDataA << ubShift) | uwBarrelA;
+					uwBarrelA = uwNewBarrel;
+
+					UWORD uwDataB = endianBigToNative16(*pPosB);
+					uwNewBarrel = uwDataB >> (16 - ubShift);
+					uwDataB = (uwDataB << ubShift) | uwBarrelB;
+					uwBarrelB = uwNewBarrel;
+
+					UWORD uwDataC = endianBigToNative16(*pPosCd);
+
+					switch(ubMinterm) {
+						case MINTERM_COOKIE:
+							*pPosCd = endianNativeToBig16((uwDataA & uwDataB) | (~uwDataA & uwDataC));
+							break;
+						case MINTERM_COPY:
+							*pPosCd = endianNativeToBig16(uwDataB);
+							break;
+						case MINTERM_AB_OR_C:
+							*pPosCd = endianNativeToBig16((uwDataA & uwDataB) | uwDataC);
+							break;
+						case MINTERM_CLEAR_C_ON_AB:
+							*pPosCd = endianNativeToBig16(~(uwDataA & uwDataB) & uwDataC);
+							break;
+						default:
+							break;
+					}
+					--pPosB;
+					--pPosCd;
+				}
+				// *pPosCd |= 0b0000111100001111; // debug row end
+				pPosB -= (pSrc->BytesPerRow / 2) - (uwColLast + 1);
+				pPosCd -= (pDst->BytesPerRow / 2) - (uwColLast + 1);
+			}
+		}
 	}
 	return 1;
 }
