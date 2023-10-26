@@ -309,7 +309,7 @@ UBYTE blitUnsafeRect(
 
 	do {
 		// Assign minterm depending if bitplane area should be filled or erased
-		ubMinterm = (ubColor & 1) ? MINTERM_A_OR_C : MINTERM_NA_AND_C;
+		ubMinterm = (ubColor & 1) ? MINTERM_A_OR_C : MINTERM_NAC;
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0 | ubMinterm;
 		// This hell of a casting must stay here or else large offsets get bugged!

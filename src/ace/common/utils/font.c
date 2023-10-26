@@ -306,7 +306,7 @@ void fontDrawTextBitMap(
 	for (UBYTE i = 0; i != pDest->Depth; ++i) {
 		// Determine minterm for given bitplane
 		if(isCookie) {
-			ubMinterm = ubColor & 1 ? 0xEA : 0x2A;
+			ubMinterm = MINTERM_COOKIE; //ubColor & 1 ? MINTERM_AB_OR_C : MINTERM_CLEAR_C_ON_AB;
 		}
 		else {
 			if(ubColor & 1) {

@@ -32,10 +32,12 @@ extern "C" {
 #define MINTERM_B 0xCC
 #define MINTERM_C 0xAA
 #define MINTERM_A_OR_C 0xFA
-#define MINTERM_NA_AND_C 0x0A
+#define MINTERM_NAC 0x0A
 #define MINTERM_COOKIE 0xCA
 #define MINTERM_REVERSE_COOKIE 0xAC
 #define MINTERM_COPY 0xC0
+#define MINTERM_AB_OR_C 0xEA
+#define MINTERM_CLEAR_C_ON_AB 0x2A
 
 /**
  * @brief Creates and initializes the blitter manager.
