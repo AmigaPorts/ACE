@@ -467,7 +467,7 @@ void bitmapSaveBmp(
 
 	systemUse();
 	UWORD uwWidth = bitmapGetByteWidth(pBitMap) << 3;
-	tFile *pOut = fileOpen(szFilePath, "w");
+	tFile *pOut = fileOpen(szFilePath, "wb");
 
 	// BMP header
 	fileWriteBytes(pOut, "BM", 2);
