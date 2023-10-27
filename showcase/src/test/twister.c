@@ -11,6 +11,10 @@
 #include <ace/managers/blit.h>
 #include <ace/utils/chunky.h>
 
+// #define CLIPPING_ENABLED
+#define CLIP_MARGIN_X 32
+#define CLIP_MARGIN_Y 16
+
 static tView *s_pView;
 static tVPort *s_pVPort;
 static tSimpleBufferManager *s_pBfr;
@@ -34,8 +38,8 @@ void gsTestTwisterCreate(void) {
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
 		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
-		TAG_SIMPLEBUFFER_BOUND_WIDTH, 800,
-		TAG_SIMPLEBUFFER_BOUND_HEIGHT, 600,
+		TAG_SIMPLEBUFFER_BOUND_WIDTH, 512,
+		TAG_SIMPLEBUFFER_BOUND_HEIGHT, 512,
 		TAG_DONE
 	);
 
@@ -43,9 +47,9 @@ void gsTestTwisterCreate(void) {
 	s_sz = 32;
 	s_ps = 0;
 	s_pVPort->pPalette[0] = 0x000;
-	s_pVPort->pPalette[1] = 0xF00;
-	s_pVPort->pPalette[2] = 0x0F0;
-	s_pVPort->pPalette[3] = 0x00F;
+	s_pVPort->pPalette[1] = 0x057;
+	s_pVPort->pPalette[2] = 0x49b;
+	s_pVPort->pPalette[3] = 0x8df;
 
 	// testGrid()
 	cameraSetCoord(s_pBfr->pCamera, 150, 180);
@@ -108,9 +112,56 @@ void gsTestTwisterLoop(void) {
 			UWORD uwSrcY = yy + (16 - y) + x;
 			UWORD uwDstX = xx;
 			UWORD uwDstY = yy + 16;
+			WORD wWidth = 32;
+			WORD wHeight = 32;
+
+#if defined(CLIPPING_ENABLED)
+			if(uwDstX < 150) {
+				UWORD uwDelta = 150 - uwDstX;
+				uwSrcX += uwDelta;
+				wWidth -= uwDelta;
+				uwDstX = 150;
+			}
+			if(uwSrcX < 150) {
+				UWORD uwDelta = 150 - uwSrcX;
+				uwDstX += uwDelta;
+				wWidth -= uwDelta;
+				uwSrcX = 150;
+			}
+			if(uwSrcX + wWidth > 150 + 320 + CLIP_MARGIN_X) {
+				wWidth = 150 + 320 + CLIP_MARGIN_X - uwSrcX;
+			}
+			if(uwDstX + wWidth > 150 + 320 + CLIP_MARGIN_X) {
+				wWidth = 150 + 300 + CLIP_MARGIN_X - uwDstX;
+			}
+
+			if(uwDstY < 180) {
+				UWORD uwDelta = 180 - uwDstY;
+				uwSrcY += uwDelta;
+				wHeight -= uwDelta;
+				uwDstY = 180;
+			}
+			if(uwSrcY < 150) {
+				UWORD uwDelta = 150 - uwSrcY;
+				uwDstY += uwDelta;
+				wWidth -= uwDelta;
+				uwSrcY = 150;
+			}
+			if(uwSrcY + wHeight > 180 + 256 + CLIP_MARGIN_Y) {
+				wHeight = 180 + 256 + CLIP_MARGIN_Y - uwSrcY;
+			}
+			if(uwDstY + wHeight > 180 + 256 + CLIP_MARGIN_Y) {
+				wHeight = 180 + 256 + CLIP_MARGIN_Y - uwDstY;
+			}
+
+			if(wWidth <= 0 || wHeight <= 0) {
+				continue;
+			}
+#endif
+
 			blitCopy(
 				s_pBfr->pFront, uwSrcX, uwSrcY,
-				s_pBfr->pBack, uwDstX, uwDstY, 32, 32, MINTERM_COOKIE
+				s_pBfr->pBack, uwDstX, uwDstY, wWidth, wHeight, MINTERM_COOKIE
 			);
 		}
 	}
