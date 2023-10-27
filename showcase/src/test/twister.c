@@ -4,6 +4,7 @@
 
 #include "twister.h"
 #include "../game.h"
+#include <ace/generic/screen.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/key.h>
 #include <ace/managers/system.h>
@@ -11,16 +12,18 @@
 #include <ace/managers/blit.h>
 #include <ace/utils/chunky.h>
 
-// #define CLIPPING_ENABLED
 #define CLIP_MARGIN_X 32
 #define CLIP_MARGIN_Y 16
+#define TWISTER_CENTER_X 138
+#define TWISTER_CENTER_Y 122
+#define TWISTER_CENTER_RADIUS 2
+#define TWISTER_BLOCK_SIZE 32
 
 static tView *s_pView;
 static tVPort *s_pVPort;
 static tSimpleBufferManager *s_pBfr;
 static tRandManager s_sRand;
 
-static UWORD s_sz;
 static ULONG s_ps;
 
 void gsTestTwisterCreate(void) {
@@ -38,13 +41,12 @@ void gsTestTwisterCreate(void) {
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
 		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
-		TAG_SIMPLEBUFFER_BOUND_WIDTH, 512,
-		TAG_SIMPLEBUFFER_BOUND_HEIGHT, 512,
+		TAG_SIMPLEBUFFER_BOUND_WIDTH, SCREEN_PAL_WIDTH + CLIP_MARGIN_X,
+		TAG_SIMPLEBUFFER_BOUND_HEIGHT, SCREEN_PAL_HEIGHT + CLIP_MARGIN_Y,
 		TAG_DONE
 	);
 
 	// Init stuff
-	s_sz = 32;
 	s_ps = 0;
 	s_pVPort->pPalette[0] = 0x000;
 	s_pVPort->pPalette[1] = 0x057;
@@ -52,7 +54,7 @@ void gsTestTwisterCreate(void) {
 	s_pVPort->pPalette[3] = 0x8df;
 
 	// testGrid()
-	cameraSetCoord(s_pBfr->pCamera, 150, 180);
+	// cameraSetCoord(s_pBfr->pCamera, 150, 180);
 	randInit(&s_sRand, 1911, 2184);
 
 	// Display view with its viewports
@@ -79,90 +81,89 @@ void gsTestTwisterLoop(void) {
 		cameraMoveBy(s_pBfr->pCamera, 1, 0);
 	}
 	if(keyUse(KEY_R)) {
-		cameraSetCoord(s_pBfr->pCamera, 150, 180);
+		cameraSetCoord(s_pBfr->pCamera, 0, 0);
 	}
 	if(keyUse(KEY_B)) {
 		bitmapSaveBmp(s_pBfr->pFront, s_pVPort->pPalette, "twister.bmp");
 	}
 
-	for(UWORD y = 298; y <= 302; ++y) {
-		for(UWORD x = 284; x <= 288;  ++x) {
-			UBYTE ubColor = randUw(&s_sRand) & 3;
-			chunkyToPlanar(ubColor, x + 2, y + 2, s_pBfr->pFront);
-		}
-	}
-
-	UWORD shift = 0;
 	s_ps += 1;
-
+	UWORD uwShift = 0;
 	// for(UBYTE i = 0; i <= 4; ++i) {
-		shift = (shift << 1) | ((s_ps >> 0) & 1);
-		shift = (shift << 1) | ((s_ps >> 1) & 1);
-		shift = (shift << 1) | ((s_ps >> 2) & 1);
-		shift = (shift << 1) | ((s_ps >> 3) & 1);
-		shift = (shift << 1) | ((s_ps >> 4) & 1);
+		uwShift = (uwShift << 1) | ((s_ps >> 0) & 1);
+		uwShift = (uwShift << 1) | ((s_ps >> 1) & 1);
+		uwShift = (uwShift << 1) | ((s_ps >> 2) & 1);
+		uwShift = (uwShift << 1) | ((s_ps >> 3) & 1);
+		uwShift = (uwShift << 1) | ((s_ps >> 4) & 1);
 	// }
 
+	// Original code was using 150,180 as camera coord on 800x600 bitmap.
+	// Following uses same math, but compensates for 0,0 on smaller buffer.
 	for(UBYTE y = 4; y <= 13; ++y) {
-		UWORD yy = y * 32 + shift;
+		WORD yy = y * TWISTER_BLOCK_SIZE + uwShift - 180;
 		for(UBYTE x = 3; x <= 14; ++x) {
-			UWORD xx = x * 32 + shift;
+			WORD xx = x * TWISTER_BLOCK_SIZE + uwShift - 150;
 
-			UWORD uwSrcX = xx + (16 - y) - x;
-			UWORD uwSrcY = yy + (16 - y) + x;
-			UWORD uwDstX = xx;
-			UWORD uwDstY = yy + 16;
-			WORD wWidth = 32;
-			WORD wHeight = 32;
+			WORD wSrcX = xx + (16 - y) - x;
+			WORD wSrcY = yy + (16 - y) + x;
+			WORD wDstX = xx;
+			WORD wDstY = yy + 16;
+			WORD wWidth = TWISTER_BLOCK_SIZE;
+			WORD wHeight = TWISTER_BLOCK_SIZE;
 
-#if defined(CLIPPING_ENABLED)
-			if(uwDstX < 150) {
-				UWORD uwDelta = 150 - uwDstX;
-				uwSrcX += uwDelta;
-				wWidth -= uwDelta;
-				uwDstX = 150;
+			if(wDstX < 0) {
+				WORD wDelta = -wDstX;
+				wSrcX += wDelta;
+				wWidth -= wDelta;
+				wDstX = 0;
 			}
-			if(uwSrcX < 150) {
-				UWORD uwDelta = 150 - uwSrcX;
-				uwDstX += uwDelta;
-				wWidth -= uwDelta;
-				uwSrcX = 150;
+			if(wSrcX < 0) {
+				WORD wDelta = -wSrcX;
+				wDstX += wDelta;
+				wWidth -= wDelta;
+				wSrcX = 0;
 			}
-			if(uwSrcX + wWidth > 150 + 320 + CLIP_MARGIN_X) {
-				wWidth = 150 + 320 + CLIP_MARGIN_X - uwSrcX;
+			if(wSrcX + wWidth > SCREEN_PAL_WIDTH + CLIP_MARGIN_X) {
+				wWidth = SCREEN_PAL_WIDTH + CLIP_MARGIN_X - wSrcX;
 			}
-			if(uwDstX + wWidth > 150 + 320 + CLIP_MARGIN_X) {
-				wWidth = 150 + 300 + CLIP_MARGIN_X - uwDstX;
+			if(wDstX + wWidth > SCREEN_PAL_WIDTH + CLIP_MARGIN_X) {
+				wWidth = SCREEN_PAL_WIDTH + CLIP_MARGIN_X - wDstX;
 			}
 
-			if(uwDstY < 180) {
-				UWORD uwDelta = 180 - uwDstY;
-				uwSrcY += uwDelta;
-				wHeight -= uwDelta;
-				uwDstY = 180;
+			if(wDstY < 0) {
+				WORD wDelta = -wDstY;
+				wSrcY += wDelta;
+				wHeight -= wDelta;
+				wDstY = 0;
 			}
-			if(uwSrcY < 150) {
-				UWORD uwDelta = 150 - uwSrcY;
-				uwDstY += uwDelta;
-				wWidth -= uwDelta;
-				uwSrcY = 150;
+			if(wSrcY < 0) {
+				WORD wDelta = -wSrcY;
+				wDstY += wDelta;
+				wWidth -= wDelta;
+				wSrcY = 0;
 			}
-			if(uwSrcY + wHeight > 180 + 256 + CLIP_MARGIN_Y) {
-				wHeight = 180 + 256 + CLIP_MARGIN_Y - uwSrcY;
+			if(wSrcY + wHeight > 0 + SCREEN_PAL_HEIGHT + CLIP_MARGIN_Y) {
+				wHeight = 0 + SCREEN_PAL_HEIGHT + CLIP_MARGIN_Y - wSrcY;
 			}
-			if(uwDstY + wHeight > 180 + 256 + CLIP_MARGIN_Y) {
-				wHeight = 180 + 256 + CLIP_MARGIN_Y - uwDstY;
+			if(wDstY + wHeight > 0 + SCREEN_PAL_HEIGHT + CLIP_MARGIN_Y) {
+				wHeight = 0 + SCREEN_PAL_HEIGHT + CLIP_MARGIN_Y - wDstY;
 			}
 
 			if(wWidth <= 0 || wHeight <= 0) {
 				continue;
 			}
-#endif
 
 			blitCopy(
-				s_pBfr->pFront, uwSrcX, uwSrcY,
-				s_pBfr->pBack, uwDstX, uwDstY, wWidth, wHeight, MINTERM_COOKIE
+				s_pBfr->pFront, wSrcX, wSrcY,
+				s_pBfr->pBack, wDstX, wDstY, wWidth, wHeight, MINTERM_COOKIE
 			);
+		}
+	}
+
+	for(UWORD y = TWISTER_CENTER_Y - TWISTER_CENTER_RADIUS; y <= TWISTER_CENTER_Y + TWISTER_CENTER_RADIUS; ++y) {
+		for(UWORD x = TWISTER_CENTER_X - TWISTER_CENTER_RADIUS; x <= TWISTER_CENTER_X + TWISTER_CENTER_RADIUS; ++x) {
+			UBYTE ubColor = randUw(&s_sRand) & 3;
+			chunkyToPlanar(ubColor, x, y, s_pBfr->pBack);
 		}
 	}
 
