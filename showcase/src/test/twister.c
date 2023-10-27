@@ -74,14 +74,14 @@ void gsTestTwisterLoop(void) {
 	if(keyCheck(KEY_RIGHT)) {
 		cameraMoveBy(s_pBfr->pCamera, 1, 0);
 	}
-	if(keyCheck(KEY_R)) {
+	if(keyUse(KEY_R)) {
 		cameraSetCoord(s_pBfr->pCamera, 150, 180);
 	}
-	if(keyCheck(KEY_B)) {
+	if(keyUse(KEY_B)) {
 		bitmapSaveBmp(s_pBfr->pFront, s_pVPort->pPalette, "twister.bmp");
 	}
 
-  for(UWORD y = 298; y <= 302; ++y) {
+	for(UWORD y = 298; y <= 302; ++y) {
 		for(UWORD x = 284; x <= 288;  ++x) {
 			UBYTE ubColor = randUw(&s_sRand) & 3;
 			chunkyToPlanar(ubColor, x + 2, y + 2, s_pBfr->pFront);
@@ -91,7 +91,7 @@ void gsTestTwisterLoop(void) {
 	UWORD shift = 0;
 	s_ps += 1;
 
-  // for(UBYTE i = 0; i <= 4; ++i) {
+	// for(UBYTE i = 0; i <= 4; ++i) {
 		shift = (shift << 1) | ((s_ps >> 0) & 1);
 		shift = (shift << 1) | ((s_ps >> 1) & 1);
 		shift = (shift << 1) | ((s_ps >> 2) & 1);
@@ -99,10 +99,10 @@ void gsTestTwisterLoop(void) {
 		shift = (shift << 1) | ((s_ps >> 4) & 1);
 	// }
 
-  for(UBYTE y = 4; y <= 13; ++y) {
-    UWORD yy = y * 32 + shift;
-    for(UBYTE x = 3; x <= 14; ++x) {
-      UWORD xx = x * 32 + shift;
+	for(UBYTE y = 4; y <= 13; ++y) {
+		UWORD yy = y * 32 + shift;
+		for(UBYTE x = 3; x <= 14; ++x) {
+			UWORD xx = x * 32 + shift;
 
 			UWORD uwSrcX = xx + (16 - y) - x;
 			UWORD uwSrcY = yy + (16 - y) + x;
