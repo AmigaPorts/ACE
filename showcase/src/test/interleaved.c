@@ -42,7 +42,7 @@ void gsTestInterleavedCreate(void) {
 
 void gsTestInterleavedLoop(void) {
 	if (keyUse(KEY_ESCAPE)) {
-		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
+		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
 }
