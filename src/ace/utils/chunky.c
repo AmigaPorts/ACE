@@ -33,29 +33,33 @@ UBYTE chunkyFromPlanar(const tBitMap *pBitMap, UWORD uwX, UWORD uwY) {
 }
 
 void chunkyToPlanar16(const UBYTE *pIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
-	UBYTE ubPlane, ubPixel;
 	UWORD uwPlanarBuffer = 0;
-	UWORD *pPlane;
-	ULONG ulOffset;
-
-	ulOffset = uwY*(pOut->BytesPerRow>>1) + (uwX >> 4);
-	for(ubPlane = 0; ubPlane != pOut->Depth; ++ubPlane) {
-		for(ubPixel = 0; ubPixel != 16; ++ubPixel) {
+	ULONG ulOffset = uwY * (pOut->BytesPerRow / 2) + (uwX / 16);
+	for(UBYTE ubPlane = 0; ubPlane < pOut->Depth; ++ubPlane) {
+		for(UBYTE ubPixel = 0; ubPixel < 16; ++ubPixel) {
 			uwPlanarBuffer <<= 1;
 			if(pIn[ubPixel] & (1<<ubPlane)) {
 				uwPlanarBuffer |= 1;
 			}
 		}
-		pPlane = (UWORD*)(pOut->Planes[ubPlane]);
+		UWORD *pPlane = (UWORD*)(pOut->Planes[ubPlane]);
 		pPlane[ulOffset] = uwPlanarBuffer;
 	}
 }
 
-void chunkyToPlanar(const UBYTE ubIn, UWORD uwX, UWORD uwY, tBitMap *pOut) {
-	UBYTE pChunky[16];
-	chunkyFromPlanar16(pOut, uwX, uwY, pChunky);
-	pChunky[uwX & 15] = ubIn;
-	chunkyToPlanar16(pChunky, uwX, uwY, pOut);
+void chunkyToPlanar(UBYTE ubColor, UWORD uwX, UWORD uwY, tBitMap *pOut) {
+	ULONG ulOffset = uwY * (pOut->BytesPerRow / 2) + (uwX / 16);
+	UWORD uwMask = BV(15) >> (uwX & 0xF);
+	for(UBYTE ubPlane = 0; ubPlane < pOut->Depth; ++ubPlane) {
+		UWORD *pPlane = (UWORD*)pOut->Planes[ubPlane];
+		if(ubColor & 1) {
+			pPlane[ulOffset] |= uwMask;
+		}
+		else {
+			pPlane[ulOffset] &= ~uwMask;
+		}
+		ubColor >>= 1;
+	}
 }
 
 void chunkyRotate(
