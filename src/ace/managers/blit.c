@@ -251,60 +251,49 @@ UBYTE blitUnsafeCopyAligned(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
 	#ifdef AMIGA
-	UWORD uwBlitWords, uwBltCon0;
-	WORD wDstModulo, wSrcModulo;
-	ULONG ulSrcOffs, ulDstOffs;
-
 	// Use C channel instead of A - same speed, less regs to set up
-	uwBlitWords = wWidth >> 4;
-	uwBltCon0 = USEC|USED | MINTERM_C;
-
-	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
-	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
-	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+	UWORD uwBlitWords = wWidth >> 4;
+	UWORD uwBltCon0 = USEC|USED | MINTERM_C;
+	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
+	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
 
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
+		WORD wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
+		WORD wDstModulo = bitmapGetByteWidth(pDst) - uwBlitWords * 2;
 		wHeight *= pSrc->Depth;
+
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-
 		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
-
-		g_pCustom->bltcpt = pSrc->Planes[0] + ulSrcOffs;
-		g_pCustom->bltdpt = pDst->Planes[0] + ulDstOffs;
-
+		g_pCustom->bltcpt = &pSrc->Planes[0][ulSrcOffs];
+		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 	}
 	else {
-		UBYTE ubPlane;
-
 		if(bitmapIsInterleaved(pSrc) || bitmapIsInterleaved(pDst)) {
 			// Since you're using this fn for speed
 			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
 		}
-		if(bitmapIsInterleaved(pSrc)) {
-			wSrcModulo += pSrc->BytesPerRow * (pSrc->Depth-1);
-		}
-		else if(bitmapIsInterleaved(pDst)) {
-			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
-		}
+
+		WORD wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
+		WORD wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
+		UBYTE ubPlane = pSrc->Depth;
 
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-
 		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
-		for(ubPlane = pSrc->Depth; ubPlane--;) {
+		while(ubPlane--) {
 			blitWait();
-			g_pCustom->bltcpt = pSrc->Planes[ubPlane] + ulSrcOffs;
-			g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
+			g_pCustom->bltcpt = &pSrc->Planes[ubPlane][ulSrcOffs];
+			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 		}
 	}
+
 #endif // AMIGA
 	return 1;
 }
