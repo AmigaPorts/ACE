@@ -14,10 +14,16 @@
 
 #define CLIP_MARGIN_X 32
 #define CLIP_MARGIN_Y 16
-#define TWISTER_CENTER_X 138
-#define TWISTER_CENTER_Y 122
+#define TWISTER_CENTER_X (86+32)
+#define TWISTER_CENTER_Y (128)
 #define TWISTER_CENTER_RADIUS 2
 #define TWISTER_BLOCK_SIZE 32
+#define TWISTER_MIN_BLOCK_X (-(((TWISTER_CENTER_X + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 2))
+#define TWISTER_MAX_BLOCK_X (+((((320 - TWISTER_CENTER_X) + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 0))
+#define TWISTER_MIN_BLOCK_Y (-(((TWISTER_CENTER_Y + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 2))
+#define TWISTER_MAX_BLOCK_Y (+((((256 - TWISTER_CENTER_Y) + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 0))
+#define TWISTER_BLOCKS_X (TWISTER_MAX_BLOCK_X - TWISTER_MIN_BLOCK_X)
+#define TWISTER_BLOCKS_Y (TWISTER_MAX_BLOCK_Y - TWISTER_MIN_BLOCK_Y)
 
 static tView *s_pView;
 static tVPort *s_pVPort;
@@ -62,15 +68,13 @@ void gsTestTwisterCreate(void) {
 
 	// Init stuff
 	s_ps = 0;
-	s_isVectors = 1;
-	s_isAdvancePs = 0;
+	s_isVectors = 0;
+	s_isAdvancePs = 1;
 	s_pVPort->pPalette[0] = 0x000;
 	s_pVPort->pPalette[1] = 0x057;
 	s_pVPort->pPalette[2] = 0x49b;
 	s_pVPort->pPalette[3] = 0x8df;
 
-	// testGrid()
-	// cameraSetCoord(s_pBfr->pCamera, 150, 180);
 	randInit(&s_sRand, 1911, 2184);
 
 	// Display view with its viewports
@@ -130,17 +134,15 @@ void gsTestTwisterLoop(void) {
 		uwShift = (uwShift << 1) | ((s_ps >> 4) & 1);
 	// }
 
-	// Original code was using 150,180 as camera coord on 800x600 bitmap.
-	// Following uses same math, but compensates for 0,0 on smaller buffer.
-	for(UBYTE y = 4; y <= 13; ++y) {
-		WORD yy = y * TWISTER_BLOCK_SIZE + uwShift - 180;
-		for(UBYTE x = 3; x <= 14; ++x) {
-			WORD xx = x * TWISTER_BLOCK_SIZE + uwShift - 150;
+	for(BYTE y = TWISTER_MIN_BLOCK_Y; y < TWISTER_MAX_BLOCK_Y; ++y) {
+		WORD yy = TWISTER_CENTER_Y + y * TWISTER_BLOCK_SIZE + uwShift;
+		for(BYTE x = TWISTER_MIN_BLOCK_X; x < TWISTER_MAX_BLOCK_X; ++x) {
+			WORD xx = TWISTER_CENTER_X + x * TWISTER_BLOCK_SIZE + uwShift;
 
-			WORD wSrcX = xx + (16 - y) - x;
-			WORD wSrcY = yy + (16 - y) + x;
+			WORD wSrcX = xx - (y + 1) - (x + 1);
+			WORD wSrcY = yy - (y + 1) + (x + 1);
 			WORD wDstX = xx;
-			WORD wDstY = yy + 16;
+			WORD wDstY = yy;
 			WORD wWidth = TWISTER_BLOCK_SIZE;
 			WORD wHeight = TWISTER_BLOCK_SIZE;
 
