@@ -39,7 +39,7 @@ void gsTestTwisterCreate(void) {
 	);
 	s_pBfr = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
-		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
 		TAG_SIMPLEBUFFER_BOUND_WIDTH, SCREEN_PAL_WIDTH + CLIP_MARGIN_X,
 		TAG_SIMPLEBUFFER_BOUND_HEIGHT, SCREEN_PAL_HEIGHT + CLIP_MARGIN_Y,
@@ -169,7 +169,9 @@ void gsTestTwisterLoop(void) {
 
 	viewProcessManagers(s_pView);
 	copProcessBlocks();
+	systemIdleBegin();
 	vPortWaitForEnd(s_pVPort);
+	systemIdleEnd();
 }
 
 void gsTestTwisterDestroy(void) {
