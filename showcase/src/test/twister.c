@@ -25,6 +25,20 @@ static tSimpleBufferManager *s_pBfr;
 static tRandManager s_sRand;
 
 static ULONG s_ps;
+static UBYTE s_isVectors;
+static UBYTE s_isAdvancePs;
+
+static void testGrid(UBYTE ubSize) {
+	UBYTE ubColor = 0;
+	for(UWORD uwX = ubSize; uwX < 320; uwX += ubSize) {
+		blitRect(s_pBfr->pBack, uwX, 0, 1, 256, 1 + (ubColor & 1));
+		++ubColor;
+	}
+	for(UWORD uwY = ubSize; uwY < 256; uwY += ubSize) {
+		blitRect(s_pBfr->pBack, 0, uwY, 320, 1, 1 + (ubColor & 1));
+		++ubColor;
+	}
+}
 
 void gsTestTwisterCreate(void) {
 	// Prepare view & viewport
@@ -48,6 +62,8 @@ void gsTestTwisterCreate(void) {
 
 	// Init stuff
 	s_ps = 0;
+	s_isVectors = 1;
+	s_isAdvancePs = 0;
 	s_pVPort->pPalette[0] = 0x000;
 	s_pVPort->pPalette[1] = 0x057;
 	s_pVPort->pPalette[2] = 0x49b;
@@ -86,8 +102,25 @@ void gsTestTwisterLoop(void) {
 	if(keyUse(KEY_B)) {
 		bitmapSaveBmp(s_pBfr->pFront, s_pVPort->pPalette, "twister.bmp");
 	}
+	if(keyUse(KEY_I)) {
+		s_isAdvancePs = !s_isAdvancePs;
+	}
+	if(keyUse(KEY_O)) {
+		--s_ps;
+		s_isAdvancePs = 0;
+	}
+	if(keyUse(KEY_P)) {
+		++s_ps;
+		s_isAdvancePs = 0;
+	}
+	if(keyUse(KEY_V)) {
+		s_isVectors = !s_isVectors;
+	}
 
-	s_ps += 1;
+	if(s_isAdvancePs) {
+		++s_ps;
+	}
+
 	UWORD uwShift = 0;
 	// for(UBYTE i = 0; i <= 4; ++i) {
 		uwShift = (uwShift << 1) | ((s_ps >> 0) & 1);
@@ -153,10 +186,17 @@ void gsTestTwisterLoop(void) {
 				continue;
 			}
 
-			blitCopy(
-				s_pBfr->pFront, wSrcX, wSrcY,
-				s_pBfr->pBack, wDstX, wDstY, wWidth, wHeight, MINTERM_COOKIE
-			);
+			if(s_isVectors) {
+				blitLine(s_pBfr->pBack, wSrcX, wSrcY, wDstX, wDstY, 2, 0xFFFF, 0);
+				chunkyToPlanar(1, wSrcX, wSrcY, s_pBfr->pBack);
+				chunkyToPlanar(3, wDstX, wDstY, s_pBfr->pBack);
+			}
+			else {
+				blitCopy(
+					s_pBfr->pFront, wSrcX, wSrcY,
+					s_pBfr->pBack, wDstX, wDstY, wWidth, wHeight, MINTERM_COOKIE
+				);
+			}
 		}
 	}
 
@@ -165,6 +205,16 @@ void gsTestTwisterLoop(void) {
 			UBYTE ubColor = randUw(&s_sRand) & 3;
 			chunkyToPlanar(ubColor, x, y, s_pBfr->pBack);
 		}
+	}
+
+	if(keyUse(KEY_G)) {
+		testGrid(16);
+	}
+	if(keyUse(KEY_H)) {
+		testGrid(8);
+	}
+	if(keyUse(KEY_J)) {
+		testGrid(4);
 	}
 
 	viewProcessManagers(s_pView);
