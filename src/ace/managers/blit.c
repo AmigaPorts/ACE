@@ -155,8 +155,11 @@ UBYTE blitUnsafeCopy(
 		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
 		uwBltCon1 = (ubShift << BSHIFTSHIFT) | BLITREVERSE;
 
-		ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight - 1) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
-		ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		// Position on the end of last row of the bitmap.
+		// For interleaved, position on the last row of last bitplane.
+		// TODO: fix duplicating bitmapGetByteWidth() check in interleaved branch
+		ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight) - bitmapGetByteWidth(pSrc) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight) - bitmapGetByteWidth(pDst) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
 	}
 	else {
 		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
