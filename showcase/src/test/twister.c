@@ -87,37 +87,24 @@ void gsTestTwisterLoop(void) {
 		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
-
-	if(keyCheck(KEY_UP)) {
-		cameraMoveBy(s_pBfr->pCamera, 0, -1);
-	}
-	if(keyCheck(KEY_DOWN)) {
-		cameraMoveBy(s_pBfr->pCamera, 0, 1);
-	}
-	if(keyCheck(KEY_LEFT)) {
-		cameraMoveBy(s_pBfr->pCamera, -1, 0);
-	}
-	if(keyCheck(KEY_RIGHT)) {
-		cameraMoveBy(s_pBfr->pCamera, 1, 0);
-	}
-	if(keyUse(KEY_R)) {
+	else if(keyUse(KEY_R)) {
 		cameraSetCoord(s_pBfr->pCamera, 0, 0);
 	}
-	if(keyUse(KEY_B)) {
+	else if(keyUse(KEY_B)) {
 		bitmapSaveBmp(s_pBfr->pFront, s_pVPort->pPalette, "twister.bmp");
 	}
-	if(keyUse(KEY_I)) {
+	else if(keyUse(KEY_I)) {
 		s_isAdvancePs = !s_isAdvancePs;
 	}
-	if(keyUse(KEY_O)) {
+	else if(keyUse(KEY_O)) {
 		--s_ps;
 		s_isAdvancePs = 0;
 	}
-	if(keyUse(KEY_P)) {
+	else if(keyUse(KEY_P)) {
 		++s_ps;
 		s_isAdvancePs = 0;
 	}
-	if(keyUse(KEY_V)) {
+	else if(keyUse(KEY_V)) {
 		s_isVectors = !s_isVectors;
 	}
 
@@ -212,10 +199,10 @@ void gsTestTwisterLoop(void) {
 	if(keyUse(KEY_G)) {
 		testGrid(16);
 	}
-	if(keyUse(KEY_H)) {
+	else if(keyUse(KEY_H)) {
 		testGrid(8);
 	}
-	if(keyUse(KEY_J)) {
+	else if(keyUse(KEY_J)) {
 		testGrid(4);
 	}
 
