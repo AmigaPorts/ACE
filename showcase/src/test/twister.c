@@ -14,10 +14,16 @@
 
 #define CLIP_MARGIN_X 32
 #define CLIP_MARGIN_Y 16
-#define TWISTER_CENTER_X 138
-#define TWISTER_CENTER_Y 122
+#define TWISTER_CENTER_X (86+32)
+#define TWISTER_CENTER_Y (128)
 #define TWISTER_CENTER_RADIUS 2
 #define TWISTER_BLOCK_SIZE 32
+#define TWISTER_MIN_BLOCK_X (-(((TWISTER_CENTER_X + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 2))
+#define TWISTER_MAX_BLOCK_X (+((((320 - TWISTER_CENTER_X) + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 0))
+#define TWISTER_MIN_BLOCK_Y (-(((TWISTER_CENTER_Y + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 2))
+#define TWISTER_MAX_BLOCK_Y (+((((256 - TWISTER_CENTER_Y) + TWISTER_BLOCK_SIZE - 1) / TWISTER_BLOCK_SIZE) + 0))
+#define TWISTER_BLOCKS_X (TWISTER_MAX_BLOCK_X - TWISTER_MIN_BLOCK_X)
+#define TWISTER_BLOCKS_Y (TWISTER_MAX_BLOCK_Y - TWISTER_MIN_BLOCK_Y)
 
 static tView *s_pView;
 static tVPort *s_pVPort;
@@ -25,6 +31,20 @@ static tSimpleBufferManager *s_pBfr;
 static tRandManager s_sRand;
 
 static ULONG s_ps;
+static UBYTE s_isVectors;
+static UBYTE s_isAdvancePs;
+
+static void testGrid(UBYTE ubSize) {
+	UBYTE ubColor = 0;
+	for(UWORD uwX = ubSize; uwX < 320; uwX += ubSize) {
+		blitRect(s_pBfr->pBack, uwX, 0, 1, 256, 1 + (ubColor & 1));
+		++ubColor;
+	}
+	for(UWORD uwY = ubSize; uwY < 256; uwY += ubSize) {
+		blitRect(s_pBfr->pBack, 0, uwY, 320, 1, 1 + (ubColor & 1));
+		++ubColor;
+	}
+}
 
 void gsTestTwisterCreate(void) {
 	// Prepare view & viewport
@@ -39,7 +59,7 @@ void gsTestTwisterCreate(void) {
 	);
 	s_pBfr = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
-		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
 		TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
 		TAG_SIMPLEBUFFER_BOUND_WIDTH, SCREEN_PAL_WIDTH + CLIP_MARGIN_X,
 		TAG_SIMPLEBUFFER_BOUND_HEIGHT, SCREEN_PAL_HEIGHT + CLIP_MARGIN_Y,
@@ -48,13 +68,13 @@ void gsTestTwisterCreate(void) {
 
 	// Init stuff
 	s_ps = 0;
+	s_isVectors = 0;
+	s_isAdvancePs = 1;
 	s_pVPort->pPalette[0] = 0x000;
 	s_pVPort->pPalette[1] = 0x057;
 	s_pVPort->pPalette[2] = 0x49b;
 	s_pVPort->pPalette[3] = 0x8df;
 
-	// testGrid()
-	// cameraSetCoord(s_pBfr->pCamera, 150, 180);
 	randInit(&s_sRand, 1911, 2184);
 
 	// Display view with its viewports
@@ -67,27 +87,31 @@ void gsTestTwisterLoop(void) {
 		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
-
-	if(keyCheck(KEY_UP)) {
-		cameraMoveBy(s_pBfr->pCamera, 0, -1);
-	}
-	if(keyCheck(KEY_DOWN)) {
-		cameraMoveBy(s_pBfr->pCamera, 0, 1);
-	}
-	if(keyCheck(KEY_LEFT)) {
-		cameraMoveBy(s_pBfr->pCamera, -1, 0);
-	}
-	if(keyCheck(KEY_RIGHT)) {
-		cameraMoveBy(s_pBfr->pCamera, 1, 0);
-	}
-	if(keyUse(KEY_R)) {
+	else if(keyUse(KEY_R)) {
 		cameraSetCoord(s_pBfr->pCamera, 0, 0);
 	}
-	if(keyUse(KEY_B)) {
+	else if(keyUse(KEY_B)) {
 		bitmapSaveBmp(s_pBfr->pFront, s_pVPort->pPalette, "twister.bmp");
 	}
+	else if(keyUse(KEY_I)) {
+		s_isAdvancePs = !s_isAdvancePs;
+	}
+	else if(keyUse(KEY_O)) {
+		--s_ps;
+		s_isAdvancePs = 0;
+	}
+	else if(keyUse(KEY_P)) {
+		++s_ps;
+		s_isAdvancePs = 0;
+	}
+	else if(keyUse(KEY_V)) {
+		s_isVectors = !s_isVectors;
+	}
 
-	s_ps += 1;
+	if(s_isAdvancePs) {
+		++s_ps;
+	}
+
 	UWORD uwShift = 0;
 	// for(UBYTE i = 0; i <= 4; ++i) {
 		uwShift = (uwShift << 1) | ((s_ps >> 0) & 1);
@@ -97,17 +121,15 @@ void gsTestTwisterLoop(void) {
 		uwShift = (uwShift << 1) | ((s_ps >> 4) & 1);
 	// }
 
-	// Original code was using 150,180 as camera coord on 800x600 bitmap.
-	// Following uses same math, but compensates for 0,0 on smaller buffer.
-	for(UBYTE y = 4; y <= 13; ++y) {
-		WORD yy = y * TWISTER_BLOCK_SIZE + uwShift - 180;
-		for(UBYTE x = 3; x <= 14; ++x) {
-			WORD xx = x * TWISTER_BLOCK_SIZE + uwShift - 150;
+	for(BYTE y = TWISTER_MIN_BLOCK_Y; y < TWISTER_MAX_BLOCK_Y; ++y) {
+		WORD yy = TWISTER_CENTER_Y + y * TWISTER_BLOCK_SIZE + uwShift;
+		for(BYTE x = TWISTER_MIN_BLOCK_X; x < TWISTER_MAX_BLOCK_X; ++x) {
+			WORD xx = TWISTER_CENTER_X + x * TWISTER_BLOCK_SIZE + uwShift;
 
-			WORD wSrcX = xx + (16 - y) - x;
-			WORD wSrcY = yy + (16 - y) + x;
+			WORD wSrcX = xx - (y + 1) - (x + 1);
+			WORD wSrcY = yy - (y + 1) + (x + 1);
 			WORD wDstX = xx;
-			WORD wDstY = yy + 16;
+			WORD wDstY = yy;
 			WORD wWidth = TWISTER_BLOCK_SIZE;
 			WORD wHeight = TWISTER_BLOCK_SIZE;
 
@@ -153,10 +175,17 @@ void gsTestTwisterLoop(void) {
 				continue;
 			}
 
-			blitCopy(
-				s_pBfr->pFront, wSrcX, wSrcY,
-				s_pBfr->pBack, wDstX, wDstY, wWidth, wHeight, MINTERM_COOKIE
-			);
+			if(s_isVectors) {
+				blitLine(s_pBfr->pBack, wSrcX, wSrcY, wDstX, wDstY, 2, 0xFFFF, 0);
+				chunkyToPlanar(1, wSrcX, wSrcY, s_pBfr->pBack);
+				chunkyToPlanar(3, wDstX, wDstY, s_pBfr->pBack);
+			}
+			else {
+				blitCopy(
+					s_pBfr->pFront, wSrcX, wSrcY,
+					s_pBfr->pBack, wDstX, wDstY, wWidth, wHeight, MINTERM_COOKIE
+				);
+			}
 		}
 	}
 
@@ -167,9 +196,21 @@ void gsTestTwisterLoop(void) {
 		}
 	}
 
+	if(keyUse(KEY_G)) {
+		testGrid(16);
+	}
+	else if(keyUse(KEY_H)) {
+		testGrid(8);
+	}
+	else if(keyUse(KEY_J)) {
+		testGrid(4);
+	}
+
 	viewProcessManagers(s_pView);
 	copProcessBlocks();
+	systemIdleBegin();
 	vPortWaitForEnd(s_pVPort);
+	systemIdleEnd();
 }
 
 void gsTestTwisterDestroy(void) {
