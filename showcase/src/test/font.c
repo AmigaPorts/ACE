@@ -62,7 +62,7 @@ void gsTestFontCreate(void) {
 
 void gsTestFontTableLoop(void) {
 	if (keyUse(KEY_ESCAPE)) {
-		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
+		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
 
@@ -100,7 +100,7 @@ void gsTestFontSentenceLoop(void) {
 	UBYTE ubAllowedCharsCount = strlen(szAllowedChars);
 
 	if (keyUse(KEY_ESCAPE)) {
-		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
+		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
 

@@ -210,7 +210,7 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
 	s_pMenuList->sCoord.uwY = 100;
-	menuListResetCount(s_pMenuList, 8);
+	menuListResetCount(s_pMenuList, 9);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
@@ -219,6 +219,7 @@ void menuShowTests(void) {
 	menuListSetEntry(s_pMenuList, 5, MENULIST_ENABLED, "Blits with small dst");
 	menuListSetEntry(s_pMenuList, 6, MENULIST_ENABLED, "Interleaved bitmaps");
 	menuListSetEntry(s_pMenuList, 7, MENULIST_ENABLED, "Scroll buffer wrap");
+	menuListSetEntry(s_pMenuList, 8, MENULIST_ENABLED, "Twister");
 	s_ubMenuType = MENU_TESTS;
 
 	// Redraw list
@@ -228,7 +229,7 @@ void menuShowTests(void) {
 
 void menuSelectTests(void) {
 	if (s_pMenuList->ubSelected) {
-		stateChange(g_pGameStateManager, g_pGameStates[s_pMenuList->ubSelected]);
+		stateChange(g_pGameStateManager, &g_pTestStates[s_pMenuList->ubSelected]);
 	}
 	else {
 		menuShowMain();

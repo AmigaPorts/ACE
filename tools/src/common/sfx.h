@@ -10,7 +10,7 @@
 
 class tSfx {
 public:
-	constexpr tSfx(void);
+	tSfx(void);
 
 	tSfx(const tWav &Wav, bool isStrict);
 
@@ -38,12 +38,5 @@ private:
 	uint32_t m_ulFreq;
 	std::vector<int8_t> m_vData;
 };
-
-//------------------------------------------------------------------------- IMPL
-
-constexpr tSfx::tSfx(void):
-	m_ulFreq(0)
-{
-}
 
 #endif // _ACE_TOOLS_COMMON_SFX_H_

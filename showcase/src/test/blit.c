@@ -57,7 +57,7 @@ void gsTestBlitLoop(void) {
 	static BYTE bSpeedX = 0, bSpeedY = 0;
 
 	if (keyUse(KEY_ESCAPE)) {
-		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
+		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
 
