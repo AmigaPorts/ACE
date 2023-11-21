@@ -52,14 +52,14 @@ UBYTE blitUnsafeCopy(
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulSrcOffs, ulDstOffs;
-	UBYTE ubShift, ubSrcDelta, ubDstDelta, ubWidthDelta, ubMaskFShift, ubMaskLShift, ubPlane;
+	UBYTE ubShift, ubMaskFShift, ubMaskLShift, ubPlane;
 	// Blitter register values
 	UWORD uwBltCon0, uwBltCon1, uwFirstMask, uwLastMask;
 	WORD wSrcModulo, wDstModulo;
 
-	ubSrcDelta = wSrcX & 0xF;
-	ubDstDelta = wDstX & 0xF;
-	ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
+	UBYTE ubSrcDelta = wSrcX & 0xF;
+	UBYTE ubDstDelta = wDstX & 0xF;
+	UBYTE ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
 
 	if(ubSrcDelta > ubDstDelta || ((wWidth+ubDstDelta+15) & 0xFFF0)-(wWidth+ubSrcDelta) > 16) {
 		uwBlitWidth = (wWidth+(ubSrcDelta>ubDstDelta?ubSrcDelta:ubDstDelta)+15) & 0xFFF0;
@@ -75,8 +75,9 @@ UBYTE blitUnsafeCopy(
 		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
 		uwBltCon1 = ubShift << BSHIFTSHIFT | BLITREVERSE;
 
-		ulSrcOffs = pSrc->BytesPerRow * (wSrcY+wHeight-1) + ((wSrcX+wWidth+ubMaskFShift-1)>>3);
-		ulDstOffs = pDst->BytesPerRow * (wDstY+wHeight-1) + ((wDstX+wWidth+ubMaskFShift-1) >> 3);
+		// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+		ulSrcOffs = pSrc->BytesPerRow * (wSrcY+wHeight-1) + ((wSrcX+wWidth+ubMaskFShift-1) / 8);
+		ulDstOffs = pDst->BytesPerRow * (wDstY+wHeight-1) + ((wDstX+wWidth+ubMaskFShift-1) / 8);
 	}
 	else {
 		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
@@ -91,8 +92,9 @@ UBYTE blitUnsafeCopy(
 		ubShift = ubDstDelta-ubSrcDelta;
 		uwBltCon1 = ubShift << BSHIFTSHIFT;
 
-		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+		// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
+		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 	}
 
 	uwBltCon0 = (ubShift << ASHIFTSHIFT) | USEB|USEC|USED | ubMinterm;
@@ -142,8 +144,9 @@ UBYTE blitUnsafeCopyAligned(
 
 	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
-	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
+	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		wHeight *= pSrc->Depth;
@@ -214,8 +217,9 @@ UBYTE blitUnsafeCopyMask(
 	UWORD uwBltCon1 = (ubDstOffs-ubSrcOffs) << BSHIFTSHIFT;
 	UWORD uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
 
-	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
+	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 		wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
@@ -292,7 +296,8 @@ UBYTE blitUnsafeRect(
 	uwFirstMask = 0xFFFF >> ubDstDelta;
 	uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ubDstDelta));
 	uwBltCon1 = 0;
-	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 	uwBltCon0 = USEC|USED;
 
@@ -372,7 +377,8 @@ void blitLine(
 
 	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
 	UWORD uwBltCon0 = ror16(x1&15, 4);
-	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
+	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	ULONG ulDataOffs = pDst->BytesPerRow * y1 + (x1 / 8);
 	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltafwm = -1;
 	g_pCustom->bltalwm = -1;

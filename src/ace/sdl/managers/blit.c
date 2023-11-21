@@ -25,101 +25,44 @@ UBYTE blitUnsafeCopy(
 	UBYTE ubMinterm
 ) {
 	// blitRect(pDst, wDstX, wDstY, wWidth, wHeight, 3);
-
-	UBYTE ubSrcShift = ((UWORD)wSrcX) % 16;
-	UBYTE ubDstShift = ((UWORD)wDstX) % 16;
+	UBYTE ubSrcDelta = wSrcX & 0xF;
+	UBYTE ubDstDelta = wDstX & 0xF;
+	UBYTE ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
 
 	UBYTE ubBpp = MIN(pSrc->Depth, pDst->Depth);
-	if(ubSrcShift <= ubDstShift) {
-		// Shifting right
-		UWORD uwFirstWordMask = 0xFFFF >> ubSrcShift;
-		UWORD uwLastWordMask = 0xFFFF << (16 - (((ubSrcShift + wWidth - 1) % 16) + 1));
-		UBYTE ubShift = ubDstShift - ubSrcShift;
-		UWORD uwFirstWordCd = wDstX / 16;
-		UWORD uwLastWordCd = ((wDstX + wWidth - 1) / 16);
-		UWORD uwFirstWordB = wSrcX / 16;
-		UWORD uwLastWordB = ((wSrcX + wWidth - 1) / 16);
-		UWORD uwColLast = uwLastWordB - uwFirstWordB;
-		if(uwLastWordCd - uwFirstWordCd > uwColLast) {
-			// e.g. srcx=0, dstx=12, width=5
-			++uwColLast;
-			uwFirstWordMask &= uwLastWordMask;
-			uwLastWordMask = 0;
-		}
-		for(UBYTE ubPlane = 0; ubPlane < ubBpp; ++ubPlane) {
-			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][0]) + uwFirstWordB + (pSrc->BytesPerRow / 2) * wSrcY;
-			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][0]) + uwFirstWordCd + (pDst->BytesPerRow / 2) * wDstY;
-			for(UWORD uwRow = 0; uwRow < wHeight; ++uwRow) {
-				// *pPosCd = 0xFFFF; // debug row start
-				UWORD uwBarrelA = 0;
-				UWORD uwBarrelB = 0;
-				for(UWORD uwCol = 0; uwCol <= uwColLast; ++uwCol) {
-					UWORD uwDataA = 0xFFFF;
-					if(uwCol == 0) {
-						uwDataA &= uwFirstWordMask;
-					}
-					if(uwCol == uwColLast) {
-						uwDataA &= uwLastWordMask;
-					}
-					UWORD uwNewBarrel = uwDataA << (16 - ubShift);
-					uwDataA = (uwDataA >> ubShift) | uwBarrelA;
-					uwBarrelA = uwNewBarrel;
-
-					UWORD uwDataB = endianBigToNative16(*pPosB);
-					uwNewBarrel = uwDataB << (16 - ubShift);
-					uwDataB = (uwDataB >> ubShift) | uwBarrelB;
-					uwBarrelB = uwNewBarrel;
-
-					UWORD uwDataC = endianBigToNative16(*pPosCd);
-
-					switch(ubMinterm) {
-						case MINTERM_COOKIE:
-							*pPosCd = endianNativeToBig16((uwDataA & uwDataB) | (~uwDataA & uwDataC));
-							break;
-						case MINTERM_COPY:
-							*pPosCd = endianNativeToBig16(uwDataB);
-						default:
-							break;
-					}
-					++pPosB;
-					++pPosCd;
-				}
-				// *pPosCd = 0b1010101010101010; // debug row end
-				pPosB += (pSrc->BytesPerRow / 2) - (uwColLast + 1);
-				pPosCd += (pDst->BytesPerRow / 2) - (uwColLast + 1);
-			}
-		}
-	}
-	else {
+	if(ubSrcDelta > ubDstDelta || ((wWidth + ubDstDelta + 15) & 0xFFF0) - (wWidth + ubSrcDelta) > 16) {
 		// Shifting left - first processed word in row is rightmost
-		UBYTE ubShift = ubSrcShift - ubDstShift;
-		UWORD uwFirstWordCd = ((wDstX + wWidth - 1) / 16);
-		UWORD uwLastWordCd = wDstX / 16;
-		UWORD uwFirstWordB = ((wSrcX + wWidth - 1) / 16);
-		UWORD uwLastWordB = wSrcX / 16;
-		UWORD uwColLast = uwFirstWordCd - uwLastWordCd;
-		if(uwFirstWordB - uwLastWordB > uwColLast) {
-			// e.g. srcx=12, dstx=0, width=6
-			uwFirstWordCd += (uwFirstWordB - uwLastWordB) - uwColLast;
-			uwColLast = uwFirstWordB - uwLastWordB;
+		UWORD uwBlitWidth = (wWidth + (ubSrcDelta > ubDstDelta ? ubSrcDelta : ubDstDelta) + 15) & 0xFFF0;
+		UWORD uwBlitWords = uwBlitWidth >> 4;
+
+		UBYTE ubMaskFShift = ((ubWidthDelta + 15) & 0xF0) - ubWidthDelta;
+		UBYTE ubMaskLShift = uwBlitWidth - (wWidth + ubMaskFShift);
+		UWORD uwFirstMask = 0xFFFF << ubMaskFShift;
+		UWORD uwLastMask = 0xFFFF >> ubMaskLShift;
+		if(ubMaskLShift > 16) { // Fix for 2-word blits
+			uwFirstMask &= 0xFFFF >> (ubMaskLShift - 16);
 		}
 
-		UWORD uwFirstWordMask = 0xFFFF << (16 - (((ubSrcShift + wWidth - 1) % 16) + 1));
-		UWORD uwLastWordMask = 0xFFFF >> ubSrcShift;
+		UBYTE ubShift = uwBlitWidth - (ubDstDelta + wWidth + ubMaskFShift);
+
+		ULONG ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight - 1) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		ULONG ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		WORD wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
+		WORD wDstModulo = pDst->BytesPerRow - uwBlitWords * 2;
 		for(UBYTE ubPlane = 0; ubPlane < ubBpp; ++ubPlane) {
-			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][0]) + uwFirstWordB + (pSrc->BytesPerRow / 2) * (wSrcY + wHeight - 1);
-			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][0]) + uwFirstWordCd + (pDst->BytesPerRow / 2) * (wDstY + wHeight - 1);
+			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][ulSrcOffs]);
+			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][ulDstOffs]);
 			for(UWORD uwRow = 0; uwRow < wHeight; ++uwRow) {
 				// *pPosCd |= 0b0101010101010101; // debug row start
 				UWORD uwBarrelB = 0;
 				UWORD uwBarrelA = 0;
-				for(UWORD uwCol = 0; uwCol <= uwColLast; ++uwCol) {
+				for(UWORD uwCol = 0; uwCol < uwBlitWords; ++uwCol) {
 					UWORD uwDataA = 0xFFFF;
 					if(uwCol == 0) {
-						uwDataA &= uwFirstWordMask;
+						uwDataA &= uwFirstMask;
 					}
-					if(uwCol == uwColLast) {
-						uwDataA &= uwLastWordMask;
+					if(uwCol == uwBlitWords - 1) {
+						uwDataA &= uwLastMask;
 					}
 					UWORD uwNewBarrel = uwDataA >> (16 - ubShift);
 					uwDataA = (uwDataA << ubShift) | uwBarrelA;
@@ -146,14 +89,83 @@ UBYTE blitUnsafeCopy(
 							*pPosCd = endianNativeToBig16(~(uwDataA & uwDataB) & uwDataC);
 							break;
 						default:
+							logWrite("ERR: Unhandled minterm: %hhu\n", ubMinterm);
 							break;
 					}
 					--pPosB;
 					--pPosCd;
 				}
 				// *pPosCd |= 0b0000111100001111; // debug row end
-				pPosB -= (pSrc->BytesPerRow / 2) - (uwColLast + 1);
-				pPosCd -= (pDst->BytesPerRow / 2) - (uwColLast + 1);
+				pPosB -= wSrcModulo / 2;
+				pPosCd -= wDstModulo / 2;
+			}
+		}
+	}
+	else {
+		// Shifting right - first processed word in row is leftmost
+		UWORD uwBlitWidth = (wWidth + ubDstDelta + 15) & 0xFFF0;
+		UWORD uwBlitWords = uwBlitWidth / 16;
+
+		UBYTE ubMaskFShift = ubSrcDelta;
+		UBYTE ubMaskLShift = uwBlitWidth - (wWidth + ubSrcDelta);
+
+		UWORD uwFirstMask = 0xFFFF >> ubMaskFShift;
+		UWORD uwLastMask = 0xFFFF << ubMaskLShift;
+
+		UBYTE ubShift = ubDstDelta - ubSrcDelta;
+
+		ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 16) * 2;
+		ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 16) * 2;
+		WORD wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
+		WORD wDstModulo = pDst->BytesPerRow - uwBlitWords * 2;
+		for(UBYTE ubPlane = 0; ubPlane < ubBpp; ++ubPlane) {
+			UWORD *pPosB = ((UWORD*)&pSrc->Planes[ubPlane][ulSrcOffs]);
+			UWORD *pPosCd = ((UWORD*)&pDst->Planes[ubPlane][ulDstOffs]);
+			for(UWORD uwRow = 0; uwRow < wHeight; ++uwRow) {
+				// *pPosCd = 0xFFFF; // debug row start
+				UWORD uwBarrelA = 0;
+				UWORD uwBarrelB = 0;
+				for(UWORD uwCol = 0; uwCol < uwBlitWords; ++uwCol) {
+					UWORD uwDataA = 0xFFFF;
+					if(uwCol == 0) {
+						uwDataA &= uwFirstMask;
+					}
+					if(uwCol == uwBlitWords - 1) {
+						uwDataA &= uwLastMask;
+					}
+					UWORD uwNewBarrel = uwDataA << (16 - ubShift);
+					uwDataA = (uwDataA >> ubShift) | uwBarrelA;
+					uwBarrelA = uwNewBarrel;
+
+					UWORD uwDataB = endianBigToNative16(*pPosB);
+					uwNewBarrel = uwDataB << (16 - ubShift);
+					uwDataB = (uwDataB >> ubShift) | uwBarrelB;
+					uwBarrelB = uwNewBarrel;
+
+					UWORD uwDataC = endianBigToNative16(*pPosCd);
+
+					switch(ubMinterm) {
+						case MINTERM_COOKIE:
+							*pPosCd = endianNativeToBig16((uwDataA & uwDataB) | (~uwDataA & uwDataC));
+							break;
+						case MINTERM_COPY:
+							*pPosCd = endianNativeToBig16(uwDataB);
+						case MINTERM_AB_OR_C:
+							*pPosCd = endianNativeToBig16((uwDataA & uwDataB) | uwDataC);
+							break;
+						case MINTERM_CLEAR_C_ON_AB:
+							*pPosCd = endianNativeToBig16(~(uwDataA & uwDataB) & uwDataC);
+							break;
+						default:
+							logWrite("ERR: Unhandled minterm: %hhu\n", ubMinterm);
+							break;
+					}
+					++pPosB;
+					++pPosCd;
+				}
+				// *pPosCd = 0b1010101010101010; // debug row end
+				pPosB += wSrcModulo / 2;
+				pPosCd += wDstModulo / 2;
 			}
 		}
 	}
