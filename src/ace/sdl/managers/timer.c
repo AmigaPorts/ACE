@@ -4,14 +4,30 @@
 
 #include <ace/managers/timer.h>
 
-void timerCreate(void) {
+/* Globals */
+tTimerManager g_sTimerManager = {0};
 
+/* Functions */
+
+void timerCreate(void) {
+	g_sTimerManager.uwFrameCounter = 0;
+	// TODO: implement
 }
 
 void timerDestroy(void) {
+	// TODO: implement
+}
 
+ULONG timerGet(void) {
+	// TODO: implement
+	return g_sTimerManager.uwFrameCounter;
+}
+
+ULONG timerGetPrec(void) {
+	// TODO: implement
+	return 0;
 }
 
 void timerProcess(void) {
-
+	// TODO: implement
 }
