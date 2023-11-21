@@ -75,10 +75,12 @@ UBYTE _blitCheck(
 
 	UBYTE isErr = 0;
 	if(pSrc) {
+#if defined(AMIGA)
 		if(!bitmapIsChip(pSrc)) {
 			isErr = 1;
 			logWrite("ERR: Source is in FAST mem: %p (%p)\n", pSrc, pSrc->Planes[0]);
 		}
+#endif
 		wSrcWidth = pSrc->BytesPerRow << 3;
 		if(bitmapIsInterleaved(pSrc)) {
 			wSrcWidth /= pSrc->Depth;
@@ -91,10 +93,12 @@ UBYTE _blitCheck(
 	}
 
 	if(pDst) {
+#if defined(AMIGA)
 		if(!bitmapIsChip(pDst)) {
 			isErr = 1;
 			logWrite("ERR: Dest is in FAST mem: %p (%p)\n", pDst, pDst->Planes[0]);
 		}
+#endif
 		wDstWidth = pDst->BytesPerRow << 3;
 		if(bitmapIsInterleaved(pDst)) {
 			wDstWidth /= pDst->Depth;

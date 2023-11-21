@@ -12,7 +12,7 @@
 
 static ULONG fileReadData(tFile *pFile, void *pDest, UBYTE ubDataSize, ULONG ulCount) {
 #ifdef ACE_DEBUG
-	if(!ulSize) {
+	if(!ubDataSize || !ulCount) {
 		logWrite("ERR: File read size = 0!\n");
 	}
 #endif
@@ -23,7 +23,7 @@ static ULONG fileReadData(tFile *pFile, void *pDest, UBYTE ubDataSize, ULONG ulC
 	if(ubDataSize == sizeof(UBYTE)) {
 		// no endian swap for bytes
 	}
-	if(ubDataSize == sizeof(UWORD)) {
+	else if(ubDataSize == sizeof(UWORD)) {
 		UWORD *pWords = pDest;
 		for(ULONG i = 0; i < ulCount; ++i) {
 			pWords[i] = endianBigToNative16(pWords[i]);
@@ -47,7 +47,7 @@ static ULONG fileReadData(tFile *pFile, void *pDest, UBYTE ubDataSize, ULONG ulC
 
 static ULONG fileWriteData(tFile *pFile, const void *pSource, UBYTE ubDataSize, ULONG ulCount) {
 #ifdef ACE_DEBUG
-	if(!ulSize) {
+	if(!ubDataSize || !ulCount) {
 		logWrite("ERR: File read size = 0!\n");
 	}
 #endif
