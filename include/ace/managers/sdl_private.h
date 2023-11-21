@@ -7,6 +7,9 @@
 
 #include <ace/utils/extview.h>
 #include <ace/utils/bitmap.h>
+#include <SDL_keycode.h>
+
+typedef void (*tSdlKeyHandler)(UBYTE isPressed, SDL_KeyCode eKeyCode);
 
 void sdlManagerCreate(void);
 
@@ -21,5 +24,7 @@ void sdlSetCurrentView(tView *pView);
 tView *sdlGetCurrentView();
 
 tBitMap *sdlGetSurfaceBitmap(void);
+
+void sdlRegisterKeyHandler(tSdlKeyHandler cbKeyHandler);
 
 #endif // _ACE_MANAGERS_SDL_PRIVATE_H_

@@ -23,12 +23,8 @@ static inline void keyIntSetState(
 	}
 }
 
-static inline UBYTE keyIntCheck(const tKeyManager *pManager, UBYTE ubKeyCode) {
-	return pManager->pStates[ubKeyCode] != KEY_NACTIVE;
-}
-
 UBYTE keyCheck(UBYTE ubKeyCode) {
-	return keyIntCheck(&g_sKeyManager, ubKeyCode);
+	return g_sKeyManager.pStates[ubKeyCode] != KEY_NACTIVE;
 }
 
 void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState) {

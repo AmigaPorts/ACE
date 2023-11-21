@@ -14,6 +14,7 @@ static SDL_Renderer *s_pWindowRenderer;
 static SDL_Surface *s_pOffscreenSurface = 0;
 static tView *s_pCurrentView;
 static tBitMap *s_pRenderBitmap;
+static tSdlKeyHandler s_cbKeyHandler;
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -63,6 +64,10 @@ static void sdlUpdateSurfaceContents(void) {
 
 //------------------------------------------------------------------- PUBLIC FNS
 
+void sdlRegisterKeyHandler(tSdlKeyHandler cbKeyHandler) {
+	s_cbKeyHandler = cbKeyHandler;
+}
+
 void sdlManagerCreate(void) {
 	s_pCurrentView = 0;
 	s_pRenderBitmap = 0;
@@ -93,13 +98,18 @@ void sdlManagerProcess(void) {
 	sdlUpdateSurfaceContents();
 
 	// Hack to get window to stay up
-	SDL_Event e;
-
-	while(SDL_PollEvent(&e)) {
-		if(e.type == SDL_QUIT) {
-			// UWORD pPalette[32] = {0x000, 0x111, 0x110, 0x222, 0x220, 0x333, 0x330, 0x444, 0x440, 0x555, 0x550, 0x666, 0x660, 0x777, 0x770, 0x888, 0x880, 0x999, 0x990, 0xaaa, 0xaa0, 0xbbb, 0xbb0, 0xccc, 0xcc0, 0xddd, 0xdd0, 0xeee, 0xee0, 0xfff};
-			// bitmapSaveBmp(s_pRenderBitmap, pPalette, "render.bmp");
-			systemKill("SDL_QUIT");
+	SDL_Event sEvt;
+	while(SDL_PollEvent(&sEvt)) {
+		switch(sEvt.type) {
+			case SDL_QUIT:
+				systemKill("SDL_QUIT");
+				break;
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				if(s_cbKeyHandler) {
+					s_cbKeyHandler(sEvt.key.state == SDL_PRESSED, sEvt.key.keysym.sym);
+				}
+				break;
 		}
 	}
 
