@@ -9,11 +9,11 @@
 #include <ace/managers/blit.h>
 #include <ace/utils/chunky.h>
 
-SDL_Window *s_pWindow = 0;
-SDL_Surface *s_pScreenSurface = 0;
-SDL_Surface *s_pOffscreenSurface = 0;
-tView *s_pCurrentView;
-tBitMap *s_pRenderBitmap;
+static SDL_Window *s_pWindow = 0;
+static SDL_Renderer *s_pWindowRenderer;
+static SDL_Surface *s_pOffscreenSurface = 0;
+static tView *s_pCurrentView;
+static tBitMap *s_pRenderBitmap;
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -37,7 +37,9 @@ static void sdlUpdateSurfaceContents(void) {
 		while(pVp) {
 			// Copy contents of each vport to SDL surface
 			tVpManager *pVpManager = vPortGetManager(pVp, VPM_SCROLL);
-			pVpManager->cbDrawToSurface(pVpManager);
+			if(pVpManager) {
+				pVpManager->cbDrawToSurface(pVpManager);
+			}
 			pVp = pVp->pNext;
 		}
 	}
@@ -52,10 +54,11 @@ static void sdlUpdateSurfaceContents(void) {
 		}
 	}
 
-	SDL_Rect sRectSrc = {.x = 0, .y = 0, .w = 320, .h = 256};
-	SDL_Rect sRectDst = {.x = 0, .y = 0, .w = 320, .h = 256};
-	SDL_BlitSurface(s_pOffscreenSurface, &sRectSrc, s_pScreenSurface, &sRectDst);
-	SDL_UpdateWindowSurface(s_pWindow);
+	// TODO: update pTexture instead
+	SDL_Texture* pTexture = SDL_CreateTextureFromSurface(s_pWindowRenderer, s_pOffscreenSurface);
+	SDL_RenderCopy(s_pWindowRenderer, pTexture, NULL, NULL);
+	SDL_RenderPresent(s_pWindowRenderer);
+	SDL_DestroyTexture(pTexture);
 }
 
 //------------------------------------------------------------------- PUBLIC FNS
@@ -73,7 +76,7 @@ void sdlManagerCreate(void) {
 
 	//Create window
 	s_pWindow = SDL_CreateWindow(
-		"ACE", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		"ACE", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		640, 512, SDL_WINDOW_SHOWN
 	);
 	if(!s_pWindow) {
@@ -81,8 +84,7 @@ void sdlManagerCreate(void) {
 		systemKill("SDL_CreateWindow error");
 		return;
 	}
-
-	s_pScreenSurface = SDL_GetWindowSurface(s_pWindow);
+	s_pWindowRenderer = SDL_CreateRenderer(s_pWindow, -1, 0);
 	s_pOffscreenSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 320, 256, 8, 0, 0, 0, 0);
 	s_pRenderBitmap = bitmapCreate(320, 256, 8, BMF_CLEAR);
 }
