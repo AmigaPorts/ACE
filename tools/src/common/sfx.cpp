@@ -8,6 +8,11 @@
 #include "logging.h"
 #include "endian.h"
 
+tSfx::tSfx(void):
+	m_ulFreq(0)
+{
+}
+
 tSfx::tSfx(const tWav &Wav, bool isStrict):
 	tSfx()
 {

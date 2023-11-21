@@ -11,22 +11,25 @@
 
 #define SHOWCASE_BPP 5
 
-#define GAME_STATE_MENU 0
-#define GAME_STATE_BLIT 1
-#define GAME_STATE_FONT 2
-#define GAME_STATE_COPPER 3
-#define GAME_STATE_LINES 4
-#define GAME_STATE_BLIT_SMALL_DEST 5
-#define GAME_STATE_INTERLEAVED 6
-#define GAME_STATE_BUFFER_SCROLL 7
-#define GAME_STATE_COUNT 8
+typedef enum tTestState {
+	TEST_STATE_MENU = 0,
+	TEST_STATE_BLIT = 1,
+	TEST_STATE_FONT = 2,
+	TEST_STATE_COPPER = 3,
+	TEST_STATE_LINES = 4,
+	TEST_STATE_BLIT_SMALL_DEST = 5,
+	TEST_STATE_INTERLEAVED = 6,
+	TEST_STATE_BUFFER_SCROLL = 7,
+	TEST_STATE_TWISTER = 8,
+	TEST_STATE_COUNT
+} tTestState;
 
 //------------------------------------------------------------------------ TYPES
 
 //---------------------------------------------------------------------- GLOBALS
 
 extern tStateManager *g_pGameStateManager;
-extern tState *g_pGameStates[];
+extern tState g_pTestStates[TEST_STATE_COUNT];
 
 //-------------------------------------------------------------------- FUNCTIONS
 

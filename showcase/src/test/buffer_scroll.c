@@ -139,7 +139,7 @@ void gsTestBufferScrollCreate(void) {
 
 void gsTestBufferScrollLoop(void) {
 	if (keyUse(KEY_ESCAPE)) {
-		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
+		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
 
