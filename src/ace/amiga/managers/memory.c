@@ -6,6 +6,10 @@
 #include <proto/dos.h> // Bartman's compiler needs this
 #include <clib/exec_protos.h> // AvailMem, AllocMem, FreeMem, etc.
 
+ULONG memAvail(ULONG ulFlags) {
+	return AvailMem(ulFlags);
+}
+
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	systemUse();
 	void *pResult;

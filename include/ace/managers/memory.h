@@ -44,6 +44,8 @@ UBYTE memIsChip(const void *pMem);
 
 ULONG memGetChipSize(void);
 
+ULONG memAvail(ULONG ulFlags);
+
 void _memCreate(void);
 void _memDestroy(void);
 

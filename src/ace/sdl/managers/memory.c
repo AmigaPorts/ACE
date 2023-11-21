@@ -6,6 +6,10 @@
 #include <string.h>
 #include <ace/managers/memory.h>
 
+ULONG memAvail(ULONG ulFlags) {
+	return 0; // TODO implement
+}
+
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	void *pResult = malloc(ulSize);
 

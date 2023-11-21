@@ -190,7 +190,7 @@ void *_memAllocDbg(
 		);
 		logWrite(
 			"[MEM] Largest available chunk of given type: %lu\n",
-			AvailMem(ulFlags | MEMF_LARGEST)
+			memAvail(ulFlags | MEMF_LARGEST)
 		);
 		return 0;
 	}
