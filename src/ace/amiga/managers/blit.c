@@ -75,7 +75,7 @@ UBYTE blitUnsafeCopy(
 		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
 		uwBltCon1 = ubShift << BSHIFTSHIFT | BLITREVERSE;
 
-		// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+		// Optimized: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
 		ulSrcOffs = pSrc->BytesPerRow * (wSrcY+wHeight-1) + ((wSrcX+wWidth+ubMaskFShift-1) / 8);
 		ulDstOffs = pDst->BytesPerRow * (wDstY+wHeight-1) + ((wDstX+wWidth+ubMaskFShift-1) / 8);
 	}
@@ -92,7 +92,7 @@ UBYTE blitUnsafeCopy(
 		ubShift = ubDstDelta-ubSrcDelta;
 		uwBltCon1 = ubShift << BSHIFTSHIFT;
 
-		// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+		// Optimized: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
 		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
 		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 	}
@@ -144,7 +144,7 @@ UBYTE blitUnsafeCopyAligned(
 
 	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
 	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
-	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	// Optimized: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
 	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
 	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 
@@ -217,7 +217,7 @@ UBYTE blitUnsafeCopyMask(
 	UWORD uwBltCon1 = (ubDstOffs-ubSrcOffs) << BSHIFTSHIFT;
 	UWORD uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
 
-	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	// Optimized: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
 	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
 	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
@@ -296,7 +296,7 @@ UBYTE blitUnsafeRect(
 	uwFirstMask = 0xFFFF >> ubDstDelta;
 	uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ubDstDelta));
 	uwBltCon1 = 0;
-	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	// Optimized: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
 	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 	uwBltCon0 = USEC|USED;
@@ -377,7 +377,7 @@ void blitLine(
 
 	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
 	UWORD uwBltCon0 = ror16(x1&15, 4);
-	// Optimization: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
+	// Optimized: this should be /16 * 2 to be word-aligned but bltpt ignores lsbit
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + (x1 / 8);
 	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltafwm = -1;
