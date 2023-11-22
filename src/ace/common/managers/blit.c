@@ -25,7 +25,15 @@ UBYTE blitSafeCopyAligned(
 	UWORD uwLine, const char *szFile
 ) {
 	if((wSrcX | wDstX | wWidth) & 0x000F) {
-		logWrite("ERR: Dimensions are not divisible by 16\n");
+		WORD wSrcWidth = bitmapGetByteWidth(pSrc) * 8;
+		WORD wSrcHeight = pSrc->Rows;
+		WORD wDstWidth = bitmapGetByteWidth(pDst) * 8;
+		WORD wDstHeight = pDst->Rows;
+		logWrite(
+			"ERR: Dimensions are not divisible by 16, source %p %dx%d, dest: %p %dx%d, blit: %d,%d -> %d,%d %dx%d (%s:%u)\n",
+			pSrc,	wSrcWidth, wSrcHeight, pDst, wDstWidth, wDstHeight,
+			wSrcX, wSrcY, wDstX, wDstY, wWidth, wHeight, szFile, uwLine
+		);
 		return 0;
 	}
 	if(!blitCheck(
