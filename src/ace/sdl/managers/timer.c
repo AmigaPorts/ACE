@@ -3,18 +3,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <ace/managers/timer.h>
+#include <ace/managers/sdl_private.h>
 
-/* Globals */
 tTimerManager g_sTimerManager = {0};
 
-/* Functions */
+//------------------------------------------------------------------ PRIVATE FNS
+
+void onVblank(void) {
+	++g_sTimerManager.uwFrameCounter;
+}
+
+//------------------------------------------------------------------- PUBLIC FNS
 
 void timerCreate(void) {
 	g_sTimerManager.uwFrameCounter = 0;
+	sdlRegisterVblankHandler(onVblank);
 	// TODO: implement
 }
 
 void timerDestroy(void) {
+	sdlRegisterVblankHandler(0);
 	// TODO: implement
 }
 

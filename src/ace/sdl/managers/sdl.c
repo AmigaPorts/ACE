@@ -15,6 +15,9 @@ static SDL_Surface *s_pOffscreenSurface = 0;
 static tView *s_pCurrentView;
 static tBitMap *s_pRenderBitmap;
 static tSdlKeyHandler s_cbKeyHandler;
+static tSdlVblankHandler s_cbVblankHandler;
+static ULONG s_ulMillisOnVblank;
+static SDL_TimerID s_VblankTimerId;
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -62,10 +65,23 @@ static void sdlUpdateSurfaceContents(void) {
 	SDL_DestroyTexture(pTexture);
 }
 
+static ULONG onFauxVblankTimer(ULONG ulInterval, void *pParam) {
+	ULONG ulNewInterval = ulInterval;
+	s_ulMillisOnVblank = SDL_GetTicks();
+	if(s_cbVblankHandler) {
+		s_cbVblankHandler();
+	}
+	return ulNewInterval;
+}
+
 //------------------------------------------------------------------- PUBLIC FNS
 
 void sdlRegisterKeyHandler(tSdlKeyHandler cbKeyHandler) {
 	s_cbKeyHandler = cbKeyHandler;
+}
+
+void sdlRegisterVblankHandler(tSdlVblankHandler cbVblankHandler) {
+	s_cbVblankHandler = cbVblankHandler;
 }
 
 void sdlManagerCreate(void) {
@@ -73,7 +89,7 @@ void sdlManagerCreate(void) {
 	s_pRenderBitmap = 0;
 
 	//Initialize SDL
-	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
 		logWrite("SDL Error: %s\n", SDL_GetError());
 		systemKill("SDL_Init error");
 		return;
@@ -92,6 +108,8 @@ void sdlManagerCreate(void) {
 	s_pWindowRenderer = SDL_CreateRenderer(s_pWindow, -1, 0);
 	s_pOffscreenSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 320, 256, 8, 0, 0, 0, 0);
 	s_pRenderBitmap = bitmapCreate(320, 256, 8, BMF_CLEAR);
+
+	s_VblankTimerId = SDL_AddTimer(20, onFauxVblankTimer, 0);
 }
 
 void sdlManagerProcess(void) {
@@ -117,6 +135,7 @@ void sdlManagerProcess(void) {
 
 void sdlManagerDestroy(void) {
 	// TODO: ensure everything is destroyed
+	SDL_RemoveTimer(s_VblankTimerId);
 	if(s_pRenderBitmap) {
 		// TODO: this should be done before mem manager destroys, which is earlier
 		// than systemDestroy() calling sdlManagerDestroy().
@@ -143,4 +162,9 @@ tView *sdlGetCurrentView(void) {
 
 tBitMap *sdlGetSurfaceBitmap(void) {
 	return s_pRenderBitmap;
+}
+
+ULONG sdlGetMillisSinceVblank(void) {
+	ULONG ulElapsedMillis = SDL_GetTicks() - s_ulMillisOnVblank;
+	return ulElapsedMillis;
 }

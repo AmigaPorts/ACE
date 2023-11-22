@@ -17,7 +17,3 @@ void viewUpdateCLUT(tView *pView) {
 void viewLoad(tView *pView) {
 	sdlSetCurrentView(pView);
 }
-
-void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
-
-}

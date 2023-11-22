@@ -10,6 +10,7 @@
 #include <SDL_keycode.h>
 
 typedef void (*tSdlKeyHandler)(UBYTE isPressed, SDL_KeyCode eKeyCode);
+typedef void (*tSdlVblankHandler)(void);
 
 void sdlManagerCreate(void);
 
@@ -26,5 +27,9 @@ tView *sdlGetCurrentView();
 tBitMap *sdlGetSurfaceBitmap(void);
 
 void sdlRegisterKeyHandler(tSdlKeyHandler cbKeyHandler);
+
+void sdlRegisterVblankHandler(tSdlVblankHandler cbVblankHandler);
+
+ULONG sdlGetMillisSinceVblank(void);
 
 #endif // _ACE_MANAGERS_SDL_PRIVATE_H_

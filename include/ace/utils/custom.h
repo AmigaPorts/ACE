@@ -11,17 +11,6 @@ extern "C" {
 
 #include <ace/macros.h>
 
-#if defined(AMIGA)
-
-#include <hardware/custom.h> // Custom chip register addresses
-#include <hardware/intbits.h> // INTF_*, INTB_* for intena/intreq
-#include <hardware/dmabits.h> // DMAF_*, DMAB_* for dmacon
-
-#define REGPTR volatile * const
-#define HARDWARE_SPRITE_CHANNEL_COUNT 8
-
-typedef struct Custom tCustom;
-
 /**
  * Ray position struct.
  * Merges vposr and vhposr read into one.
@@ -39,6 +28,26 @@ typedef struct _tRayPos {
 		ULONG ulValue;
 	};
 } tRayPos;
+
+/**
+ * @brief Returns the consistence-checked current position of display ray.
+ * This function reads custom.vposr and custom.vhposr registers and combines
+ * their values into a convenient struct.
+ *
+ * @return Current position of display ray.
+ */
+tRayPos getRayPos(void);
+
+#if defined(AMIGA)
+
+#include <hardware/custom.h> // Custom chip register addresses
+#include <hardware/intbits.h> // INTF_*, INTB_* for intena/intreq
+#include <hardware/dmabits.h> // DMAF_*, DMAB_* for dmacon
+
+#define REGPTR volatile * const
+#define HARDWARE_SPRITE_CHANNEL_COUNT 8
+
+typedef struct Custom tCustom;
 
 typedef struct _tCopperUlong {
 	UWORD uwHi; ///< upper WORD
@@ -187,15 +196,6 @@ void ciaSetTimerA(tCia REGPTR pCia, UWORD uwTicks);
 UWORD ciaGetTimerB(tCia REGPTR pCia);
 
 void ciaSetTimerB(tCia REGPTR pCia, UWORD uwTicks);
-
-/**
- * @brief Returns the consistence-checked current position of display ray.
- * This function reads custom.vposr and custom.vhposr registers and combines
- * their values into a convenient struct.
- *
- * @return Current position of display ray.
- */
-tRayPos getRayPos(void);
 
 extern tCustom FAR REGPTR g_pCustom;
 
