@@ -118,6 +118,8 @@ void sdlManagerProcess(void) {
 void sdlManagerDestroy(void) {
 	// TODO: ensure everything is destroyed
 	if(s_pRenderBitmap) {
+		// TODO: this should be done before mem manager destroys, which is earlier
+		// than systemDestroy() calling sdlManagerDestroy().
 		bitmapDestroy(s_pRenderBitmap);
 	}
 	if(s_pWindow) {
