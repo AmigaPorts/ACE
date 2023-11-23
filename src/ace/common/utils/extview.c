@@ -361,23 +361,3 @@ tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {
 	}
 	return 0;
 }
-
-void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
-	// Determine VPort end position
-	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
-	uwEndPos += pVPort->pView->ubPosY; // Addition from DiWStrt
-#if defined(ACE_DEBUG)
-	UWORD yPos = systemIsPal() ? 312 : 272;
-	if(uwEndPos >= yPos) {
-		logWrite("ERR: vPortWaitForPos - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
-		logWrite("\tVPort offs: %hu, pos: %hu\n", pVPort->uwOffsY, uwPosY);
-	}
-#endif
-
-	if(isExact) {
-		// If current beam pos is on or past end pos, wait for start of next frame
-		while (getRayPos().bfPosY >= uwEndPos) continue;
-	}
-	// If current beam pos is before end pos, wait for it
-	while (getRayPos().bfPosY < uwEndPos) continue;
-}
