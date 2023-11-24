@@ -67,7 +67,7 @@ void _putchar(char character);
  * \param format A string that specifies the format of the output
  * \return The number of characters that are written into the array, not counting the terminating null character
  */
-int PRINTF_FN(printf)(const char* format, ...) __attribute__((format(printf, 1, 2)));
+int PRINTF_FN(printf)(const char* format, ...) __attribute__((format(gnu_printf, 1, 2)));
 
 
 /**
@@ -77,7 +77,7 @@ int PRINTF_FN(printf)(const char* format, ...) __attribute__((format(printf, 1, 
  * \param format A string that specifies the format of the output
  * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
  */
-int PRINTF_FN(sprintf)(char* buffer, const char* format, ...) __attribute__ ((format (printf, 2, 3)));
+int PRINTF_FN(sprintf)(char* buffer, const char* format, ...) __attribute__((format(gnu_printf, 2, 3)));
 
 /**
  * Tiny snprintf/vsnprintf implementation
@@ -89,7 +89,7 @@ int PRINTF_FN(sprintf)(char* buffer, const char* format, ...) __attribute__ ((fo
  *         null character. A value equal or larger than count indicates truncation. Only when the returned value
  *         is non-negative and less than count, the string has been completely written.
  */
-int PRINTF_FN( snprintf)(char* buffer, size_t count, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
+int PRINTF_FN( snprintf)(char* buffer, size_t count, const char* format, ...) __attribute__((format(gnu_printf, 3, 4)));
 int PRINTF_FN(vsnprintf)(char* buffer, size_t count, const char* format, va_list va);
 
 
@@ -111,7 +111,7 @@ int PRINTF_FN(vprintf)(const char* format, va_list va);
  */
 int PRINTF_FN(fctprintf)(
 	void (*out)(char character, void* arg), void* arg, const char* format, ...
-) __attribute__ ((format (printf, 3, 4)));
+) __attribute__((format(gnu_printf, 3, 4)));
 
 #ifdef __cplusplus
 }

@@ -55,13 +55,13 @@ void _logPopIndent(void);
 void _logPushInt(void);
 void _logPopInt(void);
 
-void _logWrite(char *szFormat, ...) __attribute__ ((format (printf, 1, 2)));
+void _logWrite(char *szFormat, ...) __attribute__((format(gnu_printf, 1, 2)));
 
 void _logWriteVa(char *szFormat, va_list vaArgs);
 
 // Functions - block logging
 
-void _logBlockBegin(char *szBlockName, ...) __attribute__ ((format (printf, 1, 2)));
+void _logBlockBegin(char *szBlockName, ...) __attribute__((format(gnu_printf, 1, 2)));
 void _logBlockEnd(char *szBlockName);
 
 // Functions - average block time
