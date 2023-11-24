@@ -68,6 +68,8 @@ typedef struct tBob {
 	UWORD _uwBlitSize;
 	WORD _wModuloUndrawSave;
 	UBYTE *_pOldDrawOffs[2];
+	UWORD _pOldBgBlitHeight[2];
+	UWORD _pOldBgBlitSize[2];
 } tBob;
 
 // Undraw stack must be accessible during adding new bobs, so the most safe
@@ -99,7 +101,7 @@ typedef struct tBobManager {
 	tBobQueue pQueues[2];
 } tBobManager;
 
-tBobManager g_sBobManager;
+extern tBobManager g_sBobManager;
 
 /**
  * @brief Creates bob manager with optional double buffering support.

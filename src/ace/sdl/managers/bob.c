@@ -4,14 +4,14 @@
 
 #include <ace/managers/bob.h>
 
-static UBYTE *s_pD;
+static UBYTE *s_pBgSaveDest;
 
 void bobBegin(tBitMap *pBuffer) {
 	bobCheckGood(pBuffer);
 	tBobQueue *pQueue = &g_sBobManager.pQueues[g_sBobManager.ubBufferCurr];
 
 	// Prepare for undraw
-	UBYTE *pA = pQueue->pBg->Planes[0];
+	UBYTE *pBgRestoreSrc = pQueue->pBg->Planes[0];
 #ifdef ACE_DEBUG
 	UWORD uwDrawnHeight = 0;
 #endif
@@ -19,16 +19,17 @@ void bobBegin(tBitMap *pBuffer) {
 	for(UBYTE i = 0; i < pQueue->ubUndrawCount; ++i) {
 		const tBob *pBob = pQueue->pBobs[i];
 		if(pBob->isUndrawRequired) {
-			UBYTE *pD = pBob->_pOldDrawOffs[g_sBobManager.ubBufferCurr];
+			UBYTE *pBgRestoreDst = pBob->_pOldDrawOffs[g_sBobManager.ubBufferCurr];
+			UWORD uwHeight = pBob->_pOldBgBlitHeight[g_sBobManager.ubBufferCurr];
+			UWORD uwBlitByteWidth = ((pBob->uwWidth + 15) / 16 + 1) * 2; // One word more for aligned copy
+			UWORD uwBlitHeight = g_sBobManager.ubBpp * uwHeight;
 			// Undraw next
 			// TODO: BOB_WRAP_Y
-			UWORD uwBlitByteWidth = ((pBob->uwWidth + 15) / 16 + 1) * 2; // One word more for aligned copy
-			UWORD uwBlitHeight = g_sBobManager.ubBpp * pBob->uwHeight;
 			tBitMap sSrc = {
 				.BytesPerRow = uwBlitByteWidth,
 				.Depth = 1,
 				.Flags = 0,
-				.Planes = {pA},
+				.Planes = {pBgRestoreSrc},
 				.Rows = uwBlitHeight,
 			};
 
@@ -36,14 +37,14 @@ void bobBegin(tBitMap *pBuffer) {
 				.BytesPerRow = bitmapGetByteWidth(pQueue->pDst),
 				.Depth = 1,
 				.Flags = 0,
-				.Planes = {pD},
+				.Planes = {pBgRestoreDst},
 				.Rows = uwBlitHeight,
 			};
 			blitCopyAligned(&sSrc, 0, 0, &sDst, 0, 0, uwBlitByteWidth * 8, uwBlitHeight);
-			pA += uwBlitByteWidth * uwBlitHeight;
+			pBgRestoreSrc += uwBlitByteWidth * uwBlitHeight;
 
 #ifdef ACE_DEBUG
-			UWORD uwBlitWords = (pBob->uwWidth+ 15) / 16 + 1;
+			UWORD uwBlitWords = (pBob->uwWidth + 15) / 16 + 1;
 			uwDrawnHeight += uwBlitWords * uwBlitHeight;
 #endif
 		}
@@ -68,19 +69,18 @@ UBYTE bobProcessNext(void) {
 	if(g_sBobManager.ubBobsSaved < g_sBobManager.ubBobsPushed) {
 		tBobQueue *pQueue = &g_sBobManager.pQueues[g_sBobManager.ubBufferCurr];
 		if(!g_sBobManager.ubBobsSaved) {
-			s_pD = pQueue->pBg->Planes[0];
+			s_pBgSaveDest = pQueue->pBg->Planes[0];
 		}
 		tBob *pBob = pQueue->pBobs[g_sBobManager.ubBobsSaved];
 		++g_sBobManager.ubBobsSaved;
 
 		// TODO: for BOB_WRAP_Y and ACE_DEBUG check if bob blit fits g_sBobManager.uwAvailHeight
 		ULONG ulSrcOffs = (
-			pQueue->pDst->BytesPerRow * (
-				pBob->sPos.uwY
-			) + pBob->sPos.uwX / 8
+			pQueue->pDst->BytesPerRow * (pBob->sPos.uwY) + pBob->sPos.uwX / 8
 		);
-		UBYTE *pA = &pQueue->pDst->Planes[0][ulSrcOffs];
-		pBob->_pOldDrawOffs[g_sBobManager.ubBufferCurr] = pA;
+		UBYTE *pBgSaveSrc = &pQueue->pDst->Planes[0][ulSrcOffs];
+		pBob->_pOldDrawOffs[g_sBobManager.ubBufferCurr] = pBgSaveSrc;
+		pBob->_pOldBgBlitHeight[g_sBobManager.ubBufferCurr] = pBob->uwHeight;
 
 		if(pBob->isUndrawRequired) {
 			UWORD uwBlitByteWidth = ((pBob->uwWidth + 15) / 16 + 1) * 2; // One word more for aligned copy
@@ -89,18 +89,18 @@ UBYTE bobProcessNext(void) {
 				.BytesPerRow = bitmapGetByteWidth(pQueue->pDst),
 				.Depth = 1,
 				.Flags = 0,
-				.Planes = {pA},
+				.Planes = {pBgSaveSrc},
 				.Rows = uwBlitHeight,
 			};
 			tBitMap sDst = {
 				.BytesPerRow = uwBlitByteWidth,
 				.Depth = 1,
 				.Flags = 0,
-				.Planes = {s_pD},
+				.Planes = {s_pBgSaveDest},
 				.Rows = uwBlitHeight,
 			};
 			blitCopyAligned(&sSrc, 0, 0, &sDst, 0, 0, uwBlitByteWidth * 8, uwBlitHeight);
-			s_pD += uwBlitByteWidth * uwBlitHeight;
+			s_pBgSaveDest += uwBlitByteWidth * uwBlitHeight;
 		}
 		return 1;
 	}

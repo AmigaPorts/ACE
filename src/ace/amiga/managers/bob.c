@@ -4,7 +4,7 @@
 
 #include <ace/managers/bob.h>
 #include <ace/managers/blit.h>
-#include <ace/utils/custom.h>
+#include <ace/managers/log.h>
 
 #if !defined(ACE_NO_BOB_WRAP_Y)
 // Enables support for Y-wrapping of bobs. Required for scroll- and tileBuffer.
@@ -13,8 +13,6 @@
 // needs to be define-driven/constexpr.
 #define BOB_WRAP_Y
 #endif
-
-tBobManager g_sBobManager;
 
 void bobBegin(tBitMap *pBuffer) {
 	bobCheckGood(pBuffer);
@@ -39,14 +37,16 @@ void bobBegin(tBitMap *pBuffer) {
 			// Undraw next
 			UBYTE *pD = pBob->_pOldDrawOffs[g_sBobManager.ubBufferCurr];
 #if defined(BOB_WRAP_Y)
+			UWORD uwHeight = pBob->_pOldBgBlitHeight[g_sBobManager.ubBufferCurr];
 			UWORD uwPartHeight = g_sBobManager.uwAvailHeight - (pBob->pOldPositions[g_sBobManager.ubBufferCurr].uwY & (g_sBobManager.uwAvailHeight-1));
 #endif
+			UWORD uwBlitSize = pBob->_pOldBgBlitSize[g_sBobManager.ubBufferCurr];
 			blitWait();
 			g_pCustom->bltdmod = pBob->_wModuloUndrawSave;
 			g_pCustom->bltdpt = (APTR)pD;
 #if defined(BOB_WRAP_Y)
-			if(uwPartHeight >= pBob->uwHeight) {
-				g_pCustom->bltsize = pBob->_uwBlitSize;
+			if(uwPartHeight >= uwHeight) {
+				g_pCustom->bltsize = uwBlitSize;
 			}
 			else {
 				UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
@@ -54,15 +54,15 @@ void bobBegin(tBitMap *pBuffer) {
 				pD = &pQueue->pDst->Planes[0][pBob->pOldPositions[g_sBobManager.ubBufferCurr].uwX / 8];
 				blitWait();
 				g_pCustom->bltdpt = pD;
-				g_pCustom->bltsize =(((pBob->uwHeight - uwPartHeight) * g_sBobManager.ubBpp) << HSIZEBITS) | uwBlitWords;
+				g_pCustom->bltsize =(((uwHeight - uwPartHeight) * g_sBobManager.ubBpp) << HSIZEBITS) | uwBlitWords;
 			}
 #else
-			g_pCustom->bltsize = pBob->_uwBlitSize;
+			g_pCustom->bltsize = uwBlitSize;
 #endif
 
 #ifdef GAME_DEBUG
 			UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
-			uwDrawnHeight += uwBlitWords * pBob->uwHeight;
+			uwDrawnHeight += uwBlitWords * uwHeight;
 #endif
 		}
 	}
@@ -114,6 +114,10 @@ UBYTE bobProcessNext(void) {
 		);
 		UBYTE *pA = &pQueue->pDst->Planes[0][ulSrcOffs];
 		pBob->_pOldDrawOffs[g_sBobManager.ubBufferCurr] = pA;
+#if defined(BOB_WRAP_Y)
+		pBob->_pOldBgBlitHeight[g_sBobManager.ubBufferCurr] = pBob->uwHeight;
+#endif
+		pBob->_pOldBgBlitSize[g_sBobManager.ubBufferCurr] = pBob->_uwBlitSize;
 
 		if(pBob->isUndrawRequired) {
 #if defined(BOB_WRAP_Y)

@@ -9,6 +9,8 @@
 #include <ace/utils/custom.h>
 #endif
 
+tBobManager g_sBobManager;
+
 static void bobDeallocBuffers(void) {
 	blitWait();
 	systemUse();
