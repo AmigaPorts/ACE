@@ -7,6 +7,7 @@
 #include <ace/managers/system.h>
 #include <limits.h>
 #include <proto/exec.h>
+#include <graphics/gfxbase.h> // Required for GfxBase
 
 tCopManager g_sCopManager;
 
@@ -577,4 +578,10 @@ void copSetWait(tCopWaitCmd *pWaitCmd, UBYTE ubX, UBYTE ubY) {
 	pWaitCmd->bfVE            = 0x7F;
 	pWaitCmd->bfHE            = 0x7F;
 	pWaitCmd->bfIsSkip        = 0;
+}
+
+void copSetMove(tCopMoveCmd *pMoveCmd, volatile void *pAddr, UWORD uwValue) {
+	pMoveCmd->bfUnused = 0;
+	pMoveCmd->bfDestAddr = (ULONG)pAddr - (ULONG)((UBYTE *)g_pCustom);
+	copSetMoveVal(pMoveCmd, uwValue);
 }

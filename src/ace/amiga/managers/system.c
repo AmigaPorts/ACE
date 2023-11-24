@@ -924,3 +924,7 @@ void systemCheckStack(void) {
 		while(1) {}
 	}
 }
+
+void systemProcessFinal(void) {
+
+}

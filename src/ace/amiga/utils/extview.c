@@ -28,7 +28,7 @@ void viewUpdateCLUT(tView *pView) {
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 
-	isPAL = systemIsPal();
+	UBYTE isPAL = systemIsPal();
 	UWORD uwWaitPos = isPAL ? 300 : 260;
 	// if we are setting a NULL viewport we need to know if pal/NTSC
 	while(getRayPos().bfPosY < uwWaitPos) continue;

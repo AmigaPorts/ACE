@@ -25,6 +25,10 @@ extern "C" {
 #endif
 
 #if defined(ENDIAN_NATIVE_BIG)
+#define endianBigToNative16(x) (x)
+#define endianBigToNative32(x) (x)
+#define endianLittleToNative16(x) endianSwap16(x)
+#define endianLittleToNative32(x) endianSwap32(x)
 #define endianNativeToBig16(x) (x)
 #define endianNativeToBig32(x) (x)
 #define endianNativeToLittle16(x) endianSwap16(x)

@@ -18,8 +18,12 @@ static ULONG fileReadData(tFile *pFile, void *pDest, UBYTE ubDataSize, ULONG ulC
 #endif
 	systemUse();
 	systemReleaseBlitterToOs();
+#if defined(AMIGA)
+	// Optimize for mini-std
+	fread(pDest, ubDataSize * ulCount, 1, pFile);
+	ULONG ulReadCount = ulCount;
+#elif defined(ENDIAN_NATIVE_LITTLE)
 	ULONG ulReadCount = fread(pDest, ubDataSize, ulCount, pFile);
-#if defined(ENDIAN_NATIVE_LITTLE)
 	if(ubDataSize == sizeof(UBYTE)) {
 		// no endian swap for bytes
 	}
@@ -76,6 +80,8 @@ static ULONG fileWriteData(tFile *pFile, const void *pSource, UBYTE ubDataSize, 
 	else {
 		logWrite("ERR: Unsupported data size: %hhu\n", ubDataSize);
 	}
+#else
+	ulWriteCount = fwrite(pSource, ubDataSize, ulCount, pFile);
 #endif
 	systemGetBlitterFromOs();
 	systemUnuse();

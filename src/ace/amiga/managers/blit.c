@@ -5,12 +5,6 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 
-// BltCon0 channel enable bits
-#define USEA 0x800
-#define USEB 0x400
-#define USEC 0x200
-#define USED 0x100
-
 #define BLIT_LINE_OR ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define BLIT_LINE_XOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define BLIT_LINE_ERASE ((NABC | NANBC | ANBC) | (SRCA | SRCC | DEST))
@@ -25,10 +19,6 @@ void blitManagerDestroy(void) {
 	logBlockBegin("blitManagerDestroy");
 	systemSetDmaBit(DMAB_BLITTER, 0);
 	logBlockEnd("blitManagerDestroy");
-}
-
-void blitWait(void) {
-	while(!blitIsIdle()) continue;
 }
 
 /**
