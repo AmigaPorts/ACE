@@ -9,7 +9,7 @@
 #define AUDIO_MAX_VOLUME 64
 #define AUDIO_TARGET_RATE 44100
 #define AUDIO_SOURCE_FORMAT AUDIO_S8
-#define AUDIO_TARGET_FORMAT AUDIO_S16
+#define AUDIO_TARGET_FORMAT AUDIO_S16SYS
 #define AUDIO_SOURCE_SAMPLE_SIZE 1
 #define AUDIO_TARGET_SAMPLE_SIZE 2
 
@@ -80,7 +80,7 @@ void ptplayerCreate(void) {
 		.channels = 1,
 		.format = AUDIO_TARGET_FORMAT,
 		.freq = AUDIO_TARGET_RATE,
-		.samples = 1024,
+		.samples = 4096,
 		.userdata = 0
 	};
 

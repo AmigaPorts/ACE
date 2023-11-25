@@ -128,7 +128,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 		if(!pSfx->pData) {
 			goto fail;
 		}
-		fileReadWords(pFileSfx, pSfx->pData, pSfx->uwWordLength);
+		fileReadBytes(pFileSfx, pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
 
 		// Check if pData[0] is zeroed-out - it should be because after sfx playback
 		// ptplayer sets the channel playback to looped first word. This should
