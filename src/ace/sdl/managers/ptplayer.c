@@ -6,6 +6,12 @@
 #include <SDL.h>
 
 #define AUDIO_CHANNEL_COUNT 4
+#define AUDIO_MAX_VOLUME 64
+#define AUDIO_TARGET_RATE 44100
+#define AUDIO_SOURCE_FORMAT AUDIO_S8
+#define AUDIO_TARGET_FORMAT AUDIO_S16
+#define AUDIO_SOURCE_SAMPLE_SIZE 1
+#define AUDIO_TARGET_SAMPLE_SIZE 2
 
 typedef struct tChannelState {
 	const tPtplayerSfx *pSfx;
@@ -22,7 +28,7 @@ static tChannelState s_pChannelStates[AUDIO_CHANNEL_COUNT];
 static SDLCALL void onMoreAudioData(
 	void *pUserData, UBYTE *pStreamBytes, int lByteFillLength
 ) {
-	ULONG ulRequiredSampleCount = lByteFillLength / sizeof(UWORD);
+	ULONG ulRequiredSampleCount = lByteFillLength / AUDIO_TARGET_SAMPLE_SIZE;
 	WORD *pOutputSamples = (WORD*)pStreamBytes;
 	memset(pOutputSamples, 0, lByteFillLength);
 
@@ -32,29 +38,29 @@ static SDLCALL void onMoreAudioData(
 			continue;
 		}
 
-		ULONG ulAvailSamples = SDL_AudioStreamAvailable(pChannelState->pStream) / sizeof(WORD);
+		ULONG ulAvailSamples = SDL_AudioStreamAvailable(pChannelState->pStream) / AUDIO_TARGET_SAMPLE_SIZE;
 		if(pChannelState->isLooped) {
 			while(ulAvailSamples < ulRequiredSampleCount) {
 				SDL_AudioStreamPut(
 					pChannelState->pStream, pChannelState->pSfx->pData,
-					pChannelState->pSfx->uwWordLength * sizeof(UWORD)
+					pChannelState->pSfx->uwWordLength * pChannelState->pSfx->pData[0]
 				);
-				ulAvailSamples = SDL_AudioStreamAvailable(pChannelState->pStream) / sizeof(WORD);
+				ulAvailSamples = SDL_AudioStreamAvailable(pChannelState->pStream) / AUDIO_TARGET_SAMPLE_SIZE;
 			}
 		}
 		else {
 			if(ulAvailSamples < ulRequiredSampleCount) {
 				SDL_AudioStreamFlush(pChannelState->pStream);
-				ulAvailSamples = SDL_AudioStreamAvailable(pChannelState->pStream) / sizeof(WORD);
+				ulAvailSamples = SDL_AudioStreamAvailable(pChannelState->pStream) / AUDIO_TARGET_SAMPLE_SIZE;
 			}
 		}
 		ulAvailSamples = MIN(ulAvailSamples, ulRequiredSampleCount);
 
 		WORD pResampledChannel[ulAvailSamples];
-		SDL_AudioStreamGet(pChannelState->pStream, pResampledChannel, ulAvailSamples * sizeof(WORD));
+		SDL_AudioStreamGet(pChannelState->pStream, pResampledChannel, ulAvailSamples * AUDIO_TARGET_SAMPLE_SIZE);
 
 		for(ULONG ulSampleIndex = 0; ulSampleIndex < ulAvailSamples; ++ulSampleIndex) {
-			pOutputSamples[ulSampleIndex] += (pResampledChannel[ulSampleIndex] * pChannelState->ubVolume) / (64 * AUDIO_CHANNEL_COUNT);
+			pOutputSamples[ulSampleIndex] += (pResampledChannel[ulSampleIndex] * pChannelState->ubVolume) / (AUDIO_MAX_VOLUME * AUDIO_CHANNEL_COUNT);
 		}
 
 		if(!pChannelState->isLooped && SDL_AudioStreamAvailable(pChannelState->pStream) == 0) {
@@ -72,8 +78,8 @@ void ptplayerCreate(void) {
 	SDL_AudioSpec sSpec = {
 		.callback = onMoreAudioData,
 		.channels = 1,
-		.format = AUDIO_S16,
-		.freq = 44100,
+		.format = AUDIO_TARGET_FORMAT,
+		.freq = AUDIO_TARGET_RATE,
 		.samples = 1024,
 		.userdata = 0
 	};
@@ -218,8 +224,8 @@ void ptplayerSfxPlay(
 		pChannelState->ubPriority = ubPriority;
 		pChannelState->isLooped = 0;
 		pChannelState->ubVolume = ubVolume;
-		pChannelState->pStream = SDL_NewAudioStream(AUDIO_S8, 1, ulSourceRate, AUDIO_S16, 1, 44100);
-		SDL_AudioStreamPut(pChannelState->pStream, pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
+		pChannelState->pStream = SDL_NewAudioStream(AUDIO_SOURCE_FORMAT, 1, ulSourceRate, AUDIO_TARGET_FORMAT, 1, AUDIO_TARGET_RATE);
+		SDL_AudioStreamPut(pChannelState->pStream, pSfx->pData, pSfx->uwWordLength * sizeof(pSfx->pData[0]));
 		pChannelState->isActive = 1;
 	}
 }
@@ -239,7 +245,7 @@ void ptplayerSfxPlayLooped(
 	pChannelState->ubPriority = 0xFF;
 	pChannelState->isLooped = 1;
 	pChannelState->ubVolume = ubVolume;
-	pChannelState->pStream = SDL_NewAudioStream(AUDIO_S8, 1, ulSourceRate, AUDIO_S16, 1, 44100);
-	SDL_AudioStreamPut(pChannelState->pStream, pSfx->pData, pSfx->uwWordLength * sizeof(UWORD));
+	pChannelState->pStream = SDL_NewAudioStream(AUDIO_SOURCE_FORMAT, 1, ulSourceRate, AUDIO_S16, 1, AUDIO_TARGET_RATE);
+	SDL_AudioStreamPut(pChannelState->pStream, pSfx->pData, pSfx->uwWordLength * sizeof(pSfx->pData[0]));
 	pChannelState->isActive = 1;
 }
