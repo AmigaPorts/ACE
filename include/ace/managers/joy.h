@@ -12,9 +12,6 @@ extern "C" {
 #include <ace/types.h>
 
 /* Types */
-#define JPORT1 1
-#define JPORT2 2
-
 #define JOY1_FIRE 0
 #define JOY1_UP 1
 #define JOY1_DOWN 2

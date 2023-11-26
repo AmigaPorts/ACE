@@ -14,11 +14,13 @@ static SDL_Renderer *s_pWindowRenderer;
 static SDL_Surface *s_pOffscreenSurface = 0;
 static tView *s_pCurrentView;
 static tBitMap *s_pRenderBitmap;
-static tSdlKeyHandler s_cbKeyHandler;
-static tSdlVblankHandler s_cbVblankHandler;
 static ULONG s_ulMillisOnVblank;
 static SDL_TimerID s_VblankTimerId;
 
+static tSdlKeyHandler s_cbKeyHandler;
+static tSdlVblankHandler s_cbVblankHandler;
+static tSdlJoyButtonHandler s_cbJoyButtonHandler;
+static tSdlJoyAddRemoveHandler s_cbJoyAddRemoveHandler;
 //------------------------------------------------------------------ PRIVATE FNS
 
 static void sdlUpdateSurfaceContents(void) {
@@ -84,12 +86,20 @@ void sdlRegisterVblankHandler(tSdlVblankHandler cbVblankHandler) {
 	s_cbVblankHandler = cbVblankHandler;
 }
 
+void sdlRegisterJoyButtonHandler(tSdlJoyButtonHandler cbJoyButtonHandler) {
+	s_cbJoyButtonHandler = cbJoyButtonHandler;
+}
+
+void sdlRegisterJoyAddRemoveHandler(tSdlJoyAddRemoveHandler cbJoyAddRemoveHandler) {
+	s_cbJoyAddRemoveHandler = cbJoyAddRemoveHandler;
+}
+
 void sdlManagerCreate(void) {
 	s_pCurrentView = 0;
 	s_pRenderBitmap = 0;
 
 	//Initialize SDL
-	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) < 0) {
 		logWrite("SDL Error: %s\n", SDL_GetError());
 		systemKill("SDL_Init error");
 		return;
@@ -126,6 +136,19 @@ void sdlManagerProcess(void) {
 			case SDL_KEYUP:
 				if(s_cbKeyHandler) {
 					s_cbKeyHandler(sEvt.key.state == SDL_PRESSED, sEvt.key.keysym.sym);
+				}
+				break;
+			// TODO: SDL_CONTROLLERAXISMOTION
+			case SDL_CONTROLLERBUTTONDOWN:
+			case SDL_CONTROLLERBUTTONUP:
+				if(s_cbJoyButtonHandler) {
+					s_cbJoyButtonHandler(sEvt.cbutton.which, sEvt.cbutton.button, sEvt.cbutton.state == SDL_PRESSED);
+				}
+				break;
+			case SDL_CONTROLLERDEVICEADDED:
+			case SDL_CONTROLLERDEVICEREMOVED:
+				if(s_cbJoyAddRemoveHandler) {
+					s_cbJoyAddRemoveHandler(sEvt.cdevice.which, sEvt.cdevice.type != SDL_CONTROLLERDEVICEREMOVED);
 				}
 				break;
 		}

@@ -8,9 +8,12 @@
 #include <ace/utils/extview.h>
 #include <ace/utils/bitmap.h>
 #include <SDL_keycode.h>
+#include <SDL_GameController.h>
 
 typedef void (*tSdlKeyHandler)(UBYTE isPressed, SDL_KeyCode eKeyCode);
 typedef void (*tSdlVblankHandler)(void);
+typedef void (*tSdlJoyButtonHandler)(SDL_JoystickID lId, SDL_GameControllerButton eButton, UBYTE isPressed);
+typedef void (*tSdlJoyAddRemoveHandler)(SDL_JoystickID lId, UBYTE isAdded);
 
 void sdlManagerCreate(void);
 
@@ -26,10 +29,17 @@ tView *sdlGetCurrentView();
 
 tBitMap *sdlGetSurfaceBitmap(void);
 
+ULONG sdlGetMillisSinceVblank(void);
+
+//-------------------------------------------------------------------- CALLBACKS
+
 void sdlRegisterKeyHandler(tSdlKeyHandler cbKeyHandler);
 
 void sdlRegisterVblankHandler(tSdlVblankHandler cbVblankHandler);
 
-ULONG sdlGetMillisSinceVblank(void);
+void sdlRegisterJoyButtonHandler(tSdlJoyButtonHandler cbJoyButtonHandler);
+
+void sdlRegisterJoyAddRemoveHandler(tSdlJoyAddRemoveHandler cbJoyAddRemoveHandler);
+
 
 #endif // _ACE_MANAGERS_SDL_PRIVATE_H_
