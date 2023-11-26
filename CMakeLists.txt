@@ -107,11 +107,12 @@ endif()
 if(ACE_SDL)
 	include(cmake/CPM.cmake)
 
-	set(DIRECTX OFF)
+	set(SDL_DIRECTX OFF)
+	set(SDL2_NO_MWINDOWS ON)
 	CPMAddPackage(
 		NAME SDL2
-		VERSION 2.0.12
-		URL https://libsdl.org/release/SDL2-2.0.12.zip
+		VERSION 2.28.5
+		URL https://libsdl.org/release/SDL2-2.28.5.zip
 	)
 	if(SDL2_ADDED)
 		add_library(SDL2::SDL2 ALIAS SDL2)
