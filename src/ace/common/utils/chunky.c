@@ -12,20 +12,17 @@
 void chunkyFromPlanar16(
 	const tBitMap *pBitMap, UWORD uwX, UWORD uwY, UBYTE *pOut
 ) {
-	UWORD uwChunk, uwMask;
-	UBYTE i, ubPx;
-	memset(pOut, 0, 16*sizeof(*pOut));
-	// From highest to lowest color idx bit
+	memset(pOut, 0, 16 * sizeof(*pOut));
 	UWORD uwWordsPerRow = pBitMap->BytesPerRow / 2;
 	ULONG ulPos = uwWordsPerRow * uwY + (uwX / 16);
-	for(i = pBitMap->Depth; i--;) {
+	// From highest to lowest color idx bit
+	for(UBYTE i = pBitMap->Depth; i--;) {
 		// Obtain WORD from bitplane - 16 pixels
 		UWORD *pPlane = (UWORD*)(&pBitMap->Planes[i][0]);
-		uwChunk = endianBigToNative16(pPlane[ulPos]);
-		uwMask = 0x8000; // Start obtaining pixel values from left
-		for(ubPx = 0; ubPx != 16; ++ubPx) { // Insert read pixel bit to right
-			pOut[ubPx] = (pOut[ubPx] << 1) | ((uwChunk & uwMask) != 0);
-			uwMask >>= 1; // Shift pixel mask right
+		UWORD uwChunk = endianBigToNative16(pPlane[ulPos]);
+		for(UBYTE ubPx = 16; ubPx--;) {
+			pOut[ubPx] = (pOut[ubPx] << 1) | (uwChunk & 1);
+			uwChunk >>= 1;
 		}
 	}
 }
