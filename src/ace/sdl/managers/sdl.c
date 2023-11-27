@@ -21,6 +21,7 @@ static tSdlKeyHandler s_cbKeyHandler;
 static tSdlVblankHandler s_cbVblankHandler;
 static tSdlJoyButtonHandler s_cbJoyButtonHandler;
 static tSdlJoyAddRemoveHandler s_cbJoyAddRemoveHandler;
+static tSdlSpriteHandler s_cbSpriteHandler;
 //------------------------------------------------------------------ PRIVATE FNS
 
 static void sdlUpdateSurfaceContents(void) {
@@ -48,6 +49,10 @@ static void sdlUpdateSurfaceContents(void) {
 			}
 			pVp = pVp->pNext;
 		}
+	}
+
+	if(s_cbSpriteHandler) {
+		s_cbSpriteHandler();
 	}
 
 	// https://discourse.libsdl.org/t/mini-code-sample-for-sdl2-256-color-palette/27147/9
@@ -92,6 +97,10 @@ void sdlRegisterJoyButtonHandler(tSdlJoyButtonHandler cbJoyButtonHandler) {
 
 void sdlRegisterJoyAddRemoveHandler(tSdlJoyAddRemoveHandler cbJoyAddRemoveHandler) {
 	s_cbJoyAddRemoveHandler = cbJoyAddRemoveHandler;
+}
+
+void sdlRegisterSpriteHandler(tSdlSpriteHandler cbSpriteHandler) {
+	s_cbSpriteHandler = cbSpriteHandler;
 }
 
 void sdlManagerCreate(void) {

@@ -14,6 +14,7 @@ typedef void (*tSdlKeyHandler)(UBYTE isPressed, SDL_KeyCode eKeyCode);
 typedef void (*tSdlVblankHandler)(void);
 typedef void (*tSdlJoyButtonHandler)(SDL_JoystickID lId, SDL_GameControllerButton eButton, UBYTE isPressed);
 typedef void (*tSdlJoyAddRemoveHandler)(SDL_JoystickID lId, UBYTE isAdded);
+typedef void (*tSdlSpriteHandler)(void);
 
 void sdlManagerCreate(void);
 
@@ -41,5 +42,6 @@ void sdlRegisterJoyButtonHandler(tSdlJoyButtonHandler cbJoyButtonHandler);
 
 void sdlRegisterJoyAddRemoveHandler(tSdlJoyAddRemoveHandler cbJoyAddRemoveHandler);
 
+void sdlRegisterSpriteHandler(tSdlSpriteHandler cbSpriteHandler);
 
 #endif // _ACE_MANAGERS_SDL_PRIVATE_H_

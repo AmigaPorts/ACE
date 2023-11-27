@@ -34,6 +34,7 @@ void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
 	s_pView = pView;
 	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
 		s_pChannelsData[i] = (tSpriteChannel){
+			.pFirstSprite = 0,
 			.uwRawCopPos = uwRawCopPos + 2 * i
 		};
 	}
