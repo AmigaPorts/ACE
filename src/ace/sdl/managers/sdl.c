@@ -25,7 +25,9 @@ static tSdlSpriteHandler s_cbSpriteHandler;
 //------------------------------------------------------------------ PRIVATE FNS
 
 static void sdlUpdateSurfaceContents(void) {
-	blitRect(s_pRenderBitmap, 0, 0, 320, 256, 0);
+	for(UBYTE i = 0; i < s_pRenderBitmap->Depth; ++i) {
+		memset(&s_pRenderBitmap->Planes[i][0], 0, s_pRenderBitmap->BytesPerRow * s_pRenderBitmap->Rows);
+	}
 
 	if(s_pCurrentView && s_pCurrentView->ubVpCount > 0) {
 		tVPort *pVp = s_pCurrentView->pFirstVPort;
@@ -127,6 +129,11 @@ void sdlManagerCreate(void) {
 	s_pWindowRenderer = SDL_CreateRenderer(s_pWindow, -1, 0);
 	s_pOffscreenSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 320, 256, 8, 0, 0, 0, 0);
 	s_pRenderBitmap = bitmapCreate(320, 256, 8, BMF_CLEAR);
+
+	SDL_RendererInfo sRendererInfo;
+	if (!SDL_GetRendererInfo(s_pWindowRenderer, &sRendererInfo)) {
+		logWrite("Using renderer: %s\n", sRendererInfo.name);
+	}
 
 	s_VblankTimerId = SDL_AddTimer(20, onFauxVblankTimer, 0);
 }
