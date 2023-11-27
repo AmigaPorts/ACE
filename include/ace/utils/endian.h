@@ -55,7 +55,8 @@ extern "C" {
  *  @see endianLittle32()
  */
 static inline UWORD endianSwap16(UWORD uwIn) {
-	return (uwIn << 8) | (uwIn >> 8);
+	// TODO: _byteswap_ushort() on msvc
+	return __builtin_bswap16(uwIn);
 }
 
 /**
@@ -67,7 +68,8 @@ static inline UWORD endianSwap16(UWORD uwIn) {
  *  @see endianLittle16()
  */
 static inline ULONG endianSwap32(ULONG ulIn) {
-	return (ulIn << 24) | ((ulIn&0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
+	// TODO: _byteswap_ulong() on msvc
+	return __builtin_bswap32(ulIn);
 }
 
 #ifdef __cplusplus
