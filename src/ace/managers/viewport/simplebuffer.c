@@ -305,8 +305,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 			--pManager->ubDirtyCounter;
 		}
 	}
-	else {
-		// We can't really check for camera being moved, since in double buffering
+	else if(pManager->pBack != pManager->pFront || cameraIsMoved(pCamera)) {
+		// In double buffering, we can't really check for camera being moved, since
 		// copBlock needs to change its bitplane pointers value each frame and
 		// copperlist needs refreshing.
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
