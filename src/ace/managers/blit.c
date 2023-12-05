@@ -331,12 +331,11 @@ UBYTE blitSafeCopyAligned(
  * - wSrcX <= wDstX (shifts to right)
  * - mask must have same dimensions as source bitplane
  */
-
 UBYTE blitUnsafeCopyMask(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk
-)  {
+) {
 #ifdef AMIGA
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
