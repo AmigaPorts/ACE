@@ -52,4 +52,4 @@ endif()
 target_link_libraries(${GAME_LINKED} ace)
 
 # Copy example maps files as is
-file(COPY "${RES_DIR}/data" DESTINATION ${DATA_DIR})
+file(COPY "${RES_DIR}/data" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
