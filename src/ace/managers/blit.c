@@ -139,6 +139,10 @@ UBYTE blitUnsafeCopy(
 	ubSrcDelta = wSrcX & 0xF;
 	ubDstDelta = wDstX & 0xF;
 	ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
+	UBYTE isBlitInterleaved = (
+		bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst) &&
+		pSrc->Depth == pDst->Depth
+	);
 
 	if(ubSrcDelta > ubDstDelta || ((wWidth+ubDstDelta+15) & 0xFFF0)-(wWidth+ubSrcDelta) > 16) {
 		uwBlitWidth = (wWidth+(ubSrcDelta>ubDstDelta?ubSrcDelta:ubDstDelta)+15) & 0xFFF0;
@@ -157,9 +161,15 @@ UBYTE blitUnsafeCopy(
 
 		// Position on the end of last row of the bitmap.
 		// For interleaved, position on the last row of last bitplane.
-		// TODO: fix duplicating bitmapGetByteWidth() check in interleaved branch
-		ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight) - bitmapGetByteWidth(pSrc) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
-		ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight) - bitmapGetByteWidth(pDst) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		if(isBlitInterleaved) {
+			// TODO: fix duplicating bitmapIsInterleaved() check inside bitmapGetByteWidth()
+			ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight) - bitmapGetByteWidth(pSrc) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight) - bitmapGetByteWidth(pDst) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		}
+		else {
+			ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight - 1) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		}
 	}
 	else {
 		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
@@ -180,10 +190,7 @@ UBYTE blitUnsafeCopy(
 
 	uwBltCon0 = (ubShift << ASHIFTSHIFT) | USEB|USEC|USED | ubMinterm;
 
-	if(
-		bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst) &&
-		pSrc->Depth == pDst->Depth
-	) {
+	if(isBlitInterleaved) {
 		wHeight *= pSrc->Depth;
 		wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
 		wDstModulo = bitmapGetByteWidth(pDst) - uwBlitWords * 2;
