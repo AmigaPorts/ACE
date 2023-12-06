@@ -415,7 +415,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltbmod = wSrcModulo;
 		g_pCustom->bltcmod = wDstModulo;
 		g_pCustom->bltdmod = wDstModulo;
-		g_pCustom->bltapt = (UBYTE*)(pMsk + ulSrcOffs);
+		g_pCustom->bltapt = &pMsk[ulSrcOffs];
 		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
@@ -441,7 +441,7 @@ UBYTE blitUnsafeCopyMask(
 		while(ubPlane--) {
 			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			g_pCustom->bltapt = (UBYTE*)(pMsk + ulSrcOffs);
+			g_pCustom->bltapt = &pMsk[ulSrcOffs];
 			g_pCustom->bltbpt = &pSrc->Planes[ubPlane][ulSrcOffs];
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
