@@ -639,9 +639,7 @@ void blitLine(
 		g_pCustom->bltcon0 = uwBltCon0 | uwOp;
 		g_pCustom->bltcpt = pData;
 		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
-
 		g_pCustom->bltsize = uwBltSize;
-
 	}
 #else
 #error "Unimplemented: blitLine()"
