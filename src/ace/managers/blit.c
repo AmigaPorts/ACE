@@ -88,15 +88,22 @@ UBYTE _blitCheck(
 		);
 		return 0;
 	}
+	
+#if defined(ACE_USE_ECS_FEATURES)
+UWORD uwMaxBlitWidth = 32768;
+#else
+UWORD uwMaxBlitWidth = 1024;
+#endif
+
 	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
-		if(wHeight * pSrc->Depth > 1024) {
+		if(wHeight * pSrc->Depth > uwMaxBlitWidth) {
 			logWrite(
-				"ERR: Blit too big for OCS: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
+				"ERR: Blit too big: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
 				wHeight, pSrc->Depth, wHeight * pSrc->Depth, szFile, uwLine
 			);
 		}
 	}
-
+	
 	return 1;
 }
 #endif // defined(ACE_DEBUG)
@@ -609,12 +616,8 @@ void blitLine(
 	if (wDerr < 0) {
 		uwBltCon1 |= SIGNFLAG;
 	}
-#if !defined( ACE_USE_ECS_FEATURES)
+
 	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
-#else
-	UWORD uwBltWidth = wDx;
-	UWORD uwBltHeight = 66;
-#endif
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
 	blitWait(); // Don't modify registers when other blit is in progress
@@ -636,12 +639,7 @@ void blitLine(
 		g_pCustom->bltcon0 = uwBltCon0 | uwOp;
 		g_pCustom->bltcpt = pData;
 		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
-#if defined(ACE_USE_ECS_FEATURES)
-		g_pCustom->bltsizv = uwBltHeight;
-		g_pCustom->bltsizh = uwBltWidth;
-#else
 		g_pCustom->bltsize = uwBltSize;
-#endif
 	}
 #else
 #error "Unimplemented: blitLine()"
