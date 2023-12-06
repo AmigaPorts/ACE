@@ -88,6 +88,8 @@ UBYTE _blitCheck(
 		);
 		return 0;
 	}
+	
+#if !defined(ACE_USE_ECS_FEATURES)
 	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		if(wHeight * pSrc->Depth > 1024) {
 			logWrite(
@@ -96,6 +98,16 @@ UBYTE _blitCheck(
 			);
 		}
 	}
+	#else
+	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
+		if(wHeight * pSrc->Depth > 32768) {
+			logWrite(
+				"ERR: Blit too big for ECS: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
+				wHeight, pSrc->Depth, wHeight * pSrc->Depth, szFile, uwLine
+			);
+		}
+	}
+#endif
 
 	return 1;
 }
