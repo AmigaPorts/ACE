@@ -432,7 +432,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltcon1 = uwBltCon1;
 		g_pCustom->bltafwm = uwFirstMask;
 		g_pCustom->bltalwm = uwLastMask;
-		g_pCustom->bltapt = (UBYTE*)(pMsk + ulSrcOffs);
+		g_pCustom->bltapt = &pMsk[ulSrcOffs];
 		g_pCustom->bltamod = wSrcModulo;
 		g_pCustom->bltbmod = wSrcModulo;
 		g_pCustom->bltcmod = wDstModulo;
