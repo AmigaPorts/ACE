@@ -110,7 +110,7 @@ void blitWait(void) {
  * Polls 2 times - A1000 Agnus bug workaround
  */
 UBYTE blitIsIdle(void) {
-	#ifdef AMIGA
+	#if defined(AMIGA)
 	if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
 		if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
 			return 1;
@@ -127,7 +127,7 @@ UBYTE blitUnsafeCopy(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm
 ) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulSrcOffs, ulDstOffs;
@@ -207,7 +207,7 @@ UBYTE blitUnsafeCopy(
 		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 		g_pCustom->bltsizv = wHeight;
 		g_pCustom->bltsizh = uwBlitWords;
 #else
@@ -235,7 +235,7 @@ UBYTE blitUnsafeCopy(
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
 
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 			g_pCustom->bltsizv = wHeight;
 			g_pCustom->bltsizh = uwBlitWords;
 #else
@@ -269,7 +269,7 @@ UBYTE blitUnsafeCopyAligned(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
-	#ifdef AMIGA
+	#if defined(AMIGA)
 	// Use C channel instead of A - same speed, less regs to set up
 	UWORD uwBlitWords = wWidth >> 4;
 	UWORD uwBltCon0 = USEC|USED | MINTERM_C;
@@ -288,7 +288,7 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltdmod = wDstModulo;
 		g_pCustom->bltcpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 		g_pCustom->bltsizv = wHeight;
 		g_pCustom->bltsizh = uwBlitWords;
 #else
@@ -315,7 +315,7 @@ UBYTE blitUnsafeCopyAligned(
 			blitWait();
 			g_pCustom->bltcpt = &pSrc->Planes[ubPlane][ulSrcOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 			g_pCustom->bltsizv = wHeight;
 			g_pCustom->bltsizh = uwBlitWords;
 #else
@@ -356,7 +356,7 @@ UBYTE blitUnsafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk
 ) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulSrcOffs, ulDstOffs;
@@ -439,7 +439,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 		g_pCustom->bltsizv = wHeight;
 		g_pCustom->bltsizh = uwBlitWords;
 #else
@@ -470,7 +470,7 @@ UBYTE blitUnsafeCopyMask(
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
 		
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 			g_pCustom->bltsizv = wHeight;
 			g_pCustom->bltsizh = uwBlitWords;
 #else
@@ -498,7 +498,7 @@ UBYTE blitUnsafeRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubColor
 ) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulDstOffs;
@@ -537,7 +537,7 @@ UBYTE blitUnsafeRect(
 		// This hell of a casting must stay here or else large offsets get bugged!
 		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
 		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 		g_pCustom->bltsizv = wHeight;
 		g_pCustom->bltsizh = uwBlitWords;
 #else
@@ -566,7 +566,7 @@ void blitLine(
 	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 ) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	// Based on Cahir's function from:
 	// https://github.com/cahirwpz/demoscene/blob/master/a500/base/libsys/blt-line.c
 
@@ -609,7 +609,7 @@ void blitLine(
 	if (wDerr < 0) {
 		uwBltCon1 |= SIGNFLAG;
 	}
-#ifndef ACE_USE_ECS_FEATURES
+#if !defined( ACE_USE_ECS_FEATURES)
 	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
 #else
 	UWORD uwBltWidth = wDx;
@@ -636,7 +636,7 @@ void blitLine(
 		g_pCustom->bltcon0 = uwBltCon0 | uwOp;
 		g_pCustom->bltcpt = pData;
 		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
-#ifdef ACE_USE_ECS_FEATURES
+#if defined(ACE_USE_ECS_FEATURES)
 		g_pCustom->bltsizv = uwBltHeight;
 		g_pCustom->bltsizh = uwBltWidth;
 #else
