@@ -89,26 +89,21 @@ UBYTE _blitCheck(
 		return 0;
 	}
 	
-#if !defined(ACE_USE_ECS_FEATURES)
-	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
-		if(wHeight * pSrc->Depth > 1024) {
-			logWrite(
-				"ERR: Blit too big for OCS: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
-				wHeight, pSrc->Depth, wHeight * pSrc->Depth, szFile, uwLine
-			);
-		}
-	}
-	#else
-	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
-		if(wHeight * pSrc->Depth > 32768) {
-			logWrite(
-				"ERR: Blit too big for ECS: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
-				wHeight, pSrc->Depth, wHeight * pSrc->Depth, szFile, uwLine
-			);
-		}
-	}
+#if defined(ACE_USE_ECS_FEATURES)
+UWORD uwMaxBlitWidth = 32768;
+#else
+UWORD uwMaxBlitWidth = 1024;
 #endif
 
+	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
+		if(wHeight * pSrc->Depth > uwMaxBlitWidth) {
+			logWrite(
+				"ERR: Blit too big: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
+				wHeight, pSrc->Depth, wHeight * pSrc->Depth, szFile, uwLine
+			);
+		}
+	}
+	
 	return 1;
 }
 #endif // defined(ACE_DEBUG)
@@ -622,7 +617,7 @@ void blitLine(
 		uwBltCon1 |= SIGNFLAG;
 	}
 	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
-	
+
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
 	blitWait(); // Don't modify registers when other blit is in progress
