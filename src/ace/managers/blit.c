@@ -207,9 +207,12 @@ UBYTE blitUnsafeCopy(
 		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
-
+#ifdef ACE_USE_ECS_FEATURES
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-		
+#endif	
 	}
 	else {
 		wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
@@ -232,7 +235,12 @@ UBYTE blitUnsafeCopy(
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
 
+#ifdef ACE_USE_ECS_FEATURES
+			g_pCustom->bltsizv = wHeight;
+			g_pCustom->bltsizh = uwBlitWords;
+#else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif	
 		}
 	}
 
@@ -280,7 +288,13 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltdmod = wDstModulo;
 		g_pCustom->bltcpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
+#ifdef ACE_USE_ECS_FEATURES
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif	
+
 	}
 	else {
 		if(bitmapIsInterleaved(pSrc) || bitmapIsInterleaved(pDst)) {
@@ -301,7 +315,12 @@ UBYTE blitUnsafeCopyAligned(
 			blitWait();
 			g_pCustom->bltcpt = &pSrc->Planes[ubPlane][ulSrcOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
+#ifdef ACE_USE_ECS_FEATURES
+			g_pCustom->bltsizv = wHeight;
+			g_pCustom->bltsizh = uwBlitWords;
+#else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif	
 		}
 	}
 
@@ -420,8 +439,12 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
-
+#ifdef ACE_USE_ECS_FEATURES
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif	
 	}
 	else {
 		wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
@@ -433,7 +456,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltcon1 = uwBltCon1;
 		g_pCustom->bltafwm = uwFirstMask;
 		g_pCustom->bltalwm = uwLastMask;
-		g_pCustom->bltapt = (UBYTE*)(pMsk + ulSrcOffs);
+		g_pCustom->bltapt = &pMsk[ulSrcOffs];
 		g_pCustom->bltamod = wSrcModulo;
 		g_pCustom->bltbmod = wSrcModulo;
 		g_pCustom->bltcmod = wDstModulo;
@@ -447,7 +470,12 @@ UBYTE blitUnsafeCopyMask(
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
 		
+#ifdef ACE_USE_ECS_FEATURES
+			g_pCustom->bltsizv = wHeight;
+			g_pCustom->bltsizh = uwBlitWords;
+#else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif	
 		}
 	}
 
@@ -460,7 +488,6 @@ UBYTE blitSafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk, UWORD uwLine, const char *szFile
 ) {
-	
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
 	}
@@ -510,7 +537,12 @@ UBYTE blitUnsafeRect(
 		// This hell of a casting must stay here or else large offsets get bugged!
 		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
 		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
+#ifdef ACE_USE_ECS_FEATURES
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif	
 		ubColor >>= 1;
 		++ubPlane;
 	}	while(ubPlane < pDst->Depth);
@@ -577,8 +609,12 @@ void blitLine(
 	if (wDerr < 0) {
 		uwBltCon1 |= SIGNFLAG;
 	}
-
+#ifndef ACE_USE_ECS_FEATURES
 	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
+#else
+	UWORD uwBltWidth = wDx;
+	UWORD uwBltHeight = 66;
+#endif
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
 	blitWait(); // Don't modify registers when other blit is in progress
@@ -600,7 +636,12 @@ void blitLine(
 		g_pCustom->bltcon0 = uwBltCon0 | uwOp;
 		g_pCustom->bltcpt = pData;
 		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
+#ifdef ACE_USE_ECS_FEATURES
+		g_pCustom->bltsizv = uwBltHeight;
+		g_pCustom->bltsizh = uwBltWidth;
+#else
 		g_pCustom->bltsize = uwBltSize;
+#endif
 	}
 #else
 #error "Unimplemented: blitLine()"
