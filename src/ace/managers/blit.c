@@ -90,9 +90,9 @@ UBYTE _blitCheck(
 	}
 	
 #if defined(ACE_USE_ECS_FEATURES)
-UWORD uwMaxBlitWidth = 32768;
+	UWORD uwMaxBlitWidth = 32768;
 #else
-UWORD uwMaxBlitWidth = 1024;
+	UWORD uwMaxBlitWidth = 1024;
 #endif
 
 	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
