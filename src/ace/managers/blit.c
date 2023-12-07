@@ -88,10 +88,17 @@ UBYTE _blitCheck(
 		);
 		return 0;
 	}
+
+#if defined(ACE_USE_ECS_FEATURES)
+	UWORD uwMaxBlitWidth = 32768;
+#else
+	UWORD uwMaxBlitWidth = 1024;
+#endif
+
 	if(pSrc && pDst && bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
-		if(wHeight * pSrc->Depth > 1024) {
+		if(wHeight * pSrc->Depth > uwMaxBlitWidth) {
 			logWrite(
-				"ERR: Blit too big for OCS: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
+				"ERR: Blit too big: height %hd, depth: %hhu, interleaved: %d (%s:%u)\n",
 				wHeight, pSrc->Depth, wHeight * pSrc->Depth, szFile, uwLine
 			);
 		}
@@ -123,11 +130,11 @@ UBYTE blitUnsafeCopy(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubMinterm
 ) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulSrcOffs, ulDstOffs;
-	UBYTE ubShift, ubSrcDelta, ubDstDelta, ubWidthDelta, ubMaskFShift, ubMaskLShift, ubPlane;
+	UBYTE ubShift, ubSrcDelta, ubDstDelta, ubWidthDelta, ubMaskFShift, ubMaskLShift;
 	// Blitter register values
 	UWORD uwBltCon0, uwBltCon1, uwFirstMask, uwLastMask;
 	WORD wSrcModulo, wDstModulo;
@@ -135,6 +142,10 @@ UBYTE blitUnsafeCopy(
 	ubSrcDelta = wSrcX & 0xF;
 	ubDstDelta = wDstX & 0xF;
 	ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
+	UBYTE isBlitInterleaved = (
+		bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst) &&
+		pSrc->Depth == pDst->Depth
+	);
 
 	if(ubSrcDelta > ubDstDelta || ((wWidth+ubDstDelta+15) & 0xFFF0)-(wWidth+ubSrcDelta) > 16) {
 		uwBlitWidth = (wWidth+(ubSrcDelta>ubDstDelta?ubSrcDelta:ubDstDelta)+15) & 0xFFF0;
@@ -144,14 +155,24 @@ UBYTE blitUnsafeCopy(
 		ubMaskLShift = uwBlitWidth - (wWidth+ubMaskFShift);
 		uwFirstMask = 0xFFFF << ubMaskFShift;
 		uwLastMask = 0xFFFF >> ubMaskLShift;
-		if(ubMaskLShift > 16) // Fix for 2-word blits
+		if(ubMaskLShift > 16) { // Fix for 2-word blits
 			uwFirstMask &= 0xFFFF >> (ubMaskLShift-16);
+		}
 
 		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
-		uwBltCon1 = ubShift << BSHIFTSHIFT | BLITREVERSE;
+		uwBltCon1 = (ubShift << BSHIFTSHIFT) | BLITREVERSE;
 
-		ulSrcOffs = pSrc->BytesPerRow * (wSrcY+wHeight-1) + ((wSrcX+wWidth+ubMaskFShift-1)>>3);
-		ulDstOffs = pDst->BytesPerRow * (wDstY+wHeight-1) + ((wDstX+wWidth+ubMaskFShift-1) >> 3);
+		// Position on the end of last row of the bitmap.
+		// For interleaved, position on the last row of last bitplane.
+		if(isBlitInterleaved) {
+			// TODO: fix duplicating bitmapIsInterleaved() check inside bitmapGetByteWidth()
+			ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight) - bitmapGetByteWidth(pSrc) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight) - bitmapGetByteWidth(pDst) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		}
+		else {
+			ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight - 1) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		}
 	}
 	else {
 		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
@@ -166,33 +187,66 @@ UBYTE blitUnsafeCopy(
 		ubShift = ubDstDelta-ubSrcDelta;
 		uwBltCon1 = ubShift << BSHIFTSHIFT;
 
-		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX >> 3);
+		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX >> 3);
 	}
 
 	uwBltCon0 = (ubShift << ASHIFTSHIFT) | USEB|USEC|USED | ubMinterm;
-	wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
-	wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
 
-	ubPlane = MIN(pSrc->Depth, pDst->Depth);
-	blitWait(); // Don't modify registers when other blit is in progress
-	g_pCustom->bltcon0 = uwBltCon0;
-	g_pCustom->bltcon1 = uwBltCon1;
-	g_pCustom->bltafwm = uwFirstMask;
-	g_pCustom->bltalwm = uwLastMask;
-	g_pCustom->bltbmod = wSrcModulo;
-	g_pCustom->bltcmod = wDstModulo;
-	g_pCustom->bltdmod = wDstModulo;
-	g_pCustom->bltadat = 0xFFFF;
-	while(ubPlane--) {
-		blitWait();
-		// This hell of a casting must stay here or else large offsets get bugged!
-		g_pCustom->bltbpt = pSrc->Planes[ubPlane] + ulSrcOffs;
-		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
-		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
+	if(isBlitInterleaved) {
+		wHeight *= pSrc->Depth;
+		wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
+		wDstModulo = bitmapGetByteWidth(pDst) - uwBlitWords * 2;
 
+		blitWait(); // Don't modify registers when other blit is in progress
+		g_pCustom->bltcon0 = uwBltCon0;
+		g_pCustom->bltcon1 = uwBltCon1;
+		g_pCustom->bltafwm = uwFirstMask;
+		g_pCustom->bltalwm = uwLastMask;
+		g_pCustom->bltbmod = wSrcModulo;
+		g_pCustom->bltcmod = wDstModulo;
+		g_pCustom->bltdmod = wDstModulo;
+		g_pCustom->bltadat = 0xFFFF;
+		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
+		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
+		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
+#if defined(ACE_USE_ECS_FEATURES)
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
 	}
+	else {
+		wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
+		wDstModulo = pDst->BytesPerRow - uwBlitWords * 2;
+		UBYTE ubPlane = MIN(pSrc->Depth, pDst->Depth);
+
+		blitWait(); // Don't modify registers when other blit is in progress
+		g_pCustom->bltcon0 = uwBltCon0;
+		g_pCustom->bltcon1 = uwBltCon1;
+		g_pCustom->bltafwm = uwFirstMask;
+		g_pCustom->bltalwm = uwLastMask;
+		g_pCustom->bltbmod = wSrcModulo;
+		g_pCustom->bltcmod = wDstModulo;
+		g_pCustom->bltdmod = wDstModulo;
+		g_pCustom->bltadat = 0xFFFF;
+		while(ubPlane--) {
+			blitWait();
+			// This hell of a casting must stay here or else large offsets get bugged!
+			g_pCustom->bltbpt = &pSrc->Planes[ubPlane][ulSrcOffs];
+			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
+			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
+
+#if defined(ACE_USE_ECS_FEATURES)
+			g_pCustom->bltsizv = wHeight;
+			g_pCustom->bltsizh = uwBlitWords;
+#else
+			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
+		}
+	}
+
 #endif // AMIGA
 	return 1;
 }
@@ -218,61 +272,61 @@ UBYTE blitUnsafeCopyAligned(
 	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
-	#ifdef AMIGA
-	UWORD uwBlitWords, uwBltCon0;
-	WORD wDstModulo, wSrcModulo;
-	ULONG ulSrcOffs, ulDstOffs;
-
+	#if defined(AMIGA)
 	// Use C channel instead of A - same speed, less regs to set up
-	uwBlitWords = wWidth >> 4;
-	uwBltCon0 = USEC|USED | MINTERM_C;
-
-	wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
-	wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
-	ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+	UWORD uwBlitWords = wWidth >> 4;
+	UWORD uwBltCon0 = USEC|USED | MINTERM_C;
+	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
+	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
 
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
+		WORD wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
+		WORD wDstModulo = bitmapGetByteWidth(pDst) - uwBlitWords * 2;
 		wHeight *= pSrc->Depth;
+
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-
 		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
-
-		g_pCustom->bltcpt = pSrc->Planes[0] + ulSrcOffs;
-		g_pCustom->bltdpt = pDst->Planes[0] + ulDstOffs;
-
+		g_pCustom->bltcpt = &pSrc->Planes[0][ulSrcOffs];
+		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
+#if defined(ACE_USE_ECS_FEATURES)
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
+
 	}
 	else {
-		UBYTE ubPlane;
-
 		if(bitmapIsInterleaved(pSrc) || bitmapIsInterleaved(pDst)) {
 			// Since you're using this fn for speed
 			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
 		}
-		if(bitmapIsInterleaved(pSrc)) {
-			wSrcModulo += pSrc->BytesPerRow * (pSrc->Depth-1);
-		}
-		else if(bitmapIsInterleaved(pDst)) {
-			wDstModulo += pDst->BytesPerRow * (pDst->Depth-1);
-		}
+
+		WORD wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
+		WORD wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
+		UBYTE ubPlane = pSrc->Depth;
 
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = 0;
-
 		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
-		for(ubPlane = pSrc->Depth; ubPlane--;) {
+		while(ubPlane--) {
 			blitWait();
-			g_pCustom->bltcpt = pSrc->Planes[ubPlane] + ulSrcOffs;
-			g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
+			g_pCustom->bltcpt = &pSrc->Planes[ubPlane][ulSrcOffs];
+			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
+#if defined(ACE_USE_ECS_FEATURES)
+			g_pCustom->bltsizv = wHeight;
+			g_pCustom->bltsizh = uwBlitWords;
+#else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
 		}
 	}
+
 #endif // AMIGA
 	return 1;
 }
@@ -305,77 +359,129 @@ UBYTE blitUnsafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk
 ) {
-#ifdef AMIGA
-	WORD wDstModulo, wSrcModulo;
+#if defined(AMIGA)
+	// Helper vars
+	UWORD uwBlitWords, uwBlitWidth;
+	ULONG ulSrcOffs, ulDstOffs;
+	UBYTE ubShift, ubSrcDelta, ubDstDelta, ubWidthDelta, ubMaskFShift, ubMaskLShift;
+	// Blitter register values
+	UWORD uwBltCon0, uwBltCon1, uwFirstMask, uwLastMask;
+	WORD wSrcModulo, wDstModulo;
 
-	UBYTE ubSrcOffs = wSrcX & 0xF;
-	UBYTE ubDstOffs = wDstX & 0xF;
+	ubSrcDelta = wSrcX & 0xF;
+	ubDstDelta = wDstX & 0xF;
+	ubWidthDelta = (ubSrcDelta + wWidth) & 0xF;
+	UBYTE isBlitInterleaved = (
+		bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst) &&
+		pSrc->Depth == pDst->Depth
+	);
 
-	UWORD uwBlitWidth = (wWidth+ubDstOffs+15) & 0xFFF0;
-	UWORD uwBlitWords = uwBlitWidth >> 4;
+	if(ubSrcDelta > ubDstDelta || ((wWidth+ubDstDelta+15) & 0xFFF0)-(wWidth+ubSrcDelta) > 16) {
+		uwBlitWidth = (wWidth+(ubSrcDelta>ubDstDelta?ubSrcDelta:ubDstDelta)+15) & 0xFFF0;
+		uwBlitWords = uwBlitWidth >> 4;
 
-	UWORD uwFirstMask = 0xFFFF >> ubSrcOffs;
-	UWORD uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ubSrcOffs));
+		ubMaskFShift = ((ubWidthDelta+15)&0xF0)-ubWidthDelta;
+		ubMaskLShift = uwBlitWidth - (wWidth+ubMaskFShift);
 
-	UWORD uwBltCon1 = (ubDstOffs-ubSrcOffs) << BSHIFTSHIFT;
-	UWORD uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
+		// Position on the end of last row of the bitmap.
+		// For interleaved, position on the last row of last bitplane.
+		if(isBlitInterleaved) {
+			// TODO: fix duplicating bitmapIsInterleaved() check inside bitmapGetByteWidth()
+			ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight) - bitmapGetByteWidth(pSrc) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight) - bitmapGetByteWidth(pDst) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		}
+		else {
+			ulSrcOffs = pSrc->BytesPerRow * (wSrcY + wHeight - 1) + ((wSrcX + wWidth + ubMaskFShift - 1) / 16) * 2;
+			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
+		}
 
-	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
-	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
-		wSrcModulo = bitmapGetByteWidth(pSrc) - (uwBlitWords<<1);
-		wDstModulo = bitmapGetByteWidth(pDst) - (uwBlitWords<<1);
-		wHeight *= pSrc->Depth;
+		uwFirstMask = 0xFFFF >> ulSrcOffs;
+		uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ulSrcOffs));
+		if(ubMaskLShift > 16) { // Fix for 2-word blits
+			uwFirstMask &= 0xFFFF >> (ubMaskLShift-16);
+		}
 
-		blitWait(); // Don't modify registers when other blit is in progress
-		g_pCustom->bltcon0 = uwBltCon0;
-		g_pCustom->bltcon1 = uwBltCon1;
-		g_pCustom->bltafwm = uwFirstMask;
-		g_pCustom->bltalwm = uwLastMask;
+		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
+		uwBltCon1 = (ubShift << BSHIFTSHIFT) | BLITREVERSE;
 
-		g_pCustom->bltamod = wSrcModulo;
-		g_pCustom->bltbmod = wSrcModulo;
-		g_pCustom->bltcmod = wDstModulo;
-		g_pCustom->bltdmod = wDstModulo;
-
-		g_pCustom->bltapt = (UBYTE*)(pMsk + ulSrcOffs);
-		g_pCustom->bltbpt = pSrc->Planes[0] + ulSrcOffs;
-		g_pCustom->bltcpt = pDst->Planes[0] + ulDstOffs;
-		g_pCustom->bltdpt = pDst->Planes[0] + ulDstOffs;
-
-		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
 	}
 	else {
-#ifdef ACE_DEBUG
-		if(
-			(bitmapIsInterleaved(pSrc) && !bitmapIsInterleaved(pDst)) ||
-			(!bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst))
-		) {
-			logWrite("WARN: Inefficient blit via mask with %p, %p\n", pSrc, pDst);
-		}
-#endif // ACE_DEBUG
-		wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);
-		wDstModulo = pDst->BytesPerRow - (uwBlitWords<<1);
+		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
+		uwBlitWords = uwBlitWidth >> 4;
+
+		ubMaskFShift = ubSrcDelta;
+		ubMaskLShift = uwBlitWidth-(wWidth+ubSrcDelta);
+
+		uwFirstMask = 0xFFFF >> ubMaskFShift;
+		uwLastMask = 0xFFFF << ubMaskLShift;
+
+		ubShift = ubDstDelta-ubSrcDelta;
+		uwBltCon1 = ubShift << BSHIFTSHIFT;
+
+		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX >> 3);
+		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX >> 3);
+	}
+
+	 uwBltCon0 = uwBltCon1 |USEA|USEB|USEC|USED | MINTERM_COOKIE;
+
+	if(isBlitInterleaved) {
+		wHeight *= pSrc->Depth;
+		wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
+		wDstModulo = bitmapGetByteWidth(pDst) - uwBlitWords * 2;
+
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = uwBltCon1;
 		g_pCustom->bltafwm = uwFirstMask;
 		g_pCustom->bltalwm = uwLastMask;
-
 		g_pCustom->bltamod = wSrcModulo;
 		g_pCustom->bltbmod = wSrcModulo;
 		g_pCustom->bltcmod = wDstModulo;
 		g_pCustom->bltdmod = wDstModulo;
-		for(UBYTE ubPlane = pSrc->Depth; ubPlane--;) {
-			blitWait();
-			g_pCustom->bltapt = (UBYTE*)(pMsk + ulSrcOffs);
-			g_pCustom->bltbpt = pSrc->Planes[ubPlane] + ulSrcOffs;
-			g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
-			g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
+		g_pCustom->bltapt = &pMsk[ulSrcOffs];
+		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
+		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
+		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
+#if defined(ACE_USE_ECS_FEATURES)
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
+		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
+	}
+	else {
+		wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
+		wDstModulo = pDst->BytesPerRow - uwBlitWords * 2;
+		UBYTE ubPlane = MIN(pSrc->Depth, pDst->Depth);
 
+		blitWait(); // Don't modify registers when other blit is in progress
+		g_pCustom->bltcon0 = uwBltCon0;
+		g_pCustom->bltcon1 = uwBltCon1;
+		g_pCustom->bltafwm = uwFirstMask;
+		g_pCustom->bltalwm = uwLastMask;
+		g_pCustom->bltapt = &pMsk[ulSrcOffs];
+		g_pCustom->bltamod = wSrcModulo;
+		g_pCustom->bltbmod = wSrcModulo;
+		g_pCustom->bltcmod = wDstModulo;
+		g_pCustom->bltdmod = wDstModulo;
+
+		while(ubPlane--) {
+			blitWait();
+			// This hell of a casting must stay here or else large offsets get bugged!
+			g_pCustom->bltapt = &pMsk[ulSrcOffs];
+			g_pCustom->bltbpt = &pSrc->Planes[ubPlane][ulSrcOffs];
+			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
+			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
+
+#if defined(ACE_USE_ECS_FEATURES)
+			g_pCustom->bltsizv = wHeight;
+			g_pCustom->bltsizh = uwBlitWords;
+#else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
 		}
 	}
+
 #endif // AMIGA
 	return 1;
 }
@@ -385,13 +491,6 @@ UBYTE blitSafeCopyMask(
 	tBitMap *pDst, WORD wDstX, WORD wDstY,
 	WORD wWidth, WORD wHeight, const UBYTE *pMsk, UWORD uwLine, const char *szFile
 ) {
-	if(wSrcX > wDstX) {
-		logWrite(
-			"ERR: wSrcX %hd must be smaller than or equal to wDstX %hd\n",
-			wSrcX, wDstX
-		);
-		return 0;
-	}
 	if(!blitCheck(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
 		return 0;
 	}
@@ -402,7 +501,7 @@ UBYTE blitUnsafeRect(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UBYTE ubColor
 ) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	// Helper vars
 	UWORD uwBlitWords, uwBlitWidth;
 	ULONG ulDstOffs;
@@ -441,7 +540,12 @@ UBYTE blitUnsafeRect(
 		// This hell of a casting must stay here or else large offsets get bugged!
 		g_pCustom->bltcpt = pDst->Planes[ubPlane] + ulDstOffs;
 		g_pCustom->bltdpt = pDst->Planes[ubPlane] + ulDstOffs;
+#if defined(ACE_USE_ECS_FEATURES)
+		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizh = uwBlitWords;
+#else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
 		ubColor >>= 1;
 		++ubPlane;
 	}	while(ubPlane < pDst->Depth);
@@ -465,7 +569,7 @@ void blitLine(
 	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 ) {
-#ifdef AMIGA
+#if defined(AMIGA)
 	// Based on Cahir's function from:
 	// https://github.com/cahirwpz/demoscene/blob/master/a500/base/libsys/blt-line.c
 
@@ -508,8 +612,8 @@ void blitLine(
 	if (wDerr < 0) {
 		uwBltCon1 |= SIGNFLAG;
 	}
-
 	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
+
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
 	blitWait(); // Don't modify registers when other blit is in progress

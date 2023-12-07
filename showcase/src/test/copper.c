@@ -195,14 +195,14 @@ void gsTestCopperLoop(void) {
 	static BYTE bDir = 1;
 
 	if (keyUse(KEY_ESCAPE)) {
-		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_MENU]);
+		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
 	}
 
 	if(keyUse(KEY_M)) {
 		// Change modes and restart
 		s_isRawMode = !s_isRawMode;
-		stateChange(g_pGameStateManager, g_pGameStates[GAME_STATE_COPPER]);
+		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_COPPER]);
 		return;
 	}
 

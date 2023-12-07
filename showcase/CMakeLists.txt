@@ -23,10 +23,6 @@ file(GLOB_RECURSE HEADERS src/*.h)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
-if(ACE_DEBUG)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACE_DEBUG") # For ACE headers with ifdefs
-endif()
-
 set(RES_DIR ${CMAKE_CURRENT_LIST_DIR}/res)
 set(DATA_DIR ${CMAKE_CURRENT_BINARY_DIR}/data)
 

@@ -161,7 +161,9 @@ int main(int lArgCount, const char *pArgs[])
 		if(!Planar.m_uwWidth) {
 			return EXIT_FAILURE;
 		}
-		Planar.toBm(szOutput, isWriteInterleaved);
+		if(isEnabledOutput) {
+			Planar.toBm(szOutput, isWriteInterleaved);
+		}
 	}
 	else if(szOutExt == "png") {
 		In.toPng(szOutput);

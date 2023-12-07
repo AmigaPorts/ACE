@@ -406,6 +406,8 @@ void bitmapDestroy(tBitMap *pBitMap) {
 }
 
 UBYTE bitmapIsInterleaved(const tBitMap *pBitMap) {
+	// The check for depth is because of how bitmapGetByteWidth() works
+	// if byte width were to be stored in bitmap struct, the depth check can be skipped.
 	return (pBitMap->Depth > 1) && (pBitMap->Flags & BMF_INTERLEAVED);
 }
 
