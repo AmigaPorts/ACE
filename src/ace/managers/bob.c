@@ -7,6 +7,7 @@
 #include <ace/managers/system.h>
 #include <ace/managers/blit.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/assume.h>
 
 #if !defined(ACE_NO_BOB_WRAP_Y)
 // Enables support for Y-wrapping of bobs. Required for scroll- and tileBuffer.
@@ -90,13 +91,8 @@ void bobManagerCreate(
 		pFront, pBack, uwAvailHeight
 	);
 
-	if(!bitmapIsInterleaved(pFront)) {
-		logWrite("ERR: front buffer bitmap %p isn't interleaved\n", pFront);
-	}
-
-	if(!bitmapIsInterleaved(pBack)) {
-		logWrite("ERR: back buffer bitmap %p isn't interleaved\n", pBack);
-	}
+	assumeMsg(bitmapIsInterleaved(pFront), "Front buffer bitmap isn't interleaved");
+	assumeMsg(bitmapIsInterleaved(pBack), "Back buffer bitmap isn't interleaved");
 
 	s_ubBpp = pFront->Depth;
 	s_pQueues[0].pDst = pBack;
@@ -427,12 +423,7 @@ void bobBegin(tBitMap *pBuffer) {
 	}
 #ifdef GAME_DEBUG
 	UWORD uwDrawLimit = s_pQueues[0].pBg->Rows * s_pQueues[0].pBg->Depth;
-	if(uwDrawnHeight > uwDrawLimit) {
-		logWrite(
-			"ERR: BG restore out of bounds: used %hu, limit: %hu",
-			uwDrawnHeight, uwDrawLimit
-		);
-	}
+	assumeMsg(uwDrawnHeight <= uwDrawLimit, "BG restore out of bounds");
 #endif
 	s_ubBobsSaved = 0;
 	s_ubBobsDrawn = 0;

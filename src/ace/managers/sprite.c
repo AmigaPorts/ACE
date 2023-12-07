@@ -10,6 +10,7 @@
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
 #include <ace/utils/sprite.h>
+#include <ace/utils/assume.h>
 
 #define SPRITE_VPOS_BITS 9
 #define SPRITE_HEIGHT_MAX ((1 << SPRITE_VPOS_BITS) - 1)
@@ -27,10 +28,13 @@ static tHardwareSpriteHeader CHIP s_uBlankSprite;
 static tCopBlock *s_pInitialClearCopBlock;
 
 static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
+	assumeNotNull(pChannel);
 	pChannel->ubCopperRegenCount = 2; // for front/back buffers in raw mode
 }
 
 void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
+	assumeNotNull(pView);
+
 	// TODO: add support for non-chained mode (setting sprxdat with copper)?
 	s_pView = pView;
 	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
@@ -73,32 +77,27 @@ void spriteManagerDestroy(void) {
 }
 
 tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
+	assumeNotNull(pBitmap);
+
 	systemUse();
 	// TODO: add support for attaching next sprite to the chain.
 	// TODO: add support for attached sprites (16-color)
 	tSprite *pSprite = memAllocFastClear(sizeof(*pSprite));
+	assumeNotNull(pSprite); // TODO: gracefully fail?
 	pSprite->ubChannelIndex = ubChannelIndex;
 	pSprite->isEnabled = 1;
 
 	tSpriteChannel *pChannel = &s_pChannelsData[ubChannelIndex];
-	if(pChannel->pFirstSprite) {
-		// TODO: add support for chaining sprites
-		logWrite("ERR: Sprite channel %hhu is already used\n", ubChannelIndex);
-	}
-	else {
-		spriteChannelRequestCopperUpdate(pChannel);
-		pChannel->pFirstSprite = pSprite;
 
-		if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
-#if defined(ACE_DEBUG)
-			if(pChannel->pCopBlock) {
-				logWrite("ERR: Sprite channel %hhu already has copBlock\n", ubChannelIndex);
-				systemUnuse();
-				return 0;
-			}
-#endif
-			pChannel->pCopBlock = copBlockCreate(s_pView->pCopList, 2, 0, 0);
-		}
+	// TODO: add support for chaining sprites
+	assumeMsg(pChannel->pFirstSprite == 0, "Sprite channel is already used");
+
+	spriteChannelRequestCopperUpdate(pChannel);
+	pChannel->pFirstSprite = pSprite;
+
+	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
+		assumeMsg(pChannel->pCopBlock == 0, "Sprite channel already has copBlock");
+		pChannel->pCopBlock = copBlockCreate(s_pView->pCopList, 2, 0, 0);
 	}
 
 	spriteSetBitmap(pSprite, pBitmap);
@@ -107,6 +106,8 @@ tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 }
 
 void spriteRemove(tSprite *pSprite) {
+	assumeNotNull(pSprite);
+
 	systemUse();
 	tSpriteChannel *pChannel = &s_pChannelsData[pSprite->ubChannelIndex];
 
@@ -129,46 +130,31 @@ void spriteRemove(tSprite *pSprite) {
 }
 
 void spriteSetEnabled(tSprite *pSprite, UBYTE isEnabled) {
+	assumeNotNull(pSprite);
+
 	pSprite->isEnabled = isEnabled;
 	// TODO: only after modifying first sprite in chain, change next sprite ptr in the prior one
 	s_pChannelsData[pSprite->ubChannelIndex].ubCopperRegenCount = 2; // for front/back buffers
 }
 
 void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
-#if defined(ACE_DEBUG)
-	if(pSprite->ubChannelIndex % 2 == 0) {
-		logWrite(
-			"ERR: Invalid sprite to set attachment on. %hhu is not an odd sprite\n",
-			pSprite->ubChannelIndex
-		);
-		isAttached = 0;
-	}
-#endif	
+	assumeNotNull(pSprite);
+	assumeMsg((pSprite->ubChannelIndex & 1) == 0, "Invalid sprite to set attachment on - sprite index must be odd");
 	pSprite->isAttached = isAttached;
 	pSprite->isHeaderToBeUpdated = 1;
 }
 
 void spriteRequestMetadataUpdate(tSprite *pSprite) {
+	assumeNotNull(pSprite);
+
 	pSprite->isHeaderToBeUpdated = 1;
 }
 
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
-	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
-		logWrite(
-			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP!\n",
-			pSprite->ubChannelIndex, pBitmap
-		);
-		return;
-	}
-
-	UBYTE ubByteWidth = bitmapGetByteWidth(pBitmap);
-	if(ubByteWidth != 2) {
-		logWrite(
-			"ERR: Unsupported sprite width: %hhu, expected 16\n",
-			ubByteWidth * 8
-		);
-		return;
-	}
+	assumeNotNull(pSprite);
+	assumeNotNull(pBitmap);
+	assumeMsg((pBitmap->Flags & BMF_INTERLEAVED) && pBitmap->Depth == 2, "Sprite bitmap isn't interleaved 2BPP");
+	assumeMsg(bitmapGetByteWidth(pBitmap) == 2, "Unsupported sprite width, expected 16");
 
 	pSprite->pBitmap = pBitmap;
 	spriteSetHeight(pSprite, pBitmap->Rows - 2);
@@ -217,19 +203,17 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 }
 
 void spriteProcess(tSprite *pSprite) {
+	assumeNotNull(pSprite);
+
 	if(!pSprite->isHeaderToBeUpdated) {
 		return;
 	}
+
 	UBYTE isAttached = pSprite->isAttached;
-	#if defined(ACE_DEBUG)
-		if(pSprite->ubChannelIndex % 2 == 0 && pSprite->isAttached) {
-			logWrite(
-				"ERR: Invalid sprite to set attachment on. %hhu is not an odd sprite\n",
-				pSprite->ubChannelIndex
-			);
-			isAttached = 0;
-		}
-	#endif
+	if(isAttached) {
+		assumeMsg((pSprite->ubChannelIndex & 1) == 0, "Invalid sprite to set attachment on - sprite index must be odd");
+	}
+
 	// Sprite in list mode has 2-word header before and after data, each
 	// occupies 1 line of the bitmap.
 	// TODO: get rid of hardcoded 128 X offset in reasonable way.
@@ -246,21 +230,15 @@ void spriteProcess(tSprite *pSprite) {
 		(BTST(uwVStop, 8) << 1) |
 		BTST(uwHStart, 0)
 	);
-	
+
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
-#if defined(ACE_DEBUG)
+	assumeNotNull(pSprite);
+
 	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
 	UWORD uwMaxHeight = SPRITE_HEIGHT_MAX - uwVStart;
-	if(uwHeight >= uwMaxHeight) {
-		logWrite(
-			"ERR: Invalid sprite %hhu height %hu, max is %hu\n",
-			pSprite->ubChannelIndex, uwHeight, uwMaxHeight
-		);
-		uwHeight = uwMaxHeight;
-	}
-#endif
+	assumeMsg(uwHeight < uwMaxHeight, "Invalid sprite height");
 
 	pSprite->uwHeight = uwHeight;
 	pSprite->isHeaderToBeUpdated = 1;

@@ -18,7 +18,6 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 
 	pFile = fileOpen(szFileName, "r");
 	if(!pFile) {
-		logWrite("ERR: File doesn't exist!\n");
 		logBlockEnd("paletteLoad()");
 		return;
 	}

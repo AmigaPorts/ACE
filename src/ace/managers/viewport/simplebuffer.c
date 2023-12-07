@@ -6,6 +6,7 @@
 #include <proto/exec.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/extview.h>
+#include <ace/utils/assume.h>
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #ifdef AMIGA
 
@@ -109,12 +110,9 @@ static void simpleBufferInitializeCopperList(
 }
 
 static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) {
-#if defined(ACE_DEBUG)
-	if(pManager->pBack && pManager->pBack->Depth != pBack->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
-		return;
+	if(pManager->pBack) {
+		assumeMsg(pManager->pBack->Depth == pBack->Depth, "Buffer bitmaps differ in BPP");
 	}
-#endif
 	pManager->pBack = pBack;
 }
 
@@ -123,12 +121,9 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 		"simpleBufferSetFront(pManager: %p, pFront: %p)",
 		pManager, pFront
 	);
-#if defined(ACE_DEBUG)
-	if(pManager->pFront && pManager->pFront->Depth != pFront->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
-		return;
+	if(pManager->pFront) {
+		assumeMsg(pManager->pBack->Depth == pFront->Depth, "Buffer bitmaps differ in BPP");
 	}
-#endif
 	pManager->pFront = pFront;
 	logBlockEnd("simplebufferSetFront()");
 }
@@ -140,7 +135,6 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	UWORD uwBoundWidth, uwBoundHeight;
 	UBYTE ubBitmapFlags;
 	tBitMap *pFront = 0, *pBack = 0;
-	UBYTE isCameraCreated = 0;
 
 	logBlockBegin("simpleBufferCreate(pTags: %p, ...)", pTags);
 	va_start(vaTags, pTags);
@@ -153,10 +147,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	logWrite("Addr: %p\n", pManager);
 
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_VPORT, 0);
-	if(!pVPort) {
-		logWrite("ERR: No parent viewport (TAG_SIMPLEBUFFER_VPORT) specified!\n");
-		goto fail;
-	}
+	assumeMsg(pVPort != 0, "No parent viewport (TAG_SIMPLEBUFFER_VPORT) specified");
 	pManager->sCommon.pVPort = pVPort;
 	logWrite("Parent VPort: %p\n", pVPort);
 
@@ -174,29 +165,23 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	pFront = bitmapCreate(
 		uwBoundWidth, uwBoundHeight, pVPort->ubBPP, ubBitmapFlags
 	);
-	if(!pFront) {
-		logWrite("ERR: Can't alloc buffer bitmap!\n");
-		goto fail;
-	}
+	assumeNotNull(pFront);
 
 	UBYTE isDblBfr = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_IS_DBLBUF, 0);
 	if(isDblBfr) {
 		pBack = bitmapCreate(
 			uwBoundWidth, uwBoundHeight, pVPort->ubBPP, ubBitmapFlags
 		);
-		if(!pBack) {
-			logWrite("ERR: Can't alloc buffer bitmap!\n");
-			goto fail;
-		}
+		assumeNotNull(pBack);
 	}
 
 	// Find camera manager, create if not exists
 	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
 	if(!pManager->pCamera) {
-		isCameraCreated = 1;
 		pManager->pCamera = cameraCreate(
 			pVPort, 0, 0, uwBoundWidth, uwBoundHeight, isDblBfr
 		);
+		assumeNotNull(pManager->pCamera);
 	}
 
 	pCopList = pVPort->pView->pCopList;
@@ -217,12 +202,10 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 		pManager->uwCopperOffset = tagGet(
 			pTags, vaTags, TAG_SIMPLEBUFFER_COPLIST_OFFSET, uwInvalidCopOffs
 		);
-		if(pManager->uwCopperOffset == uwInvalidCopOffs) {
-			logWrite(
-				"ERR: Copperlist offset (TAG_SIMPLEBUFFER_COPLIST_OFFSET) not specified!\n"
-			);
-			goto fail;
-		}
+		assumeMsg(
+			pManager->uwCopperOffset != uwInvalidCopOffs,
+			"Copperlist offset (TAG_SIMPLEBUFFER_COPLIST_OFFSET) not specified"
+		);
 		logWrite("Copperlist offset: %u\n", pManager->uwCopperOffset);
 	}
 
@@ -236,23 +219,6 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	logBlockEnd("simpleBufferCreate()");
 	va_end(vaTags);
 	return pManager;
-
-fail:
-	if(pBack && pBack != pFront) {
-		bitmapDestroy(pBack);
-	}
-	if(pFront) {
-		bitmapDestroy(pFront);
-	}
-	if(pManager) {
-		if(pManager->pCamera && isCameraCreated) {
-			cameraDestroy(pManager->pCamera);
-		}
-		memFree(pManager, sizeof(tSimpleBufferManager));
-	}
-	logBlockEnd("simpleBufferCreate()");
-	va_end(vaTags);
-	return 0;
 }
 
 void simpleBufferDestroy(tSimpleBufferManager *pManager) {

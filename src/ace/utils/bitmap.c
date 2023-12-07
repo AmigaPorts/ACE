@@ -10,6 +10,7 @@
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/assume.h>
 
 /* Globals */
 
@@ -28,18 +29,12 @@ tBitMap *bitmapCreate(
 		uwWidth, uwHeight, ubDepth, ubFlags
 	);
 
-	if(uwWidth == 0 || uwHeight == 0) {
-		logWrite("ERR: invalid bitmap dimensions\n");
-		return 0;
-	}
-
-	if((uwWidth & 0xF) != 0) {
-		// Needed for blitter!
-		logWrite("ERR: bitmap width is not multiple of 16\n");
-		return 0;
-	}
+	assumeMsg(uwWidth != 0, "zero bitmap width");
+	assumeMsg(uwHeight != 0, "zero bitmap height");
+	assumeMsg((uwWidth & 0xF) == 0, "bitmap width is not multiple of 16");
 
 	pBitMap = (tBitMap*) memAllocFastClear(sizeof(tBitMap));
+	assumeNotNull(pBitMap);
 	logWrite("addr: %p\n", pBitMap);
 
 	pBitMap->BytesPerRow = uwWidth / 8;
@@ -134,7 +129,6 @@ void bitmapLoadFromFile(
 	// Open source bitmap
 	tFile *pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
-		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapLoadFromFile()");
 		systemUnuse();
 		return;
@@ -147,40 +141,14 @@ void bitmapLoadFromFile(
 	fileRead(pFile, &ubSrcVersion, sizeof(UBYTE));
 	fileRead(pFile, &ubSrcFlags, sizeof(UBYTE));
 	fileSeek(pFile, 2*sizeof(UBYTE), FILE_SEEK_CURRENT); // Skip unused 2 bytes
-	if(ubSrcVersion != 0) {
-		fileClose(pFile);
-		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
-		logBlockEnd("bitmapLoadFromFile()");
-		systemUnuse();
-		return;
-	}
+	assumeMsg(ubSrcVersion == 0, "Unknown file version");
 	logWrite("Source dimensions: %ux%u\n", uwSrcWidth, uwSrcHeight);
 
-	// Interleaved check
-	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
-		logWrite(
-			"ERR: Interleaved flag conflict (file: %d, bm: %hhu)\n",
-			!!(ubSrcFlags & BITMAP_INTERLEAVED), bitmapIsInterleaved(pBitMap)
-		);
-		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFile()");
-		systemUnuse();
-		return;
-	}
-
-	// Depth check
-	if(ubSrcBpp > pBitMap->Depth) {
-		logWrite(
-			"ERR: Source has greater BPP than destination: %hu > %hu\n",
-			ubSrcBpp, pBitMap->Depth
-		);
-		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFile()");
-		systemUnuse();
-		return;
-	}
+	assumeMsg(((ubSrcFlags & BITMAP_INTERLEAVED) != 0) == bitmapIsInterleaved(pBitMap), "Interleaved flag conflict");
+	assumeMsg(ubSrcBpp <= pBitMap->Depth, "Source has greater BPP than destination");
 
 	// Check bitmap dimensions
+	// TODO: Assume check?
 	uwDstWidth = bitmapGetByteWidth(pBitMap) << 3;
 	if(uwStartX + uwSrcWidth > uwDstWidth || uwStartY + uwSrcHeight > (pBitMap->Rows)) {
 		logWrite(
@@ -224,6 +192,7 @@ void bitmapLoadFromFile(
 	systemUnuse();
 }
 
+// TODO: remove, generate initialized bitmap struct in .c/.h with bitmap_conv instead
 void bitmapLoadFromMem(
 	tBitMap *pBitMap, const UBYTE* pData, UWORD uwStartX, UWORD uwStartY
 ) {
@@ -238,7 +207,6 @@ void bitmapLoadFromMem(
 		"bitmapLoadFromMem(pBitMap: %p, uwStartX: %u, uwStartY: %u)",
 		pBitMap, uwStartX, uwStartY
 	);
-
 
 	// Read header
 	memcpy(&uwSrcWidth,&pData[ulCurByte],sizeof(UWORD));
@@ -258,29 +226,11 @@ void bitmapLoadFromMem(
 
 	ulCurByte+=2*sizeof(UBYTE);
 
-	if(ubSrcVersion != 0) {
-		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
-		logBlockEnd("bitmapLoadFromMem()");
-		return;
-	}
+	assumeMsg(ubSrcVersion == 0, "Unknown file version");
 	logWrite("Source dimensions: %ux%u\n", uwSrcWidth, uwSrcHeight);
 
-	// Interleaved check
-	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
-		logWrite("ERR: Interleaved flag conflict\n");
-		logBlockEnd("bitmapLoadFromMem()");
-		return;
-	}
-
-	// Depth check
-	if(ubSrcBpp > pBitMap->Depth) {
-		logWrite(
-			"ERR: Source has greater BPP than destination: %hu > %hu\n",
-			ubSrcBpp, pBitMap->Depth
-		);
-		logBlockEnd("bitmapLoadFromMem()");
-		return;
-	}
+	assumeMsg(((ubSrcFlags & BITMAP_INTERLEAVED) != 0) == bitmapIsInterleaved(pBitMap), "Interleaved flag conflict");
+	assumeMsg(ubSrcBpp <= pBitMap->Depth, "Source has greater BPP than destination");
 
 	// Check bitmap dimensions
 	uwDstWidth = bitmapGetByteWidth(pBitMap) << 3;
@@ -328,7 +278,6 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
 		fileClose(pFile);
-		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapCreateFromFile()");
 		return 0;
 	}
@@ -340,12 +289,7 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	fileRead(pFile, &ubVersion, sizeof(UBYTE));
 	fileRead(pFile, &ubFlags, sizeof(UBYTE));
 	fileSeek(pFile, 2 * sizeof(UBYTE), SEEK_CUR); // Skip unused 2 bytes
-	if(ubVersion != 0) {
-		fileClose(pFile);
-		logWrite("ERR: Unknown file version: %hu\n", ubVersion);
-		logBlockEnd("bitmapCreateFromFile()");
-		return 0;
-	}
+	assumeMsg(ubVersion == 0, "Unknown file version");
 
 	// Init bitmap
 	UBYTE ubBitmapFlags = 0;

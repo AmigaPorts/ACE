@@ -4,6 +4,7 @@
 
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
+#include <ace/utils/assume.h>
 
 #define BLIT_LINE_OR ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define BLIT_LINE_XOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
@@ -313,10 +314,10 @@ UBYTE blitSafeCopyAligned(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
 	UWORD uwLine, const char *szFile
 ) {
-	if((wSrcX | wDstX | wWidth) & 0x000F) {
-		logWrite("ERR: Dimensions are not divisible by 16\n");
-		return 0;
-	}
+	assumeMsg((wSrcX & 0xF) == 0, "wSrcX isn't divisible by 16");
+	assumeMsg((wDstX & 0xF) == 0, "wDstX isn't divisible by 16");
+	assumeMsg((wWidth & 0xF) == 0, "wWidth isn't divisible by 16");
+
 	if(!blitCheck(
 		pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile
 	)) {

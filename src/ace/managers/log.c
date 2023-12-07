@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ace/macros.h>
 #include <ace/managers/system.h>
+#include <ace/utils/assume.h>
 #ifdef ACE_DEBUG
 
 // Globals
@@ -243,9 +244,8 @@ void _logPushInt(void) {
 }
 
 void _logPopInt(void) {
-	if(--g_sLogManager.wInterruptDepth < 0) {
-		logWrite("ERR: INT DEPTH NEGATIVE!\n");
-	}
+	--g_sLogManager.wInterruptDepth;
+	assumeMsg(g_sLogManager.wInterruptDepth >= 0, "INT DEPTH NEGATIVE");
 }
 
 #endif // ACE_DEBUG
