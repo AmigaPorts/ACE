@@ -88,7 +88,7 @@ UBYTE _blitCheck(
 		);
 		return 0;
 	}
-	
+
 #if defined(ACE_USE_ECS_FEATURES)
 	UWORD uwMaxBlitWidth = 32768;
 #else
@@ -103,7 +103,7 @@ UBYTE _blitCheck(
 			);
 		}
 	}
-	
+
 	return 1;
 }
 #endif // defined(ACE_DEBUG)
@@ -219,7 +219,7 @@ UBYTE blitUnsafeCopy(
 		g_pCustom->bltsizh = uwBlitWords;
 #else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-#endif	
+#endif
 	}
 	else {
 		wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
@@ -247,7 +247,7 @@ UBYTE blitUnsafeCopy(
 			g_pCustom->bltsizh = uwBlitWords;
 #else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-#endif	
+#endif
 		}
 	}
 
@@ -300,7 +300,7 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltsizh = uwBlitWords;
 #else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-#endif	
+#endif
 
 	}
 	else {
@@ -327,7 +327,7 @@ UBYTE blitUnsafeCopyAligned(
 			g_pCustom->bltsizh = uwBlitWords;
 #else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-#endif	
+#endif
 		}
 	}
 
@@ -349,6 +349,15 @@ UBYTE blitSafeCopyAligned(
 	)) {
 		return 0;
 	}
+
+	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst) && pSrc->Depth != pDst->Depth) {
+		logWrite(
+			"ERR: bitmap BPP mismatch on interleaved blit! src: %hhu, dst: %hhu\n",
+			pSrc->Depth, pDst->Depth
+		);
+		return 0;
+	}
+
 	return blitUnsafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight);
 }
 
@@ -386,7 +395,7 @@ UBYTE blitUnsafeCopyMask(
 
 		ubMaskFShift = ((ubWidthDelta+15)&0xF0)-ubWidthDelta;
 		ubMaskLShift = uwBlitWidth - (wWidth+ubMaskFShift);
-		
+
 		// Position on the end of last row of the bitmap.
 		// For interleaved, position on the last row of last bitplane.
 		if(isBlitInterleaved) {
@@ -418,16 +427,16 @@ UBYTE blitUnsafeCopyMask(
 
 		uwFirstMask = 0xFFFF >> ubMaskFShift;
 		uwLastMask = 0xFFFF << ubMaskLShift;
-		
+
 		ubShift = ubDstDelta-ubSrcDelta;
 		uwBltCon1 = ubShift << BSHIFTSHIFT;
 
 		ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX >> 3);
 		ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX >> 3);
 	}
-	
+
 	 uwBltCon0 = uwBltCon1 |USEA|USEB|USEC|USED | MINTERM_COOKIE;
-	
+
 	if(isBlitInterleaved) {
 		wHeight *= pSrc->Depth;
 		wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
@@ -451,7 +460,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltsizh = uwBlitWords;
 #else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-#endif	
+#endif
 	}
 	else {
 		wSrcModulo = pSrc->BytesPerRow - uwBlitWords * 2;
@@ -468,7 +477,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltbmod = wSrcModulo;
 		g_pCustom->bltcmod = wDstModulo;
 		g_pCustom->bltdmod = wDstModulo;
-		
+
 		while(ubPlane--) {
 			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
@@ -476,13 +485,13 @@ UBYTE blitUnsafeCopyMask(
 			g_pCustom->bltbpt = &pSrc->Planes[ubPlane][ulSrcOffs];
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];
-		
+
 #if defined(ACE_USE_ECS_FEATURES)
 			g_pCustom->bltsizv = wHeight;
 			g_pCustom->bltsizh = uwBlitWords;
 #else
 			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-#endif	
+#endif
 		}
 	}
 
@@ -549,7 +558,7 @@ UBYTE blitUnsafeRect(
 		g_pCustom->bltsizh = uwBlitWords;
 #else
 		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
-#endif	
+#endif
 		ubColor >>= 1;
 		++ubPlane;
 	}	while(ubPlane < pDst->Depth);
