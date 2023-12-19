@@ -408,15 +408,14 @@ UBYTE blitUnsafeCopyMask(
 			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
 		}
 
-		uwFirstMask = 0xFFFF >> ulSrcOffs;
-		uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ulSrcOffs));
+		uwFirstMask = 0xFFFF << ubMaskFShift;
+		uwLastMask = 0xFFFF >> ubMaskLShift;
 		if(ubMaskLShift > 16) { // Fix for 2-word blits
 			uwFirstMask &= 0xFFFF >> (ubMaskLShift-16);
 		}
 
 		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
 		uwBltCon1 = (ubShift << BSHIFTSHIFT) | BLITREVERSE;
-
 	}
 	else {
 		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
