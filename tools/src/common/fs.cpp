@@ -45,7 +45,7 @@ std::string getExt(const std::string &szPath)
 	return szPath.substr(DotPos + 1);
 }
 
-std::string trimExt(const std::string &szPath)
+std::string removeExt(const std::string &szPath)
 {
 	auto DotPos = szPath.find_last_of('.');
 	if(DotPos == std::string::npos) {

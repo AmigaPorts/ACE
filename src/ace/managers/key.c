@@ -8,7 +8,8 @@
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
 #include <hardware/intbits.h> // INTB_PORTS
-#define KEY_RELEASED_BIT 1
+#define KEY_INTERRUPT_RELEASED_BIT 1
+#define KEY_INPUT_HANDLER_RELEASED_MASK BV(7)
 
 #if defined ACE_DEBUG
 static UBYTE s_bInitCount = 0;
@@ -35,13 +36,19 @@ void keySetState(UBYTE ubKeyCode, UBYTE ubKeyState) {
 	keyIntSetState(&g_sKeyManager, ubKeyCode, ubKeyState);
 }
 
+void onRawKeyInput(UBYTE ubRawKey) {
+	UBYTE isKeyReleased = ubRawKey & KEY_INPUT_HANDLER_RELEASED_MASK;
+	ubRawKey &= ~KEY_INPUT_HANDLER_RELEASED_MASK;
+	keySetState(ubRawKey, isKeyReleased ? KEY_NACTIVE : KEY_ACTIVE);
+}
+
 /**
  * Key interrupt server
  * Gets key press/release from kbd controller and confirms reception
  * by handshake
  */
 FN_HOTSPOT
-void INTERRUPT keyIntServer(
+void INTERRUPT onKeyInterrupt(
 	REGARG(volatile tCustom *pCustom, "a0"),
 	REGARG(volatile void *pData, "a1")
 ) {
@@ -54,7 +61,7 @@ void INTERRUPT keyIntServer(
 	UWORD uwStart = pRayPos->bfPosY;
 
 	// Get keypress flag and shift key code
-	UBYTE ubKeyReleased = ubKeyCode & KEY_RELEASED_BIT;
+	UBYTE ubKeyReleased = ubKeyCode & KEY_INTERRUPT_RELEASED_BIT;
 	ubKeyCode >>= 1;
 	keyIntSetState(
 		pKeyManager, ubKeyCode, ubKeyReleased ? KEY_NACTIVE : KEY_ACTIVE
@@ -99,7 +106,8 @@ void keyCreate(void) {
 		logWrite("ERR: Keyboard already initialized!\n");
 	}
 #endif
-	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, keyIntServer, &g_sKeyManager);
+	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, onKeyInterrupt, &g_sKeyManager);
+	systemSetKeyInputHandler(onRawKeyInput);
 	logBlockEnd("keyCreate()");
 }
 
@@ -112,6 +120,7 @@ void keyDestroy(void) {
 	}
 #endif
 	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, 0, 0);
+	systemSetKeyInputHandler(0);
 	logBlockEnd("keyDestroy()");
 }
 

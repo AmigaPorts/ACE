@@ -933,6 +933,7 @@ static volatile UBYTE s_isPendingPlay, s_isPendingSetRep, s_isPendingDmaOn;
 #endif
 static UBYTE s_isRepeat;
 static tPtplayerCbSongEnd s_cbSongEnd;
+static tPtplayerCbE8 s_cbOnE8;
 static UBYTE s_isPal;
 
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
@@ -1760,6 +1761,7 @@ void ptplayerDestroy(void) {
 void ptplayerCreate(UBYTE isPal) {
 	s_isRepeat = 1;
 	s_cbSongEnd = 0;
+	s_cbOnE8 = 0;
 	s_pModCurr = 0;
 	ptplayerEnableMusic(0);
 #if defined(PTPLAYER_USE_AUDIO_INT_HANDLERS)
@@ -2456,6 +2458,9 @@ static void mt_e8(
 ) {
 	// cmd 0x0E'8X (x = trigger value)
 	mt_E8Trigger = ubArg;
+	if(s_cbOnE8) {
+		s_cbOnE8(ubArg);
+	}
 }
 
 static void ptDoRetrigger(
@@ -3221,4 +3226,8 @@ void ptplayerSamplePackDestroy(tPtplayerSamplePack *pSamplePack) {
 	memFree(pSamplePack->pData, pSamplePack->ulSize);
 	memFree(pSamplePack, sizeof(*pSamplePack));
 	logBlockEnd("ptplayerSamplePackDestroy()");
+}
+
+void ptplayerSetE8Callback(tPtplayerCbE8 cbOnE8) {
+	s_cbOnE8 = cbOnE8;
 }

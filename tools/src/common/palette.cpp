@@ -196,7 +196,7 @@ bool tPalette::toGpl(const std::string &szPath)
 
 	// Header
 	Dest << "GIMP Palette\n";
-	Dest << fmt::format("Name: {}\n", trimExt(getBaseName(szPath)));
+	Dest << fmt::format("Name: {}\n", removeExt(getBaseName(szPath)));
 	Dest << "Columns: 4\n";
 	Dest << "#\n";
 

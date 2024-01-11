@@ -17,7 +17,7 @@ bool isDir(const std::string &szPath);
 
 std::string getExt(const std::string &szPath);
 
-std::string trimExt(const std::string &szPath);
+std::string removeExt(const std::string &szPath);
 
 std::string getBaseName(const std::string &szPath);
 

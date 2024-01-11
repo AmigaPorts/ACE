@@ -109,24 +109,20 @@ UBYTE _blitCheck(
 #endif // defined(ACE_DEBUG)
 
 void blitWait(void) {
-	while(!blitIsIdle()) continue;
+	// A1000 Blitter done bug:
+	// The solution is to read hardware register before testing the bit.
+	(void)g_pCustom->dmaconr;
+	while(g_pCustom->dmaconr & DMAF_BLTDONE) continue;
 }
 
-/**
- * Checks if blitter is idle
- * Polls 2 times - A1000 Agnus bug workaround
- */
 UBYTE blitIsIdle(void) {
-	#if defined(AMIGA)
-	if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
-		if(!(g_pCustom->dmaconr & DMAF_BLTDONE)) {
-			return 1;
-		}
+	// A1000 Blitter done bug:
+	// The solution is to read hardware register before testing the bit.
+	(void)g_pCustom->dmaconr;
+	if(g_pCustom->dmaconr & DMAF_BLTDONE) {
+		return 0;
 	}
-	return 0;
-	#else
-		return 1;
-	#endif // AMIGA
+	return 1;
 }
 
 UBYTE blitUnsafeCopy(
