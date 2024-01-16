@@ -6,6 +6,7 @@
 #include <ace/managers/blit.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/file.h>
+#include <ace/utils/palette.h>
 
 void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	tFile *pFile;
@@ -66,6 +67,28 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 
 	// Output
 	return (r << 8) | (g << 4) | b;
+}
+
+UWORD paletteColorMix(
+	UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel
+) {
+	UBYTE r1,g1,b1;
+	UBYTE r2,g2,b2;
+
+	r1 = (uwColorPrimary >> 8) & 0xF;
+	g1 = (uwColorPrimary >> 4) & 0xF;
+	b1 = (uwColorPrimary)      & 0xF;
+	r2 = (uwColorSecondary >> 8) & 0xF;
+	g2 = (uwColorSecondary >> 4) & 0xF;
+	b2 = (uwColorSecondary)      & 0xF;
+
+	// Dim color
+	r1 = ((r1 * ubLevel + (r2 * (0xF - ubLevel)))/15) & 0xF;
+	g1 = ((g1 * ubLevel + (g2 * (0xF - ubLevel)))/15) & 0xF;
+	b1 = ((b1 * ubLevel + (b2 * (0xF - ubLevel)))/15) & 0xF;
+
+	// Output
+	return (r1 << 8) | (g1 << 4) | b1;
 }
 
 void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {

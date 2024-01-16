@@ -50,8 +50,22 @@ void paletteDim(
  * @brief Dims a single input color to given brightness level.
  * @param uwFullColor Full color used as a base to calculate percentage.
  * @param ubLevel Brightness level - 15 for no dim, 0 for total blackness.
+ *
+ * @see paletteColorMix()
  */
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
+
+/**
+ * @brief Interpolates two colors at given level.
+ * @param uwColorPrimary Primary color in the mix.
+ * @param uwColorSecondary Secondary color in the mix.
+ * @param ubLevel Mix ratio - 15 results in primary color, 0 in secondary.
+ * @return Mixed color between uwColorPrimary and uwColorSecondary.
+ *
+ * @note This function is slower than paletteColorDim().
+ * @see paletteColorDim()
+ */
+UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel);
 
 /**
  * @brief Writes given palette to debug .bmp file.
