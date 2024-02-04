@@ -207,14 +207,23 @@ void bitmapLoadFromFile(
 	UWORD uwReadBytesPerRow = (uwSrcWidth + 7) / 8;
 	if(bitmapIsInterleaved(pBitMap)) {
 		UWORD uwDestOffs = uwWidth * (uwStartY * pBitMap->Depth) + (uwStartX / 8);
-		for(y = 0; y < uwSrcHeight; ++y) {
-			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
-				fileRead(
-					pFile,
-					&pBitMap->Planes[0][uwDestOffs],
-					uwReadBytesPerRow
-				);
-				uwDestOffs += uwWidth;
+		if(uwStartX == 0 && uwSrcWidth == uwDstWidth) {
+			fileRead(
+				pFile,
+				&pBitMap->Planes[0][uwDestOffs],
+				pBitMap->BytesPerRow * uwSrcHeight
+			);
+		}
+		else {
+			for(y = 0; y < uwSrcHeight; ++y) {
+				for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
+					fileRead(
+						pFile,
+						&pBitMap->Planes[0][uwDestOffs],
+						uwReadBytesPerRow
+					);
+					uwDestOffs += uwWidth;
+				}
 			}
 		}
 	}
