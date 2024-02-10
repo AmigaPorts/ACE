@@ -18,24 +18,24 @@ public:
 
 	bool isEmpty(void) const;
 
-	uint32_t getLength(void) const;
+	std::uint32_t getLength(void) const;
 
 	void normalize(void);
 
-	void divideAmplitude(uint8_t ubDivisor);
+	void divideAmplitude(std::uint8_t ubDivisor);
 
-	bool isFittingMaxAmplitude(int8_t bMaxAmplitude) const;
+	bool isFittingMaxAmplitude(std::int8_t bMaxAmplitude) const;
 
 	bool hasEmptyFirstWord(void) const;
 
 	void enforceEmptyFirstWord(void);
 
-	void padContents(uint8_t ubAlignment);
+	void padContents(std::uint8_t ubAlignment);
 
-	tSfx splitAfter(uint32_t ulSamples);
+	tSfx splitAfter(std::uint32_t ulSamples);
 
 private:
-	uint32_t m_ulFreq;
+	std::uint32_t m_ulFreq;
 	std::vector<int8_t> m_vData;
 };
 

@@ -13,8 +13,8 @@
 class tGlyphSet {
 public:
 	static tGlyphSet fromTtf(
-		const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet,
-		uint8_t ubThreshold
+		const std::string &szTtfPath, std::uint8_t ubSize, const std::string &szCharSet,
+		std::uint8_t ubThreshold
 	);
 
 	/**
@@ -24,7 +24,7 @@ public:
 	 * @param ubStartIdx ASCII index of first glyph in PMNG file.
 	 * @return Glyph set filled with characters from file.
 	 */
-	static tGlyphSet fromPmng(const std::string &szPngPath, uint8_t ubStartIdx = 33);
+	static tGlyphSet fromPmng(const std::string &szPngPath, std::uint8_t ubStartIdx = 33);
 
 	/**
 	 * @brief Creates glyph set based on ACE font (.fnt) file.
@@ -48,15 +48,15 @@ public:
 
 private:
 	struct tBitmapGlyph {
-		uint8_t m_ubBearing;
-		uint8_t m_ubWidth, m_ubHeight;
+		std::uint8_t m_ubBearing;
+		std::uint8_t m_ubWidth, m_ubHeight;
 		std::vector<uint8_t> m_vData; ///< One byte per pixel, 0 for bg, 0xFF otherwise.
 
 		void trimHorz(bool isRight);
 
-		uint8_t getValueAt(uint8_t ubX, uint8_t ubY);
+		std::uint8_t getValueAt(std::uint8_t ubX, std::uint8_t ubY);
 		bool isEmpty(void);
-		bool hasEmptyColumn(uint8_t ubX);
+		bool hasEmptyColumn(std::uint8_t ubX);
 	};
 
 	std::map<uint16_t, tBitmapGlyph> m_mGlyphs;

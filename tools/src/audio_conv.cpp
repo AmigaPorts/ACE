@@ -27,7 +27,7 @@ void printUsage(const std::string &szAppName) {
 int main(int lArgCount, const char *pArgs[]) {
 	using namespace std::string_view_literals;
 
-	uint8_t ubMandatoryArgCnt = 2;
+	std::uint8_t ubMandatoryArgCnt = 2;
 
 	if(lArgCount < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
@@ -37,8 +37,8 @@ int main(int lArgCount, const char *pArgs[]) {
 
 	bool isStrict = false;
 	bool isNormalizing = false;
-	uint8_t ubDivisor = 1;
-	uint8_t ubFitDivisor = 1;
+	std::uint8_t ubDivisor = 1;
+	std::uint8_t ubFitDivisor = 1;
 	std::string szInput(pArgs[1]);
 	std::string szOutput;
 	bool isForcePt = false;
@@ -144,7 +144,7 @@ int main(int lArgCount, const char *pArgs[]) {
 		In.divideAmplitude(ubDivisor);
 	}
 
-	int8_t bMaxAmplitude = std::numeric_limits<int8_t>::max() / ubFitDivisor;
+	std::int8_t bMaxAmplitude = std::numeric_limits<int8_t>::max() / ubFitDivisor;
 	if(!In.isFittingMaxAmplitude(bMaxAmplitude)) {
 		nLog::error(
 			"Sound effect doesn't fit the amplitude divisor {}, max amplitude: {}",
@@ -159,7 +159,7 @@ int main(int lArgCount, const char *pArgs[]) {
 	if(oSplitAfter.has_value()) {
 		auto PartCount = (In.getLength() + oSplitAfter.value() - 1) / oSplitAfter.value();
 		fmt::print("Splitting to {} parts, {} bytes each\n", PartCount, oSplitAfter.value());
-		uint8_t ubPart = 0;
+		std::uint8_t ubPart = 0;
 		tSfx SfxRemaining;
 		auto BaseOutputPath = nFs::removeExt(szOutput);
 		do {

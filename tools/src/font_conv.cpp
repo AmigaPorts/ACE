@@ -14,7 +14,7 @@ static const std::string s_szDefaultCharset = (
 	" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 );
 
-enum class tFontFormat: uint8_t {
+enum class tFontFormat: std::uint8_t {
 	INVALID,
 	TTF,
 	DIR,
@@ -59,12 +59,12 @@ void printUsage(const std::string &szAppName) {
 	print("\t-fc firstchar\tSpecify first ASCII character idx in ProMotion NG font. Default: 33.");
 }
 
-static uint32_t getCharCodeFromTok(const tJson *pJson, uint16_t uwTok) {
-	uint32_t ulVal = 0;
+static std::uint32_t getCharCodeFromTok(const tJson *pJson, std::uint16_t uwTok) {
+	std::uint32_t ulVal = 0;
 	const auto &Token = pJson->pTokens[uwTok];
 	if(Token.type == JSMN_STRING) {
 		// read unicode char and return its codepoint
-		uint32_t ulCodepoint, ulState = 0;
+		std::uint32_t ulCodepoint, ulState = 0;
 
 		for(auto i = Token.start; i <= Token.end; ++i) {
 			auto CharCode = *reinterpret_cast<const uint8_t*>(&pJson->szData[i]);
@@ -87,7 +87,7 @@ static uint32_t getCharCodeFromTok(const tJson *pJson, uint16_t uwTok) {
 
 int main(int lArgCount, const char *pArgs[])
 {
-	const uint8_t ubMandatoryArgCnt = 2;
+	const std::uint8_t ubMandatoryArgCnt = 2;
 	// Mandatory args
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
@@ -101,9 +101,9 @@ int main(int lArgCount, const char *pArgs[])
 	// Optional args' default values
 	std::string szCharset = "";
 	std::string szOutPath = "";
-	uint8_t ubFirstChar = 33;
+	std::uint8_t ubFirstChar = 33;
 	std::string szRemapPath = "";
-	int32_t lSize = -1;
+	std::int32_t lSize = -1;
 
 	// Search for optional args
 	for(auto ArgIndex = ubMandatoryArgCnt+1; ArgIndex < lArgCount; ++ArgIndex) {

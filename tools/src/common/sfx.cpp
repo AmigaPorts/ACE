@@ -23,7 +23,7 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 	if(BitsPerSample == 8) {
 		// Convert 8-bit unsigned to signed - https://wiki.multimedia.cx/index.php/PCM#Sign
 		for(const auto &UnsignedSample: vWavData) {
-			int8_t bSample = UnsignedSample - 128;
+			std::int8_t bSample = UnsignedSample - 128;
 			m_vData.push_back(bSample);
 		}
 	}
@@ -35,9 +35,9 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 		}
 		nLog::warn("Resampling data - may result in poor results!");
 		auto DataSize = vWavData.size();
-		for(uint32_t i = 0; i < DataSize; i += 2) {
-			uint16_t uwRawSample = vWavData[i + 0] | (vWavData[i + 1] << 8);
-			auto *pAsSigned = reinterpret_cast<int16_t *>(&uwRawSample);
+		for(std::uint32_t i = 0; i < DataSize; i += 2) {
+			std::uint16_t uwRawSample = vWavData[i + 0] | (vWavData[i + 1] << 8);
+			auto *pAsSigned = reinterpret_cast<std::int16_t *>(&uwRawSample);
 			m_vData.push_back(*pAsSigned / 256);
 		}
 	}
@@ -51,9 +51,9 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 bool tSfx::toSfx(const std::string &szPath) const {
 	std::ofstream FileOut(szPath, std::ios::binary);
 
-	const uint8_t ubVersion = 1;
-	const uint16_t uwWordLength = nEndian::toBig16(uint16_t(m_vData.size() / 2));
-	const uint16_t uwSampleReateHz = nEndian::toBig16(m_ulFreq);
+	const std::uint8_t ubVersion = 1;
+	const std::uint16_t uwWordLength = nEndian::toBig16(uint16_t(m_vData.size() / 2));
+	const std::uint16_t uwSampleReateHz = nEndian::toBig16(m_ulFreq);
 
 	FileOut.write(reinterpret_cast<const char*>(&ubVersion), sizeof(ubVersion));
 	FileOut.write(reinterpret_cast<const char*>(&uwWordLength), sizeof(uwWordLength));
@@ -68,7 +68,7 @@ bool tSfx::isEmpty(void) const
 	return m_vData.empty();
 }
 
-uint32_t tSfx::getLength(void) const
+std::uint32_t tSfx::getLength(void) const
 {
 	return m_vData.size();
 }
@@ -76,7 +76,7 @@ uint32_t tSfx::getLength(void) const
 void tSfx::normalize(void)
 {
 	// Get the biggest amplitude - negative or positive
-	int8_t bMaxAmplitude = 0;
+	std::int8_t bMaxAmplitude = 0;
 	for(const auto &Sample: m_vData) {
 		auto Amplitude = abs(Sample);
 		if(Amplitude > bMaxAmplitude) {
@@ -90,14 +90,14 @@ void tSfx::normalize(void)
 	}
 }
 
-void tSfx::divideAmplitude(uint8_t ubDivisor)
+void tSfx::divideAmplitude(std::uint8_t ubDivisor)
 {
 	for(auto &Sample: m_vData) {
 		Sample /= ubDivisor;
 	}
 }
 
-bool tSfx::isFittingMaxAmplitude(int8_t bMaxAmplitude) const
+bool tSfx::isFittingMaxAmplitude(std::int8_t bMaxAmplitude) const
 {
 	for(auto &Sample: m_vData) {
 		if(Sample > bMaxAmplitude) {
@@ -118,14 +118,14 @@ void tSfx::enforceEmptyFirstWord(void) {
 	}
 }
 
-void tSfx::padContents(uint8_t ubAlignment) {
-		uint8_t ubAddCount = m_vData.size() % ubAlignment;
-		for(uint8_t i = ubAddCount; i--;) {
+void tSfx::padContents(std::uint8_t ubAlignment) {
+		std::uint8_t ubAddCount = m_vData.size() % ubAlignment;
+		for(std::uint8_t i = ubAddCount; i--;) {
 			m_vData.push_back(0);
 		}
 }
 
-tSfx tSfx::splitAfter(uint32_t ulSamples) {
+tSfx tSfx::splitAfter(std::uint32_t ulSamples) {
 	tSfx Out;
 	if(m_vData.size() <= ulSamples) {
 		return Out;

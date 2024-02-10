@@ -32,7 +32,7 @@ public:
 
 	bool isValid(void) const;
 
-	uint8_t getBpp(void) const;
+	std::uint8_t getBpp(void) const;
 
 	std::vector<tRgb> m_vColors;
 
@@ -42,7 +42,7 @@ public:
 		m_vColors(vColors)
 	{}
 
-	int16_t getColorIdx(const tRgb &Ref) const;
+	std::int16_t getColorIdx(const tRgb &Ref) const;
 };
 
 #endif // _ACE_TOOLS_COMMON_PALETTE_H_

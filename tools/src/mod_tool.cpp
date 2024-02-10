@@ -98,7 +98,7 @@ int main(int lArgCount, const char *pArgs[])
 		// Scan the samples to get the reorder table
 		std::vector<uint8_t> vReorder; // [idxOld] = idxNew
 		for(const auto ModSample: pMod->getSamples()) {
-			uint8_t ubIdxNew = 0;
+			std::uint8_t ubIdxNew = 0;
 			if(!ModSample.m_szName.empty()) {
 				// Find the sample index in new samplepack
 				auto SampleNew = std::find_if(
@@ -132,7 +132,7 @@ int main(int lArgCount, const char *pArgs[])
 		}
 	}
 
-	uint32_t ulIdx = 0;
+	std::uint32_t ulIdx = 0;
 	for(const auto &pMod: vModsIn) {
 		fmt::print("Writing {} to {}...\n", pMod->getSongName(), vOutNames[ulIdx]);
 		pMod->toMod(vOutNames[ulIdx], isStripSamples);

@@ -28,7 +28,7 @@ void printUsage(const std::string &szAppName)
 
 int main(int lArgCount, const char *pArgs[])
 {
-	const uint8_t ubMandatoryArgCnt = 2;
+	const std::uint8_t ubMandatoryArgCnt = 2;
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
@@ -118,7 +118,7 @@ int main(int lArgCount, const char *pArgs[])
 		if(isMaskColor) {
 			tPalette PaletteMask;
 			PaletteMask.m_vColors.push_back(tRgb(0,0,0));
-			for(uint16_t i = 1; i < 256; ++i) {
+			for(std::uint16_t i = 1; i < 256; ++i) {
 				PaletteMask.m_vColors.push_back(MaskColor);
 			}
 			auto szInMask = nFs::removeExt(szInput) + "_mask." + szInExt;

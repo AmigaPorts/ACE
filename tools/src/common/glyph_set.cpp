@@ -14,7 +14,7 @@
 #include "../common/logging.h"
 #include "utf8.h"
 
-tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, uint8_t ubStartIdx)
+tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, std::uint8_t ubStartIdx)
 {
 	tGlyphSet GlyphSet;
 
@@ -26,12 +26,12 @@ tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, uint8_t ubStartIdx)
 
 	const auto &Delimiter = Bitmap.pixelAt(0, 0);
 	const auto &Bg = Bitmap.pixelAt(0, 1);
-	uint16_t uwStart = 0;
-	uint16_t uwCurrChar = ubStartIdx;
+	std::uint16_t uwStart = 0;
+	std::uint16_t uwCurrChar = ubStartIdx;
 
-	for(uint16_t i = 1; i < Bitmap.m_uwWidth; ++i) {
+	for(std::uint16_t i = 1; i < Bitmap.m_uwWidth; ++i) {
 		if(Bitmap.pixelAt(i, 0) == Delimiter) {
-			uint16_t uwStop = i;
+			std::uint16_t uwStop = i;
 
 			tGlyphSet::tBitmapGlyph Glyph;
 			Glyph.m_ubWidth = (uwStop - uwStart) - 1;
@@ -39,8 +39,8 @@ tGlyphSet tGlyphSet::fromPmng(const std::string &szPngPath, uint8_t ubStartIdx)
 			Glyph.m_ubBearing = 0;
 			Glyph.m_vData.reserve(Glyph.m_ubWidth * Glyph.m_ubHeight);
 
-			for(uint16_t y = 0; y < Bitmap.m_uwHeight; ++y) {
-				for(uint16_t x = uwStart + 1; x < uwStop; ++x) {
+			for(std::uint16_t y = 0; y < Bitmap.m_uwHeight; ++y) {
+				for(std::uint16_t x = uwStart + 1; x < uwStop; ++x) {
 					const auto &Pixel = Bitmap.pixelAt(x, y);
 					Glyph.m_vData.push_back((Pixel == Bg ? 0 : 0xFF));
 				}
@@ -64,8 +64,8 @@ tGlyphSet tGlyphSet::fromAceFont(const std::string &szFntPath)
 	}
 
 	// Read header
-	uint8_t ubCharCount;
-	uint16_t uwBitmapWidth, uwBitmapHeight;
+	std::uint8_t ubCharCount;
+	std::uint16_t uwBitmapWidth, uwBitmapHeight;
 	FileFnt.read(reinterpret_cast<char*>(&uwBitmapWidth), sizeof(uwBitmapWidth));
 	FileFnt.read(reinterpret_cast<char*>(&uwBitmapHeight), sizeof(uwBitmapHeight));
 	FileFnt.read(reinterpret_cast<char*>(&ubCharCount), sizeof(ubCharCount));
@@ -75,18 +75,18 @@ tGlyphSet tGlyphSet::fromAceFont(const std::string &szFntPath)
 	// Read char offsets - read offset of one more to get last char's width
 	std::vector<uint16_t> vCharOffsets;
 	vCharOffsets.reserve(ubCharCount);
-	for(uint16_t c = 0; c < ubCharCount; ++c) {
-		uint16_t uwOffs;
+	for(std::uint16_t c = 0; c < ubCharCount; ++c) {
+		std::uint16_t uwOffs;
 		FileFnt.read(reinterpret_cast<char*>(&uwOffs), sizeof(uwOffs));
 		uwOffs = nEndian::fromBig16(uwOffs);
 		vCharOffsets.push_back(uwOffs);
 	}
 
 	tPlanarBitmap GlyphBitmapPlanar(uwBitmapWidth, uwBitmapHeight, 1);
-	uint32_t ulOffs = 0;
-	for(uint16_t uwY = 0; uwY < uwBitmapHeight; ++uwY) {
-		for(uint16_t uwX = 0; uwX < uwBitmapWidth / 16; ++uwX) {
-			uint16_t uwData;
+	std::uint32_t ulOffs = 0;
+	for(std::uint16_t uwY = 0; uwY < uwBitmapHeight; ++uwY) {
+		for(std::uint16_t uwX = 0; uwX < uwBitmapWidth / 16; ++uwX) {
+			std::uint16_t uwData;
 			FileFnt.read(reinterpret_cast<char*>(&uwData), sizeof(uwData));
 			uwData = nEndian::fromBig16(uwData);
 			GlyphBitmapPlanar.m_pPlanes[0][ulOffs++] = uwData;
@@ -98,13 +98,13 @@ tGlyphSet tGlyphSet::fromAceFont(const std::string &szFntPath)
 	Palette.m_vColors.push_back(tRgb(0));
 	Palette.m_vColors.push_back(tRgb(0xFF));
 	tChunkyBitmap Chunky(GlyphBitmapPlanar, Palette);
-	for(uint16_t c = 0; c < ubCharCount - 1; ++c) {
-		uint8_t ubGlyphWidth = vCharOffsets[c + 1] - vCharOffsets[c];
+	for(std::uint16_t c = 0; c < ubCharCount - 1; ++c) {
+		std::uint8_t ubGlyphWidth = vCharOffsets[c + 1] - vCharOffsets[c];
 		if(ubGlyphWidth) {
 			tBitmapGlyph Glyph;
 			Glyph.m_vData.resize(uwBitmapHeight * ubGlyphWidth);
-			for(uint8_t ubY = 0; ubY < uwBitmapHeight; ++ubY) {
-				for(uint8_t ubX = 0; ubX < ubGlyphWidth; ++ubX) {
+			for(std::uint8_t ubY = 0; ubY < uwBitmapHeight; ++ubY) {
+				for(std::uint8_t ubX = 0; ubX < ubGlyphWidth; ++ubX) {
 					// Since filled in Chunky is (FF,FF,FF), use data from any channel.
 					Glyph.m_vData[ubY * ubGlyphWidth + ubX] = Chunky.pixelAt(vCharOffsets[c] + ubX, ubY).ubR;
 				}
@@ -119,8 +119,8 @@ tGlyphSet tGlyphSet::fromAceFont(const std::string &szFntPath)
 }
 
 tGlyphSet tGlyphSet::fromTtf(
-	const std::string &szTtfPath, uint8_t ubSize, const std::string &szCharSet,
-	uint8_t ubThreshold
+	const std::string &szTtfPath, std::uint8_t ubSize, const std::string &szCharSet,
+	std::uint8_t ubThreshold
 )
 {
 	tGlyphSet GlyphSet;
@@ -141,8 +141,8 @@ tGlyphSet tGlyphSet::fromTtf(
 
 	FT_Set_Pixel_Sizes(Face, 0, ubSize);
 
-	uint8_t ubMaxBearing = 0, ubMaxAddHeight = 0;
-  uint32_t ulCodepoint, ulState = 0;
+	std::uint8_t ubMaxBearing = 0, ubMaxAddHeight = 0;
+  std::uint32_t ulCodepoint, ulState = 0;
 	for(const auto &c: szCharSet) {
 		auto CharCode = *reinterpret_cast<const uint8_t*>(&c);
 		if (
@@ -154,8 +154,8 @@ tGlyphSet tGlyphSet::fromTtf(
 
 		FT_Load_Char(Face, ulCodepoint, FT_LOAD_RENDER);
 
-		uint8_t ubWidth = Face->glyph->bitmap.width;
-		uint8_t ubHeight = Face->glyph->bitmap.rows;
+		std::uint8_t ubWidth = Face->glyph->bitmap.width;
+		std::uint8_t ubHeight = Face->glyph->bitmap.rows;
 
 		GlyphSet.m_mGlyphs[ulCodepoint] = {
 			static_cast<uint8_t>(Face->glyph->metrics.horiBearingY / 64),
@@ -164,8 +164,8 @@ tGlyphSet tGlyphSet::fromTtf(
 		auto &Glyph = GlyphSet.m_mGlyphs[ulCodepoint];
 
 		// Copy bitmap graphics with threshold
-		for(uint32_t ulPos = 0; ulPos < Glyph.m_vData.size(); ++ulPos) {
-			uint8_t ubVal = (Face->glyph->bitmap.buffer[ulPos] >= ubThreshold) ? 0xFF : 0;
+		for(std::uint32_t ulPos = 0; ulPos < Glyph.m_vData.size(); ++ulPos) {
+			std::uint8_t ubVal = (Face->glyph->bitmap.buffer[ulPos] >= ubThreshold) ? 0xFF : 0;
 			Glyph.m_vData[ulPos] = ubVal;
 		}
 
@@ -188,7 +188,7 @@ tGlyphSet tGlyphSet::fromTtf(
 	FT_Done_Face(Face);
 	FT_Done_FreeType(FreeType);
 
-	uint8_t ubBmHeight = ubMaxBearing + ubMaxAddHeight;
+	std::uint8_t ubBmHeight = ubMaxBearing + ubMaxAddHeight;
 
 	// Normalize Glyph height
 	for(auto &GlyphPair: GlyphSet.m_mGlyphs) {
@@ -208,7 +208,7 @@ tGlyphSet tGlyphSet::fromTtf(
 tGlyphSet tGlyphSet::fromDir(const std::string &szDirPath)
 {
 	tGlyphSet GlyphSet;
-	for(uint16_t c = 0; c <= 255; ++c) {
+	for(std::uint16_t c = 0; c <= 255; ++c) {
 		auto Chunky = tChunkyBitmap::fromPng(fmt::format("{}/{}.png", szDirPath, c));
 		if(Chunky.m_uwHeight) {
 			tGlyphSet::tBitmapGlyph Glyph;
@@ -256,17 +256,17 @@ bool tGlyphSet::toDir(const std::string &szDirPath)
 
 tChunkyBitmap tGlyphSet::toPackedBitmap(bool isPmng)
 {
-	uint8_t ubHeight = m_mGlyphs.begin()->second.m_ubHeight;
+	std::uint8_t ubHeight = m_mGlyphs.begin()->second.m_ubHeight;
 
 	// Calculate total width & round up to multiple of 16
-	uint16_t uwWidth = 0;
+	std::uint16_t uwWidth = 0;
 	for(const auto &[Key, Glyph]: m_mGlyphs) {
 		uwWidth += Glyph.m_ubWidth + (isPmng ? 1 : 0);
 	}
 	uwWidth = ((uwWidth + 15) / 16) * 16;
 
 	tChunkyBitmap Chunky(uwWidth, ubHeight, tRgb(0));
-	uint16_t uwOffsX = 0;
+	std::uint16_t uwOffsX = 0;
 	for(const auto &[Key, Glyph]: m_mGlyphs) {
 		if(isPmng) {
 			// Add start marker
@@ -284,15 +284,15 @@ tChunkyBitmap tGlyphSet::toPackedBitmap(bool isPmng)
 	return Chunky;
 }
 
-uint8_t tGlyphSet::tBitmapGlyph::getValueAt(uint8_t ubX, uint8_t ubY)
+std::uint8_t tGlyphSet::tBitmapGlyph::getValueAt(std::uint8_t ubX, std::uint8_t ubY)
 {
-	uint8_t ubValue = this->m_vData[ubY * this->m_ubWidth + ubY];
+	std::uint8_t ubValue = this->m_vData[ubY * this->m_ubWidth + ubY];
 	return ubValue;
 }
 
-bool tGlyphSet::tBitmapGlyph::hasEmptyColumn(uint8_t ubX)
+bool tGlyphSet::tBitmapGlyph::hasEmptyColumn(std::uint8_t ubX)
 {
-	for(uint8_t ubY = 0; ubY < this->m_ubHeight; ++ubY) {
+	for(std::uint8_t ubY = 0; ubY < this->m_ubHeight; ++ubY) {
 		if(getValueAt(ubX, ubY) != 0) {
 			return false;
 		}
@@ -302,7 +302,7 @@ bool tGlyphSet::tBitmapGlyph::hasEmptyColumn(uint8_t ubX)
 
 bool tGlyphSet::tBitmapGlyph::isEmpty(void)
 {
-	for(uint8_t ubX = 0; ubX < this->m_ubWidth; ++ubX) {
+	for(std::uint8_t ubX = 0; ubX < this->m_ubWidth; ++ubX) {
 		if(!hasEmptyColumn(ubX)) {
 			return false;
 		}
@@ -316,8 +316,8 @@ void tGlyphSet::tBitmapGlyph::trimHorz(bool isRight)
 		return;
 	}
 
-	uint8_t ubNewWidth;
-	uint8_t ubNewStart;
+	std::uint8_t ubNewWidth;
+	std::uint8_t ubNewStart;
 	if(isRight) {
 		ubNewStart = 0;
 		for(ubNewWidth = m_ubWidth; ubNewWidth > 0; --ubNewWidth) {
@@ -336,8 +336,8 @@ void tGlyphSet::tBitmapGlyph::trimHorz(bool isRight)
 	}
 
 	std::vector<uint8_t> vNew(ubNewWidth * m_ubHeight);
-	for(uint8_t ubNewX = 0; ubNewX < ubNewWidth; ++ubNewX) {
-		for(uint8_t ubNewY = 0; ubNewY < m_ubHeight; ++ubNewY) {
+	for(std::uint8_t ubNewX = 0; ubNewX < ubNewWidth; ++ubNewX) {
+		for(std::uint8_t ubNewY = 0; ubNewY < m_ubHeight; ++ubNewY) {
 			vNew[ubNewY * ubNewWidth + ubNewX] = this->m_vData[ubNewY * m_ubWidth + ubNewStart + ubNewX];
 		}
 	}
@@ -347,8 +347,8 @@ void tGlyphSet::tBitmapGlyph::trimHorz(bool isRight)
 
 void tGlyphSet::toAceFont(const std::string &szFontPath)
 {
-	uint16_t uwOffs = 0;
-	uint8_t ubCharCount = 0;
+	std::uint16_t uwOffs = 0;
+	std::uint8_t ubCharCount = 0;
 	for(const auto &GlyphPair: m_mGlyphs) {
 		if(GlyphPair.first > ubCharCount) {
 			ubCharCount = GlyphPair.first;
@@ -357,7 +357,7 @@ void tGlyphSet::toAceFont(const std::string &szFontPath)
 	++ubCharCount;
 	// Generate char offsets
 	std::vector<uint16_t> vCharOffsets(256);
-	for(uint16_t c = 0; c < ubCharCount; ++c) {
+	for(std::uint16_t c = 0; c < ubCharCount; ++c) {
 		vCharOffsets[c] = nEndian::toBig16(uwOffs);
 		if(m_mGlyphs.count(c) != 0) {
 			const auto &Glyph = m_mGlyphs.at(c);
@@ -374,9 +374,9 @@ void tGlyphSet::toAceFont(const std::string &szFontPath)
 
 	std::ofstream Out(szFontPath, std::ofstream::out | std::ofstream::binary);
 	// Write header
-	uint16_t uwBitmapWidth = nEndian::toBig16(Planar.m_uwWidth);
+	std::uint16_t uwBitmapWidth = nEndian::toBig16(Planar.m_uwWidth);
 	Out.write(reinterpret_cast<char*>(&uwBitmapWidth), sizeof(uint16_t));
-	uint16_t uwBitmapHeight = nEndian::toBig16(m_mGlyphs.begin()->second.m_ubHeight);
+	std::uint16_t uwBitmapHeight = nEndian::toBig16(m_mGlyphs.begin()->second.m_ubHeight);
 	Out.write(reinterpret_cast<char*>(&uwBitmapHeight), sizeof(uint16_t));
 	Out.write(reinterpret_cast<char*>(&ubCharCount), sizeof(uint8_t));
 
@@ -386,10 +386,10 @@ void tGlyphSet::toAceFont(const std::string &szFontPath)
 	);
 
 	// Write font bitplane
-	uint16_t uwRowWords = Planar.m_uwWidth / 16;
-	for(uint16_t y = 0; y < Planar.m_uwHeight; ++y) {
-		for(uint16_t x = 0; x < uwRowWords; ++x) {
-			uint16_t uwData = nEndian::toBig16(Planar.m_pPlanes[0][y * uwRowWords + x]);
+	std::uint16_t uwRowWords = Planar.m_uwWidth / 16;
+	for(std::uint16_t y = 0; y < Planar.m_uwHeight; ++y) {
+		for(std::uint16_t x = 0; x < uwRowWords; ++x) {
+			std::uint16_t uwData = nEndian::toBig16(Planar.m_pPlanes[0][y * uwRowWords + x]);
 			Out.write(reinterpret_cast<char*>(&uwData), sizeof(uint16_t));
 		}
 	}

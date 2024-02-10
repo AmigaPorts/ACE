@@ -9,12 +9,12 @@
 #include <string>
 
 struct tRgb {
-	uint8_t ubR, ubG, ubB;
+	std::uint8_t ubR, ubG, ubB;
 
-	tRgb(uint8_t ubNewR, uint8_t ubNewG, uint8_t ubNewB):
+	tRgb(std::uint8_t ubNewR, std::uint8_t ubNewG, std::uint8_t ubNewB):
 		ubR(ubNewR), ubG(ubNewG), ubB(ubNewB) { }
 
-	tRgb(uint8_t ubGrayscale):
+	tRgb(std::uint8_t ubGrayscale):
 		ubR(ubGrayscale), ubG(ubGrayscale), ubB(ubGrayscale) { }
 
 	tRgb():
