@@ -10,7 +10,7 @@
 #include "../common/endian.h"
 #include "../common/flags/flags.hpp"
 
-enum class tBmFlags: uint8_t {
+enum class tBmFlags: std::uint8_t {
 	NONE = 0,
 	INTERLEAVED = 1
 };
@@ -28,11 +28,11 @@ tChunkyBitmap::tChunkyBitmap(
 	}
 	m_vData.resize(m_uwWidth * m_uwHeight, Palette.m_vColors[0]);
 	auto PxPerCell = sizeof(Planar.m_pPlanes[0][0]) * 8;
-	for(uint32_t ulY = 0; ulY < m_uwHeight; ++ulY) {
-		for(uint32_t ulX = 0; ulX < m_uwWidth; ++ulX) {
-			uint8_t ubColorIdx = 0;
-			uint32_t ulOffs = (ulY * m_uwWidth + ulX) / PxPerCell;
-			for(uint8_t ubPlane = Planar.m_ubDepth; ubPlane--;) {
+	for(std::uint32_t ulY = 0; ulY < m_uwHeight; ++ulY) {
+		for(std::uint32_t ulX = 0; ulX < m_uwWidth; ++ulX) {
+			std::uint8_t ubColorIdx = 0;
+			std::uint32_t ulOffs = (ulY * m_uwWidth + ulX) / PxPerCell;
+			for(std::uint8_t ubPlane = Planar.m_ubDepth; ubPlane--;) {
 				auto &Plane = Planar.m_pPlanes[ubPlane];
 				ubColorIdx <<= 1;
 				ubColorIdx |= (Plane.at(ulOffs) >> (15 - (ulX & 15))) & 1;
@@ -52,14 +52,14 @@ tChunkyBitmap::tChunkyBitmap(
 	}
 }
 
-tChunkyBitmap::tChunkyBitmap(uint16_t uwWidth, uint16_t uwHeight, tRgb Bg):
+tChunkyBitmap::tChunkyBitmap(std::uint16_t uwWidth, std::uint16_t uwHeight, tRgb Bg):
 	m_uwWidth(uwWidth), m_uwHeight(uwHeight), m_vData(m_uwWidth * m_uwHeight, Bg)
 {
 
 }
 
 tChunkyBitmap::tChunkyBitmap(
-	uint16_t uwWidth, uint16_t uwHeight, const uint8_t *pData
+	std::uint16_t uwWidth, std::uint16_t uwHeight, const std::uint8_t *pData
 ):
 	m_uwWidth(uwWidth), m_uwHeight(uwHeight)
 {
@@ -71,7 +71,7 @@ tChunkyBitmap::tChunkyBitmap(
 tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath)
 {
 	unsigned uWidth, uHeight;
-	uint8_t *pData;
+	std::uint8_t *pData;
 	auto LodeError = lodepng_decode24_file(&pData, &uWidth, &uHeight, szPath.c_str());
 	if(LodeError) {
 		return tChunkyBitmap();
@@ -93,7 +93,7 @@ bool tChunkyBitmap::toPng(const std::string &szPngPath) const
 }
 
 tPlanarBitmap::tPlanarBitmap(
-	uint16_t uwWidth, uint16_t uwHeight, uint8_t ubDepth
+	std::uint16_t uwWidth, std::uint16_t uwHeight, std::uint8_t ubDepth
 )
 {
 	if(uwWidth & 0xF) {
@@ -109,7 +109,7 @@ tPlanarBitmap::tPlanarBitmap(
 	m_uwHeight = uwHeight;
 	m_ubDepth = ubDepth;
 
-	for(uint8_t i = 0; i < ubDepth; ++i) {
+	for(std::uint8_t i = 0; i < ubDepth; ++i) {
 		m_pPlanes[i].resize(uwWidth * uwHeight / sizeof(m_pPlanes[0][0]));
 	}
 }
@@ -128,23 +128,23 @@ tPlanarBitmap::tPlanarBitmap(
 	}
 
 	// Determine depth
-	uint8_t ubDepth = Palette.getBpp();
+	std::uint8_t ubDepth = Palette.getBpp();
 	if(ubDepth > 8) {
 		nLog::error("More than 8bpp not supported, got {}", ubDepth);
 		return;
 	}
 
 	// Write bitplanes - from LSB to MSB
-	uint16_t uwPixelBuffer;
-	uint32_t ulPos;
-	for(uint8_t ubPlane = 0; ubPlane != ubDepth; ++ubPlane) {
-		for(uint16_t y = 0; y != Chunky.m_uwHeight; ++y) {
+	std::uint16_t uwPixelBuffer;
+	std::uint32_t ulPos;
+	for(std::uint8_t ubPlane = 0; ubPlane != ubDepth; ++ubPlane) {
+		for(std::uint16_t y = 0; y != Chunky.m_uwHeight; ++y) {
 			uwPixelBuffer = 0;
-			for(uint16_t x = 0; x != Chunky.m_uwWidth; ++x) {
+			for(std::uint16_t x = 0; x != Chunky.m_uwWidth; ++x) {
 				// Determine bit value for given color at specified bitplane's pos
 				auto Color = Chunky.pixelAt(x, y);
-				int16_t wIdx = Palette.getColorIdx(Color);
-				uint8_t ubBit = 0;
+				std::int16_t wIdx = Palette.getColorIdx(Color);
+				std::uint8_t ubBit = 0;
 				if(wIdx == -1) {
 					if(PaletteIgnore.getColorIdx(Color) == -1) {
 						nLog::error(
@@ -186,25 +186,25 @@ bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 	}
 
 	// Write .bm header
-	uint16_t uwOut = nEndian::toBig16(m_uwWidth);
+	std::uint16_t uwOut = nEndian::toBig16(m_uwWidth);
 	OutFile.write(reinterpret_cast<char*>(&uwOut), 2);
 	uwOut = nEndian::toBig16(m_uwHeight);
 	OutFile.write(reinterpret_cast<char*>(&uwOut), 2);
 	OutFile.write(reinterpret_cast<char*>(&m_ubDepth), 1);
 
-	uint8_t ubOut = 0;
+	std::uint8_t ubOut = 0;
 	OutFile.write(reinterpret_cast<char*>(&ubOut), 1); // Version
 	OutFile.write(reinterpret_cast<char*>(&eFlags), 1); // Flags
 	OutFile.write(reinterpret_cast<char*>(&ubOut), 1); // Reserved 1
 	OutFile.write(reinterpret_cast<char*>(&ubOut), 1); // Reserved 2
 
 	// Write bitplanes
-	uint16_t uwRowWordCount = m_uwWidth / 16;
+	std::uint16_t uwRowWordCount = m_uwWidth / 16;
 	if(isInterleaved) {
-		for(uint16_t y = 0; y < m_uwHeight; ++y) {
-			for(uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
-				for(uint16_t x = 0; x < uwRowWordCount; ++x) {
-					uint16_t uwData = nEndian::toBig16(
+		for(std::uint16_t y = 0; y < m_uwHeight; ++y) {
+			for(std::uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
+				for(std::uint16_t x = 0; x < uwRowWordCount; ++x) {
+					std::uint16_t uwData = nEndian::toBig16(
 						m_pPlanes[ubPlane].at(y * uwRowWordCount + x)
 					);
 					OutFile.write(reinterpret_cast<char*>(&uwData), sizeof(uint16_t));
@@ -213,10 +213,10 @@ bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 		}
 	}
 	else {
-		for(uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
-			for(uint16_t y = 0; y < m_uwHeight; ++y) {
-				for(uint16_t x = 0; x < uwRowWordCount; ++x) {
-					uint16_t uwData = nEndian::toBig16(
+		for(std::uint8_t ubPlane = 0; ubPlane < m_ubDepth; ++ubPlane) {
+			for(std::uint16_t y = 0; y < m_uwHeight; ++y) {
+				for(std::uint16_t x = 0; x < uwRowWordCount; ++x) {
+					std::uint16_t uwData = nEndian::toBig16(
 						m_pPlanes[ubPlane].at(y * uwRowWordCount + x)
 					);
 					OutFile.write(reinterpret_cast<char*>(&uwData), sizeof(uint16_t));
@@ -235,8 +235,8 @@ tPlanarBitmap tPlanarBitmap::fromBm(const std::string &szPath)
 		return tPlanarBitmap(0, 0, 0);
 	}
 
-	uint16_t uwWidth, uwHeight;
-	uint8_t ubBpp, ubVersion, ubReserved1, ubReserved2;
+	std::uint16_t uwWidth, uwHeight;
+	std::uint8_t ubBpp, ubVersion, ubReserved1, ubReserved2;
 	tBmFlags eFlags;
 	File.read(reinterpret_cast<char*>(&uwWidth), sizeof(uwWidth));
 	File.read(reinterpret_cast<char*>(&uwHeight), sizeof(uwHeight));
@@ -251,12 +251,12 @@ tPlanarBitmap tPlanarBitmap::fromBm(const std::string &szPath)
 
 	if(ubVersion == 0) {
 		tPlanarBitmap Bm(uwWidth, uwHeight, ubBpp);
-		for(uint8_t i = 0; i < ubBpp; ++i) {
+		for(std::uint8_t i = 0; i < ubBpp; ++i) {
 			Bm.m_pPlanes[i].resize(uwWidth * uwHeight / sizeof(Bm.m_pPlanes[0][0]));
 		}
 		if(eFlags & tBmFlags::INTERLEAVED) {
-			for(uint32_t y = 0; y < uwHeight; ++y) {
-				for(uint8_t i = 0; i < ubBpp; ++i) {
+			for(std::uint32_t y = 0; y < uwHeight; ++y) {
+				for(std::uint8_t i = 0; i < ubBpp; ++i) {
 					File.read(
 						&(reinterpret_cast<char*>(Bm.m_pPlanes[i].data())[y * uwWidth / 8]),
 						uwWidth / 8
@@ -265,7 +265,7 @@ tPlanarBitmap tPlanarBitmap::fromBm(const std::string &szPath)
 			}
 		}
 		else {
-			for(uint8_t i = 0; i < ubBpp; ++i) {
+			for(std::uint8_t i = 0; i < ubBpp; ++i) {
 				File.read(
 					reinterpret_cast<char*>(Bm.m_pPlanes[i].data()),
 					(uwWidth / 8) * uwHeight
@@ -274,7 +274,7 @@ tPlanarBitmap tPlanarBitmap::fromBm(const std::string &szPath)
 		}
 
 		// Convert endianness on data
-		for(uint8_t i = ubBpp; i--;) {
+		for(std::uint8_t i = ubBpp; i--;) {
 			for(auto &Cell: Bm.m_pPlanes[i]) {
 				Cell = nEndian::fromBig16(Cell);
 			}
@@ -291,21 +291,21 @@ tPlanarBitmap tPlanarBitmap::fromBm(const std::string &szPath)
 	}
 }
 
-tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY)
+tRgb &tChunkyBitmap::pixelAt(std::uint16_t uwX, std::uint16_t uwY)
 {
-	uint32_t ulPos = m_uwWidth * (uwY) + uwX;
+	std::uint32_t ulPos = m_uwWidth * (uwY) + uwX;
 	return m_vData[ulPos];
 }
 
-const tRgb &tChunkyBitmap::pixelAt(uint16_t uwX, uint16_t uwY) const
+const tRgb &tChunkyBitmap::pixelAt(std::uint16_t uwX, std::uint16_t uwY) const
 {
-	uint32_t ulPos = m_uwWidth * (uwY) + uwX;
+	std::uint32_t ulPos = m_uwWidth * (uwY) + uwX;
 	return m_vData[ulPos];
 }
 
 bool tChunkyBitmap::copyRect(
-	uint16_t uwSrcX, uint16_t uwSrcY, tChunkyBitmap &Dst,
-	uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight
+	std::uint16_t uwSrcX, std::uint16_t uwSrcY, tChunkyBitmap &Dst,
+	std::uint16_t uwDstX, std::uint16_t uwDstY, std::uint16_t uwWidth, std::uint16_t uwHeight
 ) const
 {
 	if(uwSrcX + uwWidth > m_uwWidth || uwSrcY + uwHeight > m_uwHeight) {
@@ -317,8 +317,8 @@ bool tChunkyBitmap::copyRect(
 		return false;
 	}
 
-	for(uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
-		for(uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
+	for(std::uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
+		for(std::uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
 			Dst.pixelAt(uwDstX + uwX, uwDstY + uwY) = pixelAt(uwSrcX + uwX, uwSrcY + uwY);
 		}
 	}
@@ -327,7 +327,7 @@ bool tChunkyBitmap::copyRect(
 }
 
 bool tChunkyBitmap::fillRect(
-	uint16_t uwDstX, uint16_t uwDstY, uint16_t uwWidth, uint16_t uwHeight,
+	std::uint16_t uwDstX, std::uint16_t uwDstY, std::uint16_t uwWidth, std::uint16_t uwHeight,
 	const tRgb &Color
 ) {
 	if(uwDstX + uwWidth > m_uwWidth || uwDstY + uwHeight > m_uwHeight) {
@@ -335,8 +335,8 @@ bool tChunkyBitmap::fillRect(
 		return false;
 	}
 
-	for(uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
-		for(uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
+	for(std::uint16_t uwY = 0; uwY < uwHeight; ++uwY) {
+		for(std::uint16_t uwX = 0; uwX < uwWidth; ++uwX) {
 			pixelAt(uwDstX + uwX, uwDstY + uwY) = Color;
 		}
 	}
@@ -350,8 +350,8 @@ bool tChunkyBitmap::mergeWithMask(const tChunkyBitmap &Mask)
 		return false;
 	}
 
-	for(uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
-		for(uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
+	for(std::uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
+		for(std::uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
 			auto & MaskPixel = Mask.pixelAt(uwX, uwY);
 			if(MaskPixel != tRgb(0)) {
 				pixelAt(uwX, uwY) = MaskPixel;
@@ -367,8 +367,8 @@ tChunkyBitmap tChunkyBitmap::filterColors(
 {
 	const auto &Colors = Palette.m_vColors;
 	tChunkyBitmap Out(m_uwWidth, m_uwHeight);
-	for(uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
-		for(uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
+	for(std::uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
+		for(std::uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
 			const auto &Ref = pixelAt(uwX, uwY);
 			if(std::find(Colors.begin(), Colors.end(), Ref) != Colors.end()) {
 				Out.pixelAt(uwX, uwY) = Ref;

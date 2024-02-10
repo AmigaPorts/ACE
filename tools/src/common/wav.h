@@ -14,13 +14,13 @@ public:
 	tWav(const std::string &szPath);
 
 	const std::vector<uint8_t> &getData(void) const;
-	uint32_t getSampleRate(void) const;
-	uint8_t getBitsPerSample(void) const;
+	std::uint32_t getSampleRate(void) const;
+	std::uint8_t getBitsPerSample(void) const;
 
 private:
 	struct tSubchunk {
 		std::string m_szId = std::string(4, '\0');
-		uint32_t m_ulSize;
+		std::uint32_t m_ulSize;
 		std::string m_szContents;
 	};
 
@@ -28,8 +28,8 @@ private:
 
 	std::vector<tSubchunk> m_vSubchunks;
 	std::vector<uint8_t> m_vData;
-	uint32_t m_ulSampleRate;
-	uint8_t m_ubBitsPerSample;
+	std::uint32_t m_ulSampleRate;
+	std::uint8_t m_ubBitsPerSample;
 };
 
 #endif // _ACE_TOOLS_COMMON_WAV_H_

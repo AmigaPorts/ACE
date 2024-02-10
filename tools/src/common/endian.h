@@ -14,7 +14,7 @@ namespace nEndian {
 		return std::endian::native == std::endian::big;
 	}
 
-	constexpr uint16_t toBig16(uint16_t uwIn)
+	constexpr std::uint16_t toBig16(std::uint16_t uwIn)
 	{
 		if(isBig()) {
 			return uwIn;
@@ -25,12 +25,12 @@ namespace nEndian {
 		);
 	}
 
-	constexpr uint16_t fromBig16(uint16_t uwIn)
+	constexpr std::uint16_t fromBig16(std::uint16_t uwIn)
 	{
 		return toBig16(uwIn);
 	}
 
-	constexpr uint32_t toBig32(uint32_t ulIn)
+	constexpr std::uint32_t toBig32(std::uint32_t ulIn)
 	{
 		if(isBig()) {
 			return ulIn;
@@ -43,7 +43,7 @@ namespace nEndian {
 		);
 	}
 
-	constexpr uint32_t fromBig32(uint32_t uwIn)
+	constexpr std::uint32_t fromBig32(std::uint32_t uwIn)
 	{
 		return toBig32(uwIn);
 	}

@@ -11,7 +11,7 @@
 namespace nParse {
 
 static inline bool toInt32(
-	const std::string &szVal, const std::string &szValName, int32_t &lOut
+	const std::string &szVal, const std::string &szValName, std::int32_t &lOut
 )
 {
 	try {

@@ -11,13 +11,13 @@
 #include "common/exception.h"
 
 struct tConfig {
-	int32_t m_lTileSize;
-	int32_t m_lTileHeight;
+	std::int32_t m_lTileSize;
+	std::int32_t m_lTileHeight;
 	std::string m_szInPath;
 	std::string m_szOutPath;
 	std::string m_szPalettePath;
 	bool m_isInterleaved;
-	int32_t m_lColumns;
+	std::int32_t m_lColumns;
 	std::optional<int32_t> m_lColumnWidth;
 	bool m_isVaryingHeight;
 	bool m_isHeightOverride;
@@ -67,7 +67,7 @@ tConfig::tConfig(const std::vector<const char*> &vArgs)
 		}
 		else if(vArgs[ArgIndex] == std::string("-cw") && ArgIndex < ArgCount - 1) {
 			++ArgIndex;
-			int32_t lColumnWidth;
+			std::int32_t lColumnWidth;
 			if(!nParse::toInt32(vArgs[ArgIndex], "-cw", lColumnWidth)) {
 				throw std::runtime_error(nullptr); // error message inside parsing fn
 			}
@@ -158,12 +158,12 @@ static std::vector<tChunkyBitmap> readTiles(
 			throw std::runtime_error(fmt::format("Input bitmap width is not divisible by {}", Config.m_lTileSize));
 		}
 
-		uint16_t TileCountHoriz = In.m_uwWidth / ColumnWidth;
-		uint16_t TileCountVert = In.m_uwHeight / Config.m_lTileHeight;
+		std::uint16_t TileCountHoriz = In.m_uwWidth / ColumnWidth;
+		std::uint16_t TileCountVert = In.m_uwHeight / Config.m_lTileHeight;
 
 		vTiles.reserve(TileCountHoriz * TileCountVert);
-		for(uint16_t y = 0; y < TileCountVert; ++y) {
-			for(uint16_t x = 0; x < TileCountHoriz; ++x) {
+		for(std::uint16_t y = 0; y < TileCountVert; ++y) {
+			for(std::uint16_t x = 0; x < TileCountHoriz; ++x) {
 				tChunkyBitmap Tile(Config.m_lTileSize, Config.m_lTileHeight);
 				In.copyRect(
 					x * ColumnWidth, y * Config.m_lTileHeight, Tile, 0, 0,
@@ -174,8 +174,8 @@ static std::vector<tChunkyBitmap> readTiles(
 		}
 	}
 	else if(nFs::isDir(Config.m_szInPath)) {
-		int16_t wLastFull = -1;
-		for(uint16_t i = 0; i < 256; ++i) {
+		std::int16_t wLastFull = -1;
+		for(std::uint16_t i = 0; i < 256; ++i) {
 			auto Tile = tChunkyBitmap::fromPng(fmt::format("{}/{}.png", Config.m_szInPath, i));
 			if(Tile.m_uwHeight != 0) {
 				wLastFull = i;
@@ -219,7 +219,7 @@ static void saveTiles(
 				Bg
 			);
 
-			for(uint16_t i = 0; i < TileCount; ++i) {
+			for(std::uint16_t i = 0; i < TileCount; ++i) {
 				auto &Tile = vTiles.at(i);
 				if(Tile.m_uwHeight != 0) {
 					Tile.copyRect(
@@ -232,7 +232,7 @@ static void saveTiles(
 			}
 		}
 		else {
-			uint16_t uwTilesetHeight = 0;
+			std::uint16_t uwTilesetHeight = 0;
 			if(Config.m_isVaryingHeight) {
 				bool hasEmptyTile = false;
 				for(const auto &Tile: vTiles) {
@@ -250,7 +250,7 @@ static void saveTiles(
 				ColumnWidth, uwTilesetHeight, Bg
 			);
 
-			uint16_t uwOffsY = 0;
+			std::uint16_t uwOffsY = 0;
 			for(const auto &Tile: vTiles) {
 				Tile.copyRect(
 					0, 0, Out.value(), 0, uwOffsY, Tile.m_uwWidth, Tile.m_uwHeight
@@ -278,7 +278,7 @@ static void saveTiles(
 	else if(szOutExt == "") {
 		// Tile directory
 		nFs::dirCreate(Config.m_szOutPath);
-		for(uint16_t i = 0; i < TileCount; ++i) {
+		for(std::uint16_t i = 0; i < TileCount; ++i) {
 			auto &Tile = vTiles.at(i);
 			if(Tile.m_uwHeight != 0) {
 				std::string szTilePath = fmt::format("{}/{}.png", Config.m_szOutPath, i);

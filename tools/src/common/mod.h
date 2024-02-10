@@ -8,13 +8,14 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <cstdint>
 
 struct tSample {
 	std::string m_szName;
-	uint8_t m_ubFineTune; ///< Finetune. Only lower nibble is used. Values translate to finetune: {0..7, -8..-1}
-	uint8_t m_ubVolume; ///< Sample volume. 0..64
-	uint16_t m_uwRepeatOffs; ///< In words.
-	uint16_t m_uwRepeatLength; ///< In words.
+	std::uint8_t m_ubFineTune; ///< Finetune. Only lower nibble is used. Values translate to finetune: {0..7, -8..-1}
+	std::uint8_t m_ubVolume; ///< Sample volume. 0..64
+	std::uint16_t m_uwRepeatOffs; ///< In words.
+	std::uint16_t m_uwRepeatLength; ///< In words.
 
 	std::vector<uint16_t> m_vData;
 
@@ -26,10 +27,10 @@ struct tSample {
 };
 
 struct tNote {
-	uint8_t ubInstrument;
-	uint16_t uwPeriod;
-	uint8_t ubCmd;
-	uint8_t ubCmdArg;
+	std::uint8_t ubInstrument;
+	std::uint16_t uwPeriod;
+	std::uint8_t ubCmd;
+	std::uint8_t ubCmdArg;
 };
 
 class tMod {
@@ -56,8 +57,8 @@ public:
 
 private:
 	std::string m_szSongName;
-	uint8_t m_ubArrangementLength; ///< End pattern idx? Jumps are possible.
-	uint8_t m_ubSongEndPos;
+	std::uint8_t m_ubArrangementLength; ///< End pattern idx? Jumps are possible.
+	std::uint8_t m_ubSongEndPos;
 	std::string m_szFileFormatTag;  ///< Should be "M.K." for 31-sample format.
 
 	std::vector<tSample> m_vSamples;
