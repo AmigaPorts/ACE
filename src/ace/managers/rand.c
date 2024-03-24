@@ -9,6 +9,7 @@
 #include <ace/managers/rand.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/log.h>
+#include <ace/utils/assume.h>
 
 // Coefficients are chosen from the table of original post, with restriction
 // to use shifts lesser than 8 in order to let compiler use "shift immediate"
@@ -28,6 +29,7 @@ tRandManager *randCreate(UWORD uwSeed1, UWORD uwSeed2) {
 }
 
 void randDestroy(tRandManager *pRand) {
+	assumeNotNull(pRand);
 	memFree(pRand, sizeof(*pRand));
 }
 
@@ -35,11 +37,9 @@ void randInit(tRandManager *pRand, UWORD uwSeed1, UWORD uwSeed2) {
 	logBlockBegin(
 		"randInit(pRand: %p, uwSeed1: %hu, uwSeed2: %hu)", pRand, uwSeed1, uwSeed2
 	);
-	if(uwSeed1 == 0 || uwSeed2 == 0) {
-		logWrite("ERR: Seeds can't be zero!\n");
-		logBlockEnd("randInit()");
-		return;
-	}
+	assumeNotNull(pRand);
+	assumeMsg(uwSeed1 != 0, "Seeds can't be zero");
+	assumeMsg(uwSeed2 != 0, "Seeds can't be zero");
 
 	pRand->uwState1 = uwSeed1;
 	pRand->uwState2 = uwSeed2;
@@ -47,6 +47,8 @@ void randInit(tRandManager *pRand, UWORD uwSeed1, UWORD uwSeed2) {
 }
 
 UWORD randUw(tRandManager *pRand) {
+	assumeNotNull(pRand);
+
   UWORD t = (pRand->uwState1 ^ (pRand->uwState1 << RAND_COEFF_A));
   pRand->uwState1 = pRand->uwState2;
 	pRand->uwState2 = (pRand->uwState2 ^ (pRand->uwState2 >> RAND_COEFF_C)) ^ (t ^ (t >> RAND_COEFF_B));
@@ -54,24 +56,34 @@ UWORD randUw(tRandManager *pRand) {
 }
 
 UWORD randUwMax(tRandManager *pRand, UWORD uwMax) {
+	assumeNotNull(pRand);
+
 	return randUw(pRand) % (uwMax + 1);
 }
 
 UWORD randUwMinMax(tRandManager *pRand, UWORD uwMin, UWORD uwMax) {
+	assumeNotNull(pRand);
+
 	return uwMin + randUwMax(pRand, uwMax - uwMin);
 }
 
 ULONG randUl(tRandManager *pRand) {
+	assumeNotNull(pRand);
+
 	UWORD uwUpper = randUw(pRand);
 	UWORD uwLower = randUw(pRand);
 	return (uwUpper << 16) | (uwLower);
 }
 
 ULONG randUlMax(tRandManager *pRand, ULONG ulMax) {
+	assumeNotNull(pRand);
+
 	return randUl(pRand) % (ulMax + 1);
 }
 
 ULONG randUlMinMax(tRandManager *pRand, ULONG ulMin, ULONG ulMax) {
+	assumeNotNull(pRand);
+
 	return ulMin + randUlMax(pRand, ulMax - ulMin);
 }
 

@@ -5,8 +5,9 @@
 #include <ace/managers/copper.h>
 #ifdef AMIGA
 #include <stdarg.h>
-#include <ace/managers/system.h>
 #include <limits.h>
+#include <ace/managers/system.h>
+#include <ace/utils/assume.h>
 #include <proto/exec.h>
 
 tCopManager g_sCopManager;
@@ -203,17 +204,9 @@ tCopList *copListCreate(void *pTagList, ...) {
 		ULONG ulListSize = tagGet(
 			pTagList, vaTags, TAG_COPPER_RAW_COUNT, ulInvalidSize
 		);
-		if(ulListSize == ulInvalidSize) {
-			logWrite("ERR: no size specified for raw list\n");
-			goto fail;
-		}
-		if(ulListSize > USHRT_MAX) {
-			logWrite(
-				"ERR: raw copperlist size too big: %lu, max is %u\n",
-				ulListSize, USHRT_MAX
-			);
-			goto fail;
-		}
+		assumeMsg(ulListSize != ulInvalidSize, "No size specified for raw list");
+		assumeMsg(ulListSize <= USHRT_MAX, "Raw copperlist size is too big");
+
 		logWrite("RAW mode, size: %lu + WAIT(0xFFFF)\n", ulListSize);
 		// Front bfr
 		pCopList->pFrontBfr->uwCmdCount = ulListSize+1;
@@ -233,12 +226,6 @@ tCopList *copListCreate(void *pTagList, ...) {
 	logBlockEnd("copListCreate()");
 	va_end(vaTags);
 	return pCopList;
-
-fail:
-	va_end(vaTags);
-	copListDestroy(pCopList);
-	logBlockEnd("copListCreate()");
-	return 0;
 }
 
 void copListDestroy(tCopList *pCopList) {

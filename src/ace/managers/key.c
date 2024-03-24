@@ -7,6 +7,7 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/assume.h>
 #include <hardware/intbits.h> // INTB_PORTS
 #define KEY_RELEASED_BIT 1
 
@@ -94,10 +95,8 @@ const UBYTE g_pToAscii[] = {
 void keyCreate(void) {
 	logBlockBegin("keyCreate()");
 #if defined(ACE_DEBUG)
-	if(s_bInitCount++ != 0) {
-		// You should call keyCreate() only once
-		logWrite("ERR: Keyboard already initialized!\n");
-	}
+	assumeMsg(s_bInitCount == 0, "Keyboard already initialized");
+	++s_bInitCount;
 #endif
 	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, keyIntServer, &g_sKeyManager);
 	logBlockEnd("keyCreate()");
@@ -106,10 +105,8 @@ void keyCreate(void) {
 void keyDestroy(void) {
 	logBlockBegin("keyDestroy()");
 #if defined(ACE_DEBUG)
-	if(s_bInitCount-- != 1) {
-		// You should call keyDestroy() only once for each keyCreate()
-		logWrite("ERR: Keyboard was initialized multiple times!\n");
-	}
+	--s_bInitCount;
+	assumeMsg(s_bInitCount == 0, "Keyboard was initialized multiple times");
 #endif
 	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, 0, 0);
 	logBlockEnd("keyDestroy()");

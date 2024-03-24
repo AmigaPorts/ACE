@@ -7,6 +7,7 @@
 #include <ace/managers/system.h>
 #include <ace/utils/font.h>
 #include <ace/utils/file.h>
+#include <ace/utils/assume.h>
 
 /* Globals */
 
@@ -20,21 +21,19 @@ UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 }
 
 tFont *fontCreate(const char *szFontName) {
-	tFile *pFontFile;
-	tFont *pFont;
 	logBlockBegin("fontCreate(szFontName: '%s')", szFontName);
+	assumeNotNull(szFontName);
 
-	pFontFile = fileOpen(szFontName, "r");
+	tFile *pFontFile = fileOpen(szFontName, "r");
 	if (!pFontFile) {
 		logWrite("ERR: Couldn't open file\n");
 		logBlockEnd("fontCreate()");
 		return 0;
 	}
 
-	pFont = (tFont *) memAllocFast(sizeof(tFont));
+	tFont *pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont) {
 		fileClose(pFontFile);
-		logWrite("ERR: Couldn't alloc mem\n");
 		logBlockEnd("fontCreate()");
 		return 0;
 	}
@@ -51,38 +50,32 @@ tFont *fontCreate(const char *szFontName) {
 	fileRead(pFontFile, pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
-#ifdef AMIGA
+	assumeNotNull(pFont->pRawData);
+
 	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
 	fileRead(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
-#else
-	logWrite("ERR: Unimplemented\n");
-	memFree(pFont, sizeof(tFont));
-	fileClose(pFontFile);
-	logBlockEnd("fontCreate()");
-	return 0;
-#endif // AMIGA
 
 	fileClose(pFontFile);
 	logBlockEnd("fontCreate()");
 	return pFont;
 }
 
+// TODO: remove, generate initialized font struct in .c/.h with font_conv instead
 tFont *fontCreateFromMem(const UBYTE* pData) {
-	tFont *pFont;
-	UWORD uwCurByte = 0;
-
 	logBlockBegin("fontCreateFromMem(szFontName: '%p')", pData);
- 	pFont = (tFont *) memAllocFast(sizeof(tFont));
+ 	tFont *pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont) {
 		logBlockEnd("fontCreateFromMem()");
 		return 0;
 	}
-	memcpy(&pFont->uwWidth,&pData[uwCurByte],sizeof(UWORD));
-	uwCurByte+=sizeof(UWORD);
-	memcpy(&pFont->uwHeight,&pData[uwCurByte],sizeof(UWORD));
-	uwCurByte+=sizeof(UWORD);
-	memcpy(&pFont->ubChars,&pData[uwCurByte],sizeof(UBYTE));
-	uwCurByte+=sizeof(UBYTE);
+
+	UWORD uwCurByte = 0;
+	memcpy(&pFont->uwWidth, &pData[uwCurByte], sizeof(UWORD));
+	uwCurByte += sizeof(UWORD);
+	memcpy(&pFont->uwHeight, &pData[uwCurByte], sizeof(UWORD));
+	uwCurByte += sizeof(UWORD);
+	memcpy(&pFont->ubChars, &pData[uwCurByte], sizeof(UBYTE));
+	uwCurByte += sizeof(UBYTE);
 
 	logWrite(
 		"Addr: %p, data width: %upx, chars: %u, font height: %upx\n",
@@ -95,15 +88,9 @@ tFont *fontCreateFromMem(const UBYTE* pData) {
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
 
-#ifdef AMIGA
 	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
 	memcpy(pFont->pRawData->Planes[0],&pData[uwCurByte],uwPlaneByteSize);
-#else
-	logWrite("ERR: Unimplemented\n");
-	memFree(pFont, sizeof(tFont));
-	logBlockEnd("fontCreateFromMem()");
-	return 0;
-#endif // AMIGA
+
 	logBlockEnd("fontCreateFromMem()");
 	return pFont;
 }
@@ -111,7 +98,9 @@ tFont *fontCreateFromMem(const UBYTE* pData) {
 void fontDestroy(tFont *pFont) {
 	systemUse();
 	logBlockBegin("fontDestroy(pFont: %p)", pFont);
-	if (pFont) {
+	assumeNotNull(pFont);
+
+	if(pFont) {
 		bitmapDestroy(pFont->pRawData);
 		memFree(pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
 		memFree(pFont, sizeof(tFont));
@@ -158,6 +147,10 @@ fail:
 UBYTE fontTextFitsInTextBitmap(
 	const tFont *pFont, const tTextBitMap *pTextBitmap, const char *szText
 ) {
+	assumeNotNull(pFont);
+	assumeNotNull(pTextBitmap);
+	assumeNotNull(szText);
+
 	tUwCoordYX sBounds = fontMeasureText(pFont, szText);
 	if(
 		sBounds.uwX <= bitmapGetByteWidth(pTextBitmap->pBitMap) * 8 &&
@@ -169,6 +162,9 @@ UBYTE fontTextFitsInTextBitmap(
 }
 
 tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText) {
+	assumeNotNull(pFont);
+	assumeNotNull(szText);
+
 	UWORD uwWidth = 0, uwHeight = 0, uwMaxWidth = 0;
 	for (const char *p = szText; *p; ++p) {
 		if(*p == '\n') {
@@ -177,14 +173,8 @@ tUwCoordYX fontMeasureText(const tFont *pFont, const char *szText) {
 		}
 		else {
 			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
-#if defined(ACE_DEBUG)
-			if(ubGlyphWidth == 0) {
-				logWrite(
-					"ERR: Missing glyph for char '%c' (code %hhu, 0x%hhX), "
-					"pos %ld in string '%s'\n", *p, *p, *p, p - szText, szText
-				);
-			}
-#endif
+			assumeMsg(ubGlyphWidth != 0, "Missing glyph for char");
+
 			uwWidth += ubGlyphWidth + 1;
 			uwMaxWidth = MAX(uwMaxWidth, uwWidth);
 		}
@@ -198,6 +188,9 @@ tTextBitMap *fontCreateTextBitMapFromStr(const tFont *pFont, const char *szText)
 	logBlockBegin(
 		"fontCreateTextBitMapFromStr(pFont: %p, szText: '%s')", pFont, szText
 	);
+	assumeNotNull(pFont);
+	assumeNotNull(szText);
+
 	tUwCoordYX sBounds = fontMeasureText(pFont, szText);
 	// If bitmap is too tight then blitter goes nuts with bltXdat caching when
 	// going into next line of blit
@@ -213,6 +206,10 @@ tUwCoordYX fontDrawStr1bpp(
 	const tFont *pFont, tBitMap *pBitMap, UWORD uwStartX, UWORD uwStartY,
 	const char *szText
 ) {
+	assumeNotNull(pFont);
+	assumeNotNull(pBitMap);
+	assumeNotNull(szText);
+
 	UWORD uwX = uwStartX;
 	UWORD uwY = uwStartY;
 	UWORD uwBoundX = 0;
@@ -224,15 +221,7 @@ tUwCoordYX fontDrawStr1bpp(
 		}
 		else {
 			UBYTE ubGlyphWidth = fontGlyphWidth(pFont, *p);
-#if defined(ACE_DEBUG)
-			if(ubGlyphWidth == 0) {
-				logWrite(
-					"ERR: Missing glyph for char '%c' (code %hhu, 0x%hhX), "
-					"pos %ld in string '%s'\n", *p, *p, *p, p - szText, szText
-				);
-				continue;
-			}
-#endif
+			assumeMsg(ubGlyphWidth != 0, "Missing glyph for char");
 			blitCopy(
 				pFont->pRawData, pFont->pCharOffsets[(UBYTE)*p], 0, pBitMap, uwX, uwY,
 				ubGlyphWidth, pFont->uwHeight, MINTERM_COOKIE
@@ -247,6 +236,10 @@ tUwCoordYX fontDrawStr1bpp(
 void fontFillTextBitMap(
 	const tFont *pFont, tTextBitMap *pTextBitMap, const char *szText
 ) {
+	assumeNotNull(pFont);
+	assumeNotNull(pTextBitMap);
+	assumeNotNull(szText);
+
 	if(pTextBitMap->uwActualWidth) {
 		// Clear old contents
 		// TODO: we could remove this clear if letter spacing would be
@@ -257,17 +250,10 @@ void fontFillTextBitMap(
 		);
 	}
 
-#if defined(ACE_DEBUG)
-	if(!fontTextFitsInTextBitmap(pFont, pTextBitMap, szText)) {
-		tUwCoordYX sNeededDimensions = fontMeasureText(pFont, szText);
-		logWrite(
-			"ERR: Text '%s' doesn't fit in text bitmap, text needs: %hu,%hu, bitmap size: %hu,%hu\n",
-			szText, sNeededDimensions.uwX, sNeededDimensions.uwY,
-			bitmapGetByteWidth(pTextBitMap->pBitMap) * 8, pTextBitMap->pBitMap->Rows
-		);
-		return;
-	}
-#endif
+	assumeMsg(
+		fontTextFitsInTextBitmap(pFont, pTextBitMap, szText),
+		"Text doesn't fit in text bitmap"
+	);
 
 	tUwCoordYX sBounds = fontDrawStr1bpp(pFont, pTextBitMap->pBitMap, 0, 0, szText);
 	pTextBitMap->uwActualWidth = sBounds.uwX;
@@ -275,6 +261,8 @@ void fontFillTextBitMap(
 }
 
 void fontDestroyTextBitMap(tTextBitMap *pTextBitMap) {
+	assumeNotNull(pTextBitMap);
+
 	systemUse();
 	bitmapDestroy(pTextBitMap->pBitMap);
 	memFree(pTextBitMap, sizeof(tTextBitMap));
@@ -285,13 +273,9 @@ void fontDrawTextBitMap(
 	tBitMap *pDest, tTextBitMap *pTextBitMap,
 	UWORD uwX, UWORD uwY, UBYTE ubColor, UBYTE ubFlags
 ) {
-#if defined(ACE_DEBUG)
-	if(!pTextBitMap->uwActualWidth) {
-		// you can usually figure that out and skip this call before even doing fontDrawStr() or fontFillTextBitMap()
-		logWrite("ERR: pTextBitMap %p has text of zero width - do the check beforehand!\n", pTextBitMap);
-		return;
-	}
-#endif
+	assumeNotNull(pDest);
+	assumeNotNull(pTextBitMap);
+	assumeMsg(pTextBitMap->uwActualWidth > 0, "pTextBitMap has text of zero width");
 
 	// Alignment flags
 	if (ubFlags & FONT_RIGHT) {
@@ -312,13 +296,9 @@ void fontDrawTextBitMap(
 	}
 
 	// Helper destination bitmap
-#if defined(AMIGA)
 	s_sTmpDest.BytesPerRow = pDest->BytesPerRow;
 	s_sTmpDest.Rows = pDest->Rows;
 	s_sTmpDest.Depth = 1;
-#else
-#error "Something is missing here!"
-#endif
 
 	// Text-drawing loop
 	UBYTE isCookie = ubFlags & FONT_COOKIE;
@@ -358,9 +338,6 @@ void fontDrawStr(
 	const tFont *pFont, tBitMap *pDest, UWORD uwX, UWORD uwY,
 	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 ) {
-	if(!pTextBitMap) {
-		logWrite("ERR: pTextBitMap must be non-null!\n");
-	}
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);
 }

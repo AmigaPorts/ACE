@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
+#include <ace/utils/assume.h>
 #include <ace/generic/screen.h>
 
 static UBYTE s_isPAL;
@@ -104,6 +105,8 @@ tView *viewCreate(void *pTags, ...) {
 
 void viewDestroy(tView *pView) {
 	logBlockBegin("viewDestroy(pView: %p)", pView);
+	assumeNotNull(pView);
+
 #ifdef AMIGA
 	if(g_sCopManager.pCopList == pView->pCopList) {
 		viewLoad(0);
@@ -123,6 +126,8 @@ void viewDestroy(tView *pView) {
 }
 
 void vPortProcessManagers(tVPort *pVPort) {
+	assumeNotNull(pVPort);
+
 	tVpManager *pManager = pVPort->pFirstManager;
 	while(pManager) {
 		pManager->process(pManager);
@@ -131,6 +136,8 @@ void vPortProcessManagers(tVPort *pVPort) {
 }
 
 void viewProcessManagers(tView *pView) {
+	assumeNotNull(pView);
+
 	tVPort *pVPort = pView->pFirstVPort;
 	while(pVPort) {
 		vPortProcessManagers(pVPort);
@@ -139,6 +146,7 @@ void viewProcessManagers(tView *pView) {
 }
 
 void viewUpdatePalette(tView *pView) {
+	assumeNotNull(pView);
 #ifdef AMIGA
 	if(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE) {
 		for(UBYTE i = 0; i < 32; ++i) {
@@ -146,7 +154,7 @@ void viewUpdatePalette(tView *pView) {
 		}
 	}
 	else {
-		// na petli: vPortUpdatePalette();
+		// looped: vPortUpdatePalette();
 	}
 #endif // AMIGA
 }
@@ -182,12 +190,10 @@ void viewLoad(tView *pView) {
 			while(pVp->pNext) {
 				pVp = pVp->pNext;
 			}
-			if(pVp->uwOffsY + pVp->uwHeight != pView->uwHeight) {
-				logWrite(
-					"ERR: View height %hu doesn't match the total VPort area: %hu",
-					pView->uwHeight, pVp->uwOffsY + pVp->uwHeight
-				);
-			}
+			assumeMsg(
+				pVp->uwOffsY + pVp->uwHeight == pView->uwHeight,
+				"View height doesn't match the total VPort area"
+			);
 		}
 #endif
 		g_sCopManager.pCopList = pView->pCopList;
@@ -196,12 +202,10 @@ void viewLoad(tView *pView) {
 		g_pCustom->bplcon3 = 0;      // AGA fix
 		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
 		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
-		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
-			logWrite(
-				"ERR: DiwStopY (%hu) bit 8 (%hhu) must be different than bit 7 (%hhu)\n",
-				uwDiwStopY, BTST(uwDiwStopY, 8), BTST(uwDiwStopY, 7)
-			);
-		}
+		assumeMsg(
+			BTST(uwDiwStopY, 8) != BTST(uwDiwStopY, 7),
+			"DiwStopY bit 8 must be different than bit 7"
+		);
 		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | 0xC1; // HSTOP: 0xC1
 		viewUpdatePalette(pView);
 	}
@@ -228,10 +232,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 
 	// Determine parent view
 	tView *pView = (tView*)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
-	if(!pView) {
-		logWrite("ERR: no view ptr in TAG_VPORT_VIEW specified!\n");
-		goto fail;
-	}
+	assumeMsg(pView != 0, "no view ptr in TAG_VPORT_VIEW specified");
 	pVPort->pView = pView;
 	logWrite("Parent view: %p\n", pView);
 
@@ -283,29 +284,21 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	UWORD *pSrcPalette = (UWORD*)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
 	if(pSrcPalette) {
 		UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
-		if(uwPaletteSize == 0xFFFF) {
-			logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
-		}
-		else if(!uwPaletteSize || uwPaletteSize > 32) {
-			logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
-		}
-		else {
-			memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
-		}
+		assumeMsg(uwPaletteSize != 0xFFFF, "unspecified palette size (TAG_VPORT_PALETTE_SIZE)");
+		assumeMsg(0 < uwPaletteSize && uwPaletteSize < 32, "invalid palette size");
+		memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
 	}
 
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
 #endif // AMIGA
-fail:
-	va_end(vaTags);
-	logBlockEnd("vPortCreate()");
-	return 0;
 }
 
 void vPortDestroy(tVPort *pVPort) {
 	logBlockBegin("vPortDestroy(pVPort: %p)", pVPort);
+	assumeNotNull(pVPort);
+
 	tView *pView;
 	tVPort *pPrevVPort, *pCurrVPort;
 
@@ -366,23 +359,19 @@ void vPortUpdatePalette(tVPort *pVPort) {
 	// (like expanding HUD to fullscreen like we did in Goblin Villages).
 	// On copblocks implementing it is somewhat easy, but on raw copperlist
 	// something clever must be done.
-	if(pVPort->uwFlags & VIEWPORT_HAS_OWN_PALETTE) {
-		logWrite("TODO: implement vPortUpdatePalette!\n");
-	}
+	assumeMsg((pVPort->uwFlags & VIEWPORT_HAS_OWN_PALETTE) == 0, "implement vPortUpdatePalette");
 }
 
 void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
+	assumeNotNull(pVPort);
+
 #ifdef AMIGA
 	// Determine VPort end position
 	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
 	uwEndPos += pVPort->pView->ubPosY; // Addition from DiWStrt
-#if defined(ACE_DEBUG)
-	UWORD yPos = s_isPAL ? 312 : 272;
-	if(uwEndPos >= yPos) {
-		logWrite("ERR: vPortWaitForPos - too big wait pos: %04hx (%hu)\n", uwEndPos, uwEndPos);
-		logWrite("\tVPort offs: %hu, pos: %hu\n", pVPort->uwOffsY, uwPosY);
-	}
-#endif
+
+	UWORD uwScreenModeMaxPos = s_isPAL ? 312 : 272;
+	assumeMsg(uwEndPos < uwScreenModeMaxPos, "too big wait pos");
 
 	if(isExact) {
 		// If current beam pos is on or past end pos, wait for start of next frame
@@ -402,6 +391,9 @@ void vPortWaitForEnd(const tVPort *pVPort) {
 }
 
 void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
+	assumeNotNull(pVPort);
+	assumeNotNull(pVpManager);
+
 	// Check if we have any other manager - if not, attach as head
 	if(!pVPort->pFirstManager) {
 		pVPort->pFirstManager = pVpManager;
@@ -436,10 +428,9 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 }
 
 void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
-	if(!pVPort->pFirstManager) {
-		logWrite("ERR: vPort %p has no managers!\n", pVPort);
-		return;
-	}
+	assumeNotNull(pVPort);
+	assumeMsg(pVPort->pFirstManager != 0, "vPort has no managers");
+
 	if(pVPort->pFirstManager == pVpManager) {
 		logWrite("Destroying manager %u @addr: %p\n", pVpManager->ubId, pVpManager);
 		pVPort->pFirstManager = pVpManager->pNext;
@@ -459,9 +450,9 @@ void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
 }
 
 tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {
-	tVpManager *pManager;
+	assumeNotNull(pVPort);
 
-	pManager = pVPort->pFirstManager;
+	tVpManager *pManager = pVPort->pFirstManager;
 	while(pManager) {
 		if(pManager->ubId == ubId) {
 			return pManager;

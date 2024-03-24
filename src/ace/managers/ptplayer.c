@@ -12,6 +12,7 @@
 #include <ace/managers/ptplayer.h>
 #include <ace/managers/log.h>
 #include <ace/managers/system.h>
+#include <ace/utils/assume.h>
 #include <ace/utils/custom.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
@@ -1191,11 +1192,7 @@ void moreBlockedFx(
 ) {
 	// Get cmd idx. See tModVoice's type definition for details.
 	UBYTE ubCmdIdx = (uwCmd >> 8) & 0x0F;
-#if defined(ACE_DEBUG_PTPLAYER)
-	if(ubCmdIdx >= 16) {
-		logWrite("ERR: blmorefx_tab index out of range: cmd %hu -> %hu\n", uwCmd, uwCmd >> 8);
-	}
-#endif
+	assumeMsg(ubCmdIdx < 16, "blmorefx_tab index out of range");
 	blmorefx_tab[ubCmdIdx](uwCmd, pChannelData, pChannelReg);
 }
 
@@ -1222,11 +1219,7 @@ static void checkmorefx(
 	if(pChannelData->uwFunkSpeed) {
 		mt_updatefunk(pChannelData);
 	}
-#if defined(ACE_DEBUG_PTPLAYER)
-	if(uwCmd >= 16) {
-		logWrite("ERR: morefx_tab index out of range: cmd %hu\n", uwCmd);
-	}
-#endif
+	assumeMsg(uwCmd < 16, "morefx_tab index out of range");
 	morefx_tab[uwCmd](uwCmdArg, pChannelData, pChannelReg);
 }
 
@@ -1331,11 +1324,7 @@ static void mt_playvoice(
 		set_finetune(uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg);
 	}
 	else {
-#if defined(ACE_DEBUG_PTPLAYER)
-		if(uwCmd >= 16) {
-			logWrite("ERR: prefx_tab index out of range: cmd %hu\n", uwCmd);
-		}
-#endif
+		assumeMsg(uwCmd < 16, "prefx_tab index out of range");
 		prefx_tab[uwCmd](
 			uwCmd, uwCmdArg, uwMaskedCmdE, pVoice, pChannelData, pChannelReg
 		);
@@ -1382,11 +1371,7 @@ static void mt_checkfx(
 	}
 	else {
 		UBYTE ubCmdIndex = (pChannelData->sVoice.ubCmdHi & 0xF);
-#if defined(ACE_DEBUG_PTPLAYER)
-		if(ubCmdIndex >= 16) {
-			logWrite("ERR: fx_tab index out of range: cmd %hhu\n", ubCmdIndex);
-		}
-#endif
+		assumeMsg(ubCmdIndex < 16, "fx_tab index out of range");
 		fx_tab[ubCmdIndex](pChannelData->sVoice.ubCmdLo, pChannelData, pChannelReg);
 	}
 }
@@ -2193,11 +2178,7 @@ static void mt_e_cmds(
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArgE = ubArgs & 0x0F;
 	UBYTE ubCmdE = (ubArgs & 0xF0) >> 4;
-#if defined(ACE_DEBUG_PTPLAYER)
-	if(ubCmdE >= 16) {
-		logWrite("ERR: ecmd_tab index out of range: cmd %hhu\n", ubCmdE);
-	}
-#endif
+	assumeMsg(ubCmdE < 16, "ecmd_tab index out of range");
 	ecmd_tab[ubCmdE](ubArgE, pChannelData, pChannelReg);
 }
 
@@ -2265,11 +2246,7 @@ static void blocked_e_cmds(
 	// uwCmd: 0x0E'XY (x = command, y = argument)
 	UBYTE ubArg = ubArgs & 0x0F;
 	UBYTE ubCmdE = (ubArgs & 0xF0) >> 4;
-#if defined(ACE_DEBUG_PTPLAYER)
-	if(ubCmdE >= 16) {
-		logWrite("ERR: blecmd_tab index out of range: cmd %hhu\n", ubCmdE);
-	}
-#endif
+	assumeMsg(ubCmdE < 16, "blecmd_tab index out of range");
 	blecmd_tab[ubCmdE](ubArg, pChannelData, pChannelReg);
 }
 
@@ -2861,32 +2838,28 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 	}
 	UBYTE ubVersion;
 	fileRead(pFileSfx, &ubVersion, sizeof(ubVersion));
-	if(ubVersion == 1) {
-		fileRead(pFileSfx, &pSfx->uwWordLength, sizeof(pSfx->uwWordLength));
-		ULONG ulByteSize = pSfx->uwWordLength * sizeof(UWORD);
+	assumeMsg(ubVersion == 1, "Unknown sample format version");
 
-		UWORD uwSampleRateHz;
-		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
-		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
-		logWrite("Length: %lu, sample rate: %hu, period: %hu\n", ulByteSize, uwSampleRateHz, pSfx->uwPeriod);
+	fileRead(pFileSfx, &pSfx->uwWordLength, sizeof(pSfx->uwWordLength));
+	ULONG ulByteSize = pSfx->uwWordLength * sizeof(UWORD);
 
-		pSfx->pData = isFast ? memAllocFast(ulByteSize) : memAllocChip(ulByteSize);
-		if(!pSfx->pData) {
-			goto fail;
-		}
-		fileRead(pFileSfx, pSfx->pData, ulByteSize);
+	UWORD uwSampleRateHz;
+	fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
+	pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
+	logWrite("Length: %lu, sample rate: %hu, period: %hu\n", ulByteSize, uwSampleRateHz, pSfx->uwPeriod);
 
-		// Check if pData[0] is zeroed-out - it should be because after sfx playback
-		// ptplayer sets the channel playback to looped first word. This should
-		// be done on sfx converter side. If your samples are humming after playback,
-		// fix your custom conversion tool or use latest ACE tools!
-		if(pSfx->pData[0] != 0) {
-			logWrite("WARN: SFX's first word isn't zeroed-out - won't work properly with ptplayer!\n");
-		}
-	}
-	else {
-		logWrite("ERR: Unknown sample format version: %hhu\n", ubVersion);
+	pSfx->pData = isFast ? memAllocFast(ulByteSize) : memAllocChip(ulByteSize);
+	if(!pSfx->pData) {
 		goto fail;
+	}
+	fileRead(pFileSfx, pSfx->pData, ulByteSize);
+
+	// Check if pData[0] is zeroed-out - it should be because after sfx playback
+	// ptplayer sets the channel playback to looped first word. This should
+	// be done on sfx converter side. If your samples are humming after playback,
+	// fix your custom conversion tool or use latest ACE tools!
+	if(pSfx->pData[0] != 0) {
+		logWrite("WARN: SFX's first word isn't zeroed-out - won't work properly with ptplayer!\n");
 	}
 
 	fileClose(pFileSfx);
@@ -2971,9 +2944,7 @@ void ptplayerSfxStopOnChannel(UBYTE ubChannel) {
 void ptplayerSfxPlayLooped(
 	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume
 ) {
-	if(memType(pSfx->pData) == MEMF_FAST) {
-		logWrite("ERR: ptplayer only supports samples located in CHIP mem\n");
-	}
+	assumeMsg(memType(pSfx->pData) == MEMF_CHIP, "ptplayer only supports samples located in CHIP mem");
 	g_pCustom->intena = INTF_INTEN;
 	tChannelStatus *pChannel = &mt_chan[ubChannel];
 	channelSetSfx(pChannel, pSfx, ubVolume, SFX_PRIORITY_LOOPED);
@@ -2983,9 +2954,7 @@ void ptplayerSfxPlayLooped(
 void ptplayerSfxPlay(
 	const tPtplayerSfx *pSfx, UBYTE ubChannel, UBYTE ubVolume, UBYTE ubPriority
 ) {
-	if(memType(pSfx->pData) == MEMF_FAST) {
-		logWrite("ERR: ptplayer only supports samples located in CHIP mem\n");
-	}
+	assumeMsg(memType(pSfx->pData) == MEMF_CHIP, "ptplayer only supports samples located in CHIP mem");
 	g_pCustom->intena = INTF_INTEN;
 	if(ubChannel != PTPLAYER_SFX_CHANNEL_ANY) {
 		// Use fixed channel for effect
@@ -3184,7 +3153,7 @@ tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath) {
 	tPtplayerSamplePack *pSamplePack = 0;
 	LONG lSize = fileGetSize(szPath);
 	if(lSize <= 0) {
-		logWrite("ERR: Invalid file size. File exists?\n");
+		logWrite("ERR: Invalid file size. Does file exist?\n");
 		goto fail;
 	}
 

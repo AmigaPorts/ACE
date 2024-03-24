@@ -6,8 +6,10 @@
 #include <stdarg.h>
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
+#include <ace/utils/assume.h>
 
-LONG fileGetSize(const char *szPath) {
+LONG fileGetSize(const char *szFilePath) {
+	assumeNotNull(szFilePath);
 	// One could use std library to seek to end of file and use ftell,
 	// but SEEK_END is not guaranteed to work.
 	// http://www.cplusplus.com/reference/cstdio/fseek/
@@ -17,8 +19,8 @@ LONG fileGetSize(const char *szPath) {
 
 	systemUse();
 	systemReleaseBlitterToOs();
-	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
-	FILE *pFile = fopen(szPath, "r");
+	logBlockBegin("fileGetSize(szFilePath: '%s')", szFilePath);
+	FILE *pFile = fopen(szFilePath, "r");
 	if(!pFile) {
 		logWrite("ERR: File doesn't exist");
 		logBlockEnd("fileGetSize()");
@@ -37,11 +39,14 @@ LONG fileGetSize(const char *szPath) {
 	return lSize;
 }
 
-tFile *fileOpen(const char *szPath, const char *szMode) {
-	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
+tFile *fileOpen(const char *szFilePath, const char *szMode) {
+	assumeNotNull(szFilePath);
+	assumeNotNull(szMode);
+
+	// TODO check if disk is write protected when szMode has 'a'/'w'/'x'
 	systemUse();
 	systemReleaseBlitterToOs();
-	FILE *pFile = fopen(szPath, szMode);
+	FILE *pFile = fopen(szFilePath, szMode);
 	systemGetBlitterFromOs();
 	systemUnuse();
 
@@ -49,6 +54,8 @@ tFile *fileOpen(const char *szPath, const char *szMode) {
 }
 
 void fileClose(tFile *pFile) {
+	assumeNotNull(pFile);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	fclose(pFile);
@@ -57,11 +64,10 @@ void fileClose(tFile *pFile) {
 }
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
-#ifdef ACE_DEBUG
-	if(!ulSize) {
-		logWrite("ERR: File read size = 0!\n");
-	}
-#endif
+	assumeNotNull(pFile);
+	assumeNotNull(pDest);
+	assumeMsg(ulSize != 0, "File read size is zero");
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	ULONG ulReadCount = fread(pDest, ulSize, 1, pFile);
@@ -72,6 +78,10 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 }
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	assumeNotNull(pFile);
+	assumeNotNull(pSrc);
+	assumeMsg(ulSize != 0, "File write size is zero");
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
@@ -83,6 +93,8 @@ ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
 }
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
+	assumeNotNull(pFile);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	ULONG ulResult = fseek(pFile, ulPos, wMode);
@@ -93,6 +105,8 @@ ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
 }
 
 ULONG fileGetPos(tFile *pFile) {
+	assumeNotNull(pFile);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	ULONG ulResult = ftell(pFile);
@@ -103,6 +117,8 @@ ULONG fileGetPos(tFile *pFile) {
 }
 
 UBYTE fileIsEof(tFile *pFile) {
+	assumeNotNull(pFile);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	UBYTE ubResult = feof(pFile);
@@ -114,6 +130,8 @@ UBYTE fileIsEof(tFile *pFile) {
 
 #if !defined(BARTMAN_GCC) // Not implemented in mini_std for now, sorry!
 LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
+	assumeNotNull(pFile);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
@@ -124,6 +142,8 @@ LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 }
 
 LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
+	assumeNotNull(pFile);
+
 	va_list vaArgs;
 	va_start(vaArgs, szFmt);
 	LONG lResult = fileVaPrintf(pFile, szFmt, vaArgs);
@@ -132,6 +152,8 @@ LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
 }
 
 LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
+	assumeNotNull(pFile);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	LONG lResult = vfscanf(pFile, szFmt, vaArgs);
@@ -141,6 +163,8 @@ LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
 }
 
 LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
+	assumeNotNull(pFile);
+
 	va_list vaArgs;
 	va_start(vaArgs, szFmt);
 	LONG lResult = fileVaScanf(pFile, szFmt, vaArgs);
@@ -150,6 +174,8 @@ LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
 #endif
 
 void fileFlush(tFile *pFile) {
+	assumeNotNull(pFile);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	fflush(pFile);
@@ -158,14 +184,18 @@ void fileFlush(tFile *pFile) {
 }
 
 void fileWriteStr(tFile *pFile, const char *szLine) {
+	assumeNotNull(pFile);
+
 	fileWrite(pFile, szLine, strlen(szLine));
 }
 
-UBYTE fileExists(const char *szPath) {
+UBYTE fileExists(const char *szFilePath) {
+	assumeNotNull(szFilePath);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	UBYTE isExisting = 0;
-	tFile *pFile = fileOpen(szPath, "r");
+	tFile *pFile = fileOpen(szFilePath, "r");
 	if(pFile) {
 		isExisting = 1;
 		fileClose(pFile);
@@ -177,6 +207,8 @@ UBYTE fileExists(const char *szPath) {
 }
 
 UBYTE fileDelete(const char *szFilePath) {
+	assumeNotNull(szFilePath);
+
 	systemUse();
 	systemReleaseBlitterToOs();
 	UBYTE isSuccess = remove(szFilePath);
@@ -185,10 +217,13 @@ UBYTE fileDelete(const char *szFilePath) {
 	return isSuccess;
 }
 
-UBYTE fileMove(const char *szSource, const char *szDest) {
+UBYTE fileMove(const char *szSourcePath, const char *szDestPath) {
+	assumeNotNull(szSourcePath);
+	assumeNotNull(szDestPath);
+
 	systemUse();
 	systemReleaseBlitterToOs();
-	UBYTE isSuccess = rename(szSource, szDest);
+	UBYTE isSuccess = rename(szSourcePath, szDestPath);
 	systemGetBlitterFromOs();
 	systemUnuse();
 	return isSuccess;

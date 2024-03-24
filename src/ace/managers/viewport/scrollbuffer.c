@@ -4,6 +4,7 @@
 
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/utils/tag.h>
+#include <ace/utils/assume.h>
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <limits.h>
 
@@ -28,7 +29,6 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	UBYTE ubMarginWidth;
 	UWORD uwBoundWidth, uwBoundHeight;
 	UBYTE ubBitmapFlags;
-	UBYTE isCameraCreated = 0;
 	UBYTE isDblBuf;
 
 	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
@@ -42,22 +42,14 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	logWrite("Addr: %p\n", pManager);
 
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_VPORT, 0);
-	if(!pVPort) {
-		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified!\n");
-		goto fail;
-	}
+	assumeMsg(pVPort != 0, "No parent viewport (TAG_SCROLLBUFFER_VPORT) specified");
 	pManager->sCommon.pVPort = pVPort;
 	logWrite("Parent VPort: %p\n", pVPort);
 
 	ubMarginWidth = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_MARGIN_WIDTH, UCHAR_MAX
 	);
-	if(ubMarginWidth == UCHAR_MAX) {
-		logWrite(
-			"ERR: No margin width (TAG_SCROLLBUFFER_MARGIN_WIDTH) specified!\n"
-		);
-		goto fail;
-	}
+	assumeMsg(ubMarginWidth != UCHAR_MAX, "No margin width (TAG_SCROLLBUFFER_MARGIN_WIDTH) specified");
 
 	// Buffer bitmap
 	uwBoundWidth = tagGet(
@@ -94,21 +86,11 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 		pManager->uwCopperOffsetStart = tagGet(
 			pTags, vaTags, TAG_SCROLLBUFFER_COPLIST_OFFSET_START, uwInvalidCopOffs
 		);
-		if(pManager->uwCopperOffsetStart == uwInvalidCopOffs) {
-			logWrite(
-				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_START) not specified!\n"
-			);
-			goto fail;
-		}
+		assumeMsg(pManager->uwCopperOffsetStart != uwInvalidCopOffs, "Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_START) not specified");
 		pManager->uwCopperOffsetBreak = tagGet(
 			pTags, vaTags, TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK, uwInvalidCopOffs
 		);
-		if(pManager->uwCopperOffsetBreak == uwInvalidCopOffs) {
-			logWrite(
-				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK) not specified!\n"
-			);
-			goto fail;
-		}
+		assumeMsg(pManager->uwCopperOffsetBreak != uwInvalidCopOffs, "Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK) not specified");
 		logWrite("Copperlist offsets: start: %u, break: %u\n",
 				 pManager->uwCopperOffsetStart,
 				 pManager->uwCopperOffsetBreak);
@@ -128,7 +110,6 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 		pManager->pCamera = cameraCreate(
 			pVPort, 0, 0, uwBoundWidth, uwBoundHeight, isDblBuf
 		);
-		isCameraCreated = 1;
 	}
 	else {
 		cameraReset(pManager->pCamera, 0,0, uwBoundWidth, uwBoundHeight, isDblBuf);
@@ -139,21 +120,6 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	va_end(vaTags);
 	logBlockEnd("scrollBufferCreate");
 	return pManager;
-fail:
-	if(isCameraCreated) {
-		cameraDestroy(pManager->pCamera);
-	}
-	if(pCopList && pCopList->ubMode == COPPER_MODE_BLOCK && pManager->pStartBlock) {
-		copBlockDestroy(pCopList, pManager->pStartBlock);
-		if(pManager->pBreakBlock) {
-			copBlockDestroy(pCopList, pManager->pBreakBlock);
-		}
-	}
-
-	memFree(pManager, sizeof(tScrollBufferManager));
-	va_end(vaTags);
-	logBlockEnd("scrollBufferCreate");
-	return 0;
 }
 
 void scrollBufferDestroy(tScrollBufferManager *pManager) {

@@ -7,6 +7,7 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
+#include <ace/utils/assume.h>
 #include <proto/exec.h> // Bartman's compiler needs this
 
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
@@ -38,15 +39,14 @@ static void tileBufferQueueAdd(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY
 ) {
 	// Add two times so that they're drawn properly in double buffering
-#if defined ACE_DEBUG
-	if(
-		pManager->pRedrawStates[0].ubPendingCount > pManager->ubQueueSize - 2 ||
-		pManager->pRedrawStates[1].ubPendingCount > pManager->ubQueueSize - 2
-	) {
-		logWrite("ERR: No more space in redraw queue");
-		return;
-	}
-#endif
+	assumeMsg(
+		pManager->pRedrawStates[0].ubPendingCount <= pManager->ubQueueSize - 2,
+		"No more space in redraw queue"
+	);
+	assumeMsg(
+		pManager->pRedrawStates[1].ubPendingCount <= pManager->ubQueueSize - 2,
+		"No more space in redraw queue"
+	);
 	tRedrawState *pState = &pManager->pRedrawStates[0];
 	pState->pPendingQueue[pState->ubPendingCount].uwX = uwTileX;
 	pState->pPendingQueue[pState->ubPendingCount].uwY = uwTileY;
@@ -85,18 +85,12 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	pManager->sCommon.ubId = VPM_TILEBUFFER;
 
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_TILEBUFFER_VPORT, 0);
-	if(!pVPort) {
-		logWrite("ERR: No parent viewport (TAG_TILEBUFFER_VPORT) specified!\n");
-		goto fail;
-	}
+	assumeMsg(pVPort != 0, "No parent viewport (TAG_TILEBUFFER_VPORT) specified");
 	pManager->sCommon.pVPort = pVPort;
 	logWrite("Parent VPort: %p\n", pVPort);
 
 	UBYTE ubTileShift = tagGet(pTags, vaTags, TAG_TILEBUFFER_TILE_SHIFT, 0);
-	if(!ubTileShift) {
-		logWrite("ERR: No tile shift (TAG_TILEBUFFER_TILE_SHIFT) specified!\n");
-		goto fail;
-	}
+	assumeMsg(ubTileShift != 0, "No tile shift (TAG_TILEBUFFER_TILE_SHIFT) specified");
 	pManager->ubTileShift = ubTileShift;
 	pManager->ubTileSize = 1 << ubTileShift;
 
@@ -105,18 +99,13 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	);
 
 	pManager->pTileSet = (tBitMap*)tagGet(pTags, vaTags, TAG_TILEBUFFER_TILESET, 0);
-	if(!pManager->pTileSet) {
-		logWrite("ERR: No tileset (TAG_TILEBUFFER_TILESET) specified!\n");
-		goto fail;
-	}
+	assumeMsg(pManager->pTileSet != 0, "No tileset (TAG_TILEBUFFER_TILESET) specified");
+
 	uwTileX = tagGet(pTags, vaTags, TAG_TILEBUFFER_BOUND_TILE_X, 0);
+	assumeMsg(uwTileX != 0, "TAG_TILEBUFFER_BOUND_TILE_X not specified");
+
 	uwTileY = tagGet(pTags, vaTags, TAG_TILEBUFFER_BOUND_TILE_Y, 0);
-	if(!uwTileX || !uwTileY) {
-		logWrite(
-			"ERR: No tile boundaries (TAG_TILEBUFFER_BOUND_TILE_X or _Y) specified!\n"
-		);
-		goto fail;
-	}
+	assumeMsg(uwTileY != 0, "TAG_TILEBUFFER_BOUND_TILE_Y not specified");
 
 	pManager->pTileData = 0;
 	ubBitmapFlags = tagGet(pTags, vaTags, TAG_TILEBUFFER_BITMAP_FLAGS, BMF_CLEAR);
@@ -128,23 +117,14 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	pManager->ubQueueSize = tagGet(
 		pTags, vaTags, TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 0
 	);
-	if(!pManager->ubQueueSize) {
-		logWrite(
-			"ERR: No queue size (TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH) specified!\n"
-		);
-		goto fail;
-	}
+	assumeMsg(pManager->ubQueueSize != 0, "No queue size (TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH) specified");
 	// This alloc could be checked in regard of double buffering
 	// but I want process to be as quick as possible (one 'if' less)
 	// and redraw queue has no mem footprint at all (256 bytes max?)
 	pManager->pRedrawStates[0].pPendingQueue = memAllocFast(pManager->ubQueueSize);
 	pManager->pRedrawStates[1].pPendingQueue = memAllocFast(pManager->ubQueueSize);
-	if(
-		!pManager->pRedrawStates[0].pPendingQueue ||
-		!pManager->pRedrawStates[1].pPendingQueue
-	) {
-		goto fail;
-	}
+	assumeNotNull(pManager->pRedrawStates[0].pPendingQueue);
+	assumeNotNull(pManager->pRedrawStates[1].pPendingQueue);
 
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 
@@ -158,17 +138,6 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	va_end(vaTags);
 	logBlockEnd("tileBufferCreate");
 	return pManager;
-fail:
-	// TODO: proper fail
-	if(pManager->pRedrawStates[0].pPendingQueue) {
-		memFree(pManager->pRedrawStates[0].pPendingQueue, pManager->ubQueueSize);
-	}
-	if(pManager->pRedrawStates[1].pPendingQueue) {
-		memFree(pManager->pRedrawStates[1].pPendingQueue, pManager->ubQueueSize);
-	}
-	va_end(vaTags);
-	logBlockEnd("tileBufferCreate");
-	return 0;
 }
 
 void tileBufferDestroy(tTileBufferManager *pManager) {

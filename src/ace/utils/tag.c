@@ -4,13 +4,10 @@
 
 #include <ace/utils/tag.h>
 #include <ace/managers/log.h>
+#include <ace/utils/assume.h>
 
 ULONG tagGet(void *pTagListPtr, va_list vaSrcList, tTag ulTagToFind, ULONG ulOnNotFound) {
-	if(pTagListPtr) {
-		// TODO
-		logWrite("ERR: Unimplemented in tagFindString()");
-		return ulOnNotFound;
-	}
+	assumeMsg(pTagListPtr == 0, "Unimplemented parsing pTagListPtr");
 
 	va_list vaWorkList;
 	va_copy(vaWorkList, vaSrcList);
