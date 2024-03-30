@@ -30,12 +30,14 @@ tBitMap *bitmapCreate(
 
 	if(uwWidth == 0 || uwHeight == 0) {
 		logWrite("ERR: invalid bitmap dimensions\n");
+		systemUnuse();
 		return 0;
 	}
 
 	if((uwWidth & 0xF) != 0) {
 		// Needed for blitter!
 		logWrite("ERR: bitmap width is not multiple of 16\n");
+		systemUnuse();
 		return 0;
 	}
 
