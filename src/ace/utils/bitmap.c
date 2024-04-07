@@ -326,12 +326,14 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	UBYTE ubPlaneCount;       // Bitplane count
 	UBYTE i;
 
+	systemUse();
 	logBlockBegin("bitmapCreateFromFile(szFilePath: '%s')", szFilePath);
 	pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
 		fileClose(pFile);
 		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapCreateFromFile()");
+		systemUnuse();
 		return 0;
 	}
 
@@ -346,6 +348,7 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 		fileClose(pFile);
 		logWrite("ERR: Unknown file version: %hu\n", ubVersion);
 		logBlockEnd("bitmapCreateFromFile()");
+		systemUnuse();
 		return 0;
 	}
 
@@ -373,6 +376,7 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 		uwWidth, uwHeight, ubPlaneCount, ubVersion, ubFlags
 	);
 	logBlockEnd("bitmapCreateFromFile()");
+	systemUnuse();
 	return pBitMap;
 }
 
