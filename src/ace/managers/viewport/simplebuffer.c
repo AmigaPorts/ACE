@@ -118,6 +118,24 @@ static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) 
 	pManager->pBack = pBack;
 }
 
+static UWORD simpleBufferCalcBplOffsAndShift(tSimpleBufferManager *pManager, ULONG *pBplOffs) {
+	// Calculate X movement: bitplane shift, starting word to fetch
+	UWORD uwShift;
+	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
+		uwShift = (16 - (pManager->pCamera->uPos.uwX & 0xF)) & 0xF;  // Bitplane shift - single
+		uwShift = (uwShift << 4) | uwShift;                // Bitplane shift - PF1 | PF2
+		*pBplOffs = ((pManager->pCamera->uPos.uwX - 1) >> 4) << 1;   // Must be ULONG!
+	}
+	else {
+		uwShift = 0;
+		*pBplOffs = (pManager->pCamera->uPos.uwX >> 4) << 1;
+	}
+
+	// Calculate Y movement
+	*pBplOffs += pManager->pBack->BytesPerRow * pManager->pCamera->uPos.uwY;
+	return uwShift;
+}
+
 void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 	logBlockBegin(
 		"simpleBufferSetFront(pManager: %p, pFront: %p)",
@@ -274,22 +292,6 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 	const tCameraManager *pCamera = pManager->pCamera;
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
-	// Calculate X movement: bitplane shift, starting word to fetch
-	UWORD uwShift;
-	ULONG ulBplOffs;
-	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-		uwShift = (16 - (pCamera->uPos.uwX & 0xF)) & 0xF;  // Bitplane shift - single
-		uwShift = (uwShift << 4) | uwShift;                // Bitplane shift - PF1 | PF2
-		ulBplOffs = ((pCamera->uPos.uwX - 1) >> 4) << 1;   // Must be ULONG!
-	}
-	else {
-		uwShift = 0;
-		ulBplOffs = (pCamera->uPos.uwX >> 4) << 1;
-	}
-
-	// Calculate Y movement
-	ulBplOffs += pManager->pBack->BytesPerRow * pCamera->uPos.uwY;
-
 	// Copperlist - regen bitplane ptrs, update shift
 	// TODO could be unified by using copSetMove in copBlock
 	if((pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW)) {
@@ -299,6 +301,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 			pManager->ubDirtyCounter = 2;
 		}
 		if(pManager->ubDirtyCounter) {
+			ULONG ulBplOffs;
+			UWORD uwShift = simpleBufferCalcBplOffsAndShift(pManager, &ulBplOffs);
 			tCopCmd *pCmdList = &pCopList->pBackBfr->pList[pManager->uwCopperOffset];
 			copSetMoveVal(&pCmdList[5].sMove, uwShift);
 			updateBitplanePtrs(&pCmdList[6], pManager->pBack, ulBplOffs);
@@ -309,6 +313,8 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		// In double buffering, we can't really check for camera being moved, since
 		// copBlock needs to change its bitplane pointers value each frame and
 		// copperlist needs refreshing.
+		ULONG ulBplOffs;
+		UWORD uwShift = simpleBufferCalcBplOffsAndShift(pManager, &ulBplOffs);
 		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
 		for(UBYTE i = 0; i < pManager->pBack->Depth; ++i) {
