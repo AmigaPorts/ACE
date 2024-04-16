@@ -107,3 +107,27 @@ void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
 	bitmapSaveBmp(pBm, pPalette, szPath);
 	bitmapDestroy(pBm);
 }
+
+void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
+	tFile *pFile;
+	UBYTE ubPaletteLength;
+
+	logBlockBegin(
+		"paletteSave(pPalette: %p, ubColorCnt: %hu, szPath: '%s')",
+		pPalette, ubColorCnt, szPath
+	);
+
+	pFile = fileOpen(szPath, "wb");
+	if(!pFile) {
+		logWrite("ERR: Can't write file!\n");
+		logBlockEnd("paletteSave()");
+		return;
+	}
+	else {
+		fileWrite(pFile, &ubColorCnt, sizeof(UBYTE));
+		fileWrite(pFile, pPalette, sizeof(UWORD) * ubColorCnt);
+		fileClose(pFile);
+	}
+
+	logBlockEnd("paletteSave()");
+}
