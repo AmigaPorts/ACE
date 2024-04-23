@@ -23,7 +23,7 @@ typedef struct tSpriteChannel {
 
 static const tView *s_pView;
 static tSpriteChannel s_pChannelsData[HARDWARE_SPRITE_CHANNEL_COUNT];
-static tHardwareSpriteHeader CHIP s_uBlankSprite;
+static const tHardwareSpriteHeader CHIP s_uBlankSprite;
 static tCopBlock *s_pInitialClearCopBlock;
 
 static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
@@ -143,7 +143,7 @@ void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
 		);
 		isAttached = 0;
 	}
-#endif	
+#endif
 	pSprite->isAttached = isAttached;
 	pSprite->isHeaderToBeUpdated = 1;
 }
@@ -246,7 +246,7 @@ void spriteProcess(tSprite *pSprite) {
 		(BTST(uwVStop, 8) << 1) |
 		BTST(uwHStart, 0)
 	);
-	
+
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
