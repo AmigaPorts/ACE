@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14.0)
 project(ACE
-	LANGUAGES C ASM
+	LANGUAGES C
 	DESCRIPTION "Amiga C Engine"
 	HOMEPAGE_URL "https://github.com/AmigaPorts/ACE"
 )
