@@ -78,14 +78,14 @@ void joyProcess(void) {
 		BTST(uwJoyDataPort2 >> 1 ^ uwJoyDataPort2, 0), // Joy 1 down  (PORT 2)
 		BTST(uwJoyDataPort2, 9),                       // Joy 1 left  (PORT 2)
 		BTST(uwJoyDataPort2, 1),                       // Joy 1 right (PORT 2)
-		BTST(g_pCustom->potinp, 14),                   // Joy 1 fire2 (PORT 2)
+		!BTST(g_pCustom->potinp, 14),                  // Joy 1 fire2 (PORT 2)
 
 		!BTST(ubCiaAPra, 6),                           // Joy 2 fire  (PORT 1)
 		BTST(uwJoyDataPort1 >> 1 ^ uwJoyDataPort1, 8), // Joy 2 up    (PORT 1)
 		BTST(uwJoyDataPort1 >> 1 ^ uwJoyDataPort1, 0), // Joy 2 down  (PORT 1)
 		BTST(uwJoyDataPort1, 9),                       // Joy 2 left  (PORT 1)
 		BTST(uwJoyDataPort1, 1),                       // Joy 2 right (PORT 1)
-		BTST(g_pCustom->potinp, 10),                   // Joy 2 fire2 (PORT 1)
+		!BTST(g_pCustom->potinp, 10),                  // Joy 2 fire2 (PORT 1)
 	};
 
 	UBYTE ubJoyCode;
