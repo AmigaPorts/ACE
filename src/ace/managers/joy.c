@@ -122,8 +122,6 @@ void joyProcess(void) {
 			joySetState(ubJoyCode, JOY_NACTIVE);
 		}
 	}
-
-	g_pCustom->potgo = 0xFF00;
 }
 
 //----------------------------------------------------------- PARALLEL PORT JOYS
