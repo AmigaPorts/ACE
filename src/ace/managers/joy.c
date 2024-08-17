@@ -188,8 +188,8 @@ void joyDisableParallel(void) {
 
 	// Close misc.resource
 	systemUse();
-	FreeMiscResource(MR_PARALLELPORT);
 	FreeMiscResource(MR_PARALLELBITS);
+	FreeMiscResource(MR_PARALLELPORT);
 	systemUnuse();
 	s_isParallelEnabled = 0;
 }

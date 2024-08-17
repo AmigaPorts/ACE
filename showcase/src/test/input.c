@@ -114,6 +114,13 @@ static void updateJoyState(UBYTE ubJoyIndex) {
 	}
 }
 
+static void showParallelStatus(void) {
+	char szMsg[40];
+	sprintf(szMsg, "Parallel joys are %s F1 to toggle", joyIsParallelEnabled() ? "ON" : "OFF");
+	blitRect(s_pTestInputBfr->pBack, 0, 256 - s_pFont->uwHeight, 320, s_pFont->uwHeight, 0);
+	fontDrawStr(s_pFont, s_pTestInputBfr->pBack, 160, 256, szMsg, 3, FONT_BOTTOM|FONT_HCENTER, s_pTextBitMap);
+}
+
 void gsTestInputCreate(void) {
 	// Prepare view & viewport
 	s_pTestInputView = viewCreate(0,
@@ -139,8 +146,6 @@ void gsTestInputCreate(void) {
 	s_pFont = fontCreate("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 
-	joyEnableParallel();
-
 	fontDrawStr(
 		s_pFont, s_pTestInputBfr->pBack, 0 + 160 / 2, 10,
 		"Joy 1", 1, FONT_CENTER, s_pTextBitMap
@@ -164,6 +169,11 @@ void gsTestInputCreate(void) {
 		}
 	}
 
+	fontDrawStr(s_pFont, s_pTestInputBfr->pBack, 0, 160, "TODO Mouse 1", 1, 0, s_pTextBitMap);
+	fontDrawStr(s_pFont, s_pTestInputBfr->pBack, 0, 168, "TODO Mouse 2", 1, 0, s_pTextBitMap);
+	fontDrawStr(s_pFont, s_pTestInputBfr->pBack, 0, 176, "TODO Keyboard", 1, 0, s_pTextBitMap);
+	showParallelStatus();
+
 	// Display view with its viewports
 	systemUnuse();
 	viewLoad(s_pTestInputView);
@@ -175,6 +185,16 @@ void gsTestInputLoop(void) {
 		return;
 	}
 
+	if(keyUse(KEY_F1)) {
+		if(joyIsParallelEnabled()) {
+			joyDisableParallel();
+		}
+		else {
+			joyEnableParallel();
+		}
+		showParallelStatus();
+	}
+
 	updateJoyState(0);
 	updateJoyState(1);
 	updateJoyState(2);
@@ -184,10 +204,9 @@ void gsTestInputLoop(void) {
 }
 
 void gsTestInputDestroy(void) {
-	joyDisableParallel();
-
 	viewLoad(0);
 	systemUse();
+	joyDisableParallel();
 
 	fontDestroy(s_pFont);
 	fontDestroyTextBitMap(s_pTextBitMap);
