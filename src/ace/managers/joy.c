@@ -91,7 +91,7 @@ void joyProcess(void) {
 
 	UBYTE ubJoyCode;
 	if(s_isParallelEnabled) {
-		ubJoyCode = 20;
+		ubJoyCode = 24;
 		UBYTE ubParData = g_pCia[CIA_A]->prb;
 		UBYTE ubParStatus = g_pCia[CIA_B]->pra;
 
@@ -110,7 +110,7 @@ void joyProcess(void) {
 		pJoyLookup[23] = 0;   // Joy 4 fire 2
 	}
 	else {
-		ubJoyCode = 10;
+		ubJoyCode = 12;
 	}
 	while (ubJoyCode--) {
 		if (pJoyLookup[ubJoyCode]) {
