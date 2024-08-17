@@ -18,11 +18,28 @@
 #define COLOR_PRESSED_INACTIVE 2
 #define COLOR_PRESSED_ACTIVE 1
 
+#define OFFS_JOY1_X 0
+#define OFFS_JOY1_Y 0
+#define OFFS_JOY2_X 160
+#define OFFS_JOY2_Y 0
+#define OFFS_JOY3_X 0
+#define OFFS_JOY3_Y 80
+#define OFFS_JOY4_X 160
+#define OFFS_JOY4_Y 80
+
 typedef enum tJoyInputState {
 	JOY_PRESSED_NEVER,
 	JOY_PRESSED_INACTIVE,
 	JOY_PRESSED_ACTIVE,
 } tJoyInputState;
+
+typedef struct tButtonDef {
+	UWORD uwX;
+	UWORD uwY;
+	UBYTE ubWidth;
+	UBYTE ubHeight;
+	const char *szLabel;
+} tButtonDef;
 
 static tView *s_pTestInputView;
 static tVPort *s_pTestInputVPort;
@@ -31,17 +48,52 @@ static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
 static tJoyInputState s_pJoyStates[4][6];
 
-static void drawButtonAt(UWORD uwX, UWORD uwY, UBYTE ubWidth, UBYTE ubHeight, const char *szText, UBYTE ubColor) {
-	blitRect(s_pTestInputBfr->pBack, uwX, uwY, ubWidth, ubHeight, ubColor);
-	if(szText) {
+static const tButtonDef s_pJoyButtonDefs[4][6] = {
+	[0] = {
+		[JOY_FIRE] = {.uwX = OFFS_JOY1_X + 4 * 20 + 2, .uwY = OFFS_JOY1_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F1"},
+		[JOY_UP] = {.uwX = OFFS_JOY1_X + 1 * 20 + 2, .uwY = OFFS_JOY1_Y + 0 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "U"},
+		[JOY_DOWN] = {.uwX = OFFS_JOY1_X + 1 * 20 + 2, .uwY = OFFS_JOY1_Y + 2 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "D"},
+		[JOY_LEFT] = {.uwX = OFFS_JOY1_X + 0 * 20 + 2, .uwY = OFFS_JOY1_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "L"},
+		[JOY_RIGHT] = {.uwX = OFFS_JOY1_X + 2 * 20 + 2, .uwY = OFFS_JOY1_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "R"},
+		[JOY_FIRE2] = {.uwX = OFFS_JOY1_X + 5 * 20 + 2, .uwY = OFFS_JOY1_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F2"},
+	},
+	[1] = {
+		[JOY_FIRE] = {.uwX = OFFS_JOY2_X + 4 * 20 + 2, .uwY = OFFS_JOY2_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F1"},
+		[JOY_UP] = {.uwX = OFFS_JOY2_X + 1 * 20 + 2, .uwY = OFFS_JOY2_Y + 0 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "U"},
+		[JOY_DOWN] = {.uwX = OFFS_JOY2_X + 1 * 20 + 2, .uwY = OFFS_JOY2_Y + 2 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "D"},
+		[JOY_LEFT] = {.uwX = OFFS_JOY2_X + 0 * 20 + 2, .uwY = OFFS_JOY2_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "L"},
+		[JOY_RIGHT] = {.uwX = OFFS_JOY2_X + 2 * 20 + 2, .uwY = OFFS_JOY2_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "R"},
+		[JOY_FIRE2] = {.uwX = OFFS_JOY2_X + 5 * 20 + 2, .uwY = OFFS_JOY2_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F2"},
+	},
+	[2] = {
+		[JOY_FIRE] = {.uwX = OFFS_JOY3_X + 4 * 20 + 2, .uwY = OFFS_JOY3_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F1"},
+		[JOY_UP] = {.uwX = OFFS_JOY3_X + 1 * 20 + 2, .uwY = OFFS_JOY3_Y + 0 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "U"},
+		[JOY_DOWN] = {.uwX = OFFS_JOY3_X + 1 * 20 + 2, .uwY = OFFS_JOY3_Y + 2 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "D"},
+		[JOY_LEFT] = {.uwX = OFFS_JOY3_X + 0 * 20 + 2, .uwY = OFFS_JOY3_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "L"},
+		[JOY_RIGHT] = {.uwX = OFFS_JOY3_X + 2 * 20 + 2, .uwY = OFFS_JOY3_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "R"},
+		[JOY_FIRE2] = {.uwX = OFFS_JOY3_X + 5 * 20 + 2, .uwY = OFFS_JOY3_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F2"},
+	},
+	[3] = {
+		[JOY_FIRE] = {.uwX = OFFS_JOY4_X + 4 * 20 + 2, .uwY = OFFS_JOY4_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F1"},
+		[JOY_UP] = {.uwX = OFFS_JOY4_X + 1 * 20 + 2, .uwY = OFFS_JOY4_Y + 0 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "U"},
+		[JOY_DOWN] = {.uwX = OFFS_JOY4_X + 1 * 20 + 2, .uwY = OFFS_JOY4_Y + 2 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "D"},
+		[JOY_LEFT] = {.uwX = OFFS_JOY4_X + 0 * 20 + 2, .uwY = OFFS_JOY4_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "L"},
+		[JOY_RIGHT] = {.uwX = OFFS_JOY4_X + 2 * 20 + 2, .uwY = OFFS_JOY4_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "R"},
+		[JOY_FIRE2] = {.uwX = OFFS_JOY4_X + 5 * 20 + 2, .uwY = OFFS_JOY4_Y + 1 * 20 + 2, .ubWidth = 16, .ubHeight = 16, .szLabel = "F2"},
+	},
+};
+
+static void drawButtonAt(const tButtonDef *pDef, UBYTE ubColor) {
+	blitRect(s_pTestInputBfr->pBack, pDef->uwX, pDef->uwY, pDef->ubWidth, pDef->ubHeight, ubColor);
+	if(pDef->szLabel) {
 		fontDrawStr(
-			s_pFont, s_pTestInputBfr->pBack, uwX + ubWidth / 2, uwY + ubHeight / 2,
-			szText, 0, FONT_CENTER | FONT_COOKIE, s_pTextBitMap
+			s_pFont, s_pTestInputBfr->pBack, pDef->uwX + pDef->ubWidth / 2, pDef->uwY + pDef->ubHeight / 2,
+			pDef->szLabel, 0, FONT_CENTER | FONT_COOKIE, s_pTextBitMap
 		);
 	}
 }
 
-static void updateJoyState(UBYTE ubJoyIndex, UWORD uwOffsX, UWORD uwOffsY) {
+static void updateJoyState(UBYTE ubJoyIndex) {
 	static const UBYTE pPressToColor[] = {
 		[JOY_PRESSED_NEVER] = COLOR_PRESSED_NEVER,
 		[JOY_PRESSED_INACTIVE] = COLOR_PRESSED_INACTIVE,
@@ -57,14 +109,9 @@ static void updateJoyState(UBYTE ubJoyIndex, UWORD uwOffsX, UWORD uwOffsY) {
 		else if(s_pJoyStates[ubJoyIndex][ubDir] != JOY_PRESSED_NEVER && ubButtonState == JOY_NACTIVE) {
 			s_pJoyStates[ubJoyIndex][ubDir] = JOY_PRESSED_INACTIVE;
 		}
-	}
 
-	drawButtonAt(uwOffsX + 1 * 20 + 2, uwOffsY + 0 * 20 + 2, 16, 16, "U", pPressToColor[s_pJoyStates[ubJoyIndex][JOY_UP]]);
-	drawButtonAt(uwOffsX + 1 * 20 + 2, uwOffsY + 2 * 20 + 2, 16, 16, "D", pPressToColor[s_pJoyStates[ubJoyIndex][JOY_DOWN]]);
-	drawButtonAt(uwOffsX + 0 * 20 + 2, uwOffsY + 1 * 20 + 2, 16, 16, "L", pPressToColor[s_pJoyStates[ubJoyIndex][JOY_LEFT]]);
-	drawButtonAt(uwOffsX + 2 * 20 + 2, uwOffsY + 1 * 20 + 2, 16, 16, "R", pPressToColor[s_pJoyStates[ubJoyIndex][JOY_RIGHT]]);
-	drawButtonAt(uwOffsX + 4 * 20 + 2, uwOffsY + 1 * 20 + 2, 16, 16, "F1", pPressToColor[s_pJoyStates[ubJoyIndex][JOY_FIRE]]);
-	drawButtonAt(uwOffsX + 5 * 20 + 2, uwOffsY + 1 * 20 + 2, 16, 16, "F2", pPressToColor[s_pJoyStates[ubJoyIndex][JOY_FIRE2]]);
+		drawButtonAt(&s_pJoyButtonDefs[ubJoyIndex][ubDir], pPressToColor[s_pJoyStates[ubJoyIndex][ubDir]]);
+	}
 }
 
 void gsTestInputCreate(void) {
@@ -92,6 +139,8 @@ void gsTestInputCreate(void) {
 	s_pFont = fontCreate("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 
+	joyEnableParallel();
+
 	fontDrawStr(
 		s_pFont, s_pTestInputBfr->pBack, 0 + 160 / 2, 10,
 		"Joy 1", 1, FONT_CENTER, s_pTextBitMap
@@ -99,6 +148,14 @@ void gsTestInputCreate(void) {
 	fontDrawStr(
 		s_pFont, s_pTestInputBfr->pBack, 160 + 160 / 2, 10,
 		"Joy 2", 1, FONT_CENTER, s_pTextBitMap
+	);
+	fontDrawStr(
+		s_pFont, s_pTestInputBfr->pBack, 0 + 160 / 2, 80 + 10,
+		"Joy 3", 1, FONT_CENTER, s_pTextBitMap
+	);
+	fontDrawStr(
+		s_pFont, s_pTestInputBfr->pBack, 160 + 160 / 2, 80 + 10,
+		"Joy 4", 1, FONT_CENTER, s_pTextBitMap
 	);
 
 	for(UBYTE ubJoy = 0; ubJoy < 4; ++ubJoy) {
@@ -118,13 +175,17 @@ void gsTestInputLoop(void) {
 		return;
 	}
 
-	updateJoyState(0, 0, 20);
-	updateJoyState(1, 160, 20);
+	updateJoyState(0);
+	updateJoyState(1);
+	updateJoyState(2);
+	updateJoyState(3);
 
 	vPortWaitForEnd(s_pTestInputVPort);
 }
 
 void gsTestInputDestroy(void) {
+	joyDisableParallel();
+
 	viewLoad(0);
 	systemUse();
 
