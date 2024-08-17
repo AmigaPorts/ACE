@@ -210,16 +210,17 @@ void menuShowTests(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
 	s_pMenuList->sCoord.uwY = 100;
-	menuListResetCount(s_pMenuList, 9);
-	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
-	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Blits");
-	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Fonts");
-	menuListSetEntry(s_pMenuList, 3, MENULIST_ENABLED, "Copper");
-	menuListSetEntry(s_pMenuList, 4, MENULIST_ENABLED, "Blitter lines");
-	menuListSetEntry(s_pMenuList, 5, MENULIST_ENABLED, "Blits with small dst");
-	menuListSetEntry(s_pMenuList, 6, MENULIST_ENABLED, "Interleaved bitmaps");
-	menuListSetEntry(s_pMenuList, 7, MENULIST_ENABLED, "Scroll buffer wrap");
-	menuListSetEntry(s_pMenuList, 8, MENULIST_ENABLED, "Twister");
+	menuListResetCount(s_pMenuList, TEST_STATE_COUNT);
+	menuListSetEntry(s_pMenuList, TEST_STATE_MENU, MENULIST_ENABLED, "Back");
+	menuListSetEntry(s_pMenuList, TEST_STATE_BLIT, MENULIST_ENABLED, "Blits");
+	menuListSetEntry(s_pMenuList, TEST_STATE_INPUT, MENULIST_ENABLED, "Input");
+	menuListSetEntry(s_pMenuList, TEST_STATE_FONT, MENULIST_ENABLED, "Fonts");
+	menuListSetEntry(s_pMenuList, TEST_STATE_COPPER, MENULIST_ENABLED, "Copper");
+	menuListSetEntry(s_pMenuList, TEST_STATE_LINES, MENULIST_ENABLED, "Blitter lines");
+	menuListSetEntry(s_pMenuList, TEST_STATE_BLIT_SMALL_DEST, MENULIST_ENABLED, "Blits with small dst");
+	menuListSetEntry(s_pMenuList, TEST_STATE_INTERLEAVED, MENULIST_ENABLED, "Interleaved bitmaps");
+	menuListSetEntry(s_pMenuList, TEST_STATE_BUFFER_SCROLL, MENULIST_ENABLED, "Scroll buffer wrap");
+	menuListSetEntry(s_pMenuList, TEST_STATE_TWISTER, MENULIST_ENABLED, "Twister");
 	s_ubMenuType = MENU_TESTS;
 
 	// Redraw list

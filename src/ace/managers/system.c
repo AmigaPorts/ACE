@@ -735,6 +735,12 @@ void systemUnuse(void) {
 		// but not audio channels since ptplayer relies on polling them, and I'm not
 		// currently being able to debug audio interrupt handler variant.
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
+
+		// HACK: OS resets potgo in vblank int, preventing scanning fire2 on most joysticks.
+		// TODO: make sure this doesn't break anything, e.g. mice
+		// TODO: add setting this value to OS-friendly vblank handler with proper priority
+		// https://eab.abime.net/showthread.php?t=74981
+		g_pCustom->potgo = 0xFF00;
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
