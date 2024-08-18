@@ -161,15 +161,19 @@ endfunction()
 
 function(convertBitmaps)
 	getToolPath(bitmap_conv TOOL_BITMAP_CONV)
-	set(options INTERLEAVED)
+	set(options INTERLEAVED EHB)
 	set(oneValArgs TARGET PALETTE MASK_COLOR)
 	set(multiValArgs SOURCES DESTINATIONS MASKS)
 	cmake_parse_arguments(
 		convertBitmaps "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
 	)
 
+	if(${convertBitmaps_EHB})
+		list(APPEND extraFlags "-ehb")
+	endif()
+
 	if(${convertBitmaps_INTERLEAVED})
-		set(extraFlags -i)
+		list(APPEND extraFlags "-i")
 	endif()
 
 	list(LENGTH convertBitmaps_SOURCES srcCount)

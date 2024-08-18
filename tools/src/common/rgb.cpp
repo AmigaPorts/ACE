@@ -5,19 +5,20 @@
 #include "rgb.h"
 #include <fmt/format.h>
 #include <stdexcept>
+#include "parse.h"
 
 tRgb::tRgb(const std::string &szCode)
 {
 	if(szCode[0] == '#') {
 		if(szCode.length() == 3 + 1) {
-			this->ubR = std::stoul(szCode.substr(1, 1), nullptr, 16);
-			this->ubG = std::stoul(szCode.substr(2, 1), nullptr, 16);
-			this->ubB = std::stoul(szCode.substr(3, 1), nullptr, 16);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(1, 1), 0, 15, this->ubR);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(2, 1), 0, 15, this->ubG);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(3, 1), 0, 15, this->ubB);
 		}
 		else if(szCode.length() == 6 + 1) {
-			this->ubR = std::stoul(szCode.substr(1, 2), nullptr, 16);
-			this->ubG = std::stoul(szCode.substr(3, 2), nullptr, 16);
-			this->ubB = std::stoul(szCode.substr(5, 2), nullptr, 16);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(1, 2), 0, 15, this->ubR);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(3,2), 0, 15, this->ubG);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(5, 2), 0, 15, this->ubB);
 		}
 		else {
 			throw std::runtime_error(fmt::format("Unknown RGB hex format: {}", szCode));
@@ -33,6 +34,15 @@ tRgb tRgb::to12Bit(void) const
 	auto R4 = ((this->ubR + 16) / 17);
 	auto G4 = ((this->ubG + 16) / 17);
 	auto B4 = ((this->ubB + 16) / 17);
+	auto Out = tRgb((R4 << 4) | R4, (G4 << 4) | G4, (B4 << 4) | B4);
+	return Out;
+}
+
+tRgb tRgb::toEhb(void) const
+{
+	auto R4 = ((this->ubR + 16) / 17) >> 1;
+	auto G4 = ((this->ubG + 16) / 17) >> 1;
+	auto B4 = ((this->ubB + 16) / 17) >> 1;
 	auto Out = tRgb((R4 << 4) | R4, (G4 << 4) | G4, (B4 << 4) | B4);
 	return Out;
 }
