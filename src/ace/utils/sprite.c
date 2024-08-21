@@ -59,3 +59,21 @@ UBYTE spriteDisableInCopRawMode(
 
 	return ubCmdCount;
 }
+
+void spriteSetOddColourPaletteBank(UBYTE ubIndex) {
+	
+	UBYTE oddBank = (g_pCustom->bplcon4);
+	UBYTE evenBank = (g_pCustom->bplcon4) >> 4;
+	
+	oddBank = ubIndex & 0x0F;
+	g_pCustom->bplcon4 = (evenBank << 4	| oddBank);
+
+}
+
+void spriteSetEvenColourPaletteBank(UBYTE ubIndex) {
+	
+	UBYTE oddBank = g_pCustom->bplcon4 ;
+	UBYTE evenBank = g_pCustom->bplcon4 >> 4;
+	evenBank = ubIndex & 0x0F;
+	g_pCustom->bplcon4 = (evenBank << 4 | oddBank);
+}

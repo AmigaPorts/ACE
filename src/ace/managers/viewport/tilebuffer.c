@@ -7,7 +7,9 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
+#include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <proto/exec.h> // Bartman's compiler needs this
+
 
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 	UBYTE ubPower = 0;

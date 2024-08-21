@@ -51,11 +51,13 @@ set(ACE_DEBUG OFF CACHE BOOL "Build with ACE-specific debug/safety functionality
 set(ACE_DEBUG_UAE OFF CACHE BOOL "With ACE_DEBUG enabled, output log to UAE console.")
 set(ACE_BOB_WRAP_Y ON CACHE BOOL "Conrols Y-wrapping support in bob manager. Disable for extra performance in simple buffer scenarios.")
 set(ACE_USE_ECS_FEATURES OFF CACHE BOOL "Enable ECS feature sets.")
+set(ACE_USE_AGA_FEATURES OFF CACHE BOOL "Enable AGA feature sets.")
 message(STATUS "[ACE] ACE_LIBRARY_KIND: '${ACE_LIBRARY_KIND}'")
 message(STATUS "[ACE] ACE_DEBUG: '${ACE_DEBUG}'")
 message(STATUS "[ACE] ACE_DEBUG_UAE: '${ACE_DEBUG_UAE}'")
 message(STATUS "[ACE] ACE_BOB_WRAP_Y: '${ACE_BOB_WRAP_Y}'")
 message(STATUS "[ACE] ACE_USE_ECS_FEATURES: '${ACE_USE_ECS_FEATURES}'")
+message(STATUS "[ACE] ACE_USE_AGA_FEATURES: '${ACE_USE_AGA_FEATURES}'")
 
 # Linux/other UNIX get a lower-case binary name
 set(TARGET_NAME ${PROJECT_NAME_LOWER})
@@ -80,6 +82,10 @@ if(NOT ACE_BOB_WRAP_Y)
 endif()
 if(ACE_USE_ECS_FEATURES)
 	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_USE_ECS_FEATURES)
+endif()
+
+if(ACE_USE_AGA_FEATURES)
+	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_USE_ECS_FEATURES ACE_USE_AGA_FEATURES)
 endif()
 
 if(M68K_COMPILER MATCHES "Bartman")

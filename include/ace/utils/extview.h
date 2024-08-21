@@ -35,6 +35,7 @@ typedef enum _tTagView {
 	// TAG_VIEW_WINDOW_WIDTH      = TAG_USER | 6,
 	// The height of display window. Defaults to (lastPalScanline - TAG_VIEW_WINDOW_START_Y)
 	TAG_VIEW_WINDOW_HEIGHT     = TAG_USER | 7,
+    TAG_VIEW_USES_AGA          = TAG_USER | 8
 } tTagView;
 
 // Values for TAG_VIEW_COPLIST_MODE
@@ -63,6 +64,8 @@ typedef enum _tTagVport {
 	TAG_VPORT_OFFSET_TOP   = TAG_USER | 7,
 } tTagVport;
 
+
+
 /* Types */
 
 /**
@@ -76,6 +79,7 @@ typedef enum _tTagVport {
  */
 #define VIEWPORT_HAS_OWN_PALETTE 1
 
+#define VIEWPORT_USES_AGA	  2
 /**
  *  Viewport manager IDs.
  *  Number determines processing order. Camera is last, so rest may see
@@ -134,7 +138,10 @@ typedef struct _tVPort {
 
 	// Color info
 	UBYTE ubBPP;        ///< Bitplane count
-	UWORD pPalette[32]; ///< Destination palette
+	
+	UWORD* pPalette;
+
+	
 } tVPort;
 
 /* Globals */

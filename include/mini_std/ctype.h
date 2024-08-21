@@ -1,5 +1,8 @@
 #ifndef _DEIDARA_CTYPE
 #define _DEIDARA_CTYPE
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef __cplusplus
 #if !defined(restrict)

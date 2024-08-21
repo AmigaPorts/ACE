@@ -46,12 +46,17 @@ void paletteDim(
 	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
 );
 
+void paletteDimAGA(
+    ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel
+);
+
 /**
  * @brief Dims a single input color to given brightness level.
  * @param uwFullColor Full color used as a base to calculate percentage.
  * @param ubLevel Brightness level - 15 for no dim, 0 for total blackness.
  */
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
+ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
 
 /**
  * @brief Writes given palette to debug .bmp file.

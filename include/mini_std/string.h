@@ -30,6 +30,9 @@ unsigned long strtoul(const char *restrict str, char **restrict str_end, int bas
 int strcmp(const char *szA, const char *szB);
 
 char *strncpy(char *restrict szDest, const char *restrict szSrc, size_t Count);
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef __cplusplus
 }

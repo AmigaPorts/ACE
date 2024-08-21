@@ -171,6 +171,18 @@ void spriteProcess(tSprite *pSprite);
  */
 void spriteProcessChannel(UBYTE ubChannelIndex);
 
+
+/**
+ * @brief Sets whether the sprite is an attached sprite.
+ * Attached sprites are only available on odd sprite channels.
+ *
+ * 
+ * @param isAttached Set to 1 to enable sprite attachment, otherwise set to 0.
+ *
+ * @see spriteProcess()
+ */
+void spriteSetAttached(tSprite *pSprite, UBYTE isAttached);
+
 #ifdef __cplusplus
 }
 #endif

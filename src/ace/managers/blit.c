@@ -624,8 +624,8 @@ void blitLine(
 	if (wDerr < 0) {
 		uwBltCon1 |= SIGNFLAG;
 	}
-	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
 
+	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
 	UWORD uwBltCon0 = ror16(x1&15, 4);
 	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
 	blitWait(); // Don't modify registers when other blit is in progress
