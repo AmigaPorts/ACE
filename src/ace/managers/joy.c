@@ -71,41 +71,46 @@ void joyProcess(void) {
 	UBYTE ubCiaAPra = g_pCia[CIA_A]->pra;
 	UWORD uwJoyDataPort1 = g_pCustom->joy0dat;
 	UWORD uwJoyDataPort2 = g_pCustom->joy1dat;
+	UWORD uwInput = g_pCustom->potinp;
 
-	UWORD pJoyLookup[20] = {
+	UWORD pJoyLookup[24] = {
 		!BTST(ubCiaAPra, 7),                           // Joy 1 fire  (PORT 2)
 		BTST(uwJoyDataPort2 >> 1 ^ uwJoyDataPort2, 8), // Joy 1 up    (PORT 2)
 		BTST(uwJoyDataPort2 >> 1 ^ uwJoyDataPort2, 0), // Joy 1 down  (PORT 2)
 		BTST(uwJoyDataPort2, 9),                       // Joy 1 left  (PORT 2)
 		BTST(uwJoyDataPort2, 1),                       // Joy 1 right (PORT 2)
+		!BTST(uwInput, 14),                            // Joy 1 fire2 (PORT 2)
 
 		!BTST(ubCiaAPra, 6),                           // Joy 2 fire  (PORT 1)
 		BTST(uwJoyDataPort1 >> 1 ^ uwJoyDataPort1, 8), // Joy 2 up    (PORT 1)
 		BTST(uwJoyDataPort1 >> 1 ^ uwJoyDataPort1, 0), // Joy 2 down  (PORT 1)
 		BTST(uwJoyDataPort1, 9),                       // Joy 2 left  (PORT 1)
-		BTST(uwJoyDataPort1, 1),						           // Joy 2 right (PORT 1)
+		BTST(uwJoyDataPort1, 1),                       // Joy 2 right (PORT 1)
+		!BTST(uwInput, 10),                            // Joy 2 fire2 (PORT 1)
 	};
 
 	UBYTE ubJoyCode;
 	if(s_isParallelEnabled) {
-		ubJoyCode = 20;
+		ubJoyCode = 24;
 		UBYTE ubParData = g_pCia[CIA_A]->prb;
 		UBYTE ubParStatus = g_pCia[CIA_B]->pra;
 
-		pJoyLookup[10] = !BTST(ubParStatus, 2); // Joy 3 fire
-		pJoyLookup[11] = !BTST(ubParData, 0);   // Joy 3 up
-		pJoyLookup[12] = !BTST(ubParData, 1);   // Joy 3 down
-		pJoyLookup[13] = !BTST(ubParData, 2);   // Joy 3 left
-		pJoyLookup[14] = !BTST(ubParData, 3);   // Joy 3 right
+		pJoyLookup[12] = !BTST(ubParStatus, 2); // Joy 3 fire
+		pJoyLookup[13] = !BTST(ubParData, 0);   // Joy 3 up
+		pJoyLookup[14] = !BTST(ubParData, 1);   // Joy 3 down
+		pJoyLookup[15] = !BTST(ubParData, 2);   // Joy 3 left
+		pJoyLookup[16] = !BTST(ubParData, 3);   // Joy 3 right
+		pJoyLookup[17] = 0;   // Joy 3 fire 2
 
-		pJoyLookup[15] = !BTST(ubParStatus , 0); // Joy 4 fire
-		pJoyLookup[16] = !BTST(ubParData , 4);   // Joy 4 up
-		pJoyLookup[17] = !BTST(ubParData , 5);   // Joy 4 down
-		pJoyLookup[18] = !BTST(ubParData , 6);   // Joy 4 left
-		pJoyLookup[19] = !BTST(ubParData , 7);   // Joy 4 right
+		pJoyLookup[18] = !BTST(ubParStatus , 0); // Joy 4 fire
+		pJoyLookup[19] = !BTST(ubParData , 4);   // Joy 4 up
+		pJoyLookup[20] = !BTST(ubParData , 5);   // Joy 4 down
+		pJoyLookup[21] = !BTST(ubParData , 6);   // Joy 4 left
+		pJoyLookup[22] = !BTST(ubParData , 7);   // Joy 4 right
+		pJoyLookup[23] = 0;   // Joy 4 fire 2
 	}
 	else {
-		ubJoyCode = 10;
+		ubJoyCode = 12;
 	}
 	while (ubJoyCode--) {
 		if (pJoyLookup[ubJoyCode]) {
@@ -183,8 +188,8 @@ void joyDisableParallel(void) {
 
 	// Close misc.resource
 	systemUse();
-	FreeMiscResource(MR_PARALLELPORT);
 	FreeMiscResource(MR_PARALLELBITS);
+	FreeMiscResource(MR_PARALLELPORT);
 	systemUnuse();
 	s_isParallelEnabled = 0;
 }

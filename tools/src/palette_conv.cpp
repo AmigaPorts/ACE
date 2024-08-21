@@ -22,7 +22,7 @@ void printUsage(const std::string& szAppName) {
 
 int main(int lArgCount, const char* pArgs[])
 {
-	const uint8_t ubMandatoryArgCnt = 1;
+	const std::uint8_t ubMandatoryArgCnt = 1;
 	// Mandatory args
 	if (lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
@@ -72,8 +72,10 @@ int main(int lArgCount, const char* pArgs[])
 		else if (szExtOut == "png") {
 			auto ColorCount = Palette.m_vColors.size();
 			tChunkyBitmap PltPreview(ColorCount * 32, 16);
+
 			for (uint8_t i = 0; i < ColorCount; ++i) {
 				const auto& Color = Palette.m_vColors[i];
+
 				PltPreview.fillRect(i * 32, 0, 32, 16, Color);
 				isOk = PltPreview.toPng(szPathOut);
 			}

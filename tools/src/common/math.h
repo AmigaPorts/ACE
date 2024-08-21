@@ -6,7 +6,7 @@
 #define _ACE_TOOLS_COMMON_MATH_H_
 
 #if defined(_MSC_VER) && _MSC_VER < 1930
-auto ceilToFactor(uint64_t Value, int64_t Multiple) {
+auto ceilToFactor(std::uint64_t Value, std::int64_t Multiple) {
 #else
 auto ceilToFactor(auto Value, auto Multiple) {
 #endif

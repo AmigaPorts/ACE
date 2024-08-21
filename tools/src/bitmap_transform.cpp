@@ -14,11 +14,11 @@ public:
 
 class tOpExtract: public tOp {
 public:
-	tOpExtract(uint16_t uwX, uint16_t uwY, uint16_t uwW, uint16_t uwH);
+	tOpExtract(std::uint16_t uwX, std::uint16_t uwY, std::uint16_t uwW, std::uint16_t uwH);
 	virtual tChunkyBitmap execute(const tChunkyBitmap &Src);
 	virtual std::string toString(void);
 private:
-	uint16_t m_uwX, m_uwY, m_uwW, m_uwH;
+	std::uint16_t m_uwX, m_uwY, m_uwW, m_uwH;
 };
 
 class tOpRotate: public tOp {
@@ -160,7 +160,7 @@ int main(int lArgCount, char *pArgs[])
 
 //--------------------------------------------------------------------OP EXTRACT
 
-tOpExtract::tOpExtract(uint16_t uwX, uint16_t uwY, uint16_t uwW, uint16_t uwH):
+tOpExtract::tOpExtract(std::uint16_t uwX, std::uint16_t uwY, std::uint16_t uwW, std::uint16_t uwH):
 	m_uwX(uwX), m_uwY(uwY), m_uwW(uwW), m_uwH(uwH)
 {
 	// Nothing here for now

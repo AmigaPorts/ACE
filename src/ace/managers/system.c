@@ -98,6 +98,8 @@ static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 static struct IOAudio s_sIoAudio = {0};
 static struct Library *s_pCiaResource[CIA_COUNT];
 static struct Process *s_pProcess;
+static struct MsgPort *s_pCdtvIOPort;
+static struct IOStdReq *s_pCdtvIOReq;
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
@@ -342,6 +344,25 @@ static void msgPortDelete(struct MsgPort *mp) {
 	FreeMem(mp, sizeof(*mp));
 }
 
+static void ioRequestInitialize(struct IORequest *pIoReq, struct MsgPort *pMsgPort, UWORD uwLen) {
+	pIoReq->io_Message.mn_Node.ln_Type = NT_MESSAGE;
+	pIoReq->io_Message.mn_ReplyPort = pMsgPort;
+	pIoReq->io_Message.mn_Length = uwLen;
+}
+
+static struct IORequest *ioRequestCreate(struct MsgPort *pMsgPort, UWORD uwLen) {
+	struct IORequest *pIoReq = (struct IORequest *) AllocMem(uwLen, MEMF_PUBLIC | MEMF_CLEAR);
+	if (!pIoReq) {
+		return NULL;
+	}
+	ioRequestInitialize(pIoReq, pMsgPort, uwLen);
+	return pIoReq;
+}
+
+static void ioRequestDestroy(struct IORequest *pIoReq) {
+	FreeMem(pIoReq, pIoReq->io_Message.mn_Length);
+}
+
 static UBYTE audioChannelAlloc(struct IOAudio *pIoAudio) {
 	struct MsgPort *pMsgPort = 0;
 
@@ -351,11 +372,8 @@ static UBYTE audioChannelAlloc(struct IOAudio *pIoAudio) {
 		goto fail;
 	}
 
-	// We don't have CreateIORequest on ks1.3, so do what AROS does
 	memset(pIoAudio, 0, sizeof(*pIoAudio));
-	pIoAudio->ioa_Request.io_Message.mn_Node.ln_Type = NT_MESSAGE;
-	pIoAudio->ioa_Request.io_Message.mn_ReplyPort = pMsgPort;
-	pIoAudio->ioa_Request.io_Message.mn_Length = sizeof(*pIoAudio);
+	ioRequestInitialize(&pIoAudio->ioa_Request, pMsgPort, sizeof(*pIoAudio));
 
 	UBYTE isError = OpenDevice(
 		(CONST_STRPTR)"audio.device", 0, (struct IORequest *)pIoAudio, 0
@@ -405,6 +423,37 @@ void audioChannelFree(struct IOAudio *pIoAudio) {
 
 	CloseDevice((struct IORequest *)pIoAudio);
 	msgPortDelete(pMsgPort);
+}
+
+static void cdtvPortAlloc(void) {
+	if (!(s_pCdtvIOPort = msgPortCreate(NULL, ADALLOC_MAXPREC))) {
+		logWrite("ERR: Couldn't allocate message port for cdtv alloc\n");
+		return;
+	}
+
+	if (!(s_pCdtvIOReq = (struct IOStdReq *)ioRequestCreate(s_pCdtvIOPort, sizeof(struct IOStdReq)))) {
+		logWrite("ERR: Couldn't allocate io request for cdtv messages\n");
+		msgPortDelete(s_pCdtvIOPort);
+		s_pCdtvIOPort = NULL;
+		return;
+	}
+
+	if (OpenDevice((CONST_STRPTR)"cdtv.device", 0, (struct IORequest *) s_pCdtvIOReq, 0)) {
+		msgPortDelete(s_pCdtvIOPort);
+		s_pCdtvIOPort = NULL;
+		ioRequestDestroy((struct IORequest*)s_pCdtvIOReq);
+		s_pCdtvIOReq = NULL;
+		return;
+	}
+}
+
+static void cdtvPortFree(void) {
+	if (s_pCdtvIOPort) {
+		msgPortDelete(s_pCdtvIOPort);
+	}
+	if (s_pCdtvIOReq) {
+		ioRequestDestroy((struct IORequest *)s_pCdtvIOReq);
+	}
 }
 
 /**
@@ -487,8 +536,8 @@ void systemCreate(void) {
 		return;
 	}
 
-  // Determine original stack size
-  s_pProcess = (struct Process *)FindTask(NULL);
+	// Determine original stack size
+	s_pProcess = (struct Process *)FindTask(NULL);
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
 	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
 	if(s_pProcess->pr_CLI) {
@@ -500,6 +549,10 @@ void systemCreate(void) {
 	// Reserve all audio channels - apparantly this allows for int flag polling
 	// From https://gist.github.com/johngirvin/8fb0c4bb83b7c80427e2f439bb074e95
 	audioChannelAlloc(&s_sIoAudio);
+
+	// prepare disabling/enabling CDTV device as per Alpine9000 code
+	// from https://eab.abime.net/showthread.php?t=89836
+	cdtvPortAlloc();
 
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
@@ -572,6 +625,9 @@ void systemDestroy(void) {
 	// Free audio channels
 	audioChannelFree(&s_sIoAudio);
 
+	// Free CDTV request port
+	cdtvPortFree();
+
 	// restore old view
 	WaitTOF();
 	LoadView(s_pOsView);
@@ -600,6 +656,15 @@ void systemUnuse(void) {
 			// systemUse() restores disk DMA, so it's an easy check if OS was
 			// actually restored.
 			systemFlushIo();
+		}
+
+		// Disable CDTV CD drive if present
+		if (s_pCdtvIOReq) {
+			s_pCdtvIOReq->io_Command = CMD_STOP;
+			s_pCdtvIOReq->io_Offset  = 0;
+			s_pCdtvIOReq->io_Length  = 0;
+			s_pCdtvIOReq->io_Data    = NULL;
+			DoIO((struct IORequest *)s_pCdtvIOReq);
 		}
 
 		// Disable interrupts (this is the actual "kill system/OS" part)
@@ -670,6 +735,12 @@ void systemUnuse(void) {
 		// but not audio channels since ptplayer relies on polling them, and I'm not
 		// currently being able to debug audio interrupt handler variant.
 		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
+
+		// HACK: OS resets potgo in vblank int, preventing scanning fire2 on most joysticks.
+		// TODO: make sure this doesn't break anything, e.g. mice
+		// TODO: add setting this value to OS-friendly vblank handler with proper priority
+		// https://eab.abime.net/showthread.php?t=74981
+		g_pCustom->potgo = 0xFF00;
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
@@ -727,6 +798,15 @@ void systemUse(void) {
 		// Nasty keyboard hack - if any key gets pressed / released while system is
 		// inactive, we won't be able to catch it.
 		keyReset();
+
+		// Re-enable CDTV CD drive if present
+		if (s_pCdtvIOReq) {
+			s_pCdtvIOReq->io_Command = CMD_START;
+			s_pCdtvIOReq->io_Offset  = 0;
+			s_pCdtvIOReq->io_Length  = 0;
+			s_pCdtvIOReq->io_Data    = NULL;
+			DoIO((struct IORequest *)s_pCdtvIOReq);
+		}
 	}
 	++s_wSystemUses;
 

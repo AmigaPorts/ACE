@@ -16,7 +16,7 @@ tMod::tMod(const std::string &szFileName)
 	FileIn.open(szFileName, std::ios::binary);
 
 	FileIn.seekg(0, std::ios::end);
-	uint32_t ulFileSize = FileIn.tellg(); // For pattern count calc
+	std::uint32_t ulFileSize = FileIn.tellg(); // For pattern count calc
 
 	FileIn.seekg(0, std::ios::beg);
 
@@ -26,11 +26,11 @@ tMod::tMod(const std::string &szFileName)
 	m_szSongName = szSongNameRaw;
 
 	// Read sample info
-	uint32_t ulTotalSampleSize = 0;
-	for(uint8_t i = 0; i < 31; ++i) {
+	std::uint32_t ulTotalSampleSize = 0;
+	for(std::uint8_t i = 0; i < 31; ++i) {
 		char szSampleNameRaw[SAMPLE_NAME_SIZE];
-		uint16_t uwSampleLen, uwSampleRepeatOffs, uwSampleRepeatLength;
-		uint8_t ubSampleFineTune, ubSampleLinearVolume;
+		std::uint16_t uwSampleLen, uwSampleRepeatOffs, uwSampleRepeatLength;
+		std::uint8_t ubSampleFineTune, ubSampleLinearVolume;
 
 		FileIn.read(szSampleNameRaw, sizeof(szSampleNameRaw));
 		FileIn.read(
@@ -57,10 +57,10 @@ tMod::tMod(const std::string &szFileName)
 
 		// Data read successfully, fill sample info
 		tSample Sample;
-		for (uint8_t ubCharIndex = 0; ubCharIndex < SAMPLE_NAME_SIZE; ++ubCharIndex){
+		for (std::uint8_t ubCharIndex = 0; ubCharIndex < SAMPLE_NAME_SIZE; ++ubCharIndex){
 			// sample name to uppercase, to avoid duplicates
 			// will be reworked to: comparison between samples on temporarily uppercased copies
-			szSampleNameRaw[ubCharIndex] = std::toupper(szSampleNameRaw[ubCharIndex]); 
+			szSampleNameRaw[ubCharIndex] = std::toupper(szSampleNameRaw[ubCharIndex]);
 		}
 		Sample.m_szName = szSampleNameRaw;
 		Sample.m_ubFineTune = ubSampleFineTune;
@@ -93,21 +93,21 @@ tMod::tMod(const std::string &szFileName)
 	}
 
 	// Determine pattern count
-	uint32_t ulCurrPos = FileIn.tellg();
-	uint32_t ulPatternDataSize = (ulFileSize - ulCurrPos - ulTotalSampleSize);
+	std::uint32_t ulCurrPos = FileIn.tellg();
+	std::uint32_t ulPatternDataSize = (ulFileSize - ulCurrPos - ulTotalSampleSize);
 	if((ulPatternDataSize / 1024) * 1024 != ulPatternDataSize) {
 		fmt::print("ERR: unexpected size of pattern data!");
 		throw std::exception();
 	}
-	uint8_t ubPatternCount = (ulFileSize - ulCurrPos - ulTotalSampleSize) / 1024;
+	std::uint8_t ubPatternCount = (ulFileSize - ulCurrPos - ulTotalSampleSize) / 1024;
 
 	// Read pattern data
 	m_vPatterns.resize(ubPatternCount);
-	for(uint8_t ubPattern = 0; ubPattern < ubPatternCount; ++ubPattern) {
-		for(uint8_t ubRow = 0; ubRow < 64; ++ubRow) {
+	for(std::uint8_t ubPattern = 0; ubPattern < ubPatternCount; ++ubPattern) {
+		for(std::uint8_t ubRow = 0; ubRow < 64; ++ubRow) {
 			std::array<tNote, 4> NotesInRow;
-			for(uint8_t i = 0; i < 4; ++i) {
-				uint32_t ulRawNote; // [instrumentHi:4] [period:12] [instrumentLo:4] [cmdNo:4] [cmdArg:8]
+			for(std::uint8_t i = 0; i < 4; ++i) {
+				std::uint32_t ulRawNote; // [instrumentHi:4] [period:12] [instrumentLo:4] [cmdNo:4] [cmdArg:8]
 				FileIn.read(reinterpret_cast<char*>(&ulRawNote), sizeof(ulRawNote));
 				ulRawNote = nEndian::fromBig32(ulRawNote);
 				tNote Note = {
@@ -144,9 +144,9 @@ void tMod::toMod(const std::string &szFileName, bool isSkipSampleData)
 
 	// Samples
 	for(const auto &Sample: m_vSamples) {
-		uint16_t uwSampleLen = nEndian::toBig16(Sample.m_vData.size());
-		uint16_t uwSampleRepeatOffs = nEndian::toBig16(Sample.m_uwRepeatOffs);
-		uint16_t uwSampleRepeatLength = nEndian::toBig16(Sample.m_uwRepeatLength);
+		std::uint16_t uwSampleLen = nEndian::toBig16(Sample.m_vData.size());
+		std::uint16_t uwSampleRepeatOffs = nEndian::toBig16(Sample.m_uwRepeatOffs);
+		std::uint16_t uwSampleRepeatLength = nEndian::toBig16(Sample.m_uwRepeatLength);
 
 		// Ensure that garbage after null terminator doesn't get copied
 		char szSampleNameRaw[22] = {'\0'};
@@ -182,11 +182,11 @@ void tMod::toMod(const std::string &szFileName, bool isSkipSampleData)
 
 	// Pattern data
 	for(const auto &Pattern: m_vPatterns) {
-		for(uint8_t ubRow = 0; ubRow < 64; ++ubRow) {
-			for(uint8_t ubChan = 0; ubChan < 4; ++ubChan) {
+		for(std::uint8_t ubRow = 0; ubRow < 64; ++ubRow) {
+			for(std::uint8_t ubChan = 0; ubChan < 4; ++ubChan) {
 				const auto Note = &Pattern[ubRow][ubChan];
 				// [instrumentHi:4] [period:12] [instrumentLo:4] [cmdNo:4] [cmdArg:8]
-				uint32_t ulNoteRaw = nEndian::toBig32(
+				std::uint32_t ulNoteRaw = nEndian::toBig32(
 					((Note->ubInstrument & 0xF0  ) << 24) |
 					((Note->uwPeriod     & 0x0FFF) << 16) |
 					((Note->ubInstrument & 0x0F  ) << 12) |
@@ -223,9 +223,9 @@ void tMod::reorderSamples(const std::vector<uint8_t> vNewOrder)
 {
 	// Generate reordered sample defs - do it on copy because of X->Y & Y->X
 	std::vector<tSample> vSamplesNew(m_vSamples.size());
-	for(uint8_t ubOldIdx = 0; ubOldIdx < vNewOrder.size(); ++ubOldIdx) {
+	for(std::uint8_t ubOldIdx = 0; ubOldIdx < vNewOrder.size(); ++ubOldIdx) {
 		if(!m_vSamples[ubOldIdx].m_szName.empty()) {
-			uint8_t ubNewIdx = vNewOrder[ubOldIdx];
+			std::uint8_t ubNewIdx = vNewOrder[ubOldIdx];
 			vSamplesNew[ubNewIdx] = m_vSamples[ubOldIdx];
 		}
 	}

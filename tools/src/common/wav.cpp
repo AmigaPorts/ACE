@@ -8,11 +8,11 @@
 #include <algorithm>
 #include "logging.h"
 
-enum class tAudioFormat: uint16_t {
+enum class tAudioFormat: std::uint16_t {
 	PCM = 1
 };
 
-bool tryRead(std::ifstream &Stream, char *Buffer, uint32_t ulSize)
+bool tryRead(std::ifstream &Stream, char *Buffer, std::uint32_t ulSize)
 {
 	// ifstream::read doesn't return meaningful return value
 	// so here's a helper fn for it
@@ -35,7 +35,7 @@ tWav::tWav(const std::string &szPath)
 		return;
 	}
 
-	uint32_t ulChunkSize;
+	std::uint32_t ulChunkSize;
 	tryRead(StreamFile, reinterpret_cast<char*>(&ulChunkSize), sizeof(ulChunkSize));
 
 	std::string szFormat(4, '\0');
@@ -66,8 +66,8 @@ tWav::tWav(const std::string &szPath)
 	}
 	std::stringstream StreamSubchunk(pSubchunkFmt->m_szContents);
 	tAudioFormat eAudioFormat;
-	uint16_t uwNumChannels, uwBlockAlign, uwBitsPerSample;
-	uint32_t ulSampleRate, ulByteRate;
+	std::uint16_t uwNumChannels, uwBlockAlign, uwBitsPerSample;
+	std::uint32_t ulSampleRate, ulByteRate;
 	StreamSubchunk.read(reinterpret_cast<char*>(&eAudioFormat), sizeof(eAudioFormat));
 	StreamSubchunk.read(reinterpret_cast<char*>(&uwNumChannels), sizeof(uwNumChannels));
 	StreamSubchunk.read(reinterpret_cast<char*>(&ulSampleRate), sizeof(ulSampleRate));
@@ -118,12 +118,12 @@ const std::vector<uint8_t> &tWav::getData(void) const
 	return m_vData;
 }
 
-uint32_t tWav::getSampleRate(void) const
+std::uint32_t tWav::getSampleRate(void) const
 {
 	return m_ulSampleRate;
 }
 
-uint8_t tWav::getBitsPerSample(void) const
+std::uint8_t tWav::getBitsPerSample(void) const
 {
 	return m_ubBitsPerSample;
 }
