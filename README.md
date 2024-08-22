@@ -50,6 +50,7 @@ In alphabetical order:
 - [Atarenium Falcon](https://github.com/Last-Minute-Creations/AtareniumFalcon)
 - CastleHack
 - [Chaos Arena](https://github.com/Last-Minute-Creations/chaosArena)
+- [Flappy Ace](https://github.com/NZjeux26/FlappyAceWin)
 - [Impsbru](https://github.com/approxit/impsbru)
 - [OpenFire](https://github.com/Last-Minute-Creations/openFire)
 - [GermZ](https://github.com/Last-Minute-Creations/germz)

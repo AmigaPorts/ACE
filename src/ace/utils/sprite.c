@@ -5,7 +5,7 @@
 #include <ace/utils/sprite.h>
 #include <ace/utils/custom.h>
 
-static tHardwareSpriteHeader CHIP s_uBlankSprite;
+static const tHardwareSpriteHeader CHIP s_uBlankSprite;
 
 tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask) {
 	// TODO: move to sprite manager?

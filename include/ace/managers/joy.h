@@ -15,41 +15,47 @@ extern "C" {
 #define JPORT1 1
 #define JPORT2 2
 
-#define JOY1_FIRE 0
-#define JOY1_UP 1
-#define JOY1_DOWN 2
-#define JOY1_LEFT 3
-#define JOY1_RIGHT 4
-
-#define JOY2_FIRE 5
-#define JOY2_UP 6
-#define JOY2_DOWN 7
-#define JOY2_LEFT 8
-#define JOY2_RIGHT 9
-
-#define JOY3_FIRE 10
-#define JOY3_UP 11
-#define JOY3_DOWN 12
-#define JOY3_LEFT 13
-#define JOY3_RIGHT 14
-
-#define JOY4_FIRE 15
-#define JOY4_UP 16
-#define JOY4_DOWN 17
-#define JOY4_LEFT 18
-#define JOY4_RIGHT 19
-
 // Combined access: JOYn + JOY_action
-#define JOY_FIRE 0
-#define JOY_UP 1
-#define JOY_DOWN 2
-#define JOY_LEFT 3
+#define JOY_FIRE  0
+#define JOY_UP    1
+#define JOY_DOWN  2
+#define JOY_LEFT  3
 #define JOY_RIGHT 4
+#define JOY_FIRE2 5
 
 #define JOY1 0
-#define JOY2 5
-#define JOY3 10
-#define JOY4 15
+#define JOY2 6
+#define JOY3 12
+#define JOY4 18
+
+#define JOY1_FIRE	(JOY1 + JOY_FIRE)
+#define JOY1_UP		(JOY1 + JOY_UP)
+#define JOY1_DOWN	(JOY1 + JOY_DOWN)
+#define JOY1_LEFT	(JOY1 + JOY_LEFT)
+#define JOY1_RIGHT	(JOY1 + JOY_RIGHT)
+#define JOY1_FIRE2	(JOY1 + JOY_FIRE2)
+
+#define JOY2_FIRE	(JOY2 + JOY_FIRE)
+#define JOY2_UP		(JOY2 + JOY_UP)
+#define JOY2_DOWN	(JOY2 + JOY_DOWN)
+#define JOY2_LEFT	(JOY2 + JOY_LEFT)
+#define JOY2_RIGHT	(JOY2 + JOY_RIGHT)
+#define JOY2_FIRE2	(JOY2 + JOY_FIRE2)
+
+#define JOY3_FIRE	(JOY3 + JOY_FIRE)
+#define JOY3_UP		(JOY3 + JOY_UP)
+#define JOY3_DOWN	(JOY3 + JOY_DOWN)
+#define JOY3_LEFT	(JOY3 + JOY_LEFT)
+#define JOY3_RIGHT	(JOY3 + JOY_RIGHT)
+#define JOY3_FIRE2	(JOY3 + JOY_FIRE2)
+
+#define JOY4_FIRE	(JOY4 + JOY_FIRE)
+#define JOY4_UP		(JOY4 + JOY_UP)
+#define JOY4_DOWN	(JOY4 + JOY_DOWN)
+#define JOY4_LEFT	(JOY4 + JOY_LEFT)
+#define JOY4_RIGHT	(JOY4 + JOY_RIGHT)
+#define JOY4_FIRE2	(JOY4 + JOY_FIRE2)
+
 
 #define JOY_NACTIVE 0
 #define JOY_USED 1

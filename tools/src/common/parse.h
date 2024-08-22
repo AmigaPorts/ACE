@@ -24,6 +24,17 @@ static inline bool toInt32(
 	return true;
 }
 
+template<typename t_tValue>
+static bool hexToRange(const std::string &szVal, t_tValue Min, t_tValue Max, t_tValue &Out) {
+	auto Value = std::stoll(szVal, nullptr, 16);
+	if(Value < Min || Max < Value) {
+		return false;
+	}
+
+	Out = static_cast<t_tValue>(Value);
+	return true;
+}
+
 } // namespace nParse
 
 

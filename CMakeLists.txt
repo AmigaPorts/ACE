@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14.0)
 project(ACE
-	LANGUAGES C ASM
+	LANGUAGES C
 	DESCRIPTION "Amiga C Engine"
 	HOMEPAGE_URL "https://github.com/AmigaPorts/ACE"
 )
@@ -83,16 +83,21 @@ if(ACE_USE_ECS_FEATURES)
 endif()
 
 if(M68K_COMPILER MATCHES "Bartman")
-	target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/bartman)
-	file(GLOB SOURCES_BARTMAN src/mini_std/*.c src/bartman/*.c src/bartman/*.s)
-	file(GLOB HEADERS_BARTMAN include/mini_std/*.h include/bartman/*.h)
-	target_compile_definitions(${TARGET_NAME} PRIVATE PRINTF_DISABLE_SUPPORT_FLOAT PRINTF_DISABLE_SUPPORT_LONG_LONG)
-	target_sources(${TARGET_NAME} PRIVATE ${SOURCES_BARTMAN} ${HEADERS_BARTMAN})
+	include(cmake/CPM.cmake)
+	CPMAddPackage(
+		NAME bartman_gcc_support
+		GITHUB_REPOSITORY AmigaPorts/bartman_gcc_support
+		GIT_TAG latest
+	)
+	# Workaround for nested OBJECT library
+	# https://stackoverflow.com/questions/71040175
+	target_link_libraries(${TARGET_NAME} PUBLIC bartman_gcc_support "$<TARGET_OBJECTS:bartman_gcc_support>")
 endif()
 if(M68K_COMPILER MATCHES "Bartman" OR USE_MINI_STD)
 	target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/mini_std)
 	file(GLOB SOURCES_MINI_STD src/mini_std/*.c)
 	file(GLOB HEADERS_MINI_STD include/mini_std/*.h)
+	target_compile_definitions(${TARGET_NAME} PRIVATE PRINTF_DISABLE_SUPPORT_FLOAT PRINTF_DISABLE_SUPPORT_LONG_LONG)
 	target_sources(${TARGET_NAME} PRIVATE ${SOURCES_MINI_STD} ${HEADERS_MINI_STD})
 	message(STATUS "[ACE] Using mini std")
 endif()
@@ -156,15 +161,19 @@ endfunction()
 
 function(convertBitmaps)
 	getToolPath(bitmap_conv TOOL_BITMAP_CONV)
-	set(options INTERLEAVED)
+	set(options INTERLEAVED EHB)
 	set(oneValArgs TARGET PALETTE MASK_COLOR)
 	set(multiValArgs SOURCES DESTINATIONS MASKS)
 	cmake_parse_arguments(
 		convertBitmaps "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
 	)
 
+	if(${convertBitmaps_EHB})
+		list(APPEND extraFlags "-ehb")
+	endif()
+
 	if(${convertBitmaps_INTERLEAVED})
-		set(extraFlags -i)
+		list(APPEND extraFlags "-i")
 	endif()
 
 	list(LENGTH convertBitmaps_SOURCES srcCount)

@@ -26,6 +26,8 @@ struct tRgb {
 
 	tRgb to12Bit(void) const;
 
+	tRgb toEhb(void) const;
+
 	bool operator == (const tRgb &Rhs) const {
 		return ubB == Rhs.ubB && ubG == Rhs.ubG && ubR == Rhs.ubR;
 	}

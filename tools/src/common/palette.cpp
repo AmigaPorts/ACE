@@ -285,3 +285,16 @@ std::uint8_t tPalette::getBpp(void) const {
 	}
 	return ubBpp;
 }
+
+bool tPalette::convertToEhb(void)
+{
+	if(m_vColors.size() > 32) {
+		return false;
+	}
+
+	m_vColors.resize(64);
+	for(std::size_t i = 0; i < 32; ++i) {
+		m_vColors[i + 32] = m_vColors[i].toEhb();
+	}
+	return true;
+}
