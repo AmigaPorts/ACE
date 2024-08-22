@@ -345,6 +345,15 @@ UBYTE blitSafeCopyAligned(
 	)) {
 		return 0;
 	}
+
+	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst) && pSrc->Depth != pDst->Depth) {
+		logWrite(
+			"ERR: bitmap BPP mismatch on interleaved blit! src: %hhu, dst: %hhu\n",
+			pSrc->Depth, pDst->Depth
+		);
+		return 0;
+	}
+
 	return blitUnsafeCopyAligned(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight);
 }
 
@@ -395,15 +404,14 @@ UBYTE blitUnsafeCopyMask(
 			ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth + ubMaskFShift - 1) / 16) * 2;
 		}
 
-		uwFirstMask = 0xFFFF >> ulSrcOffs;
-		uwLastMask = 0xFFFF << (uwBlitWidth-(wWidth+ulSrcOffs));
+		uwFirstMask = 0xFFFF << ubMaskFShift;
+		uwLastMask = 0xFFFF >> ubMaskLShift;
 		if(ubMaskLShift > 16) { // Fix for 2-word blits
 			uwFirstMask &= 0xFFFF >> (ubMaskLShift-16);
 		}
 
 		ubShift = uwBlitWidth - (ubDstDelta+wWidth+ubMaskFShift);
 		uwBltCon1 = (ubShift << BSHIFTSHIFT) | BLITREVERSE;
-
 	}
 	else {
 		uwBlitWidth = (wWidth+ubDstDelta+15) & 0xFFF0;
@@ -438,7 +446,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltbmod = wSrcModulo;
 		g_pCustom->bltcmod = wDstModulo;
 		g_pCustom->bltdmod = wDstModulo;
-		g_pCustom->bltapt = &pMsk[ulSrcOffs];
+		g_pCustom->bltapt = (APTR)&pMsk[ulSrcOffs];
 		g_pCustom->bltbpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltcpt = &pDst->Planes[0][ulDstOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
@@ -459,7 +467,7 @@ UBYTE blitUnsafeCopyMask(
 		g_pCustom->bltcon1 = uwBltCon1;
 		g_pCustom->bltafwm = uwFirstMask;
 		g_pCustom->bltalwm = uwLastMask;
-		g_pCustom->bltapt = &pMsk[ulSrcOffs];
+		g_pCustom->bltapt = (APTR)&pMsk[ulSrcOffs];
 		g_pCustom->bltamod = wSrcModulo;
 		g_pCustom->bltbmod = wSrcModulo;
 		g_pCustom->bltcmod = wDstModulo;
@@ -468,7 +476,7 @@ UBYTE blitUnsafeCopyMask(
 		while(ubPlane--) {
 			blitWait();
 			// This hell of a casting must stay here or else large offsets get bugged!
-			g_pCustom->bltapt = &pMsk[ulSrcOffs];
+			g_pCustom->bltapt = (APTR)&pMsk[ulSrcOffs];
 			g_pCustom->bltbpt = &pSrc->Planes[ubPlane][ulSrcOffs];
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
 			g_pCustom->bltdpt = &pDst->Planes[ubPlane][ulDstOffs];

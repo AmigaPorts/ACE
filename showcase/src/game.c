@@ -8,6 +8,7 @@
 #include <ace/managers/game.h>
 #include "menu/menu.h"
 #include "test/blit.h"
+#include "test/input.h"
 #include "test/copper.h"
 #include "test/font.h"
 #include "test/blitsmalldest.h"
@@ -20,6 +21,7 @@ tStateManager *g_pGameStateManager = 0;
 tState g_pTestStates[TEST_STATE_COUNT] = {
     [TEST_STATE_MENU] = {.cbCreate = gsMenuCreate, .cbLoop = gsMenuLoop, .cbDestroy = gsMenuDestroy},
     [TEST_STATE_BLIT] = {.cbCreate = gsTestBlitCreate, .cbLoop = gsTestBlitLoop, .cbDestroy = gsTestBlitDestroy},
+    [TEST_STATE_INPUT] = {.cbCreate = gsTestInputCreate, .cbLoop = gsTestInputLoop, .cbDestroy = gsTestInputDestroy},
     [TEST_STATE_FONT] = {.cbCreate = gsTestFontCreate, .cbLoop = gsTestFontTableLoop, .cbDestroy = gsTestFontDestroy},
     [TEST_STATE_COPPER] = {.cbCreate = gsTestCopperCreate, .cbLoop = gsTestCopperLoop, .cbDestroy = gsTestCopperDestroy},
     [TEST_STATE_LINES] = {.cbCreate = gsTestLinesCreate, .cbLoop = gsTestLinesLoop, .cbDestroy = gsTestLinesDestroy},

@@ -5,7 +5,7 @@ project(ACE_tools)
 
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
-include(cmake/CPM.cmake)
+include(../cmake/CPM.cmake)
 set (CMAKE_CXX_STANDARD 20)
 
 # MSVC needs a few defines to be GNU compatible

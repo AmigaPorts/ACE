@@ -107,7 +107,9 @@ int main(void) {
 	systemCreate();
 	logOpen(GENERIC_MAIN_LOG_PATH);
 	memCreate();
+#if !defined(GENERIC_MAIN_NO_TIMER)
 	timerCreate();
+#endif
 
 	blitManagerCreate();
 	copCreate();
@@ -115,7 +117,9 @@ int main(void) {
 	// Call user callbacks:
 	genericCreate();
 	while (GENERIC_MAIN_LOOP_CONDITION) {
+#if !defined(GENERIC_MAIN_NO_TIMER)
 		timerProcess();
+#endif
 		genericProcess();
 	}
 	genericDestroy();
@@ -123,7 +127,9 @@ int main(void) {
 	copDestroy();
 	blitManagerDestroy();
 
+#if !defined(GENERIC_MAIN_NO_TIMER)
 	timerDestroy();
+#endif
 	memDestroy();
 	logClose();
 	systemDestroy();
