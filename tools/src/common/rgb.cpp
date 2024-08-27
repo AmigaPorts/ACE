@@ -14,11 +14,14 @@ tRgb::tRgb(const std::string &szCode)
 			nParse::hexToRange<std::uint8_t>(szCode.substr(1, 1), 0, 15, this->ubR);
 			nParse::hexToRange<std::uint8_t>(szCode.substr(2, 1), 0, 15, this->ubG);
 			nParse::hexToRange<std::uint8_t>(szCode.substr(3, 1), 0, 15, this->ubB);
+			this->ubR *= 17;
+			this->ubG *= 17;
+			this->ubB *= 17;
 		}
 		else if(szCode.length() == 6 + 1) {
-			nParse::hexToRange<std::uint8_t>(szCode.substr(1, 2), 0, 15, this->ubR);
-			nParse::hexToRange<std::uint8_t>(szCode.substr(3,2), 0, 15, this->ubG);
-			nParse::hexToRange<std::uint8_t>(szCode.substr(5, 2), 0, 15, this->ubB);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(1, 2), 0, 255, this->ubR);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(3,2), 0, 255, this->ubG);
+			nParse::hexToRange<std::uint8_t>(szCode.substr(5, 2), 0, 255, this->ubB);
 		}
 		else {
 			throw std::runtime_error(fmt::format("Unknown RGB hex format: {}", szCode));
