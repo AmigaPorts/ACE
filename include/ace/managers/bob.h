@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_BOB_H_
 #define _ACE_MANAGERS_BOB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 #include <ace/managers/blit.h>
 
@@ -237,5 +241,9 @@ void bobDiscardUndraw(void);
  * in bobManagerCreate().
  */
 void bobSetCurrentBuffer(tBitMap *pCurrent);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_BOB_H_
