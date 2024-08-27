@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_BOB_H_
 #define _ACE_MANAGERS_BOB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 #include <ace/managers/blit.h>
 
@@ -227,5 +231,10 @@ void bobPushingDone(void);
 void bobEnd(void);
 
 void bobDiscardUndraw(void);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_BOB_H_
