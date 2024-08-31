@@ -16,10 +16,7 @@ static tVPort *s_pVPort;
 static tSimpleBufferManager *s_pBfrManager;
 
 void gsTestLinesCreate(void) {
-	s_pView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_END
-	);
+	s_pView = viewCreate(0, TAG_END);
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_BPP, 4,
 		TAG_VPORT_VIEW, s_pView,

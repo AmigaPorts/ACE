@@ -59,8 +59,8 @@ void gameGsCreate(void) {
 
 //-------------------------------------------------------------- NEW STUFF START
   // Load palette from file to first viewport - second one will use the same
-  // due to TAG_VIEW_GLOBAL_PALETTE being set to 1. We're using 4BPP display,
-  // which means max 16 colors.
+  // due to TAG_VIEW_GLOBAL_PALETTE being by default set to 1. We're using
+  // 4BPP display, which means max 16 colors.
   paletteLoad("data/pong.plt", s_pVpScore->pPalette, 16);
 
   // Load background graphics and draw them immediately
