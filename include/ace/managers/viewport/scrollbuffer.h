@@ -73,6 +73,8 @@ typedef struct _tScrollBufferManager {
 	UWORD uwBmAvailHeight;         ///< Avail height of buffer to blit (excludes height reserved for x-scroll)
 	UWORD uwVpHeightPrev;          ///< Prev height of related VPort, used to force refresh on change
 	UWORD uwModulo;                ///< Bitplane modulo
+	UWORD uwDDfStrt;                ///< Display datafetch start
+	UWORD uwDDfStop;                ///< Display datafetch stop
 	UBYTE ubFlags;                 ///< Read only. See SCROLLBUFFER_FLAG_*.
 } tScrollBufferManager;
 

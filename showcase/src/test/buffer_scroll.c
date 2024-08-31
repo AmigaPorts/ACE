@@ -35,6 +35,17 @@ static tCameraManager *s_pCamera;
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
 
+static void drawModeInfo(tBitMap *pBfr, UWORD uwX, UWORD uwY) {
+	char szMsg[50];
+	sprintf(szMsg, "Current mode is %s", s_pModeNames[s_eCurrentMode]);
+	fontDrawStr(s_pFont, pBfr, uwX, uwY + 0 * 10, szMsg, 6, FONT_COOKIE, s_pTextBitMap);
+	fontDrawStr(s_pFont, pBfr, uwX, uwY + 1 * 10, "WSAD to navigate", 6, FONT_COOKIE, s_pTextBitMap);
+	for(UBYTE i = 0; i < 4; ++i) {
+		sprintf(szMsg, "%d to %s", i + 1, s_pModeNames[i]);
+		fontDrawStr(s_pFont, pBfr, uwX, uwY + (2 + i) * 10, szMsg, 6, FONT_COOKIE, s_pTextBitMap);
+	}
+}
+
 static void fillBfr(tBitMap *pBfr, UWORD uwWidth, UWORD uwHeight) {
 	logBlockBegin(
 		"fillBfr(pBfr: *%p, uwWidth: %hu, uwHeight: %hu)",
@@ -69,15 +80,7 @@ static void fillBfr(tBitMap *pBfr, UWORD uwWidth, UWORD uwHeight) {
 	blitRect(pBfr,       0,        0,       1, uwHeight, 6);
 	blitRect(pBfr, uwWidth,        0,       1, uwHeight, 6);
 
-	char szMsg[50];
-	sprintf(szMsg, "Current mode is %s", s_pModeNames[s_eCurrentMode]);
-	fontDrawStr(s_pFont, pBfr, 100, 50 + 0 * 10, szMsg, 5, FONT_COOKIE, s_pTextBitMap);
-	fontDrawStr(s_pFont, pBfr, 100, 50 + 1 * 10, "WSAD to navigate", 5, FONT_COOKIE, s_pTextBitMap);
-	for(UBYTE i = 0; i < 4; ++i) {
-		sprintf(szMsg, "%d to %s", i + 1, s_pModeNames[i]);
-		fontDrawStr(s_pFont, pBfr, 100, 50 + (2 + i) * 10, szMsg, 5, FONT_COOKIE, s_pTextBitMap);
-	}
-
+	drawModeInfo(pBfr, 50, 50);
 	logBlockEnd("fillBfr()");
 }
 
@@ -128,8 +131,8 @@ static void initScrollBuffer(UBYTE isHires) {
 	tScrollBufferManager *s_pBfr = scrollBufferCreate(0,
 		TAG_SCROLLBUFFER_VPORT, s_pVPort,
 		TAG_SCROLLBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
-		TAG_SCROLLBUFFER_BOUND_WIDTH, 640,
-		TAG_SCROLLBUFFER_BOUND_HEIGHT, 720,
+		TAG_SCROLLBUFFER_BOUND_WIDTH, 1024,
+		TAG_SCROLLBUFFER_BOUND_HEIGHT, 600,
 		TAG_SCROLLBUFFER_MARGIN_WIDTH, 32,
 	TAG_DONE);
 	s_pCamera = s_pBfr->pCamera;
@@ -151,7 +154,10 @@ static void initScrollBuffer(UBYTE isHires) {
 	blitRect(s_pBfr->pBack, 0, 3, 2, 1, ubColor);
 	blitRect(s_pBfr->pBack, 0, 4, 1, 1, ubColor);
 
-	blitRect(s_pBfr->pBack, 32, 32, 32, 32, 5);
+	blitRect(s_pBfr->pBack, 16, 16, 32, 32, 5);
+
+	drawModeInfo(s_pBfr->pBack, 50, 50);
+
 	viewLoad(s_pView);
 	systemUnuse();
 }
