@@ -65,6 +65,17 @@ static void simpleBufferInitializeCopperList(
 	}
 	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", uwDDfStrt, uwDDfStop, uwModulo);
 
+	// if X scroll is enabled then it needs to start one word early
+	ULONG ulBplOffs = 0;
+	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
+		if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
+			ulBplOffs = -4;
+		}
+		else {
+			ulBplOffs = -2;
+		}
+	}
+
 	// Update (rewrite) copperlist
 	// TODO this could be unified with copBlock being set with copSetMove too
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
@@ -92,17 +103,6 @@ static void simpleBufferInitializeCopperList(
 			pCopList->pFrontBfr->pList[i].ulCode = pCopList->pBackBfr->pList[i].ulCode;
 		}
 
-		// if X scroll is enabled then it needs to start one word early
-		ULONG ulBplOffs = 0;
-		if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-			if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
-				ulBplOffs = -4;
-			}
-			else {
-				ulBplOffs = -2;
-			}
-		}
-
 		// Proper back buffer pointers
 		setBitplanePtrs(&pCmdList[6], pManager->pFront, ulBplOffs);
 
@@ -119,7 +119,7 @@ static void simpleBufferInitializeCopperList(
 		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, uwModulo);
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, 0);          // Shift: 0
 		for (UBYTE i = 0; i < pManager->sCommon.pVPort->ubBpp; ++i) {
-			ULONG ulPlaneAddr = (ULONG)pManager->pBack->Planes[i];
+			ULONG ulPlaneAddr = (ULONG)pManager->pBack->Planes[i] + ulBplOffs;
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
