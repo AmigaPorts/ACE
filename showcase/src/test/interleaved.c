@@ -25,10 +25,7 @@ static WORD wX, wY;
 static BYTE bDx, bDy;
 
 void gsTestInterleavedCreate(void) {
-	s_pTestInterleavedView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pTestInterleavedView = viewCreate(0, TAG_DONE);
 	s_pTestInterleavedVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestInterleavedView,
 		TAG_VPORT_BPP, SHOWCASE_BPP,

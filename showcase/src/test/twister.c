@@ -48,10 +48,7 @@ static void testGrid(UBYTE ubSize) {
 
 void gsTestTwisterCreate(void) {
 	// Prepare view & viewport
-	s_pView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pView = viewCreate(0, TAG_DONE);
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
 		TAG_VPORT_BPP, 2,

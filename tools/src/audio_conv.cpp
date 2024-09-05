@@ -105,7 +105,7 @@ int main(int lArgCount, const char *pArgs[]) {
 	}
 
 	if(szOutput.empty()) {
-		szOutput = nFs::trimExt(szInput);
+		szOutput = nFs::removeExt(szInput);
 		if(szInExt == "wav") {
 			szOutput += ".sfx";
 		}
@@ -161,7 +161,7 @@ int main(int lArgCount, const char *pArgs[]) {
 		fmt::print("Splitting to {} parts, {} bytes each\n", PartCount, oSplitAfter.value());
 		std::uint8_t ubPart = 0;
 		tSfx SfxRemaining;
-		auto BaseOutputPath = nFs::trimExt(szOutput);
+		auto BaseOutputPath = nFs::removeExt(szOutput);
 		do {
 			SfxRemaining = In.splitAfter(oSplitAfter.value());
 			auto PartOutPath = fmt::format(FMT_STRING("{}_{}.{}"), BaseOutputPath, ubPart, szOutExt);

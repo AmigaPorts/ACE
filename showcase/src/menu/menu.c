@@ -27,10 +27,7 @@ static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 void gsMenuCreate(void) {
 	logBlockBegin("gsMenuCreate");
 	// Prepare view & viewport
-	s_pMenuView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pMenuView = viewCreate(0, TAG_DONE);
 	s_pMenuVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pMenuView,
 		TAG_VPORT_BPP, SHOWCASE_BPP,

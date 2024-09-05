@@ -48,11 +48,17 @@ static void tileBufferQueueAdd(
 	}
 #endif
 	tRedrawState *pState = &pManager->pRedrawStates[0];
+	if(pState->ubPendingCount >= pManager->ubQueueSize) {
+		logWrite("ERR: Pending tiles queue overflow!");
+	}
 	pState->pPendingQueue[pState->ubPendingCount].uwX = uwTileX;
 	pState->pPendingQueue[pState->ubPendingCount].uwY = uwTileY;
 	++pState->ubPendingCount;
 
 	pState = &pManager->pRedrawStates[1];
+	if(pState->ubPendingCount >= pManager->ubQueueSize) {
+		logWrite("ERR: Pending tiles queue overflow!");
+	}
 	pState->pPendingQueue[pState->ubPendingCount].uwX = uwTileX;
 	pState->pPendingQueue[pState->ubPendingCount].uwY = uwTileY;
 	++pState->ubPendingCount;
@@ -624,6 +630,24 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		}
 		uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
 	}
+
+	if (pManager->cbTileDraw) {
+		uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
+		for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
+			uwTileOffsX = (wStartX << ubTileShift);
+			UWORD uwTileCurr = wStartX;
+			while (uwTileCurr < uwEndX) {
+				pManager->cbTileDraw(
+					uwTileCurr, uwTileY, pManager->pScroll->pBack,
+					uwTileOffsX, uwTileOffsY
+				);
+				++uwTileCurr;
+				uwTileOffsX += ubTileSize;
+			}
+			uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
+		}
+	}
+
 	systemSetDmaBit(DMAB_BLITHOG, 0);
 
 	// Copy from back buffer to front buffer.

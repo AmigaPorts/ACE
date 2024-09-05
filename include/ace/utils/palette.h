@@ -25,6 +25,14 @@ extern "C" {
 void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
 
 /**
+ * @brief Saves given palette into .plt file.
+ * @param pPalette Palette to save.
+ * @param ubColorCnt Number of colors in palette.
+ * @param szPath Destination path.
+ */
+void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
+
+/**
  * @brief Loads palette from supplied .plt stored in memory to given address.
  * @param pData Palette source pointer.
  * @param pPalette Palette destination pointer.
