@@ -60,14 +60,14 @@ void _logPopIndent(void) {
 	--g_sLogManager.ubIndent;
 }
 
-void _logWrite(char *szFormat, ...) {
+void _logWrite(const char *szFormat, ...) {
 	va_list vaArgs;
 	va_start(vaArgs, szFormat);
 	logWriteVa(szFormat, vaArgs);
 	va_end(vaArgs);
 }
 
-void _logWriteVa(char *szFormat, va_list vaArgs) {
+void _logWriteVa(const char *szFormat, va_list vaArgs) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
