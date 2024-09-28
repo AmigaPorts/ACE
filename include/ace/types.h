@@ -105,43 +105,68 @@ typedef LONG FLONG;
 /**
  * Coord type with fast sorting option
  */
-typedef union _tUwCoordYX {
+typedef union tUwCoordYX {
 	ULONG ulYX;
 	struct {
 		UWORD uwY;
 		UWORD uwX;
 	};
+
+#if defined(__cplusplus)
+	[[nodiscard]] static constexpr auto zero() { return tUwCoordYX {.uwY = 0, .uwX = 0}; }
+	[[nodiscard]] constexpr auto withX(UWORD uwX) { auto copy = *this; copy.uwX = uwX; return copy; }
+	[[nodiscard]] constexpr auto withY(UWORD uwY) { auto copy = *this; copy.uwY = uwY; return copy; }
+#endif
 } tUwCoordYX;
 
-typedef union _tUbCoordYX {
+typedef union tUbCoordYX {
 	UWORD uwYX;
 	struct {
 		UBYTE ubY;
 		UBYTE ubX;
 	};
+
+
+#if defined(__cplusplus)
+	[[nodiscard]] static constexpr auto zero() { return tUbCoordYX {.ubY = 0, .ubX = 0}; }
+	[[nodiscard]] constexpr auto withX(UBYTE ubX) { auto copy = *this; copy.ubX = ubX; return copy; }
+	[[nodiscard]] constexpr auto withY(UBYTE ubY) { auto copy = *this; copy.ubY = ubY; return copy; }
+#endif
 } tUbCoordYX;
 
-typedef struct _tBCoordYX {
+typedef struct tBCoordYX {
 	BYTE bY;
 	BYTE bX;
+
+#if defined(__cplusplus)
+	[[nodiscard]] static constexpr auto zero() { return tBCoordYX {.bY = 0, .bX = 0}; }
+	[[nodiscard]] constexpr auto withX(BYTE bX) { auto copy = *this; copy.bX = bX; return copy; }
+	[[nodiscard]] constexpr auto withY(BYTE bY) { auto copy = *this; copy.bY = bY; return copy; }
+#endif
 } tBCoordYX;
 
-typedef struct _tWCoordYX {
+typedef struct tWCoordYX {
 	WORD wY;
 	WORD wX;
+
+#if defined(__cplusplus)
+	[[nodiscard]] static constexpr auto zero() { return tWCoordYX {.wY = 0, .wX = 0}; }
+	[[nodiscard]] constexpr auto withX(WORD wX) { auto copy = *this; copy.wX = wX; return copy; }
+	[[nodiscard]] constexpr auto withY(WORD wY) { auto copy = *this; copy.wY = wY; return copy; }
+#endif
 } tWCoordYX;
 
 /**
  * Rectangle type
  */
-typedef struct _tUwRect {
+typedef struct tUwRect {
 	UWORD uwY;
 	UWORD uwX;
 	UWORD uwWidth;
 	UWORD uwHeight;
 } tUwRect;
 
-typedef struct _tUwAbsRect {
+typedef struct tUwAbsRect {
 	UWORD uwY1;
 	UWORD uwX1;
 	UWORD uwY2;

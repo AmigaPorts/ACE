@@ -18,7 +18,7 @@ typedef void (*tStateCb)(void);
 /**
  * State struct.
  */
-typedef struct _tState {
+typedef struct tState {
 	tStateCb cbCreate;     ///< Optional callback that fires when state manager
 	                       ///< enters to this state.
 
@@ -33,15 +33,32 @@ typedef struct _tState {
 	tStateCb cbResume;     ///< Optional callback that fires when state manager
 	                       ///< pops old state over this state.
 
-	struct _tState *pPrev; ///< Optional pointer to previous state.
+	struct tState *pPrev; ///< Optional pointer to previous state.
 	                       ///< Zero if there is no previous state. Will be
 	                       ///< overriden when pushed into state manager.
+
+#if defined(__cplusplus)
+	[[nodiscard]]
+	static constexpr auto empty()
+	{
+		return tState {
+			.cbCreate = nullptr, .cbLoop = nullptr, .cbDestroy = nullptr,
+			.cbSuspend = nullptr, .cbResume = nullptr, .pPrev = nullptr
+		};
+	}
+
+	[[nodiscard]] constexpr auto withCreate(tStateCb cbCreate) { auto copy = *this; copy.cbCreate = cbCreate; return copy; }
+	[[nodiscard]] constexpr auto withLoop(tStateCb cbLoop) { auto copy = *this; copy.cbLoop = cbLoop; return copy; }
+	[[nodiscard]] constexpr auto withDestroy(tStateCb cbDestroy) { auto copy = *this; copy.cbDestroy = cbDestroy; return copy; }
+	[[nodiscard]] constexpr auto withSuspend(tStateCb cbSuspend) { auto copy = *this; copy.cbSuspend = cbSuspend; return copy; }
+	[[nodiscard]] constexpr auto withResume(tStateCb cbResume) { auto copy = *this; copy.cbResume = cbResume; return copy; }
+#endif
 } tState;
 
 /**
  * State manager struct.
  */
-typedef struct _tStateManager {
+typedef struct tStateManager {
 	tState *pCurrent; ///< Pointer to currently handled state.
 } tStateManager;
 
