@@ -18,8 +18,6 @@ static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 	return ubPower;
 }
 
-#ifdef AMIGA
-
 #define BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
 
 static void tileBufferResetRedrawState(tRedrawState *pState) {
@@ -183,9 +181,9 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 
 	// Free tile data
 	for(uwCol = pManager->uTileBounds.uwX; uwCol--;) {
-		memFree(pManager->pTileData[uwCol], pManager->uTileBounds.uwY * sizeof(UBYTE));
+		memFree(pManager->pTileData[uwCol], pManager->uTileBounds.uwY * sizeof(pManager->pTileData[uwCol][0]));
 	}
-	memFree(pManager->pTileData, pManager->uTileBounds.uwX * sizeof(UBYTE *));
+	memFree(pManager->pTileData, pManager->uTileBounds.uwX * sizeof(pManager->pTileData[0]));
 
 	// Free tile offset lookup table
 	if(pManager->pTileSetOffsets) {
@@ -217,9 +215,9 @@ void tileBufferReset(
 	// Free old tile data
 	if(pManager->pTileData) {
 		for(UWORD uwCol = pManager->uTileBounds.uwX; uwCol--;) {
-			memFree(pManager->pTileData[uwCol], pManager->uTileBounds.uwY * sizeof(UBYTE));
+			memFree(pManager->pTileData[uwCol], pManager->uTileBounds.uwY * sizeof(pManager->pTileData[uwCol][0]));
 		}
-		memFree(pManager->pTileData, pManager->uTileBounds.uwX * sizeof(UBYTE *));
+		memFree(pManager->pTileData, pManager->uTileBounds.uwX * sizeof(pManager->pTileData[0]));
 		pManager->pTileData = 0;
 	}
 
@@ -232,9 +230,9 @@ void tileBufferReset(
 	pManager->uTileBounds.uwX = uwTileX;
 	pManager->uTileBounds.uwY = uwTileY;
 	if(uwTileX && uwTileY) {
-		pManager->pTileData = memAllocFast(uwTileX * sizeof(UBYTE*));
+		pManager->pTileData = memAllocFast(uwTileX * sizeof(pManager->pTileData[0]));
 		for(UWORD uwCol = uwTileX; uwCol--;) {
-			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(UBYTE));
+			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(pManager->pTileData[uwCol]));
 		}
 	}
 
@@ -351,13 +349,13 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
  */
 FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
-	const tTileBufferManager *pManager, UBYTE *pTileDataColumn, UWORD uwTileY,
-	UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst
+	const tTileBufferManager *pManager, const ACE_TILEBUFFER_TILE_TYPE *pTileDataColumn,
+	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst
 ) {
-	UBYTE ubTileToDraw = pTileDataColumn[uwTileY];
+	ACE_TILEBUFFER_TILE_TYPE TileToDraw = pTileDataColumn[uwTileY];
 
 	if (!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)) {
-		UBYTE *pUbBltapt = pManager->pTileSetOffsets[ubTileToDraw];
+		UBYTE *pUbBltapt = pManager->pTileSetOffsets[TileToDraw];
 		UBYTE *pUbBltdpt;
 		if (ubSetDst) {
 			// this function should be inlined into the caller, where
@@ -374,7 +372,7 @@ static inline void tileBufferContinueTileDraw(
 		g_pCustom->bltsize = uwBltsize;
 	}
 	else {
-		ULONG ulSrcOffs = (ULONG)pManager->pTileSetOffsets[ubTileToDraw] - (ULONG)pManager->pTileSet->Planes[0];
+		ULONG ulSrcOffs = (ULONG)pManager->pTileSetOffsets[TileToDraw] - (ULONG)pManager->pTileSet->Planes[0];
 		for(UBYTE ubPlane = pManager->pTileSet->Depth; ubPlane--;) {
 			UBYTE *pUbBltapt = pManager->pTileSet->Planes[ubPlane] + ulSrcOffs;
 			UBYTE *pUbBltdpt = pManager->pScroll->pBack->Planes[ubPlane] + ulDstOffs;
@@ -423,7 +421,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileEnd = pState->pMarginX->wTileEnd;
 				UWORD uwMarginedHeight = pManager->uwMarginedHeight;
 				UWORD uwTilePos = pState->pMarginX->wTilePos;
-				UBYTE *pTileColumn = pManager->pTileData[uwTilePos];
+				const ACE_TILEBUFFER_TILE_TYPE *pTileColumn = pManager->pTileData[uwTilePos];
 				UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
 				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 				ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
@@ -526,7 +524,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileCurr = pState->pMarginY->wTileCurr;
 				UWORD uwTileEnd = pState->pMarginY->wTileEnd;
 				UWORD uwTilePos = pState->pMarginY->wTilePos;
-				UBYTE **pTileData = pManager->pTileData;
+				ACE_TILEBUFFER_TILE_TYPE **pTileData = pManager->pTileData;
 				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 				ULONG ulDstOffs = pManager->pScroll->pBack->BytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
 				UWORD uwDstOffsStep = ubTileSize >> 3;
@@ -612,7 +610,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	UWORD uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
 	UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
 	PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
-	UBYTE **pTileData = pManager->pTileData;
+	ACE_TILEBUFFER_TILE_TYPE **pTileData = pManager->pTileData;
 	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
 	UWORD uwDstOffsStep = ubTileSize >> 3;
@@ -684,13 +682,13 @@ void tileBufferDrawTileQuick(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
 	UWORD uwBfrX, UWORD uwBfrY
 ) {
-	UBYTE ubTileToDraw = pManager->pTileData[uwTileX][uwTileY];
+	ACE_TILEBUFFER_TILE_TYPE TileToDraw = pManager->pTileData[uwTileX][uwTileY];
 	UBYTE ubTileShift = pManager->ubTileShift;
 	// This can't use safe blit fn because when scrolling in X direction,
 	// we need to draw on bitplane 1 as if it is part of bitplane 0.
 	blitUnsafeCopyAligned(
 		pManager->pTileSet,
-		0, ubTileToDraw << ubTileShift,
+		0, TileToDraw << ubTileShift,
 		pManager->pScroll->pBack, uwBfrX, uwBfrY,
 		pManager->ubTileSize, pManager->ubTileSize
 	);
@@ -786,10 +784,8 @@ UBYTE tileBufferIsRectFullyOnBuffer(
 }
 
 void tileBufferSetTile(
-	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwIdx
+	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, ACE_TILEBUFFER_TILE_TYPE Index
 ) {
- 	pManager->pTileData[uwX][uwY] = uwIdx;
+ 	pManager->pTileData[uwX][uwY] = Index;
 	tileBufferInvalidateTile(pManager, uwX, uwY);
 }
-
-#endif // AMIGA
