@@ -208,10 +208,12 @@ void viewLoad(tView *pView) {
 		pView->uwBplCon0 |= BV(9); // composite output
 
 		g_sCopManager.pCopList = pView->pCopList;
-		g_pCustom->bplcon0 = pView->uwBplCon0; // BPP + composite output
-		g_pCustom->fmode = 0; // AGA fix
-		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
+		g_pCustom->bplcon0 =pView->uwBplCon0; // BPP + composite output
+		g_pCustom->fmode = 0;        // AGA fix
+		g_pCustom->bplcon3 = 0;      // AGA fix
+
+		UWORD uwDiwStartX = 0x81;
+		UWORD uwDiwStopX = uwDiwStartX + SCREEN_PAL_WIDTH - 256;
 		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
 		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
 			logWrite(
@@ -219,7 +221,8 @@ void viewLoad(tView *pView) {
 				uwDiwStopY, BTST(uwDiwStopY, 8), BTST(uwDiwStopY, 7)
 			);
 		}
-		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | 0xC1; // HSTOP: 0xC1
+		g_pCustom->diwstrt = (pView->ubPosY << 8) | uwDiwStartX; // HSTART: 0x81
+		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | uwDiwStopX; // HSTOP: 0xC1
 		viewUpdateGlobalPalette(pView);
 	}
 	copProcessBlocks();
