@@ -349,10 +349,10 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
  */
 FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
-	const tTileBufferManager *pManager, const ACE_TILEBUFFER_TILE_TYPE *pTileDataColumn,
+	const tTileBufferManager *pManager, const tTileBufferTileIndex *pTileDataColumn,
 	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst
 ) {
-	ACE_TILEBUFFER_TILE_TYPE TileToDraw = pTileDataColumn[uwTileY];
+	tTileBufferTileIndex TileToDraw = pTileDataColumn[uwTileY];
 
 	if (!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)) {
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[TileToDraw];
@@ -421,7 +421,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileEnd = pState->pMarginX->wTileEnd;
 				UWORD uwMarginedHeight = pManager->uwMarginedHeight;
 				UWORD uwTilePos = pState->pMarginX->wTilePos;
-				const ACE_TILEBUFFER_TILE_TYPE *pTileColumn = pManager->pTileData[uwTilePos];
+				const tTileBufferTileIndex *pTileColumn = pManager->pTileData[uwTilePos];
 				UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
 				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 				ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
@@ -524,7 +524,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileCurr = pState->pMarginY->wTileCurr;
 				UWORD uwTileEnd = pState->pMarginY->wTileEnd;
 				UWORD uwTilePos = pState->pMarginY->wTilePos;
-				ACE_TILEBUFFER_TILE_TYPE **pTileData = pManager->pTileData;
+				tTileBufferTileIndex **pTileData = pManager->pTileData;
 				PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 				ULONG ulDstOffs = pManager->pScroll->pBack->BytesPerRow * uwTileOffsY + (uwTileOffsX >> 3);
 				UWORD uwDstOffsStep = ubTileSize >> 3;
@@ -610,7 +610,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	UWORD uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
 	UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
 	PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
-	ACE_TILEBUFFER_TILE_TYPE **pTileData = pManager->pTileData;
+	tTileBufferTileIndex **pTileData = pManager->pTileData;
 	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
 	UWORD uwDstOffsStep = ubTileSize >> 3;
@@ -682,7 +682,7 @@ void tileBufferDrawTileQuick(
 	const tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
 	UWORD uwBfrX, UWORD uwBfrY
 ) {
-	ACE_TILEBUFFER_TILE_TYPE TileToDraw = pManager->pTileData[uwTileX][uwTileY];
+	tTileBufferTileIndex TileToDraw = pManager->pTileData[uwTileX][uwTileY];
 	UBYTE ubTileShift = pManager->ubTileShift;
 	// This can't use safe blit fn because when scrolling in X direction,
 	// we need to draw on bitplane 1 as if it is part of bitplane 0.
@@ -784,7 +784,7 @@ UBYTE tileBufferIsRectFullyOnBuffer(
 }
 
 void tileBufferSetTile(
-	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, ACE_TILEBUFFER_TILE_TYPE Index
+	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, tTileBufferTileIndex Index
 ) {
  	pManager->pTileData[uwX][uwY] = Index;
 	tileBufferInvalidateTile(pManager, uwX, uwY);

@@ -23,6 +23,8 @@ extern "C" {
 #include <ace/managers/viewport/camera.h>
 #include <ace/managers/viewport/scrollbuffer.h>
 
+typedef ACE_TILEBUFFER_TILE_TYPE tTileBufferTileIndex;
+
 typedef enum tTileBufferCreateTags {
 	/**
 	 * @brief Pointer to parent vPort. Mandatory.
@@ -120,7 +122,7 @@ typedef struct _tTileBufferManager {
 	UWORD uwMarginedHeight;       ///< Height of visible area + margins
 	                              ///  TODO: refresh when scrollbuffer changes
 	tTileDrawCallback cbTileDraw; ///< Called when tile is redrawn
-	ACE_TILEBUFFER_TILE_TYPE **pTileData; ///< 2D array of tile indices
+	tTileBufferTileIndex **pTileData; ///< 2D array of tile indices
 	tBitMap *pTileSet;            ///< Tileset - one tile beneath another
 	UBYTE **pTileSetOffsets;      ///< Lookup table for tile offsets in pTileSet
 	// Margin & queue geometry
@@ -244,7 +246,7 @@ UBYTE tileBufferIsRectFullyOnBuffer(
  * @param Index Index of tile to be placed on given position.
  */
 void tileBufferSetTile(
-	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, ACE_TILEBUFFER_TILE_TYPE Index
+	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, tTileBufferTileIndex Index
 );
 
 static inline UBYTE tileBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp) {
