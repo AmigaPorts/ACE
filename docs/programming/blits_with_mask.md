@@ -98,14 +98,14 @@ void gameGsLoop(void) {
   blitCopyMask(
     s_pBmObjects, 0, PADDLE_LEFT_BITMAP_OFFSET_Y,
     s_pMainBuffer->pBack, 0, uwPaddleLeftPosY,
-    PADDLE_WIDTH, PADDLE_HEIGHT, (UWORD*)s_pBmObjectsMask->Planes[0]
+    PADDLE_WIDTH, PADDLE_HEIGHT, s_pBmObjectsMask->Planes[0]
   );
 
   // Draw right paddle
   blitCopyMask(
     s_pBmObjects, 0, PADDLE_RIGHT_BITMAP_OFFSET_Y,
     s_pMainBuffer->pBack, uwPaddleRightPosX, uwPaddleRightPosY,
-    PADDLE_WIDTH, PADDLE_HEIGHT, (UWORD*)s_pBmObjectsMask->Planes[0]
+    PADDLE_WIDTH, PADDLE_HEIGHT, s_pBmObjectsMask->Planes[0]
   );
 
   // Draw ball
@@ -116,7 +116,7 @@ void gameGsLoop(void) {
     (s_pVpMain->uwWidth - BALL_WIDTH) / 2,
     // y center: half of screen height minus half of ball
     (s_pVpMain->uwHeight - BALL_WIDTH) / 2,
-    BALL_WIDTH, BALL_WIDTH, (UWORD*)s_pBmObjectsMask->Planes[0]
+    BALL_WIDTH, BALL_WIDTH, s_pBmObjectsMask->Planes[0]
   );
 //---------------------------------------------------------------- NEW STUFF END
   vPortWaitForEnd(s_pVpMain);

@@ -24,10 +24,7 @@ static UBYTE s_ubPage;
 
 void gsTestFontCreate(void) {
 	// Prepare view & viewport
-	s_pTestFontView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pTestFontView = viewCreate(0, TAG_DONE);
 	s_pTestFontVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestFontView,
 		TAG_VPORT_BPP, SHOWCASE_BPP,

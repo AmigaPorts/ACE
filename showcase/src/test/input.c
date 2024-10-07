@@ -123,10 +123,7 @@ static void showParallelStatus(void) {
 
 void gsTestInputCreate(void) {
 	// Prepare view & viewport
-	s_pTestInputView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pTestInputView = viewCreate(0, TAG_DONE);
 	s_pTestInputVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestInputView,
 		TAG_VPORT_BPP, SHOWCASE_BPP,
