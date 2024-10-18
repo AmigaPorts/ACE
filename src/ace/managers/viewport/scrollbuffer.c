@@ -392,8 +392,9 @@ void scrollBufferReset(
 	}
 	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3) - 2;
 
-	pManager->uwDDfStrt = 0x0030;
-	pManager->uwDDfStop = 0x00D0;
+	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
+	pManager->uwDDfStop = pManager->uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
+	pManager->uwDDfStrt -= 8; // for scroll reasons
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		// Start/stop one 4-step bitplane fetch pattern later: 3120
 		pManager->uwDDfStrt += 4;
@@ -402,6 +403,7 @@ void scrollBufferReset(
 		// One word more for fetch
 		pManager->uwModulo -= 2;
 	}
+	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", pManager->uwDDfStrt, pManager->uwDDfStop, pManager->uwModulo);
 
 	// Constant stuff in copperlist
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;

@@ -40,8 +40,8 @@ static void simpleBufferInitializeCopperList(
 	UWORD uwModulo = pManager->pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 
 	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
-	UWORD uwDDfStrt = 0x0038;
-	UWORD uwDDfStop = 0x00D0;
+	UWORD uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
+	UWORD uwDDfStop = uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		uwDDfStrt += 4;
 		uwDDfStop += 4;
