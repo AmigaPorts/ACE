@@ -232,10 +232,9 @@ void spriteProcess(tSprite *pSprite) {
 	#endif
 	// Sprite in list mode has 2-word header before and after data, each
 	// occupies 1 line of the bitmap.
-	// TODO: get rid of hardcoded 128 X offset in reasonable way.
 	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
 	UWORD uwVStop = uwVStart + pSprite->uwHeight;
-	UWORD uwHStart = 128 + pSprite->wX;
+	UWORD uwHStart = s_pView->ubPosX + pSprite->wX;
 
 	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
 	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
