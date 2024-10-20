@@ -234,7 +234,7 @@ void spriteProcess(tSprite *pSprite) {
 	// occupies 1 line of the bitmap.
 	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
 	UWORD uwVStop = uwVStart + pSprite->uwHeight;
-	UWORD uwHStart = s_pView->ubPosX + pSprite->wX;
+	UWORD uwHStart = s_pView->ubPosX - 1 + pSprite->wX; // For diwstrt 0x81, x offset equal to 128 worked fine, hence -1
 
 	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
 	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
