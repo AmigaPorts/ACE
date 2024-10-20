@@ -485,6 +485,9 @@ UBYTE copUpdateFromBlocks(void) {
 		if(pBlock->ubUpdated) {
 			--pBlock->ubUpdated;
 		}
+		if(pBlock->uwCurrCount == 0) {
+			continue;
+		}
 
 		// Update WAIT
 		if(pBlock->uWaitPos.uwY > 0xFF) {
