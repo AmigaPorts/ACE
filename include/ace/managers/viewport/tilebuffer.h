@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
-
 /**
  * Tilemap buffer manager
  * Provides speed- and memory-efficient tilemap buffer
@@ -24,6 +22,8 @@ extern "C" {
 #include <ace/utils/extview.h>
 #include <ace/managers/viewport/camera.h>
 #include <ace/managers/viewport/scrollbuffer.h>
+
+typedef ACE_TILEBUFFER_TILE_TYPE tTileBufferTileIndex;
 
 typedef enum tTileBufferCreateTags {
 	/**
@@ -122,7 +122,7 @@ typedef struct _tTileBufferManager {
 	UWORD uwMarginedHeight;       ///< Height of visible area + margins
 	                              ///  TODO: refresh when scrollbuffer changes
 	tTileDrawCallback cbTileDraw; ///< Called when tile is redrawn
-	UBYTE **pTileData;            ///< 2D array of tile indices
+	tTileBufferTileIndex **pTileData; ///< 2D array of tile indices
 	tBitMap *pTileSet;            ///< Tileset - one tile beneath another
 	UBYTE **pTileSetOffsets;      ///< Lookup table for tile offsets in pTileSet
 	// Margin & queue geometry
@@ -243,10 +243,10 @@ UBYTE tileBufferIsRectFullyOnBuffer(
  * @param pManager The tile manager to be used.
  * @param uwX The X coordinate of tile, in tile-space.
  * @param uwY The Y coordinate of tile, in tile-space.
- * @param uwIdx Index of tile to be placed on given position.
+ * @param Index Index of tile to be placed on given position.
  */
 void tileBufferSetTile(
-	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwIdx
+	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, tTileBufferTileIndex Index
 );
 
 static inline UBYTE tileBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp) {
@@ -256,8 +256,6 @@ static inline UBYTE tileBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp)
 static inline UBYTE tileBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp) {
     return scrollBufferGetRawCopperlistInstructionCountBreak(ubBpp);
 }
-
-#endif // AMIGA
 
 #ifdef __cplusplus
 }

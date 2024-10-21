@@ -27,7 +27,7 @@ CPMAddPackage(
 file(GLOB COMMON_src src/common/*.cpp src/common/*.c)
 file(GLOB_RECURSE COMMON_hdr src/common/*.h src/common/*.hpp)
 add_library(common STATIC ${COMMON_src} ${COMMON_hdr})
-if(NOT MSVC AND NOT APPLE)
+if(MINGW)
 	message(STATUS "Building STATIC executables")
 	target_link_libraries(common PUBLIC -static)
 endif()
