@@ -28,11 +28,11 @@ typedef enum tTagView {
 	// If set to non-zero, view will use first vport's palette as global & ignore other ones.
 	TAG_VIEW_GLOBAL_PALETTE    = TAG_USER | 3,
 	// The X value for display window start.
-	// TAG_VIEW_WINDOW_START_X    = TAG_USER | 4,
+	TAG_VIEW_WINDOW_START_X    = TAG_USER | 4,
 	// The Y value for display window start.
 	TAG_VIEW_WINDOW_START_Y    = TAG_USER | 5,
 	// The width of display window.
-	// TAG_VIEW_WINDOW_WIDTH      = TAG_USER | 6,
+	TAG_VIEW_WINDOW_WIDTH      = TAG_USER | 6,
 	// The height of display window. Defaults to (lastPalScanline - TAG_VIEW_WINDOW_START_Y)
 	TAG_VIEW_WINDOW_HEIGHT     = TAG_USER | 7,
 	// If set to non-zero, view will use first vport's bpp value for whole screen.
@@ -121,7 +121,9 @@ typedef void (*tVpManagerFn)(tVpManager *pManager);
 typedef struct tView {
 	UBYTE ubVpCount;             ///< Viewport count.
 	UWORD uwFlags;               ///< Creation flags.
+	UBYTE ubPosX;                ///< Directly populates the DIWSTRT value.
 	UBYTE ubPosY;                ///< Directly populates the DIWSTRT value.
+	UWORD uwWidth;
 	UWORD uwHeight;
 	UWORD uwBplCon0;             ///< Initial/global bplcon0 values.
 	struct _tCopList *pCopList;  ///< Pointer to copperlist.

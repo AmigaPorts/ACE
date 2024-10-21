@@ -40,8 +40,8 @@ static void simpleBufferInitializeCopperList(
 	UWORD uwModulo = pManager->pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
 
 	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
-	UWORD uwDDfStrt = 0x0038;
-	UWORD uwDDfStop = 0x00D0;
+	UWORD uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
+	UWORD uwDDfStop = uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		uwDDfStrt += 4;
 		uwDDfStop += 4;
@@ -92,11 +92,11 @@ static void simpleBufferInitializeCopperList(
 			pManager->sCommon.pVPort->uwOffsY +
 			pManager->sCommon.pVPort->pView->ubPosY -1
 		));
-		copSetMove(&pCmdList[1].sMove, &g_pCustom->ddfstop, uwDDfStop);    // Data fetch
+		copSetMove(&pCmdList[1].sMove, &g_pCustom->ddfstop, uwDDfStop); // Data fetch
 		copSetMove(&pCmdList[2].sMove, &g_pCustom->ddfstrt, uwDDfStrt);
-		copSetMove(&pCmdList[3].sMove, &g_pCustom->bpl1mod, uwModulo);  // Bitplane modulo
+		copSetMove(&pCmdList[3].sMove, &g_pCustom->bpl1mod, uwModulo); // Bitplane modulo
 		copSetMove(&pCmdList[4].sMove, &g_pCustom->bpl2mod, uwModulo);
-		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, 0);         // Shift: 0
+		copSetMove(&pCmdList[5].sMove, &g_pCustom->bplcon1, 0); // Shift: 0
 
 		// Copy to front buffer since it needs initialization there too
 		for(UWORD i = pManager->uwCopperOffset; i < pManager->uwCopperOffset + 6; ++i) {
@@ -113,11 +113,11 @@ static void simpleBufferInitializeCopperList(
 	else {
 		tCopBlock *pBlock = pManager->pCopBlock;
 		pBlock->uwCurrCount = 0; // Rewind to beginning
-		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);     // Data fetch
+		copMove(pCopList, pBlock, &g_pCustom->ddfstop, uwDDfStop); // Data fetch
 		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, uwDDfStrt);
-		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, uwModulo);   // Bitplane modulo
+		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, uwModulo); // Bitplane modulo
 		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, uwModulo);
-		copMove(pCopList, pBlock, &g_pCustom->bplcon1, 0);          // Shift: 0
+		copMove(pCopList, pBlock, &g_pCustom->bplcon1, 0); // Shift: 0
 		for (UBYTE i = 0; i < pManager->sCommon.pVPort->ubBpp; ++i) {
 			ULONG ulPlaneAddr = (ULONG)pManager->pBack->Planes[i] + ulBplOffs;
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
