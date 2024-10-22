@@ -9,6 +9,8 @@
 #include <ace/utils/tag.h>
 #include <proto/exec.h> // Bartman's compiler needs this
 
+#define TILEBUFFER_MAX_TILE_COUNT (1 << (8 * sizeof(tTileBufferTileIndex)))
+
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 	UBYTE ubPower = 0;
 	while(uwPot > 1) {
@@ -187,7 +189,7 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 
 	// Free tile offset lookup table
 	if(pManager->pTileSetOffsets) {
-		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * 256);
+		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * TILEBUFFER_MAX_TILE_COUNT);
 	}
 
 	if(pManager->pRedrawStates[0].pPendingQueue) {
@@ -223,7 +225,7 @@ void tileBufferReset(
 
 	// Free old tile offset lookup table
 	if(pManager->pTileSetOffsets) {
-		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * 256);
+		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * TILEBUFFER_MAX_TILE_COUNT);
 	}
 
 	// Init new tile data
@@ -237,8 +239,8 @@ void tileBufferReset(
 	}
 
 	// Init tile offset lookup table
-	pManager->pTileSetOffsets = memAllocFastClear(sizeof(pManager->pTileSetOffsets[0]) * 256);
-	for (UWORD i = 0; i < 256; ++i) {
+	pManager->pTileSetOffsets = memAllocFastClear(sizeof(pManager->pTileSetOffsets[0]) * TILEBUFFER_MAX_TILE_COUNT);
+	for (ULONG i = 0; i < TILEBUFFER_MAX_TILE_COUNT; ++i) {
 		pManager->pTileSetOffsets[i] = pManager->pTileSet->Planes[0] + (pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift));
 	}
 
