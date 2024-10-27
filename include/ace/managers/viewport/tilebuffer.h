@@ -79,7 +79,13 @@ typedef enum tTileBufferCreateTags {
 	 *
 	 * @see tileBufferQueueProcess()
 	 */
-	TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH = (TAG_USER | 11)
+	TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH = (TAG_USER | 11),
+
+	/**
+	 * @brief Maximum tile index used in the tileset.
+	 * Optional, limits the tile lookup table size.
+	 */
+	TAG_TILEBUFFER_MAX_TILESET_SIZE = (TAG_USER | 12),
 } tTileBufferCreateTags;
 
 /* types */
@@ -130,8 +136,9 @@ typedef struct _tTileBufferManager {
 	UBYTE ubMarginYLength; ///< Ditto, up & down
 	UBYTE ubQueueSize;
 	// Redraw state and double buffering
-	tRedrawState pRedrawStates[2];
 	UBYTE ubStateIdx;
+	tRedrawState pRedrawStates[2];
+	ULONG ulMaxTilesetSize;
 } tTileBufferManager;
 
 /* globals */

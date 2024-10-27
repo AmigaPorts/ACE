@@ -99,9 +99,12 @@ tView *viewCreate(void *pTags, ...) {
 		pView->ubPosY = ubPosY;
 		pView->uwHeight = uwHeight;
 	}
+	pView->ubPosX = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_START_X, SCREEN_XOFFSET);
+	pView->uwWidth = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_WIDTH, SCREEN_PAL_WIDTH);
+
 	logWrite(
 		"Display pos: %hhu,%hhu, size: %hu,%hu\n",
-		0x81, pView->ubPosY, SCREEN_PAL_WIDTH, pView->uwHeight
+		pView->ubPosX, pView->ubPosY, pView->uwWidth, pView->uwHeight
 	);
 
 	va_end(vaTags);
@@ -174,8 +177,9 @@ void viewLoad(tView *pView) {
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
-		g_pCustom->bplcon3 = 0; // AGA fix
 		g_pCustom->fmode = 0;   // AGA fix
+		g_pCustom->bplcon3 = 0; // AGA fix
+		g_pCustom->bplcon4 = 0x0011; // AGA fix
 		for(UBYTE i = 0; i < 6; ++i) {
 			g_pCustom->bplpt[i] = 0;
 		}
@@ -208,12 +212,13 @@ void viewLoad(tView *pView) {
 		pView->uwBplCon0 |= BV(9); // composite output
 
 		g_sCopManager.pCopList = pView->pCopList;
-		g_pCustom->bplcon0 =pView->uwBplCon0; // BPP + composite output
-		g_pCustom->fmode = 0;        // AGA fix
-		g_pCustom->bplcon3 = 0;      // AGA fix
+		g_pCustom->bplcon0 = pView->uwBplCon0; // BPP + composite output
+		g_pCustom->fmode = 0; // AGA fix
+		g_pCustom->bplcon3 = 0; // AGA fix
+		g_pCustom->bplcon4 = 0x0011; // AGA fix
 
-		UWORD uwDiwStartX = 0x81;
-		UWORD uwDiwStopX = uwDiwStartX + SCREEN_PAL_WIDTH - 256;
+		UWORD uwDiwStartX = pView->ubPosX;
+		UWORD uwDiwStopX = uwDiwStartX + pView->uwWidth - 256;
 		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
 		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
 			logWrite(
@@ -279,7 +284,9 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	pVPort->ubBpp = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 
 	// Get dimensions
-	UWORD uwDefaultWidth = s_isPAL ? SCREEN_PAL_WIDTH : SCREEN_NTSC_WIDTH;
+	// FIXME: this doesn't work correctly due to diwstrt/stop being set globally
+	// in view, but is needed for vport manger bitmap default size calcs.
+	UWORD uwDefaultWidth = pView->uwWidth;
 	if(pVPort->eFlags & VP_FLAG_HIRES) {
 		uwDefaultWidth *= 2;
 	}

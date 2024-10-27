@@ -9,6 +9,8 @@
 #include <ace/utils/tag.h>
 #include <proto/exec.h> // Bartman's compiler needs this
 
+#define TILEBUFFER_MAX_TILESET_SIZE (1 << (8 * sizeof(tTileBufferTileIndex)))
+
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 	UBYTE ubPower = 0;
 	while(uwPot > 1) {
@@ -127,6 +129,9 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	isDblBuf = tagGet(pTags, vaTags, TAG_TILEBUFFER_IS_DBLBUF, 0);
 	uwCoplistOffStart = tagGet(pTags, vaTags, TAG_TILEBUFFER_COPLIST_OFFSET_START, -1);
 	uwCoplistOffBreak = tagGet(pTags, vaTags, TAG_TILEBUFFER_COPLIST_OFFSET_BREAK, -1);
+	pManager->ulMaxTilesetSize = tagGet(
+		pTags, vaTags, TAG_TILEBUFFER_MAX_TILESET_SIZE, TILEBUFFER_MAX_TILESET_SIZE
+	);
 	tileBufferReset(pManager, uwTileX, uwTileY, ubBitmapFlags, isDblBuf, uwCoplistOffStart, uwCoplistOffBreak);
 
 	pManager->ubQueueSize = tagGet(
@@ -187,7 +192,7 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 
 	// Free tile offset lookup table
 	if(pManager->pTileSetOffsets) {
-		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * 256);
+		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * pManager->ulMaxTilesetSize);
 	}
 
 	if(pManager->pRedrawStates[0].pPendingQueue) {
@@ -223,7 +228,7 @@ void tileBufferReset(
 
 	// Free old tile offset lookup table
 	if(pManager->pTileSetOffsets) {
-		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * 256);
+		memFree(pManager->pTileSetOffsets, sizeof(pManager->pTileSetOffsets[0]) * pManager->ulMaxTilesetSize);
 	}
 
 	// Init new tile data
@@ -237,8 +242,8 @@ void tileBufferReset(
 	}
 
 	// Init tile offset lookup table
-	pManager->pTileSetOffsets = memAllocFastClear(sizeof(pManager->pTileSetOffsets[0]) * 256);
-	for (UWORD i = 0; i < 256; ++i) {
+	pManager->pTileSetOffsets = memAllocFast(sizeof(pManager->pTileSetOffsets[0]) * pManager->ulMaxTilesetSize);
+	for (ULONG i = 0; i < pManager->ulMaxTilesetSize; ++i) {
 		pManager->pTileSetOffsets[i] = pManager->pTileSet->Planes[0] + (pManager->pTileSet->BytesPerRow * (i << pManager->ubTileShift));
 	}
 

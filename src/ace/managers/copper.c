@@ -485,20 +485,25 @@ UBYTE copUpdateFromBlocks(void) {
 		if(pBlock->ubUpdated) {
 			--pBlock->ubUpdated;
 		}
+		if(pBlock->uwCurrCount == 0) {
+			continue;
+		}
 
 		// Update WAIT
-		if(pBlock->uWaitPos.uwY > 0xFF) {
+		if(pBlock->uWaitPos.uwY >= 0xFF) {
 			// FIXME: double WAIT only when previous line ended before some pos
 			if(!ubWasLimitY) {
 				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
 				++uwListPos;
 				ubWasLimitY = 1;
 			}
-			copSetWait(
-				(tCopWaitCmd*)&pBackBfr->pList[uwListPos],
-				pBlock->uWaitPos.uwX, pBlock->uWaitPos.uwY & 0xFF
-			);
-			++uwListPos;
+			if(pBlock->uWaitPos.uwY > 0xFF) {
+				copSetWait(
+					(tCopWaitCmd*)&pBackBfr->pList[uwListPos],
+					pBlock->uWaitPos.uwX, pBlock->uWaitPos.uwY & 0xFF
+				);
+				++uwListPos;
+			}
 		}
 		else {
 			copSetWait(

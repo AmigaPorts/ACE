@@ -84,6 +84,8 @@ typedef struct tBob {
  * @param pFront Double buffering's front buffer bitmap.
  * @param pBack Double buffering's back buffer bitmap.
  * @param uwAvailHeight True available height for Y-scroll in passed bitmap.
+ * For tileBuffer you should use `pTileBuffer->pScroll->uwBmAvailHeight`.
+ * For scrollBuffer you should use `pScrollBuffer->uwBmAvailHeight`.
  *
  * @see bobInit()
  * @see bobReallocateBgBuffers()
