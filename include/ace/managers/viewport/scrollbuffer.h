@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
-
 /**
  * Scrollable buffer manager
  * Uses scrolling-trick from aminet to achieve memory-efficient scroll
@@ -30,6 +28,8 @@ extern "C" {
 #include <ace/managers/blit.h>
 #include <ace/managers/copper.h>
 #include <ace/managers/viewport/camera.h>
+
+#define SCROLLBUFFER_CLEAN_MARGIN_SIZE 1
 
 // vPort ptr
 typedef enum tScrollBufferCreateTags {
@@ -113,8 +113,6 @@ void scrollBufferBlitMask(
 UBYTE scrollBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp);
 
 UBYTE scrollBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp);
-
-#endif // AMIGA
 
 #ifdef __cplusplus
 }
