@@ -29,6 +29,8 @@ extern "C" {
 #include <ace/managers/copper.h>
 #include <ace/managers/viewport/camera.h>
 
+// #define SCROLLBUFFER_ENABLE_SCROLL_X
+// #define SCROLLBUFFER_ENABLE_SCROLL_Y
 #define SCROLLBUFFER_X_MARGIN_SIZE 1
 #define SCROLLBUFFER_Y_MARGIN_SIZE 1
 #define SCROLLBUFFER_POT_BITMAP_HEIGHT
@@ -37,6 +39,18 @@ extern "C" {
 #define SCROLLBUFFER_HEIGHT_MODULO(x, h) ((x) & ((h) - 1))
 #else
 #define SCROLLBUFFER_HEIGHT_MODULO(x, h) ((x) % (h))
+#endif
+
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_X)
+#define SCROLLBUFFER_X_DRAW_MARGIN_SIZE 1
+#else
+#define SCROLLBUFFER_X_DRAW_MARGIN_SIZE 0
+#endif
+
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
+#define SCROLLBUFFER_Y_DRAW_MARGIN_SIZE 1
+#else
+#define SCROLLBUFFER_Y_DRAW_MARGIN_SIZE 0
 #endif
 
 // vPort ptr

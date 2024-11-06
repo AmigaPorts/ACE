@@ -95,28 +95,36 @@ typedef void (*tTileDrawCallback)(
 	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
 );
 
-typedef struct _tMarginState {
+typedef struct tMarginState {
 	WORD wTilePos; ///< Index of row/col to update
 	WORD wTileCurr; ///< Index of current tile to update in row/col
 	WORD wTileEnd;  ///< Index of last+1  tile to update in row/col
 } tMarginState;
 
-typedef struct _tRedrawState {
+typedef struct tRedrawState {
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_X)
 	tMarginState sMarginL; ///< Data for left margin
 	tMarginState sMarginR; ///< Ditto, right
+#endif
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
 	tMarginState sMarginU; ///< Ditto, up
 	tMarginState sMarginD; ///< Ditto, down
+#endif
 	// Vars needed in Process, reset in Create
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_X)
 	tMarginState *pMarginX;         ///< Idx of X margin to be redrawn
 	tMarginState *pMarginOppositeX; ///< Opposite margin of pMarginX
+#endif
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
 	tMarginState *pMarginY;         ///< Idx of Y margin to be redrawn
 	tMarginState *pMarginOppositeY; ///< Opposite margin of pMarginY
+#endif
 	// Tile redraw queue
 	tUwCoordYX *pPendingQueue;
 	UBYTE ubPendingCount;
 } tRedrawState;
 
-typedef struct _tTileBufferManager {
+typedef struct tTileBufferManager {
 	tVpManager sCommon;
 	tCameraManager *pCamera;       ///< Quick ref to Camera
 	tScrollBufferManager *pScroll; ///< Quick ref to Scroll

@@ -25,14 +25,20 @@ static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 #define BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
 
 static void tileBufferResetRedrawState(tRedrawState *pState) {
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_X)
 	memset(&pState->sMarginL, 0, sizeof(tMarginState));
 	memset(&pState->sMarginR, 0, sizeof(tMarginState));
+	pState->pMarginX = &pState->sMarginR;
+	pState->pMarginOppositeX = &pState->sMarginL;
+#endif
+
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
 	memset(&pState->sMarginU, 0, sizeof(tMarginState));
 	memset(&pState->sMarginD, 0, sizeof(tMarginState));
-	pState->pMarginX         = &pState->sMarginR;
-	pState->pMarginOppositeX = &pState->sMarginL;
-	pState->pMarginY         = &pState->sMarginD;
+	pState->pMarginY = &pState->sMarginD;
 	pState->pMarginOppositeY = &pState->sMarginU;
+#endif
+
 	pState->ubPendingCount = 0;
 }
 
@@ -278,11 +284,11 @@ void tileBufferReset(
 	pManager->uwMarginedHeight = pManager->pScroll->uwBmAvailHeight;
 	pManager->ubMarginXLength = MIN(
 		pManager->uTileBounds.uwY,
-		(pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 2 * (1 + SCROLLBUFFER_Y_MARGIN_SIZE)
+		(pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 2 * (SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE)
 	);
 	pManager->ubMarginYLength = MIN(
 		pManager->uTileBounds.uwX,
-		(pManager->sCommon.pVPort->uwWidth >> ubTileShift) + 2 * (1 + SCROLLBUFFER_X_MARGIN_SIZE)
+		(pManager->sCommon.pVPort->uwWidth >> ubTileShift) + 2 * (SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE)
 	);
 	logWrite(
 		"Margin sizes: %hhu,%hhu\n",
@@ -393,15 +399,18 @@ static inline void tileBufferContinueTileDraw(
 
 FN_HOTSPOT
 void tileBufferProcess(tTileBufferManager *pManager) {
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_X) || defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
 	WORD wMarginXPos, wMarginYPos;
 	UWORD uwTileOffsX, uwTileOffsY;
 	tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
 
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
-	WORD wDeltaX = cameraGetDeltaX(pManager->pCamera);
-	WORD wDeltaY = cameraGetDeltaY(pManager->pCamera);
+#endif
+
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_X)
 	// X movement
+	WORD wDeltaX = cameraGetDeltaX(pManager->pCamera);
 	if (wDeltaX) {
 		// determine movement direction - right or left
 		if (wDeltaX > 0) {
@@ -484,7 +493,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			else {
 				// Prepare new column for redraw
 				pState->pMarginX->wTileCurr = MAX(
-					0, (pManager->pCamera->uPos.uwY >> ubTileShift) - (1 + SCROLLBUFFER_Y_MARGIN_SIZE)
+					0, (pManager->pCamera->uPos.uwY >> ubTileShift) - (SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE)
 				);
 				pState->pMarginX->wTileEnd = MIN(
 					pState->pMarginX->wTileCurr + pManager->ubMarginXLength,
@@ -510,8 +519,11 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		);
 		++pState->pMarginX->wTileCurr;
 	}
+#endif // defined(SCROLLBUFFER_ENABLE_SCROLL_X)
 
+#if defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
 	// Y movement
+	WORD wDeltaY = cameraGetDeltaY(pManager->pCamera);
 	if (wDeltaY) {
 		// determine redraw row - down or up
 		if (wDeltaY > 0) {
@@ -571,7 +583,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			else {
 				// Prepare new row for redraw
 				pState->pMarginY->wTileCurr = MAX(
-					0, (pManager->pCamera->uPos.uwX >> ubTileShift) - (SCROLLBUFFER_X_MARGIN_SIZE + 1)
+					0, (pManager->pCamera->uPos.uwX >> ubTileShift) - (SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE)
 				);
 				pState->pMarginY->wTileEnd = MIN(
 					pState->pMarginY->wTileCurr + pManager->ubMarginYLength,
@@ -597,6 +609,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		);
 		++pState->pMarginY->wTileCurr;
 	}
+#endif // defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
+
 	pManager->ubStateIdx = !pManager->ubStateIdx;
 }
 
