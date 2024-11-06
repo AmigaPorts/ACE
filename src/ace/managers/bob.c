@@ -263,7 +263,7 @@ UBYTE bobProcessNext(void) {
 
 		if(pBob->isUndrawRequired) {
 #if defined(BOB_WRAP_Y)
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+			UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight);
 #endif
 			blitWait();
 			g_pCustom->bltamod = pBob->_wModuloUndrawSave;
