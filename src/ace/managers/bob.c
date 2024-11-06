@@ -6,6 +6,7 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/viewport/scrollbuffer.h> // for SCROLLBUFFER_HEIGHT_MODULO, TODO: get rid of it somehow
 #include <ace/utils/custom.h>
 
 #if !defined(ACE_NO_BOB_WRAP_Y)
@@ -251,7 +252,7 @@ UBYTE bobProcessNext(void) {
 		ULONG ulSrcOffs = (
 			pQueue->pDst->BytesPerRow * (
 #if defined(BOB_WRAP_Y)
-				pBob->sPos.uwY & (s_uwAvailHeight - 1)
+				SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight)
 #else
 				pBob->sPos.uwY
 #endif

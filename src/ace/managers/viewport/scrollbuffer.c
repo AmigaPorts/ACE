@@ -32,6 +32,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	pManager->sCommon.ubId = VPM_SCROLL;
 	logWrite("Addr: %p\n", pManager);
 
+	UBYTE isCameraCreated = 0;
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_VPORT, 0);
 	if(!pVPort) {
 		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified!\n");
@@ -114,7 +115,6 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	vPortAddManager(pVPort, (tVpManager*)pManager);
 
 	// Find camera manager, create if not exists
-	UBYTE isCameraCreated = 0;
 	pManager->pCamera = (tCameraManager*)vPortGetManager(pVPort, VPM_CAMERA);
 	if(!pManager->pCamera) {
 		pManager->pCamera = cameraCreate(
@@ -260,7 +260,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	// convert camera pos to scroll pos
 	UWORD uwScrollX = pManager->pCamera->uPos.uwX;
-	UWORD uwScrollY = pManager->pCamera->uPos.uwY & (pManager->uwBmAvailHeight - 1);
+	UWORD uwScrollY = SCROLLBUFFER_HEIGHT_MODULO(
+		pManager->pCamera->uPos.uwY, pManager->uwBmAvailHeight
+	);
 
 	// preparations for new copperlist
 	UWORD uwShift = (16 - (uwScrollX & 0xF)) & 0xF; // Bitplane shift - single
@@ -356,9 +358,11 @@ void scrollBufferReset(
 	pManager->uBfrBounds.uwX = uwBoundWidth;
 	pManager->uBfrBounds.uwY = uwBoundHeight;
 	// Optimize avail height to power of two so that modulo can be an AND
-	pManager->uwBmAvailHeight = nearestPowerOf2(
-		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (SCROLLBUFFER_CLEAN_MARGIN_SIZE + 1))
-	);
+	pManager->uwBmAvailHeight =
+		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (SCROLLBUFFER_CLEAN_MARGIN_SIZE + 1));
+#if defined(SCROLLBUFFER_POT_BITMAP_HEIGHT)
+	pManager->uwBmAvailHeight = nearestPowerOf2(pManager->uwBmAvailHeight);
+#endif
 
 	// Destroy old buffer bitmap
 	if(pManager->pFront && pManager->pFront != pManager->pBack) {

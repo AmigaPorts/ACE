@@ -30,6 +30,13 @@ extern "C" {
 #include <ace/managers/viewport/camera.h>
 
 #define SCROLLBUFFER_CLEAN_MARGIN_SIZE 1
+#define SCROLLBUFFER_POT_BITMAP_HEIGHT
+
+#if defined(SCROLLBUFFER_POT_BITMAP_HEIGHT)
+#define SCROLLBUFFER_HEIGHT_MODULO(x, h) ((x) & ((h) - 1))
+#else
+#define SCROLLBUFFER_HEIGHT_MODULO(x, h) ((x) % (h))
+#endif
 
 // vPort ptr
 typedef enum tScrollBufferCreateTags {

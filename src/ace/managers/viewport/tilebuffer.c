@@ -420,7 +420,9 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wMarginXPos != pState->pMarginX->wTilePos) {
 			// Not finished redrawing all column tiles?
 			if(pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
-				uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) & (pManager->uwMarginedHeight-1);
+				uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+					pState->pMarginX->wTileCurr << ubTileShift, pManager->uwMarginedHeight
+				);
 				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
@@ -458,12 +460,16 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					}
 				}
 				if (pManager->cbTileDraw) {
-					uwTileOffsY = (pState->pMarginX->wTileCurr << ubTileShift) & (pManager->uwMarginedHeight-1);
+					uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+						pState->pMarginX->wTileCurr << ubTileShift, pManager->uwMarginedHeight
+					);
 					uwTileCurr = pState->pMarginX->wTileCurr;
 					while (uwTileCurr < uwTileEnd) {
 						pManager->cbTileDraw(uwTilePos, uwTileCurr, pManager->pScroll->pBack, uwTileOffsX, uwTileOffsY);
 						++uwTileCurr;
-						uwTileOffsY = (uwTileOffsY + ubTileSize) & (uwMarginedHeight - 1);
+						uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+							uwTileOffsY + ubTileSize, uwMarginedHeight
+						);
 					}
 				}
 				pState->pMarginX->wTileCurr = pState->pMarginX->wTileEnd;
@@ -524,7 +530,9 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wMarginYPos != pState->pMarginY->wTilePos) {
 			// Not finished redrawing all row tiles?
 			if(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
-				uwTileOffsY = (pState->pMarginY->wTilePos << ubTileShift) & (pManager->uwMarginedHeight-1);
+				uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+					pState->pMarginY->wTilePos << ubTileShift, pManager->uwMarginedHeight
+				);
 				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
@@ -614,7 +622,9 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		wStartY + (pManager->uwMarginedHeight >> ubTileShift)
 	);
 
-	UWORD uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
+	UWORD uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+		wStartY << ubTileShift, pManager->uwMarginedHeight
+	);
 	UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
 	PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 	tTileBufferTileIndex **pTileData = pManager->pTileData;
@@ -633,7 +643,9 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 			++uwTileCurr;
 			ulDstOffs += uwDstOffsStep;
 		}
-		uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
+		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+			uwTileOffsY + ubTileSize, pManager->uwMarginedHeight
+		);
 	}
 
 	if (pManager->cbTileDraw) {
@@ -649,7 +661,9 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 				++uwTileCurr;
 				uwTileOffsX += ubTileSize;
 			}
-			uwTileOffsY = (uwTileOffsY + ubTileSize) & (pManager->uwMarginedHeight - 1);
+			uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+				uwTileOffsY + ubTileSize, pManager->uwMarginedHeight
+			);
 		}
 	}
 
@@ -679,7 +693,9 @@ void tileBufferDrawTile(
 ) {
 	// Buffer X coord will overflow dimensions but that's fine 'cuz we need to
 	// draw on bitplane 1 as if it is part of bitplane 0.
-	UWORD uwBfrY = (uwTileIdxY << pManager->ubTileShift) & (pManager->uwMarginedHeight - 1);
+	UWORD uwBfrY = SCROLLBUFFER_HEIGHT_MODULO(
+		uwTileIdxY << pManager->ubTileShift, pManager->uwMarginedHeight
+	);
 	UWORD uwBfrX = (uwTileIdxX << pManager->ubTileShift);
 
 	tileBufferDrawTileQuick(pManager, uwTileIdxX, uwTileIdxY, uwBfrX, uwBfrY);
