@@ -29,7 +29,8 @@ extern "C" {
 #include <ace/managers/copper.h>
 #include <ace/managers/viewport/camera.h>
 
-#define SCROLLBUFFER_CLEAN_MARGIN_SIZE 1
+#define SCROLLBUFFER_X_MARGIN_SIZE 1
+#define SCROLLBUFFER_Y_MARGIN_SIZE 1
 #define SCROLLBUFFER_POT_BITMAP_HEIGHT
 
 #if defined(SCROLLBUFFER_POT_BITMAP_HEIGHT)

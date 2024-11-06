@@ -11,7 +11,7 @@
 
 #define TILEBUFFER_MAX_TILESET_SIZE (1 << (8 * sizeof(tTileBufferTileIndex)))
 
-// Zero the SCROLLBUFFER_CLEAN_MARGIN_SIZE to see the undraw
+// Zero the SCROLLBUFFER_X_MARGIN_SIZE/SCROLLBUFFER_Y_MARGIN_SIZE to see the undraw
 
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 	UBYTE ubPower = 0;
@@ -278,11 +278,11 @@ void tileBufferReset(
 	pManager->uwMarginedHeight = pManager->pScroll->uwBmAvailHeight;
 	pManager->ubMarginXLength = MIN(
 		pManager->uTileBounds.uwY,
-		(pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 2 * (1 + SCROLLBUFFER_CLEAN_MARGIN_SIZE)
+		(pManager->sCommon.pVPort->uwHeight >> ubTileShift) + 2 * (1 + SCROLLBUFFER_Y_MARGIN_SIZE)
 	);
 	pManager->ubMarginYLength = MIN(
 		pManager->uTileBounds.uwX,
-		(pManager->sCommon.pVPort->uwWidth >> ubTileShift) + 2 * (1 + SCROLLBUFFER_CLEAN_MARGIN_SIZE)
+		(pManager->sCommon.pVPort->uwWidth >> ubTileShift) + 2 * (1 + SCROLLBUFFER_X_MARGIN_SIZE)
 	);
 	logWrite(
 		"Margin sizes: %hhu,%hhu\n",
@@ -407,12 +407,12 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wDeltaX > 0) {
 			wMarginXPos = ((
 				pManager->pCamera->uPos.uwX + pManager->sCommon.pVPort->uwWidth
-			) >> ubTileShift) + SCROLLBUFFER_CLEAN_MARGIN_SIZE;
+			) >> ubTileShift) + SCROLLBUFFER_X_MARGIN_SIZE;
 			pState->pMarginX = &pState->sMarginR;
 			pState->pMarginOppositeX = &pState->sMarginL;
 		}
 		else {
-			wMarginXPos = (pManager->pCamera->uPos.uwX >> ubTileShift) - SCROLLBUFFER_CLEAN_MARGIN_SIZE;
+			wMarginXPos = (pManager->pCamera->uPos.uwX >> ubTileShift) - SCROLLBUFFER_X_MARGIN_SIZE;
 			pState->pMarginX = &pState->sMarginL;
 			pState->pMarginOppositeX = &pState->sMarginR;
 		}
@@ -484,7 +484,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			else {
 				// Prepare new column for redraw
 				pState->pMarginX->wTileCurr = MAX(
-					0, (pManager->pCamera->uPos.uwY >> ubTileShift) - (1 + SCROLLBUFFER_CLEAN_MARGIN_SIZE)
+					0, (pManager->pCamera->uPos.uwY >> ubTileShift) - (1 + SCROLLBUFFER_Y_MARGIN_SIZE)
 				);
 				pState->pMarginX->wTileEnd = MIN(
 					pState->pMarginX->wTileCurr + pManager->ubMarginXLength,
@@ -517,12 +517,12 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wDeltaY > 0) {
 			wMarginYPos = ((
 				pManager->pCamera->uPos.uwY + pManager->sCommon.pVPort->uwHeight
-			) >> ubTileShift) + SCROLLBUFFER_CLEAN_MARGIN_SIZE;
+			) >> ubTileShift) + SCROLLBUFFER_Y_MARGIN_SIZE;
 			pState->pMarginY = &pState->sMarginD;
 			pState->pMarginOppositeY = &pState->sMarginU;
 		}
 		else {
-			wMarginYPos = (pManager->pCamera->uPos.uwY >> ubTileShift) - SCROLLBUFFER_CLEAN_MARGIN_SIZE;
+			wMarginYPos = (pManager->pCamera->uPos.uwY >> ubTileShift) - SCROLLBUFFER_Y_MARGIN_SIZE;
 			pState->pMarginY = &pState->sMarginU;
 			pState->pMarginOppositeY = &pState->sMarginD;
 		}
@@ -571,7 +571,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 			else {
 				// Prepare new row for redraw
 				pState->pMarginY->wTileCurr = MAX(
-					0, (pManager->pCamera->uPos.uwX >> ubTileShift) - (1 + SCROLLBUFFER_CLEAN_MARGIN_SIZE)
+					0, (pManager->pCamera->uPos.uwX >> ubTileShift) - (SCROLLBUFFER_X_MARGIN_SIZE + 1)
 				);
 				pState->pMarginY->wTileEnd = MIN(
 					pState->pMarginY->wTileCurr + pManager->ubMarginYLength,
@@ -610,8 +610,8 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
 
-	WORD wStartX = MAX(0, (pManager->pCamera->uPos.uwX >> ubTileShift) - SCROLLBUFFER_CLEAN_MARGIN_SIZE);
-	WORD wStartY = MAX(0, (pManager->pCamera->uPos.uwY >> ubTileShift) - SCROLLBUFFER_CLEAN_MARGIN_SIZE);
+	WORD wStartX = MAX(0, (pManager->pCamera->uPos.uwX >> ubTileShift) - SCROLLBUFFER_X_MARGIN_SIZE);
+	WORD wStartY = MAX(0, (pManager->pCamera->uPos.uwY >> ubTileShift) - SCROLLBUFFER_Y_MARGIN_SIZE);
 	// One of bounds may be smaller than viewport + margin size
 	UWORD uwEndX = MIN(
 		pManager->uTileBounds.uwX,

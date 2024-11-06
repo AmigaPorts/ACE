@@ -359,7 +359,7 @@ void scrollBufferReset(
 	pManager->uBfrBounds.uwY = uwBoundHeight;
 	// Optimize avail height to power of two so that modulo can be an AND
 	pManager->uwBmAvailHeight =
-		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (SCROLLBUFFER_CLEAN_MARGIN_SIZE + 1));
+		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (SCROLLBUFFER_Y_MARGIN_SIZE + 1));
 #if defined(SCROLLBUFFER_POT_BITMAP_HEIGHT)
 	pManager->uwBmAvailHeight = nearestPowerOf2(pManager->uwBmAvailHeight);
 #endif
@@ -373,7 +373,7 @@ void scrollBufferReset(
 	}
 
 	// Create new buffer bitmap
-	UWORD uwCalcWidth = uwVpWidth + ubMarginWidth * 2 * (SCROLLBUFFER_CLEAN_MARGIN_SIZE + 1);
+	UWORD uwCalcWidth = uwVpWidth + ubMarginWidth * 2 * (SCROLLBUFFER_X_MARGIN_SIZE + 1);
 	UWORD uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 	pManager->pBack = bitmapCreate(
 		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
