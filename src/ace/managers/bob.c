@@ -317,7 +317,7 @@ UBYTE bobProcessNext(void) {
 			UBYTE *pB = pBob->pFrameData;
 			UBYTE *pCD = pBob->_pOldDrawOffs[s_ubBufferCurr];
 #if defined(BOB_WRAP_Y)
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+			UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight);
 #endif
 
 			blitWait();
@@ -399,7 +399,7 @@ void bobBegin(tBitMap *pBuffer) {
 			// Undraw next
 			UBYTE *pD = pBob->_pOldDrawOffs[s_ubBufferCurr];
 #if defined(BOB_WRAP_Y)
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->pOldPositions[s_ubBufferCurr].uwY & (s_uwAvailHeight-1));
+			UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->pOldPositions[s_ubBufferCurr].uwY, s_uwAvailHeight);
 #endif
 			blitWait();
 			g_pCustom->bltdmod = pBob->_wModuloUndrawSave;
