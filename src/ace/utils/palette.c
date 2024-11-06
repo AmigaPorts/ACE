@@ -86,15 +86,12 @@ void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
 }
 
 void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
-	tFile *pFile;
-	UBYTE ubPaletteLength;
-
 	logBlockBegin(
 		"paletteSave(pPalette: %p, ubColorCnt: %hu, szPath: '%s')",
 		pPalette, ubColorCnt, szPath
 	);
 
-	pFile = fileOpen(szPath, "wb");
+	tFile *pFile = fileOpen(szPath, "wb");
 	if(!pFile) {
 		logWrite("ERR: Can't write file!\n");
 		logBlockEnd("paletteSave()");
