@@ -649,7 +649,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	}
 
 	if (pManager->cbTileDraw) {
-		uwTileOffsY = (wStartY << ubTileShift) & (pManager->uwMarginedHeight - 1);
+		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(wStartY << ubTileShift, pManager->uwMarginedHeight);
 		for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
 			uwTileOffsX = (wStartX << ubTileShift);
 			UWORD uwTileCurr = wStartX;
