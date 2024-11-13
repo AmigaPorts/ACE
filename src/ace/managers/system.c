@@ -463,7 +463,7 @@ static void cdtvPortFree(void) {
  * More explanation about how it works:
  * http://eab.abime.net/showthread.php?t=87202&page=2
  */
-static void systemFlushIo() {
+static void systemFlushIo(void) {
 	struct StandardPacket *pPacket = (struct StandardPacket*)AllocMem(
 		sizeof(struct StandardPacket), MEMF_CLEAR
 	);
@@ -823,6 +823,7 @@ UBYTE systemIsUsed(void) {
 void systemGetBlitterFromOs(void) {
 	--s_wSystemBlitterUses;
 	if(!s_wSystemBlitterUses) {
+		systemFlushIo();
 		OwnBlitter();
 		WaitBlit();
 	}
