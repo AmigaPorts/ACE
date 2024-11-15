@@ -5,7 +5,7 @@
 #include <ace/utils/palette.h>
 #include <ace/managers/blit.h>
 #include <ace/utils/bitmap.h>
-#include <ace/utils/file.h>
+#include <ace/utils/disk_file.h>
 
 void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 	tFile *pFile;
@@ -16,7 +16,7 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
 		szFileName, pPalette, ubMaxLength
 	);
 
-	pFile = fileOpen(szFileName, "r");
+	pFile = diskFileOpen(szFileName, "r");
 	if(!pFile) {
 		logWrite("ERR: File doesn't exist!\n");
 		logBlockEnd("paletteLoad()");
@@ -91,7 +91,7 @@ void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
 		pPalette, ubColorCnt, szPath
 	);
 
-	tFile *pFile = fileOpen(szPath, "wb");
+	tFile *pFile = diskFileOpen(szPath, "wb");
 	if(!pFile) {
 		logWrite("ERR: Can't write file!\n");
 		logBlockEnd("paletteSave()");

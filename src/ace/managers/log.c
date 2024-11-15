@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ace/macros.h>
 #include <ace/managers/system.h>
+#include <ace/utils/disk_file.h>
 #ifdef ACE_DEBUG
 
 // Globals
@@ -45,7 +46,7 @@ static UBYTE isWritingToFileAllowed(void) {
  */
 
 void _logOpen(const char *szFilePath) {
-	g_sLogManager.pFile = szFilePath ? fileOpen(szFilePath, "w") : 0;
+	g_sLogManager.pFile = szFilePath ? diskFileOpen(szFilePath, "w") : 0;
 	g_sLogManager.ubIndent = 0;
 	g_sLogManager.wasLastInline = 0;
 	g_sLogManager.isBlockEmpty = 1;

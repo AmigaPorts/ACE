@@ -13,6 +13,7 @@
 #include <ace/managers/log.h>
 #include <ace/managers/system.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/disk_file.h>
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 
@@ -2774,7 +2775,7 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	}
 
 	// Read header
-	tFile *pFileMod = fileOpen(szPath, "rb");
+	tFile *pFileMod = diskFileOpen(szPath, "rb");
 	fileRead(pFileMod, pMod->szSongName, sizeof(pMod->szSongName));
 	// TODO: read samples data field by field for portability
 	fileRead(pFileMod, pMod->pSampleHeaders, sizeof(pMod->pSampleHeaders));
@@ -2848,7 +2849,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod) {
 tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 	systemUse();
 	logBlockBegin("ptplayerSfxCreateFromFile(szPath: '%s', isFast: %hhu)", szPath, isFast);
-	tFile *pFileSfx = fileOpen(szPath, "rb");
+	tFile *pFileSfx = diskFileOpen(szPath, "rb");
 	tPtplayerSfx *pSfx = 0;
 	if(!pFileSfx) {
 		logWrite("ERR: File doesn't exist: '%s'\n", szPath);
@@ -3196,7 +3197,7 @@ tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath) {
 		goto fail;
 	}
 
-	tFile *pFileSamples = fileOpen(szPath, "rb");
+	tFile *pFileSamples = diskFileOpen(szPath, "rb");
 	fileRead(pFileSamples, pSamplePack->pData, pSamplePack->ulSize);
 	fileClose(pFileSamples);
 

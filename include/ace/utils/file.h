@@ -16,9 +16,28 @@ extern "C" {
 #define FILE_SEEK_SET SEEK_SET
 #define FILE_SEEK_END SEEK_END
 
-typedef FILE tFile;
+typedef void (*tCbFileClose)(void *pData);
+typedef ULONG (*tCbFileRead)(void *pData, void *pDest, ULONG ulSize);
+typedef ULONG (*tCbFileWrite)(void *pData, const void *pSrc, ULONG ulSize);
+typedef ULONG (*tCbFileSeek)(void *pData, ULONG ulPos, WORD wMode);
+typedef ULONG (*tCbFileGetPos)(void *pData);
+typedef UBYTE (*tCbFileIsEof)(void *pData);
+typedef void (*tCbFileFlush)(void *pData);
 
-tFile *fileOpen(const char *szPath, const char *szMode);
+typedef struct tFileCallbacks {
+	tCbFileClose cbFileClose;
+	tCbFileRead cbFileRead;
+	tCbFileWrite cbFileWrite;
+	tCbFileSeek cbFileSeek;
+	tCbFileGetPos cbFileGetPos;
+	tCbFileIsEof cbFileIsEof;
+	tCbFileFlush cbFileFlush;
+} tFileCallbacks;
+
+typedef struct tFile {
+	const tFileCallbacks *pCallbacks;
+	void *pData;
+} tFile;
 
 void fileClose(tFile *pFile);
 
@@ -32,14 +51,6 @@ ULONG fileGetPos(tFile *pFile);
 
 UBYTE fileIsEof(tFile *pFile);
 
-LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs);
-
-LONG filePrintf(tFile *pFile, const char *szFmt, ...);
-
-LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs);
-
-LONG fileScanf(tFile *pFile,const char *szFmt, ...);
-
 void fileFlush(tFile *pFile);
 
 /**
@@ -51,33 +62,6 @@ void fileFlush(tFile *pFile);
 LONG fileGetSize(const char *szPath);
 
 void fileWriteStr(tFile *pFile, const char *szLine);
-
-/**
- * @brief Check whether file at given path exists and is not a directory.
- *
- * @param szPath Path to file to be checked.
- * @return Success: 1, otherwise 0.
- *
- * @see dirExists()
- */
-UBYTE fileExists(const char *szPath);
-
-/**
- * @brief Deletes the selected file.
- *
- * @param szPath Path to file to be deleted.
- * @return 1 on success, otherwise 0, including if file does not exist.
- */
-UBYTE fileDelete(const char *szPath);
-
-/**
- * @brief Moves or renames selected file into another file.
- *
- * @param szSource Path to source file to be moved.
- * @param szDest Path to new file destination.
- * @return 1 on success, otherwise 0, including if source file doesn't exist or destination path is already occupied.
- */
-UBYTE fileMove(const char *szSource, const char *szDest);
 
 #ifdef __cplusplus
 }

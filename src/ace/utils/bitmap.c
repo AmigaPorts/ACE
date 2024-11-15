@@ -10,6 +10,7 @@
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/disk_file.h>
 
 /* Globals */
 
@@ -141,7 +142,7 @@ void bitmapLoadFromFile(
 	}
 
 	// Open source bitmap
-	tFile *pFile = fileOpen(szFilePath, "r");
+	tFile *pFile = diskFileOpen(szFilePath, "r");
 	if(!pFile) {
 		logWrite("ERR: File does not exist\n");
 		logBlockEnd("bitmapLoadFromFile()");
@@ -349,7 +350,7 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 
 	systemUse();
 	logBlockBegin("bitmapCreateFromFile(szFilePath: '%s')", szFilePath);
-	pFile = fileOpen(szFilePath, "r");
+	pFile = diskFileOpen(szFilePath, "r");
 	if(!pFile) {
 		fileClose(pFile);
 		logWrite("ERR: File does not exist\n");
@@ -457,7 +458,7 @@ void bitmapSave(const tBitMap *pBitMap, const char *szPath) {
 	systemUse();
 	logBlockBegin("bitmapSave(pBitMap: %p, szPath: '%s')", pBitMap, szPath);
 
-	tFile *pFile = fileOpen(szPath, "wb");
+	tFile *pFile = diskFileOpen(szPath, "wb");
 	if(!pFile) {
 		logWrite("ERR: Couldn't save bitmap at '%s'\n", szPath);
 		logBlockEnd("bitmapSave()");
@@ -502,7 +503,7 @@ void bitmapSaveBmp(
 
 	systemUse();
 	UWORD uwWidth = bitmapGetByteWidth(pBitMap) << 3;
-	tFile *pOut = fileOpen(szFilePath, "w");
+	tFile *pOut = diskFileOpen(szFilePath, "w");
 
 	// BMP header
 	fileWrite(pOut, "BM", 2);

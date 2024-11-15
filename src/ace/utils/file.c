@@ -37,23 +37,9 @@ LONG fileGetSize(const char *szPath) {
 	return lSize;
 }
 
-tFile *fileOpen(const char *szPath, const char *szMode) {
-	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
-	systemUse();
-	systemReleaseBlitterToOs();
-	FILE *pFile = fopen(szPath, szMode);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return pFile;
-}
-
 void fileClose(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	fclose(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
+	pFile->pCallbacks->cbFileClose(pFile->pData);
+	memFree(pFile, sizeof(*pFile));
 }
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
@@ -62,134 +48,29 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
 		logWrite("ERR: File read size = 0!\n");
 	}
 #endif
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulReadCount = fread(pDest, ulSize, 1, pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulReadCount;
+	return pFile->pCallbacks->cbFileRead(pFile->pData, pDest, ulSize);
 }
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
-	fflush(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulResult;
+	return pFile->pCallbacks->cbFileWrite(pFile->pData, pSrc, ulSize);
 }
 
 ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulResult = fseek(pFile, ulPos, wMode);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulResult;
+	return pFile->pCallbacks->cbFileSeek(pFile->pData, ulPos, wMode);
 }
 
 ULONG fileGetPos(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulResult = ftell(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulResult;
+	return pFile->pCallbacks->cbFileGetPos(pFile->pData);
 }
 
 UBYTE fileIsEof(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE ubResult = feof(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ubResult;
+	return pFile->pCallbacks->cbFileIsEof(pFile->pData);
 }
-
-#if !defined(BARTMAN_GCC) // Not implemented in mini_std for now, sorry!
-LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
-	fflush(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return lResult;
-}
-
-LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
-	va_list vaArgs;
-	va_start(vaArgs, szFmt);
-	LONG lResult = fileVaPrintf(pFile, szFmt, vaArgs);
-	va_end(vaArgs);
-	return lResult;
-}
-
-LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	LONG lResult = vfscanf(pFile, szFmt, vaArgs);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return lResult;
-}
-
-LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
-	va_list vaArgs;
-	va_start(vaArgs, szFmt);
-	LONG lResult = fileVaScanf(pFile, szFmt, vaArgs);
-	va_end(vaArgs);
-	return lResult;
-}
-#endif
 
 void fileFlush(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	fflush(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
+	pFile->pCallbacks->cbFileFlush(pFile->pData);
 }
 
 void fileWriteStr(tFile *pFile, const char *szLine) {
 	fileWrite(pFile, szLine, strlen(szLine));
-}
-
-UBYTE fileExists(const char *szPath) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE isExisting = 0;
-	tFile *pFile = fileOpen(szPath, "r");
-	if(pFile) {
-		isExisting = 1;
-		fileClose(pFile);
-	}
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return isExisting;
-}
-
-UBYTE fileDelete(const char *szFilePath) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE isSuccess = remove(szFilePath);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return isSuccess;
-}
-
-UBYTE fileMove(const char *szSource, const char *szDest) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE isSuccess = rename(szSource, szDest);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return isSuccess;
 }

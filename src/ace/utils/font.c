@@ -7,6 +7,7 @@
 #include <ace/managers/system.h>
 #include <ace/utils/font.h>
 #include <ace/utils/file.h>
+#include <ace/utils/disk_file.h>
 
 /* Globals */
 
@@ -24,7 +25,7 @@ tFont *fontCreate(const char *szFontName) {
 	tFont *pFont;
 	logBlockBegin("fontCreate(szFontName: '%s')", szFontName);
 
-	pFontFile = fileOpen(szFontName, "r");
+	pFontFile = diskFileOpen(szFontName, "r");
 	if (!pFontFile) {
 		logWrite("ERR: Couldn't open file\n");
 		logBlockEnd("fontCreate()");
