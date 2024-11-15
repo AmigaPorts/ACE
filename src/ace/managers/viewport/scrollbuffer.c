@@ -33,6 +33,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	logWrite("Addr: %p\n", pManager);
 
 	UBYTE isCameraCreated = 0;
+	tCopList *pCopList = 0;
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_VPORT, 0);
 	if(!pVPort) {
 		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified!\n");
@@ -66,7 +67,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	UBYTE isDblBuf = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
 
 	// Create copperlist entries
-	tCopList *pCopList = pVPort->pView->pCopList;
+	pCopList = pVPort->pView->pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
 		pManager->pStartBlock = copBlockCreate(
 			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 8,
