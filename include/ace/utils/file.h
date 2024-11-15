@@ -19,7 +19,7 @@ extern "C" {
 typedef void (*tCbFileClose)(void *pData);
 typedef ULONG (*tCbFileRead)(void *pData, void *pDest, ULONG ulSize);
 typedef ULONG (*tCbFileWrite)(void *pData, const void *pSrc, ULONG ulSize);
-typedef ULONG (*tCbFileSeek)(void *pData, ULONG ulPos, WORD wMode);
+typedef ULONG (*tCbFileSeek)(void *pData, LONG lPos, WORD wMode);
 typedef ULONG (*tCbFileGetPos)(void *pData);
 typedef UBYTE (*tCbFileIsEof)(void *pData);
 typedef void (*tCbFileFlush)(void *pData);
@@ -45,7 +45,7 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize);
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize);
 
-ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode);
+ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode);
 
 ULONG fileGetPos(tFile *pFile);
 

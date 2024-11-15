@@ -55,8 +55,8 @@ ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
 	return pFile->pCallbacks->cbFileWrite(pFile->pData, pSrc, ulSize);
 }
 
-ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
-	return pFile->pCallbacks->cbFileSeek(pFile->pData, ulPos, wMode);
+ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode) {
+	return pFile->pCallbacks->cbFileSeek(pFile->pData, lPos, wMode);
 }
 
 ULONG fileGetPos(tFile *pFile) {

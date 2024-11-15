@@ -9,7 +9,7 @@
 static void diskFileClose(void *pData);
 static ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize);
 static ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize);
-static ULONG diskFileSeek(void *pData, ULONG ulPos, WORD wMode);
+static ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode);
 static ULONG diskFileGetPos(void *pData);
 static UBYTE diskFileIsEof(void *pData);
 static void diskFileFlush(void *pData);
@@ -61,12 +61,12 @@ static ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize) {
 	return ulResult;
 }
 
-static ULONG diskFileSeek(void *pData, ULONG ulPos, WORD wMode) {
+static ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
 	systemReleaseBlitterToOs();
-	ULONG ulResult = fseek(pFile, ulPos, wMode);
+	ULONG ulResult = fseek(pFile, lPos, wMode);
 	systemGetBlitterFromOs();
 	systemUnuse();
 

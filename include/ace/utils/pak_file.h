@@ -19,6 +19,7 @@ typedef struct tPakFileEntry {
 
 typedef struct tPakFile {
 	tFile *pFile;
+	void *pPrevReadSubfile;
 	UWORD uwFileCount;
 	tPakFileEntry *pEntries;
 } tPakFile;
@@ -28,7 +29,6 @@ tPakFile *pakFileOpen(const char *szPath);
 void pakFileClose(tPakFile *pPakFile);
 
 tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath);
-
 
 #ifdef __cplusplus
 }
