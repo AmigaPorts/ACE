@@ -437,3 +437,26 @@ function(mergeMods)
 	)
 	target_sources(${args_TARGET} PUBLIC ${destinationsAbsolute})
 endfunction()
+
+function(packDirectory)
+	getToolPath(pak_tool TOOL_PAK_TOOL)
+	set(oneValArgs SOURCE_DIR DEST_FILE TARGET)
+	set(multiValArgs "")
+	set(cmdParams "")
+	cmake_parse_arguments(
+		args "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
+	)
+
+	toAbsolute(args_SOURCE_DIR)
+	toAbsolute(args_DEST_FILE)
+	FILE(GLOB_RECURSE sourceDirFiles "${args_SOURCE_DIR}/*")
+
+	MESSAGE(STATUS "Doing ${TOOL_PAK_TOOL} ${args_SOURCE_DIR} ${args_DEST_FILE}")
+	add_custom_command(
+		OUTPUT ${args_DEST_FILE}
+		COMMAND ${TOOL_PAK_TOOL} ${args_SOURCE_DIR} ${args_DEST_FILE}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${sourceDirFiles}
+	)
+	target_sources(${args_TARGET} PUBLIC ${args_DEST_FILE})
+endfunction()
