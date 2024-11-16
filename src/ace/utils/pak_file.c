@@ -8,6 +8,7 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/log.h>
 
+#if !defined(ACE_FILE_USE_ONLY_DISK)
 #define ADLER32_MODULO 65521
 
 typedef struct tPakFileSubfileData {
@@ -187,3 +188,5 @@ tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 	logBlockEnd("pakFileGetFile()");
 	return pFile;
 }
+
+#endif

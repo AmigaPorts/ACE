@@ -30,6 +30,45 @@ LONG fileGetSize(tFile *pFile) {
 	return lSize;
 }
 
+void fileWriteStr(tFile *pFile, const char *szLine) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	fileWrite(pFile, szLine, strlen(szLine));
+}
+
+#if defined(ACE_FILE_USE_ONLY_DISK)
+#include <ace/utils/disk_file_private.h>
+
+void fileClose(tFile *pFile) {
+	diskFileClose(pFile);
+}
+
+ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
+	return diskFileRead(pFile, pDest, ulSize);
+}
+
+ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	return diskFileWrite(pFile, pSrc, ulSize);
+}
+
+ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode) {
+	return diskFileSeek(pFile, lPos, wMode);
+}
+
+ULONG fileGetPos(tFile *pFile) {
+	return diskFileGetPos(pFile);
+}
+
+UBYTE fileIsEof(tFile *pFile) {
+	return diskFileIsEof(pFile);
+}
+
+void fileFlush(tFile *pFile) {
+	diskFileFlush(pFile);
+}
+
+#else
 void fileClose(tFile *pFile) {
 	logWrite("Closing file %p", pFile);
 	if(!pFile) {
@@ -84,10 +123,4 @@ void fileFlush(tFile *pFile) {
 	}
 	pFile->pCallbacks->cbFileFlush(pFile->pData);
 }
-
-void fileWriteStr(tFile *pFile, const char *szLine) {
-	if(!pFile) {
-		logWrite("ERR: Null file handle\n");
-	}
-	fileWrite(pFile, szLine, strlen(szLine));
-}
+#endif

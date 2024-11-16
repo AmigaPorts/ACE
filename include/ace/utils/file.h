@@ -16,6 +16,9 @@ extern "C" {
 #define FILE_SEEK_SET SEEK_SET
 #define FILE_SEEK_END SEEK_END
 
+#if defined(ACE_FILE_USE_ONLY_DISK)
+typedef void *tFile;
+#else
 typedef void (*tCbFileClose)(void *pData);
 typedef ULONG (*tCbFileRead)(void *pData, void *pDest, ULONG ulSize);
 typedef ULONG (*tCbFileWrite)(void *pData, const void *pSrc, ULONG ulSize);
@@ -38,6 +41,7 @@ typedef struct tFile {
 	const tFileCallbacks *pCallbacks;
 	void *pData;
 } tFile;
+#endif
 
 void fileClose(tFile *pFile);
 

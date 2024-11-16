@@ -9,7 +9,10 @@
 extern "C" {
 #endif
 
+
 #include "file.h"
+
+#if !defined(ACE_FILE_USE_ONLY_DISK)
 
 typedef struct tPakFileEntry {
 	ULONG ulOffs;
@@ -29,6 +32,8 @@ tPakFile *pakFileOpen(const char *szPath);
 void pakFileClose(tPakFile *pPakFile);
 
 tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath);
+
+#endif
 
 #ifdef __cplusplus
 }

@@ -6,15 +6,9 @@
 #include <ace/managers/system.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/log.h>
+#include <ace/utils/disk_file_private.h>
 
-static void diskFileClose(void *pData);
-static ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize);
-static ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize);
-static ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode);
-static ULONG diskFileGetPos(void *pData);
-static UBYTE diskFileIsEof(void *pData);
-static void diskFileFlush(void *pData);
-
+#if !defined(ACE_FILE_USE_ONLY_DISK)
 static const tFileCallbacks s_sDiskFileCallbacks = {
 	.cbFileClose = diskFileClose,
 	.cbFileRead = diskFileRead,
@@ -24,10 +18,11 @@ static const tFileCallbacks s_sDiskFileCallbacks = {
 	.cbFileIsEof = diskFileIsEof,
 	.cbFileFlush = diskFileFlush,
 };
+#endif
 
 //------------------------------------------------------------------ PRIVATE FNS
 
-static void diskFileClose(void *pData) {
+DISKFILE_PRIVATE void diskFileClose(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
@@ -37,7 +32,7 @@ static void diskFileClose(void *pData) {
 	systemUnuse();
 }
 
-static ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
+DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
@@ -49,7 +44,7 @@ static ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 	return ulReadCount;
 }
 
-static ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize) {
+DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
@@ -62,7 +57,7 @@ static ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize) {
 	return ulResult;
 }
 
-static ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
+DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
@@ -74,7 +69,7 @@ static ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	return ulResult;
 }
 
-static ULONG diskFileGetPos(void *pData) {
+DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
@@ -86,7 +81,7 @@ static ULONG diskFileGetPos(void *pData) {
 	return ulResult;
 }
 
-static UBYTE diskFileIsEof(void *pData) {
+DISKFILE_PRIVATE UBYTE diskFileIsEof(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
@@ -98,7 +93,7 @@ static UBYTE diskFileIsEof(void *pData) {
 	return ubResult;
 }
 
-static void diskFileFlush(void *pData) {
+DISKFILE_PRIVATE void diskFileFlush(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
@@ -121,10 +116,14 @@ tFile *diskFileOpen(const char *szPath, const char *szMode) {
 		logWrite("ERR: Can't open file\n");
 	}
 	else {
+#if defined(ACE_FILE_USE_ONLY_DISK)
+	pFile = (tFile*)pFileHandle;
+#else
 		pFile = memAllocFast(sizeof(*pFile));
 		pFile->pCallbacks = &s_sDiskFileCallbacks;
 		pFile->pData = pFileHandle;
 		logWrite("File handle: %p, data: %p\n", pFile, pFile->pData);
+#endif
 	}
 	systemGetBlitterFromOs();
 	systemUnuse();
