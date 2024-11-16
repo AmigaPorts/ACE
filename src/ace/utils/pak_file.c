@@ -71,7 +71,9 @@ static ULONG pakSubfileRead(void *pData, void *pDest, ULONG ulSize) {
 		);
 		pPak->pPrevReadSubfile = pSubfileData;
 	}
-	return fileRead(pPak->pFile, pDest, ulSize);
+	ULONG ulRead = fileRead(pPak->pFile, pDest, ulSize);
+	pSubfileData->ulPos += ulRead;
+	return ulRead;
 }
 
 static ULONG pakSubfileWrite(
@@ -93,12 +95,12 @@ static ULONG pakSubfileSeek(void *pData, LONG lPos, WORD wMode) {
 		pSubfileData->ulPos += lPos;
 	}
 	else if(wMode == FILE_SEEK_END) {
-		pSubfileData->ulPos = pPakEntry->ulOffs + lPos;
+		pSubfileData->ulPos = pPakEntry->ulSize + lPos;
 	}
 	pPak->pPrevReadSubfile = 0; // Invalidate cache
 
 	if(pSubfileData->ulPos > pPakEntry->ulSize) {
-		logWrite("ERR: Seek out of range for pakFile %hu\n", pSubfileData->uwFileIndex);
+		logWrite("ERR: Seek position %lu out of range %lu for pakFile %hu\n", pSubfileData->ulPos, pPakEntry->ulSize, pSubfileData->uwFileIndex);
 		pSubfileData->ulPos = pPakEntry->ulSize;
 		return 0;
 	}
@@ -151,7 +153,7 @@ tPakFile *pakFileOpen(const char *szPath) {
 		fileRead(pMainFile, &pPakFile->pEntries[i].ulOffs, sizeof(pPakFile->pEntries[i].ulOffs));
 		fileRead(pMainFile, &pPakFile->pEntries[i].ulSize, sizeof(pPakFile->pEntries[i].ulSize));
 	}
-	logWrite("Pak file: %p\n", pPakFile);
+	logWrite("Pak file: %p, file count: %hu\n", pPakFile, pPakFile->uwFileCount);
 
 	logBlockEnd("pakFileOpen()");
 	return pPakFile;
@@ -173,13 +175,20 @@ tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 		logBlockEnd("pakFileGetFile()");
 		return 0;
 	}
-	logWrite("Subfile index: %hu", uwFileIndex);
+	logWrite(
+		"Subfile index: %hu, offset: %lu, size: %lu",
+		uwFileIndex,
+		pPakFile->pEntries[uwFileIndex].ulOffs,
+		pPakFile->pEntries[uwFileIndex].ulSize
+	);
 
 	// Create tFile, fill subfileData
 	tPakFileSubfileData *pSubfileData = memAllocFast(sizeof(*pSubfileData));
 	pSubfileData->pPak = pPakFile;
 	pSubfileData->uwFileIndex = uwFileIndex;
 	pSubfileData->ulPos = 0;
+	// Prevent reading from same place if pSubfileData gets mem from recently closed file
+	pPakFile->pPrevReadSubfile = 0;
 
 	tFile *pFile = memAllocFast(sizeof(*pFile));
 	pFile->pCallbacks = &s_sPakSubfileCallbacks;
