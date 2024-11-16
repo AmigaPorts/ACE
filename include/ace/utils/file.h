@@ -56,10 +56,10 @@ void fileFlush(tFile *pFile);
 /**
  * @brief Returns file size of file, in bytes.
  *
- * @param szPath Path to file.
+ * @param pFile File handle.
  * @return On fail -1, otherwise file size in bytes.
  */
-LONG fileGetSize(const char *szPath);
+LONG fileGetSize(tFile *pFile);
 
 void fileWriteStr(tFile *pFile, const char *szLine);
 

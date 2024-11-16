@@ -5,6 +5,7 @@
 #include <ace/utils/disk_file.h>
 #include <ace/managers/system.h>
 #include <ace/managers/memory.h>
+#include <ace/managers/log.h>
 
 static void diskFileClose(void *pData);
 static ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize);
@@ -110,19 +111,25 @@ static void diskFileFlush(void *pData) {
 //------------------------------------------------------------------- PUBLIC FNS
 
 tFile *diskFileOpen(const char *szPath, const char *szMode) {
+	logBlockBegin("diskFileOpen(szPath: '%s', szMode: '%s')", szPath, szMode);
 	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
 	systemUse();
 	systemReleaseBlitterToOs();
 	tFile *pFile = 0;
 	FILE *pFileHandle = fopen(szPath, szMode);
-	if(pFileHandle != 0) {
+	if(pFileHandle == 0) {
+		logWrite("ERR: Can't open file\n");
+	}
+	else {
 		pFile = memAllocFast(sizeof(*pFile));
 		pFile->pCallbacks = &s_sDiskFileCallbacks;
 		pFile->pData = pFileHandle;
+		logWrite("File handle: %p, data: %p\n", pFile, pFile->pData);
 	}
 	systemGetBlitterFromOs();
 	systemUnuse();
 
+	logBlockEnd("diskFileOpen()");
 	return pFile;
 }
 

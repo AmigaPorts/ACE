@@ -85,8 +85,8 @@ void gameGsCreate(void) {
   s_pBmPaddleRightBg = bitmapCreate(PADDLE_BG_BUFFER_WIDTH, PADDLE_HEIGHT, 4, 0);
   s_pBmPaddleBallBg = bitmapCreate(BALL_BG_BUFFER_WIDTH, BALL_WIDTH, 4, 0);
 //-------------------------------------------------------------- NEW STUFF START
-  s_pBmObjects = bitmapCreateFromFile("data/pong_paddles.bm", 0);
-  s_pBmObjectsMask = bitmapCreateFromFile("data/pong_paddles_mask.bm", 1);
+  s_pBmObjects = bitmapCreateFromPath("data/pong_paddles.bm", 0);
+  s_pBmObjectsMask = bitmapCreateFromPath("data/pong_paddles_mask.bm", 1);
 //---------------------------------------------------------------- NEW STUFF END
   // ...old code...
 }

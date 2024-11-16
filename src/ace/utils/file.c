@@ -7,7 +7,7 @@
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
 
-LONG fileGetSize(const char *szPath) {
+LONG fileGetSize(tFile *pFile) {
 	// One could use std library to seek to end of file and use ftell,
 	// but SEEK_END is not guaranteed to work.
 	// http://www.cplusplus.com/reference/cstdio/fseek/
@@ -15,62 +15,79 @@ LONG fileGetSize(const char *szPath) {
 	// for doing Open() on same file after using it.
 	// So I ultimately do it using fseek.
 
-	systemUse();
-	systemReleaseBlitterToOs();
-	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
-	FILE *pFile = fopen(szPath, "r");
+	logBlockBegin("fileGetSize(pFile: %p)", pFile);
 	if(!pFile) {
-		logWrite("ERR: File doesn't exist");
+		logWrite("ERR: Null file handle\n");
 		logBlockEnd("fileGetSize()");
-		systemGetBlitterFromOs();
-		systemUnuse();
 		return -1;
 	}
-	fseek(pFile, 0, SEEK_END);
-	LONG lSize = ftell(pFile);
-	fclose(pFile);
+	LONG lOldPos = fileGetPos(pFile);
+	fileSeek(pFile, 0, SEEK_END);
+	LONG lSize = fileGetPos(pFile);
+	fileSeek(pFile, lOldPos, SEEK_SET);
 
 	logBlockEnd("fileGetSize()");
-	systemGetBlitterFromOs();
-	systemUnuse();
-
 	return lSize;
 }
 
 void fileClose(tFile *pFile) {
+	logWrite("Closing file %p", pFile);
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+		return;
+	}
 	pFile->pCallbacks->cbFileClose(pFile->pData);
 	memFree(pFile, sizeof(*pFile));
 }
 
 ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
-#ifdef ACE_DEBUG
-	if(!ulSize) {
-		logWrite("ERR: File read size = 0!\n");
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
 	}
-#endif
+	if(!ulSize) {
+		logWrite("ERR: File read size = 0\n");
+	}
 	return pFile->pCallbacks->cbFileRead(pFile->pData, pDest, ulSize);
 }
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
 	return pFile->pCallbacks->cbFileWrite(pFile->pData, pSrc, ulSize);
 }
 
 ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
 	return pFile->pCallbacks->cbFileSeek(pFile->pData, lPos, wMode);
 }
 
 ULONG fileGetPos(tFile *pFile) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
 	return pFile->pCallbacks->cbFileGetPos(pFile->pData);
 }
 
 UBYTE fileIsEof(tFile *pFile) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
 	return pFile->pCallbacks->cbFileIsEof(pFile->pData);
 }
 
 void fileFlush(tFile *pFile) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
 	pFile->pCallbacks->cbFileFlush(pFile->pData);
 }
 
 void fileWriteStr(tFile *pFile, const char *szLine) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
 	fileWrite(pFile, szLine, strlen(szLine));
 }

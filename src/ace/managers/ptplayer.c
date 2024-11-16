@@ -2759,14 +2759,18 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume) {
 	mt_mod->pSampleHeaders[ubSampleIndex].ubVolume = ubVolume;
 }
 
-tPtplayerMod *ptplayerModCreate(const char *szPath) {
-	logBlockBegin("ptplayerModCreate(szPath: '%s')", szPath);
+tPtplayerMod *ptplayerModCreateFromPath(const char *szPath) {
+	return ptplayerModCreateFromFd(diskFileOpen(szPath, "rb"));
+}
+
+tPtplayerMod *ptplayerModCreateFromFd(tFile *pFileMod) {
+	logBlockBegin("ptplayerModCreateFromFd(pFileMod: %p)", pFileMod);
 
 	tPtplayerMod *pMod = 0;
-	LONG lSize = fileGetSize(szPath);
-	if(lSize == -1) {
-		logWrite("ERR: File doesn't exist!\n");
-		return 0;
+	LONG lSize = fileGetSize(pFileMod);
+	if(lSize <= 0) {
+		logWrite("ERR: File doesn't exist\n");
+		goto fail;
 	}
 
 	pMod = memAllocFastClear(sizeof(*pMod));
@@ -2775,7 +2779,6 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	}
 
 	// Read header
-	tFile *pFileMod = diskFileOpen(szPath, "rb");
 	fileRead(pFileMod, pMod->szSongName, sizeof(pMod->szSongName));
 	// TODO: read samples data field by field for portability
 	fileRead(pFileMod, pMod->pSampleHeaders, sizeof(pMod->pSampleHeaders));
@@ -2798,7 +2801,7 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	pMod->ulPatternsSize = (ubPatternCount * MOD_PATTERN_LENGTH);
 	pMod->pPatterns = memAllocFast(pMod->ulPatternsSize);
 	if(!pMod->pPatterns) {
-		logWrite("ERR: Couldn't allocate memory for pattern data!");
+		logWrite("ERR: Couldn't allocate memory for pattern data");
 		goto fail;
 	}
 	fileRead(pFileMod, pMod->pPatterns, pMod->ulPatternsSize);
@@ -2808,28 +2811,31 @@ tPtplayerMod *ptplayerModCreate(const char *szPath) {
 	if(pMod->ulSamplesSize) {
 		pMod->pSamples = memAllocChip(pMod->ulSamplesSize);
 		if(!pMod->pSamples) {
-			logWrite("ERR: Couldn't allocate memory for sample data!");
+			logWrite("ERR: Couldn't allocate memory for sample data");
 			goto fail;
 		}
 		fileRead(pFileMod, pMod->pSamples, pMod->ulSamplesSize);
 	}
 	else {
-		logWrite("MOD has no samples - be sure to pass sample pack to ptplayer!\n");
+		logWrite("MOD has no samples - be sure to pass sample pack to ptplayer\n");
 	}
 
 	fileClose(pFileMod);
-	logBlockEnd("ptplayerModCreate()");
+	logBlockEnd("ptplayerModCreateFromFd()");
 	return pMod;
 fail:
-	if(pMod->pPatterns) {
-		memFree(pMod->pPatterns, pMod->ulPatternsSize);
-	}
-	if(pMod->pSamples) {
-		memFree(pMod->pSamples, pMod->ulSamplesSize);
-	}
 	if(pMod) {
+		if(pMod->pPatterns) {
+			memFree(pMod->pPatterns, pMod->ulPatternsSize);
+		}
+		if(pMod->pSamples) {
+			memFree(pMod->pSamples, pMod->ulSamplesSize);
+		}
 		memFree(pMod, sizeof(*pMod));
 	}
+
+	fileClose(pFileMod);
+	logBlockEnd("ptplayerModCreateFromFd()");
 	return 0;
 }
 
@@ -2846,13 +2852,17 @@ void ptplayerModDestroy(tPtplayerMod *pMod) {
 
 //-------------------------------------------------------------------------- SFX
 
-tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
+tPtplayerSfx *ptplayerSfxCreateFromPath(const char *szPath, UBYTE isFast) {
+	return ptplayerSfxCreateFromFd(diskFileOpen(szPath, "rb"), isFast);
+}
+
+tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
+{
 	systemUse();
-	logBlockBegin("ptplayerSfxCreateFromFile(szPath: '%s', isFast: %hhu)", szPath, isFast);
-	tFile *pFileSfx = diskFileOpen(szPath, "rb");
+	logBlockBegin("ptplayerSfxCreateFromFd(pFileSfx: %p, isFast: %hhu)", pFileSfx, isFast);
 	tPtplayerSfx *pSfx = 0;
 	if(!pFileSfx) {
-		logWrite("ERR: File doesn't exist: '%s'\n", szPath);
+		logWrite("ERR: Null file handle\n");
 		goto fail;
 	}
 
@@ -2882,7 +2892,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 		// be done on sfx converter side. If your samples are humming after playback,
 		// fix your custom conversion tool or use latest ACE tools!
 		if(pSfx->pData[0] != 0) {
-			logWrite("WARN: SFX's first word isn't zeroed-out - won't work properly with ptplayer!\n");
+			logWrite("WARN: SFX's first word isn't zeroed-out - won't work properly with ptplayer\n");
 		}
 	}
 	else {
@@ -2891,7 +2901,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast) {
 	}
 
 	fileClose(pFileSfx);
-	logBlockEnd("ptplayerSfxCreateFromFile()");
+	logBlockEnd("ptplayerSfxCreateFromFd()");
 	systemUnuse();
 	return pSfx;
 
@@ -2900,7 +2910,7 @@ fail:
 		fileClose(pFileSfx);
 	}
 	ptplayerSfxDestroy(pSfx);
-	logBlockEnd("ptplayerSfxCreateFromFile()");
+	logBlockEnd("ptplayerSfxCreateFromFd()");
 	systemUnuse();
 	return 0;
 }
@@ -3178,12 +3188,17 @@ UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
 	return uwFrameCount;
 }
 
-tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath) {
+tPtplayerSamplePack *ptplayerSampleDataCreateFromPath(const char *szPath) {
+	return ptplayerSampleDataCreateFromFd(diskFileOpen(szPath, "rb"));
+}
+
+tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)
+{
 	// TODO: add some kind of header for the file, read each sample separately
-	logBlockBegin("ptplayerSampleDataCreate(szPath: '%s')", szPath);
+	logBlockBegin("ptplayerSampleDataCreateFromFd(pFileSamples: %p)", pFileSamples);
 	systemUse();
 	tPtplayerSamplePack *pSamplePack = 0;
-	LONG lSize = fileGetSize(szPath);
+	LONG lSize = fileGetSize(pFileSamples);
 	if(lSize <= 0) {
 		logWrite("ERR: Invalid file size. File exists?\n");
 		goto fail;
@@ -3197,14 +3212,16 @@ tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath) {
 		goto fail;
 	}
 
-	tFile *pFileSamples = diskFileOpen(szPath, "rb");
 	fileRead(pFileSamples, pSamplePack->pData, pSamplePack->ulSize);
 	fileClose(pFileSamples);
 
 	systemUnuse();
-	logBlockEnd("ptplayerSampleDataCreate()");
+	logBlockEnd("ptplayerSampleDataCreateFromFd()");
 	return pSamplePack;
 fail:
+	if(pFileSamples) {
+		fileClose(pFileSamples);
+	}
 	if(pSamplePack) {
 		if(pSamplePack->pData) {
 			memFree(pSamplePack->pData, pSamplePack->ulSize);
@@ -3213,7 +3230,7 @@ fail:
 	}
 
 	systemUnuse();
-	logBlockEnd("ptplayerSampleDataCreate()");
+	logBlockEnd("ptplayerSampleDataCreateFromFd()");
 	return 0;
 }
 

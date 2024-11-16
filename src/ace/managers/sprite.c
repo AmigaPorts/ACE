@@ -155,7 +155,7 @@ void spriteRequestMetadataUpdate(tSprite *pSprite) {
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
 		logWrite(
-			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP!\n",
+			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP\n",
 			pSprite->ubChannelIndex, pBitmap
 		);
 		return;

@@ -18,11 +18,23 @@ extern "C" {
 
 /**
  * @brief Loads palette from supplied .plt file to given address.
- * @param szFileName Palette source path.
+ * @param szPath Palette source path.
  * @param pPalette Palette destination pointer.
  * @param ubMaxLength Maximum number of colors in palette.
+ *
+ * @see paletteLoadFromFd()
  */
-void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
+void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UBYTE ubMaxLength);
+
+/**
+ * @brief Loads palette from supplied .plt file to given address.
+ * @param pFile Handle to the palette file. Will be closed on function return.
+ * @param pPalette Palette destination pointer.
+ * @param ubMaxLength Maximum number of colors in palette.
+ *
+ * @see paletteLoadFromPath()
+ */
+void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength);
 
 /**
  * @brief Saves given palette into .plt file.
@@ -31,14 +43,6 @@ void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength);
  * @param szPath Destination path.
  */
 void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
-
-/**
- * @brief Loads palette from supplied .plt stored in memory to given address.
- * @param pData Palette source pointer.
- * @param pPalette Palette destination pointer.
- * @param ubMaxLength Maximum number of colors in palette.
- */
-void paletteLoadFromMem(const UBYTE *pData , UWORD *pPalette, UBYTE ubMaxLength);
 
 /**
  * @brief Dims palette to given brightness level.

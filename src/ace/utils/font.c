@@ -6,7 +6,6 @@
 #include <ace/macros.h>
 #include <ace/managers/system.h>
 #include <ace/utils/font.h>
-#include <ace/utils/file.h>
 #include <ace/utils/disk_file.h>
 
 /* Globals */
@@ -20,23 +19,25 @@ UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 	return pFont->pCharOffsets[ubIdx + 1] - pFont->pCharOffsets[ubIdx];
 }
 
-tFont *fontCreate(const char *szFontName) {
-	tFile *pFontFile;
-	tFont *pFont;
-	logBlockBegin("fontCreate(szFontName: '%s')", szFontName);
+tFont *fontCreateFromPath(const char *szPath) {
+	return fontCreateFromFd(diskFileOpen(szPath, "rb"));
+}
 
-	pFontFile = diskFileOpen(szFontName, "r");
+tFont *fontCreateFromFd(tFile *pFontFile) {
+
+	logBlockBegin("fontCreateFromFd(pFontFile: %p)", pFontFile);
+
 	if (!pFontFile) {
-		logWrite("ERR: Couldn't open file\n");
-		logBlockEnd("fontCreate()");
+		logWrite("ERR: Null file handle\n");
+		logBlockEnd("fontCreateFromFd()");
 		return 0;
 	}
 
-	pFont = (tFont *) memAllocFast(sizeof(tFont));
+	tFont *pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont) {
 		fileClose(pFontFile);
 		logWrite("ERR: Couldn't alloc mem\n");
-		logBlockEnd("fontCreate()");
+		logBlockEnd("fontCreateFromFd()");
 		return 0;
 	}
 
@@ -59,12 +60,12 @@ tFont *fontCreate(const char *szFontName) {
 	logWrite("ERR: Unimplemented\n");
 	memFree(pFont, sizeof(tFont));
 	fileClose(pFontFile);
-	logBlockEnd("fontCreate()");
+	logBlockEnd("fontCreateFromFd()");
 	return 0;
 #endif // AMIGA
 
 	fileClose(pFontFile);
-	logBlockEnd("fontCreate()");
+	logBlockEnd("fontCreateFromFd()");
 	return pFont;
 }
 
@@ -289,7 +290,7 @@ void fontDrawTextBitMap(
 #if defined(ACE_DEBUG)
 	if(!pTextBitMap->uwActualWidth) {
 		// you can usually figure that out and skip this call before even doing fontDrawStr() or fontFillTextBitMap()
-		logWrite("ERR: pTextBitMap %p has text of zero width - do the check beforehand!\n", pTextBitMap);
+		logWrite("ERR: pTextBitMap %p has text of zero width - do the check beforehand\n", pTextBitMap);
 		return;
 	}
 #endif
@@ -360,7 +361,7 @@ void fontDrawStr(
 	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 ) {
 	if(!pTextBitMap) {
-		logWrite("ERR: pTextBitMap must be non-null!\n");
+		logWrite("ERR: pTextBitMap must be non-null\n");
 	}
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);

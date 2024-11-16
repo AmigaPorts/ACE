@@ -66,7 +66,7 @@ static ULONG pakSubfileRead(void *pData, void *pDest, ULONG ulSize) {
 		fileSeek(
 			pPak->pFile,
 			pPak->pEntries[pSubfileData->uwFileIndex].ulOffs + pSubfileData->ulPos,
-			SEEK_SET
+			FILE_SEEK_SET
 		);
 		pPak->pPrevReadSubfile = pSubfileData;
 	}
@@ -85,13 +85,13 @@ static ULONG pakSubfileSeek(void *pData, LONG lPos, WORD wMode) {
 	tPakFile *pPak = pSubfileData->pPak;
 	const tPakFileEntry *pPakEntry = &pPak->pEntries[pSubfileData->uwFileIndex];
 
-	if(wMode == SEEK_SET) {
+	if(wMode == FILE_SEEK_SET) {
 		pSubfileData->ulPos = lPos;
 	}
-	else if(wMode == SEEK_CUR) {
+	else if(wMode == FILE_SEEK_CURRENT) {
 		pSubfileData->ulPos += lPos;
 	}
-	else if(wMode == SEEK_END) {
+	else if(wMode == FILE_SEEK_END) {
 		pSubfileData->ulPos = pPakEntry->ulOffs + lPos;
 	}
 	pPak->pPrevReadSubfile = 0; // Invalidate cache
@@ -133,8 +133,10 @@ static UWORD pakFileGetFileIndex(const tPakFile *pPakFile, const char *szPath) {
 //------------------------------------------------------------------- PUBLIC FNS
 
 tPakFile *pakFileOpen(const char *szPath) {
+	logBlockBegin("pakFileOpen(szPath: '%s')", szPath);
 	tFile *pMainFile = diskFileOpen(szPath, "rb");
 	if(!pMainFile) {
+		logBlockEnd("pakFileOpen()");
 		return 0;
 	}
 
@@ -148,22 +150,29 @@ tPakFile *pakFileOpen(const char *szPath) {
 		fileRead(pMainFile, &pPakFile->pEntries[i].ulOffs, sizeof(pPakFile->pEntries[i].ulOffs));
 		fileRead(pMainFile, &pPakFile->pEntries[i].ulSize, sizeof(pPakFile->pEntries[i].ulSize));
 	}
+	logWrite("Pak file: %p\n", pPakFile);
 
+	logBlockEnd("pakFileOpen()");
 	return pPakFile;
 }
 
 void pakFileClose(tPakFile *pPakFile) {
+	logBlockBegin("pakFileClose(pPakFile: %p)", pPakFile);
 	fileClose(pPakFile->pFile);
 	memFree(pPakFile->pEntries, sizeof(pPakFile->pEntries[0]) * pPakFile->uwFileCount);
 	memFree(pPakFile, sizeof(*pPakFile));
+	logBlockEnd("pakFileClose()");
 }
 
 tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
+	logBlockBegin("pakFileGetFile(pPakFile: %p, szInternalPath: '%s')", pPakFile, szInternalPath);
 	UWORD uwFileIndex = pakFileGetFileIndex(pPakFile, szInternalPath);
 	if(uwFileIndex == UWORD_MAX) {
-		logWrite("ERR: Can't file subfile %s in pakfile %p\n", szInternalPath, pPakFile);
+		logWrite("ERR: Can't find subfile in pakfile\n");
+		logBlockEnd("pakFileGetFile()");
 		return 0;
 	}
+	logWrite("Subfile index: %hu", uwFileIndex);
 
 	// Create tFile, fill subfileData
 	tPakFileSubfileData *pSubfileData = memAllocFast(sizeof(*pSubfileData));
@@ -175,5 +184,6 @@ tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 	pFile->pCallbacks = &s_sPakSubfileCallbacks;
 	pFile->pData = pSubfileData;
 
+	logBlockEnd("pakFileGetFile()");
 	return pFile;
 }

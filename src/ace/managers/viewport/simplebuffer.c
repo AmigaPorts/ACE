@@ -129,7 +129,7 @@ static void simpleBufferInitializeCopperList(
 static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) {
 #if defined(ACE_DEBUG)
 	if(pManager->pBack && pManager->pBack->Depth != pBack->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
+		logWrite("ERR: buffer bitmaps differ in BPP\n");
 		return;
 	}
 #endif
@@ -165,7 +165,7 @@ void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 	);
 #if defined(ACE_DEBUG)
 	if(pManager->pFront && pManager->pFront->Depth != pFront->Depth) {
-		logWrite("ERR: buffer bitmaps differ in BPP!\n");
+		logWrite("ERR: buffer bitmaps differ in BPP\n");
 		return;
 	}
 #endif
@@ -194,7 +194,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_VPORT, 0);
 	if(!pVPort) {
-		logWrite("ERR: No parent viewport (TAG_SIMPLEBUFFER_VPORT) specified!\n");
+		logWrite("ERR: No parent viewport (TAG_SIMPLEBUFFER_VPORT) specified\n");
 		goto fail;
 	}
 	pManager->sCommon.pVPort = pVPort;
@@ -215,7 +215,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 		uwBoundWidth, uwBoundHeight, pVPort->ubBpp, ubBitmapFlags
 	);
 	if(!pFront) {
-		logWrite("ERR: Can't alloc buffer bitmap!\n");
+		logWrite("ERR: Can't alloc buffer bitmap\n");
 		goto fail;
 	}
 
@@ -225,7 +225,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 			uwBoundWidth, uwBoundHeight, pVPort->ubBpp, ubBitmapFlags
 		);
 		if(!pBack) {
-			logWrite("ERR: Can't alloc buffer bitmap!\n");
+			logWrite("ERR: Can't alloc buffer bitmap\n");
 			goto fail;
 		}
 	}
@@ -259,7 +259,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 		);
 		if(pManager->uwCopperOffset == uwInvalidCopOffs) {
 			logWrite(
-				"ERR: Copperlist offset (TAG_SIMPLEBUFFER_COPLIST_OFFSET) not specified!\n"
+				"ERR: Copperlist offset (TAG_SIMPLEBUFFER_COPLIST_OFFSET) not specified\n"
 			);
 			goto fail;
 		}

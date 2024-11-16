@@ -197,7 +197,7 @@ void bobSetWidth(tBob *pBob, UWORD uwWidth)
 #if defined(ACE_DEBUG)
 	if(pBob->isUndrawRequired && uwWidth > pBob->_uwOriginalWidth) {
 		// NOTE: that could be valid behavior when other bobs get smaller in the same time
-		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
+		logWrite("WARN: Bob bigger than initial - bg buffer might be too small\n");
 		// Change original width so that this warning gets issued only once
 		pBob->_uwOriginalWidth = uwWidth;
 	}
@@ -213,7 +213,7 @@ void bobSetHeight(tBob *pBob, UWORD uwHeight)
 #if defined(ACE_DEBUG)
 	if(pBob->isUndrawRequired && uwHeight > pBob->_uwOriginalHeight) {
 		// NOTE: that could be valid behavior when other bobs get smaller in the same time
-		logWrite("WARN: Bob bigger than initial - bg buffer might be too small!\n");
+		logWrite("WARN: Bob bigger than initial - bg buffer might be too small\n");
 		// Change original height so that this warning gets issued only once
 		pBob->_uwOriginalHeight = uwHeight;
 	}
@@ -369,7 +369,7 @@ static void bobCheckGood(const tBitMap *pBack) {
 			s_pQueues[s_ubBufferCurr].pDst, s_ubBufferCurr, s_pQueues[!s_ubBufferCurr].pDst, pBack
 		);
 		if(s_pQueues[!s_ubBufferCurr].pDst == pBack) {
-			logWrite("ERR: Wrong bob buffer as curr!\n");
+			logWrite("ERR: Wrong bob buffer as curr\n");
 			s_ubBufferCurr = !s_ubBufferCurr;
 		}
 #endif

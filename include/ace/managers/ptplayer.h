@@ -82,7 +82,7 @@ void ptplayerProcess(void);
  * @brief Sets PAL/NTSC mode. Relevant in CIA-based playback mode.
  *
  * Note that each tSfx stores period calculated for mode which was set during
- * call to ptplayerSfxCreateFromFile(). You may need to correct their values
+ * call to ptplayerSfxCreateFromFd(). You may need to correct their values
  * manually.
  *
  * @param isPal In CIA mode, Set to 1 on PAL configs, zero on NTSC.
@@ -96,7 +96,16 @@ void ptplayerSetPal(UBYTE isPal);
  * @param szPath Path to .mod file.
  * @return Pointer to new MOD structure, initialized with file contents.
  */
-tPtplayerMod *ptplayerModCreate(const char *szPath);
+tPtplayerMod *ptplayerModCreateFromPath(const char *szPath);
+
+/**
+ * @brief Loads new MOD from file.
+ * @note This function may use OS.
+ *
+ * @param pFileMod Handle to the .mod file. Will be closed on function return.
+ * @return Pointer to new MOD structure, initialized with file contents.
+ */
+tPtplayerMod *ptplayerModCreateFromFd(tFile *pFileMod);
 
 /**
  * @brief Frees given MOD from memory.
@@ -217,7 +226,24 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume);
  * @see ptplayerSfxDestroy()
  * @see ptplayerSfxPlay()
  */
-tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast);
+tPtplayerSfx *ptplayerSfxCreateFromPath(const char *szPath, UBYTE isFast);
+
+/**
+ * @brief Loads SFX from given file.
+ * Note that this function sets SFX period based on currently set PAL/NTSC video
+ * mode. If you plan to change it after loading SFX, be sure to adjust
+ * the period value for new mode.
+ * @note This function may use OS.
+ *
+ * @param pFileSfx Handle to the .sfx file. Will be closed on function return.
+ * @param isFast Set to 1 if you wish to load SFX to FAST memory.
+ * Useful for software-based audio-mixing, unusable with ptplayer.
+ * @return Newly loaded SFX.
+ *
+ * @see ptplayerSfxDestroy()
+ * @see ptplayerSfxPlay()
+ */
+tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast);
 
 /**
  * @brief Destroys given SFX, freeing its resources to OS.
@@ -225,7 +251,7 @@ tPtplayerSfx *ptplayerSfxCreateFromFile(const char *szPath, UBYTE isFast);
  *
  * @param pSfx SFX to be destroyed.
  *
- * @see ptplayerSfxCreateFromFile()
+ * @see ptplayerSfxCreateFromFd()
  */
 void ptplayerSfxDestroy(tPtplayerSfx *pSfx);
 
@@ -299,7 +325,16 @@ UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx);
  * @param szPath Path to sample pack to be loaded.
  * @return Pointer to newly allocated sample pack, zero on failure.
  */
-tPtplayerSamplePack *ptplayerSampleDataCreate(const char *szPath);
+tPtplayerSamplePack *ptplayerSampleDataCreateFromPath(const char *szPath);
+
+/**
+ * @brief Loads MOD sample pack from file at given path.
+ * @note This function may use OS.
+ *
+ * @param pFileSamples Handle to the sample pack file to be loaded. Will be closed on function return.
+ * @return Pointer to newly allocated sample pack, zero on failure.
+ */
+tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples);
 
 /**
  * @brief Destroys given sample pack, freeing its resources to OS.
