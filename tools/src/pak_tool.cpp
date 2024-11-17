@@ -13,6 +13,7 @@ struct tPakCompressEntry {
 	std::string ShortPath;
 	std::string Path;
 	std::uint32_t ulSize;
+	std::uint32_t ulChecksum;
 };
 
 static std::uint32_t adler32Buffer(const std::uint8_t *pData, std::uint32_t ulDataSize) {
@@ -62,16 +63,31 @@ int main(int lArgCount, const char *pArgs[])
 
 
 	auto AbsoluteBasePath = std::filesystem::absolute(InPath);
+	bool isCollided = false;
   for (std::filesystem::recursive_directory_iterator i(InPath), end; i != end; ++i) {
     if (!is_directory(i->path())) {
 			tPakCompressEntry Entry;
 			Entry.ShortPath = std::filesystem::relative(i->path(), AbsoluteBasePath).generic_string();
 			Entry.Path = i->path().generic_string();
 			Entry.ulSize = std::uint32_t(std::filesystem::file_size(Entry.Path));
+			Entry.ulChecksum = adler32Buffer(
+				reinterpret_cast<const std::uint8_t*>(Entry.ShortPath.c_str()),
+				std::uint32_t(Entry.ShortPath.size())
+			);
+			for(auto OtherIndex = 0; OtherIndex < vEntries.size(); ++OtherIndex) {
+				if(Entry.ulChecksum == vEntries[OtherIndex].ulChecksum) {
+					nLog::error("Entry {} checksum collision with entry {}", vEntries.size(), OtherIndex);
+					isCollided = true;
+				}
+			}
 			vEntries.push_back(Entry);
 		}
 	}
 	fmt::print("Discovered {} files\n", vEntries.size());
+	if(isCollided) {
+		nLog::error("Aborting due to checksum collisions! Report an issue and/or change your file names a bit.");
+		return EXIT_FAILURE;
+	}
 
 	std::uint16_t uwFileCount = std::uint16_t(vEntries.size());
 	std::uint16_t uwFileCountBe = nEndian::toBig16(uwFileCount);
@@ -79,12 +95,12 @@ int main(int lArgCount, const char *pArgs[])
 	std::uint32_t ulNextFileOffs = sizeof(uwFileCount) + (uwFileCount * 3 * sizeof(std::uint32_t));
 	std::uint16_t i = 0;
 	for(const auto &Entry: vEntries) {
-		fmt::print("Adding file {:4d}: '{}', offset {}, size: {}...\n", i++, Entry.ShortPath, ulNextFileOffs, Entry.ulSize);
-
-		std::uint32_t ulChecksumBe = nEndian::toBig32(adler32Buffer(
-			reinterpret_cast<const std::uint8_t*>(Entry.ShortPath.c_str()),
-			std::uint32_t(Entry.ShortPath.size())
-		));
+		fmt::print(
+			"Adding file {:4d}: '{}', offset: {}, size: {}, checksum: {:08X}...\n",
+			i++, Entry.ShortPath, ulNextFileOffs, Entry.ulSize,
+			Entry.ulChecksum
+		);
+		std::uint32_t ulChecksumBe = nEndian::toBig32(Entry.ulChecksum);
 		std::uint32_t ulOffsBe = nEndian::toBig32(ulNextFileOffs);
 		std::uint32_t ulSizeBe = nEndian::toBig32(Entry.ulSize);
 
