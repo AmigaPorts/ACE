@@ -5,6 +5,7 @@
 #include <map>
 #include <fstream>
 #include <filesystem>
+#include <vector>
 #include "common/logging.h"
 #include "common/fs.h"
 #include "common/endian.h"
