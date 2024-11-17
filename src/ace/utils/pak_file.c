@@ -176,7 +176,7 @@ tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 		return 0;
 	}
 	logWrite(
-		"Subfile index: %hu, offset: %lu, size: %lu",
+		"Subfile index: %hu, offset: %lu, size: %lu\n",
 		uwFileIndex,
 		pPakFile->pEntries[uwFileIndex].ulOffs,
 		pPakFile->pEntries[uwFileIndex].ulSize

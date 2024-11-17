@@ -15,6 +15,7 @@ extern "C" {
 
 #define PTPLAYER_VOLUME_MAX 64
 #define PTPLAYER_SFX_CHANNEL_ANY 0xFF
+#define PTPLAYER_MOD_SAMPLE_COUNT 31
 
 #include <ace/types.h>
 #include <ace/utils/bitmap.h>
@@ -42,7 +43,7 @@ typedef struct _tPtplayerSampleHeader {
 
 typedef struct _tPtplayerMod {
 	char szSongName[20];
-	tPtplayerSampleHeader pSampleHeaders[31];
+	tPtplayerSampleHeader pSampleHeaders[PTPLAYER_MOD_SAMPLE_COUNT];
 	UBYTE ubArrangementLength; ///< Length of arrangement, not to be confused with
 	                           /// pattern count in file. Max 128.
 	UBYTE ubSongEndPos;
@@ -53,9 +54,9 @@ typedef struct _tPtplayerMod {
 	// MOD pattern/sample data follows
 
 	UBYTE *pPatterns;
+	UWORD *pSampleStarts[PTPLAYER_MOD_SAMPLE_COUNT];
 	ULONG ulPatternsSize;
-	UWORD *pSamples;
-	ULONG ulSamplesSize;
+	UBYTE isOwningSamples;
 } tPtplayerMod;
 
 typedef struct tPtplayerSamplePack {
@@ -122,7 +123,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod);
  * Master volume is at 64 (maximum).
  *
  * @param pMod Pointer to MOD struct.
- * @param pSamples When set to 0, the samples are assumed to be stored inside
+ * @param pExternalSamples When set to 0, the samples are assumed to be stored inside
  * the MOD, after the patterns. Otherwise, uses samples from given samplepack.
  * @param uwInitialSongPos
  *
@@ -130,7 +131,8 @@ void ptplayerModDestroy(tPtplayerMod *pMod);
  * @see ptplayerStop()
  */
 void ptplayerLoadMod(
-	tPtplayerMod *pMod, tPtplayerSamplePack *pSamples, UWORD uwInitialSongPos
+	tPtplayerMod *pMod, tPtplayerSamplePack *pExternalSamples,
+	UWORD uwInitialSongPos
 );
 
 /**

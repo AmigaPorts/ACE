@@ -70,7 +70,7 @@ void fileFlush(tFile *pFile) {
 
 #else
 void fileClose(tFile *pFile) {
-	logWrite("Closing file %p", pFile);
+	logWrite("Closing file %p\n", pFile);
 	if(!pFile) {
 		logWrite("ERR: Null file handle\n");
 		return;
