@@ -5,6 +5,8 @@
 #ifndef _ACE_MANAGERS_BOB_H_
 #define _ACE_MANAGERS_BOB_H_
 
+// #define ACE_BOB_PRISTINE_BUFFER
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -71,7 +73,12 @@ typedef struct tBob {
 #endif
 	UWORD _uwBlitSize;
 	WORD _wModuloUndrawSave;
-	UBYTE *_pOldDrawOffs[2];
+	UWORD _uwInterleavedHeight;
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	ULONG _pSaveOffsets[2];
+#else
+	UBYTE *_pBufferDrawPtrs[2];
+#endif
 } tBob;
 
 /**
@@ -91,7 +98,13 @@ typedef struct tBob {
  * @see bobReallocateBgBuffers()
  * @see bobManagerDestroy()
  */
-void bobManagerCreate(tBitMap *pFront, tBitMap *pBack, UWORD uwAvailHeight);
+void bobManagerCreate(
+	tBitMap *pFront, tBitMap *pBack,
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	tBitMap *pPristineBuffer,
+#endif
+	UWORD uwAvailHeight
+);
 
 /**
  * @brief Destroys bob manager, releasing all its resources.
