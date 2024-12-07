@@ -29,12 +29,6 @@ extern "C" {
 #include <ace/managers/copper.h>
 #include <ace/managers/viewport/camera.h>
 
-// #define ACE_SCROLLBUFFER_ENABLE_SCROLL_X
-// #define ACE_SCROLLBUFFER_ENABLE_SCROLL_Y
-#define ACE_SCROLLBUFFER_X_MARGIN_SIZE 1
-#define ACE_SCROLLBUFFER_Y_MARGIN_SIZE 1
-#define ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT
-
 #if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
 #define SCROLLBUFFER_HEIGHT_MODULO(x, h) ((x) & ((h) - 1))
 #else
