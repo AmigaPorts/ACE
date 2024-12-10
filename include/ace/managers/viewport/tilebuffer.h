@@ -102,20 +102,20 @@ typedef struct tMarginState {
 } tMarginState;
 
 typedef struct tRedrawState {
-#if defined(SCROLLBUFFER_ENABLE_SCROLL_X)
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
 	tMarginState sMarginL; ///< Data for left margin
 	tMarginState sMarginR; ///< Ditto, right
 #endif
-#if defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
 	tMarginState sMarginU; ///< Ditto, up
 	tMarginState sMarginD; ///< Ditto, down
 #endif
 	// Vars needed in Process, reset in Create
-#if defined(SCROLLBUFFER_ENABLE_SCROLL_X)
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
 	tMarginState *pMarginX;         ///< Idx of X margin to be redrawn
 	tMarginState *pMarginOppositeX; ///< Opposite margin of pMarginX
 #endif
-#if defined(SCROLLBUFFER_ENABLE_SCROLL_Y)
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
 	tMarginState *pMarginY;         ///< Idx of Y margin to be redrawn
 	tMarginState *pMarginOppositeY; ///< Opposite margin of pMarginY
 #endif

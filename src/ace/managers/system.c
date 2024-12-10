@@ -823,6 +823,7 @@ UBYTE systemIsUsed(void) {
 void systemGetBlitterFromOs(void) {
 	--s_wSystemBlitterUses;
 	if(!s_wSystemBlitterUses) {
+		// Make OS finish its pending operations before it loses blitter!
 		systemFlushIo();
 		OwnBlitter();
 		WaitBlit();
