@@ -6,6 +6,7 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/viewport/scrollbuffer.h> // for SCROLLBUFFER_HEIGHT_MODULO, TODO: get rid of it somehow
 #include <ace/utils/custom.h>
 
 #if !defined(ACE_NO_BOB_WRAP_Y)
@@ -251,7 +252,7 @@ UBYTE bobProcessNext(void) {
 		ULONG ulSrcOffs = (
 			pQueue->pDst->BytesPerRow * (
 #if defined(BOB_WRAP_Y)
-				pBob->sPos.uwY & (s_uwAvailHeight - 1)
+				SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight)
 #else
 				pBob->sPos.uwY
 #endif
@@ -262,7 +263,7 @@ UBYTE bobProcessNext(void) {
 
 		if(pBob->isUndrawRequired) {
 #if defined(BOB_WRAP_Y)
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+			UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight);
 #endif
 			blitWait();
 			g_pCustom->bltamod = pBob->_wModuloUndrawSave;
@@ -316,7 +317,7 @@ UBYTE bobProcessNext(void) {
 			UBYTE *pB = pBob->pFrameData;
 			UBYTE *pCD = pBob->_pOldDrawOffs[s_ubBufferCurr];
 #if defined(BOB_WRAP_Y)
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->sPos.uwY & (s_uwAvailHeight-1));
+			UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight);
 #endif
 
 			blitWait();
@@ -398,7 +399,7 @@ void bobBegin(tBitMap *pBuffer) {
 			// Undraw next
 			UBYTE *pD = pBob->_pOldDrawOffs[s_ubBufferCurr];
 #if defined(BOB_WRAP_Y)
-			UWORD uwPartHeight = s_uwAvailHeight - (pBob->pOldPositions[s_ubBufferCurr].uwY & (s_uwAvailHeight-1));
+			UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->pOldPositions[s_ubBufferCurr].uwY, s_uwAvailHeight);
 #endif
 			blitWait();
 			g_pCustom->bltdmod = pBob->_wModuloUndrawSave;

@@ -7,8 +7,6 @@
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <limits.h>
 
-#ifdef AMIGA
-
 static UWORD nearestPowerOf2(UWORD uwVal) {
 	// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 	// Decrease by one and fill result with ones, then increase by one
@@ -22,25 +20,20 @@ static UWORD nearestPowerOf2(UWORD uwVal) {
 }
 
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
-	va_list vaTags;
-	tCopList *pCopList = 0;
-	tScrollBufferManager *pManager;
-	UBYTE ubMarginWidth;
-	UWORD uwBoundWidth, uwBoundHeight;
-	UBYTE ubBitmapFlags;
-	UBYTE isCameraCreated = 0;
-	UBYTE isDblBuf;
-
 	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
+
+	va_list vaTags;
 	va_start(vaTags, pTags);
 
 	// Init manager
-	pManager = memAllocFastClear(sizeof(tScrollBufferManager));
+	tScrollBufferManager *pManager = memAllocFastClear(sizeof(tScrollBufferManager));
 	pManager->sCommon.process = (tVpManagerFn)scrollBufferProcess;
 	pManager->sCommon.destroy = (tVpManagerFn)scrollBufferDestroy;
 	pManager->sCommon.ubId = VPM_SCROLL;
 	logWrite("Addr: %p\n", pManager);
 
+	UBYTE isCameraCreated = 0;
+	tCopList *pCopList = 0;
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_VPORT, 0);
 	if(!pVPort) {
 		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified!\n");
@@ -49,7 +42,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	pManager->sCommon.pVPort = pVPort;
 	logWrite("Parent VPort: %p\n", pVPort);
 
-	ubMarginWidth = tagGet(
+	UBYTE ubMarginWidth = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_MARGIN_WIDTH, UCHAR_MAX
 	);
 	if(ubMarginWidth == UCHAR_MAX) {
@@ -60,18 +53,18 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	}
 
 	// Buffer bitmap
-	uwBoundWidth = tagGet(
+	UWORD uwBoundWidth = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_BOUND_WIDTH, pVPort->uwWidth
 	);
-	uwBoundHeight = tagGet(
+	UWORD uwBoundHeight = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_BOUND_HEIGHT, pVPort->uwHeight
 	);
-	ubBitmapFlags = tagGet(
+	UBYTE ubBitmapFlags = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_BITMAP_FLAGS, BMF_CLEAR
 	);
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
 
-	isDblBuf = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
+	UBYTE isDblBuf = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
 
 	// Create copperlist entries
 	pCopList = pVPort->pView->pCopList;
@@ -268,7 +261,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	// convert camera pos to scroll pos
 	UWORD uwScrollX = pManager->pCamera->uPos.uwX;
-	UWORD uwScrollY = pManager->pCamera->uPos.uwY & (pManager->uwBmAvailHeight - 1);
+	UWORD uwScrollY = SCROLLBUFFER_HEIGHT_MODULO(
+		pManager->pCamera->uPos.uwY, pManager->uwBmAvailHeight
+	);
 
 	// preparations for new copperlist
 	UWORD uwShift = (16 - (uwScrollX & 0xF)) & 0xF; // Bitplane shift - single
@@ -351,22 +346,24 @@ void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
 	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBuf
 ) {
-	UWORD uwVpWidth, uwVpHeight;
-	UWORD uwCalcWidth, uwCalcHeight;
 	logBlockBegin(
 		"scrollBufferReset(pManager: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)",
 		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight
 	);
 	// Helper vars
-	uwVpWidth = pManager->sCommon.pVPort->uwWidth;
-	uwVpHeight = pManager->sCommon.pVPort->uwHeight;
+	UWORD uwVpWidth = pManager->sCommon.pVPort->uwWidth;
+	UWORD uwVpHeight = pManager->sCommon.pVPort->uwHeight;
 
 	// Reset manager fields
 	pManager->uwVpHeightPrev = 0;
 	pManager->uBfrBounds.uwX = uwBoundWidth;
 	pManager->uBfrBounds.uwY = uwBoundHeight;
 	// Optimize avail height to power of two so that modulo can be an AND
-	pManager->uwBmAvailHeight = nearestPowerOf2(ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4));
+	pManager->uwBmAvailHeight =
+		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
+#if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
+	pManager->uwBmAvailHeight = nearestPowerOf2(pManager->uwBmAvailHeight);
+#endif
 
 	// Destroy old buffer bitmap
 	if(pManager->pFront && pManager->pFront != pManager->pBack) {
@@ -377,8 +374,8 @@ void scrollBufferReset(
 	}
 
 	// Create new buffer bitmap
-	uwCalcWidth = uwVpWidth + ubMarginWidth*4;
-	uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
+	UWORD uwCalcWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
+	UWORD uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 	pManager->pBack = bitmapCreate(
 		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
 	);
@@ -415,7 +412,7 @@ void scrollBufferReset(
 		resetBreakCopperlist(
 			&pCopList->pBackBfr->pList[pManager->uwCopperOffsetBreak],
 			pManager->sCommon.pVPort->pView->ubPosY +
-			pManager->sCommon.pVPort->uwOffsY -1,
+			pManager->sCommon.pVPort->uwOffsY - 1,
 			pManager->sCommon.pVPort->ubBpp);
 		// again for double bufferred
 		resetStartCopperlist(
@@ -425,7 +422,7 @@ void scrollBufferReset(
 		resetBreakCopperlist(
 			&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetBreak],
 			pManager->sCommon.pVPort->pView->ubPosY +
-			pManager->sCommon.pVPort->uwOffsY -1,
+			pManager->sCommon.pVPort->uwOffsY - 1,
 			pManager->sCommon.pVPort->ubBpp
 		);
 	}
@@ -487,5 +484,3 @@ void scrollBufferBlitMask(
 		);
 	}
 }
-
-#endif // AMIGA
