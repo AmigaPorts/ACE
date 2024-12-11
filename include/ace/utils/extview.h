@@ -39,7 +39,7 @@ typedef enum tTagView {
 	TAG_VIEW_GLOBAL_BPP        = TAG_USER | 8,
 	// If set to non-zero, view will use first vport's horizontal resolution (hires on/off) setting for whole screen.
 	TAG_VIEW_GLOBAL_HRES       = TAG_USER | 9,
-    TAG_VIEW_USES_AGA          = TAG_USER | 8
+    TAG_VIEW_USES_AGA          = TAG_USER | 10
 } tTagView;
 
 // Values for TAG_VIEW_COPLIST_MODE
@@ -153,7 +153,7 @@ typedef struct _tVPort {
 	UWORD uwHeight; ///< Viewport's height
 
 	// Color info
-	UBYTE ubBPP;        ///< Bitplane count
+	UBYTE ubBpp;        ///< Bitplane count
 	
 	UWORD* pPalette;
 

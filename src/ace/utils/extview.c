@@ -173,7 +173,7 @@ void viewUpdateGlobalPalette(const tView *pView) {
 		// }
 		if (pView->uwFlags & VIEWPORT_USES_AGA) {
 
-			WORD colourBanks = (1 << pView->pFirstVPort->ubBPP) /32 ;
+			WORD colourBanks = (1 << pView->pFirstVPort->ubBpp) /32 ;
 			// oh AGA palette, how convoluted you are.
 			for (UBYTE p = 0; p < colourBanks ; p++)
 			{
@@ -258,21 +258,24 @@ void viewLoad(tView *pView)
 		g_sCopManager.pCopList = pView->pCopList;
 		// Seems strange that everything relies on the first viewport flags, and palette etc
 		if (pView->uwFlags & VIEWPORT_USES_AGA) {
-			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBPP) << 12) | BV(9) | BV(4); // BPP + composite output
-			if ( pView->pFirstVPort->ubBPP == 6) {
+			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9) | BV(4); // BPP + composite output
+			if ( pView->pFirstVPort->ubBpp == 6) {
 			
 				g_pCustom->bplcon2 = BV(9);  // Set KillEHB flag, since we have declared out viewport to be aga, and 64 colours.
 			}
 		}
 		else {
-			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBPP << 12) | BV(9); // BPP + composite output
+			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
 			g_pCustom->bplcon2 = 0; // No need to KILLEHB because we are not AGA, so just blank the flag.
 		}
 		g_pCustom->fmode = 0;        // AGA fix
 		g_pCustom->bplcon3 = 0;      // AGA fix
 		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
 		g_pCustom->bplcon4 = 0x0011; // AGA fix
+		UWORD uwDiwStartX = pView->ubPosX;
+		UWORD uwDiwStopX = uwDiwStartX + pView->uwWidth - 256;
 		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
+		
 		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
 			logWrite(
 				"ERR: DiwStopY (%hu) bit 8 (%hhu) must be different than bit 7 (%hhu)\n",
@@ -382,7 +385,7 @@ tVPort *vPortCreate(void *pTagList, ...)
 	// Allocate memory for the palette;
 	if (pView->uwFlags & VIEWPORT_USES_AGA) {
 		// AGA uses 24 bit palette entries. 		
-		pVPort->pPalette = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBPP)); 
+		pVPort->pPalette = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBpp)); 
 		UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
 		if (pSrcPalette)
 		{
@@ -472,7 +475,7 @@ void vPortDestroy(tVPort *pVPort)
 			if (pVPort->uwFlags & VIEWPORT_USES_AGA)
 			{
 				// AGA uses 24 bit palette entries. 
-				memFree(pVPort->pPalette, sizeof(ULONG) * (1 << pVPort->ubBPP));
+				memFree(pVPort->pPalette, sizeof(ULONG) * (1 << pVPort->ubBpp));
 			}
 			else
 			{
