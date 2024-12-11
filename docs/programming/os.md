@@ -23,7 +23,7 @@ Consider following code:
 systemUnuse(); // Assume that OS is disabled at this point
 
 logWrite("I'm initializing stuff\n");
-paletteLoad("palette.plt", s_pPalette, 32);
+paletteLoadFromPath("palette.plt", s_pPalette, 32);
 s_pBm1 = bitmapCreate(320, 256, 5);
 s_pBm2 = fontCreate("test.fnt");
 logWrite("I'm done initializing\n");
@@ -35,7 +35,7 @@ This can be easily fixed by adding `systemUse()` and `systemUnuse()` calls:
 ```c
 systemUse(); // Re-enable OS once
 logWrite("I'm initializing stuff\n");       // Any of these functions
-paletteLoad("palette.plt", s_pPalette, 32); // Won't re-enable/disable OS
+paletteLoadFromPath("palette.plt", s_pPalette, 32); // Won't re-enable/disable OS
 s_pBm1 = bitmapCreate(320, 256, 5);         // They have systemUse()/systemUnuse calls
 s_pBm2 = fontCreate("test.fnt");            // But they won't do anything since OS
 logWrite("I'm done initializing\n");        // Is already enabled

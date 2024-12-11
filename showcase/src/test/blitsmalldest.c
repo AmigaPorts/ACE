@@ -22,7 +22,7 @@ static tBitMap *s_pDstBitmap;
 UBYTE ubFrameIdx;
 
 void prepareRefBitmap(void) {
-	// s_pRefBitmap = bitmapCreateFromFile("data/blitToSmall.bm");
+	// s_pRefBitmap = bitmapCreateFromPath("data/blitToSmall.bm");
 	UBYTE ubBlockWidth = 32;
 	UBYTE ubBlockHeight = 32;
 	UBYTE ubImageCount = 16;
@@ -42,10 +42,7 @@ void prepareRefBitmap(void) {
 
 void gsTestBlitSmallDestCreate(void) {
 	// Prepare view & viewport
-	s_pTestBlitView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pTestBlitView = viewCreate(0, TAG_DONE);
 	s_pTestBlitVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestBlitView,
 		TAG_VPORT_BPP, SHOWCASE_BPP,
@@ -56,7 +53,7 @@ void gsTestBlitSmallDestCreate(void) {
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
 		TAG_DONE
 	);
-	paletteLoad("data/blitToSmall.plt", s_pTestBlitVPort->pPalette, 1 << SHOWCASE_BPP);
+	paletteLoadFromPath("data/blitToSmall.plt", s_pTestBlitVPort->pPalette, 1 << SHOWCASE_BPP);
 
 	s_pDstBitmap = bitmapCreate(32, 32, SHOWCASE_BPP, 0);
 	prepareRefBitmap();

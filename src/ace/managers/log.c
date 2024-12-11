@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ace/macros.h>
 #include <ace/managers/system.h>
+#include <ace/utils/disk_file.h>
 #ifdef ACE_DEBUG
 
 // Globals
@@ -45,7 +46,8 @@ static UBYTE isWritingToFileAllowed(void) {
  */
 
 void _logOpen(const char *szFilePath) {
-	g_sLogManager.pFile = szFilePath ? fileOpen(szFilePath, "w") : 0;
+	g_sLogManager.ubShutUp = 1; // Prevent log message for diskFileOpen()
+	g_sLogManager.pFile = szFilePath ? diskFileOpen(szFilePath, "w") : 0;
 	g_sLogManager.ubIndent = 0;
 	g_sLogManager.wasLastInline = 0;
 	g_sLogManager.isBlockEmpty = 1;
@@ -222,7 +224,7 @@ void _logAvgWrite(tAvg *pAvg) {
 	char szMax[15];
 
 	if(!pAvg->uwUsedCount) {
-		logWrite("Avg %s: No measures taken!\n", pAvg->szName);
+		logWrite("Avg %s: No measures taken\n", pAvg->szName);
 		return;
 	}
 	// Calculate average time
@@ -244,7 +246,7 @@ void _logPushInt(void) {
 
 void _logPopInt(void) {
 	if(--g_sLogManager.wInterruptDepth < 0) {
-		logWrite("ERR: INT DEPTH NEGATIVE!\n");
+		logWrite("ERR: INT DEPTH NEGATIVE\n");
 	}
 }
 

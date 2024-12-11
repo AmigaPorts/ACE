@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#ifdef AMIGA
-
 /**
  * Tilemap buffer manager
  * Provides speed- and memory-efficient tilemap buffer
@@ -24,6 +22,8 @@ extern "C" {
 #include <ace/utils/extview.h>
 #include <ace/managers/viewport/camera.h>
 #include <ace/managers/viewport/scrollbuffer.h>
+
+typedef ACE_TILEBUFFER_TILE_TYPE tTileBufferTileIndex;
 
 typedef enum tTileBufferCreateTags {
 	/**
@@ -79,7 +79,13 @@ typedef enum tTileBufferCreateTags {
 	 *
 	 * @see tileBufferQueueProcess()
 	 */
-	TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH = (TAG_USER | 11)
+	TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH = (TAG_USER | 11),
+
+	/**
+	 * @brief Maximum tile index used in the tileset.
+	 * Optional, limits the tile lookup table size.
+	 */
+	TAG_TILEBUFFER_MAX_TILESET_SIZE = (TAG_USER | 12),
 } tTileBufferCreateTags;
 
 /* types */
@@ -89,28 +95,36 @@ typedef void (*tTileDrawCallback)(
 	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
 );
 
-typedef struct _tMarginState {
+typedef struct tMarginState {
 	WORD wTilePos; ///< Index of row/col to update
 	WORD wTileCurr; ///< Index of current tile to update in row/col
 	WORD wTileEnd;  ///< Index of last+1  tile to update in row/col
 } tMarginState;
 
-typedef struct _tRedrawState {
+typedef struct tRedrawState {
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
 	tMarginState sMarginL; ///< Data for left margin
 	tMarginState sMarginR; ///< Ditto, right
+#endif
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
 	tMarginState sMarginU; ///< Ditto, up
 	tMarginState sMarginD; ///< Ditto, down
+#endif
 	// Vars needed in Process, reset in Create
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
 	tMarginState *pMarginX;         ///< Idx of X margin to be redrawn
 	tMarginState *pMarginOppositeX; ///< Opposite margin of pMarginX
+#endif
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
 	tMarginState *pMarginY;         ///< Idx of Y margin to be redrawn
 	tMarginState *pMarginOppositeY; ///< Opposite margin of pMarginY
+#endif
 	// Tile redraw queue
 	tUwCoordYX *pPendingQueue;
 	UBYTE ubPendingCount;
 } tRedrawState;
 
-typedef struct _tTileBufferManager {
+typedef struct tTileBufferManager {
 	tVpManager sCommon;
 	tCameraManager *pCamera;       ///< Quick ref to Camera
 	tScrollBufferManager *pScroll; ///< Quick ref to Scroll
@@ -122,7 +136,7 @@ typedef struct _tTileBufferManager {
 	UWORD uwMarginedHeight;       ///< Height of visible area + margins
 	                              ///  TODO: refresh when scrollbuffer changes
 	tTileDrawCallback cbTileDraw; ///< Called when tile is redrawn
-	UBYTE **pTileData;            ///< 2D array of tile indices
+	tTileBufferTileIndex **pTileData; ///< 2D array of tile indices
 	tBitMap *pTileSet;            ///< Tileset - one tile beneath another
 	UBYTE **pTileSetOffsets;      ///< Lookup table for tile offsets in pTileSet
 	// Margin & queue geometry
@@ -130,8 +144,9 @@ typedef struct _tTileBufferManager {
 	UBYTE ubMarginYLength; ///< Ditto, up & down
 	UBYTE ubQueueSize;
 	// Redraw state and double buffering
-	tRedrawState pRedrawStates[2];
 	UBYTE ubStateIdx;
+	tRedrawState pRedrawStates[2];
+	ULONG ulMaxTilesetSize;
 } tTileBufferManager;
 
 /* globals */
@@ -243,10 +258,10 @@ UBYTE tileBufferIsRectFullyOnBuffer(
  * @param pManager The tile manager to be used.
  * @param uwX The X coordinate of tile, in tile-space.
  * @param uwY The Y coordinate of tile, in tile-space.
- * @param uwIdx Index of tile to be placed on given position.
+ * @param Index Index of tile to be placed on given position.
  */
 void tileBufferSetTile(
-	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, UWORD uwIdx
+	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, tTileBufferTileIndex Index
 );
 
 static inline UBYTE tileBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp) {
@@ -256,8 +271,6 @@ static inline UBYTE tileBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp)
 static inline UBYTE tileBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp) {
     return scrollBufferGetRawCopperlistInstructionCountBreak(ubBpp);
 }
-
-#endif // AMIGA
 
 #ifdef __cplusplus
 }

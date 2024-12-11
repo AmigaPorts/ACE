@@ -237,7 +237,7 @@ bool tPalette::toGpl(const std::string& szPath)
 
 	// Header
 	Dest << "GIMP Palette\n";
-	Dest << fmt::format("Name: {}\n", trimExt(getBaseName(szPath)));
+	Dest << fmt::format("Name: {}\n", removeExt(getBaseName(szPath)));
 	Dest << "Columns: 4\n";
 	Dest << "#\n";
 
@@ -332,4 +332,17 @@ uint8_t tPalette::getBpp(void) const {
 		++ubBpp;
 	}
 	return ubBpp;
+}
+
+bool tPalette::convertToEhb(void)
+{
+	if(m_vColors.size() > 32) {
+		return false;
+	}
+
+	m_vColors.resize(64);
+	for(std::size_t i = 0; i < 32; ++i) {
+		m_vColors[i + 32] = m_vColors[i].toEhb();
+	}
+	return true;
 }

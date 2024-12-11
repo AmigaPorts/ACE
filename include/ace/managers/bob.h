@@ -5,6 +5,10 @@
 #ifndef _ACE_MANAGERS_BOB_H_
 #define _ACE_MANAGERS_BOB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ace/types.h>
 #include <ace/managers/blit.h>
 
@@ -80,6 +84,8 @@ typedef struct tBob {
  * @param pFront Double buffering's front buffer bitmap.
  * @param pBack Double buffering's back buffer bitmap.
  * @param uwAvailHeight True available height for Y-scroll in passed bitmap.
+ * For tileBuffer you should use `pTileBuffer->pScroll->uwBmAvailHeight`.
+ * For scrollBuffer you should use `pScrollBuffer->uwBmAvailHeight`.
  *
  * @see bobInit()
  * @see bobReallocateBgBuffers()
@@ -227,5 +233,10 @@ void bobPushingDone(void);
 void bobEnd(void);
 
 void bobDiscardUndraw(void);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_MANAGERS_BOB_H_

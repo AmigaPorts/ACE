@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <optional>
 #include "common/logging.h"
 #include "common/fs.h"
@@ -105,7 +109,7 @@ int main(int lArgCount, const char *pArgs[]) {
 	}
 
 	if(szOutput.empty()) {
-		szOutput = nFs::trimExt(szInput);
+		szOutput = nFs::removeExt(szInput);
 		if(szInExt == "wav") {
 			szOutput += ".sfx";
 		}
@@ -161,7 +165,7 @@ int main(int lArgCount, const char *pArgs[]) {
 		fmt::print("Splitting to {} parts, {} bytes each\n", PartCount, oSplitAfter.value());
 		std::uint8_t ubPart = 0;
 		tSfx SfxRemaining;
-		auto BaseOutputPath = nFs::trimExt(szOutput);
+		auto BaseOutputPath = nFs::removeExt(szOutput);
 		do {
 			SfxRemaining = In.splitAfter(oSplitAfter.value());
 			auto PartOutPath = fmt::format(FMT_STRING("{}_{}.{}"), BaseOutputPath, ubPart, szOutExt);

@@ -10,6 +10,7 @@
 #include <ace/utils/endian.h>
 #include <ace/utils/chunky.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/disk_file.h>
 
 /* Globals */
 
@@ -119,9 +120,13 @@ fail:
 #endif // AMIGA
 }
 
-void bitmapLoadFromFile(
-	tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWORD uwStartY
-) {
+void bitmapLoadFromPath(tBitMap *pBitMap, const char *szPath, UWORD uwStartX, UWORD uwStartY) {
+	return bitmapLoadFromFd(pBitMap, diskFileOpen(szPath, "rb"), uwStartX, uwStartY);
+}
+
+void bitmapLoadFromFd(
+		tBitMap *pBitMap, tFile *pFile, UWORD uwStartX, UWORD uwStartY)
+{
 	UWORD uwSrcWidth, uwDstWidth, uwSrcHeight;
 	UBYTE ubSrcFlags, ubSrcBpp, ubSrcVersion;
 	UWORD y;
@@ -130,14 +135,20 @@ void bitmapLoadFromFile(
 
 	systemUse();
 	logBlockBegin(
-		"bitmapLoadFromFile(pBitMap: %p, szFilePath: '%s', uwStartX: %u, uwStartY: %u)",
-		pBitMap, szFilePath, uwStartX, uwStartY
+		"bitmapLoadFromFd(pBitMap: %p, pFile: %p, uwStartX: %u, uwStartY: %u)",
+		pBitMap, pFile, uwStartX, uwStartY
 	);
+
+	if(!pBitMap) {
+		logWrite("ERR: pBitMap is 0\n");
+		systemUnuse();
+		return;
+	}
+
 	// Open source bitmap
-	tFile *pFile = fileOpen(szFilePath, "r");
 	if(!pFile) {
-		logWrite("ERR: File does not exist\n");
-		logBlockEnd("bitmapLoadFromFile()");
+		logWrite("ERR: Null file handle\n");
+		logBlockEnd("bitmapLoadFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -148,11 +159,11 @@ void bitmapLoadFromFile(
 	fileRead(pFile, &ubSrcBpp, sizeof(UBYTE));
 	fileRead(pFile, &ubSrcVersion, sizeof(UBYTE));
 	fileRead(pFile, &ubSrcFlags, sizeof(UBYTE));
-	fileSeek(pFile, 2*sizeof(UBYTE), FILE_SEEK_CURRENT); // Skip unused 2 bytes
+	fileSeek(pFile, 2 * sizeof(UBYTE), FILE_SEEK_CURRENT); // Skip unused 2 bytes
 	if(ubSrcVersion != 0) {
 		fileClose(pFile);
 		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
-		logBlockEnd("bitmapLoadFromFile()");
+		logBlockEnd("bitmapLoadFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -165,7 +176,7 @@ void bitmapLoadFromFile(
 			!!(ubSrcFlags & BITMAP_INTERLEAVED), bitmapIsInterleaved(pBitMap)
 		);
 		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFile()");
+		logBlockEnd("bitmapLoadFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -177,7 +188,7 @@ void bitmapLoadFromFile(
 			ubSrcBpp, pBitMap->Depth
 		);
 		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFile()");
+		logBlockEnd("bitmapLoadFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -192,147 +203,70 @@ void bitmapLoadFromFile(
 			uwDstWidth, pBitMap->Rows
 		);
 		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFile()");
+		logBlockEnd("bitmapLoadFromFd()");
 		systemUnuse();
 		return;
 	}
 
 	// Read data
 	uwWidth = bitmapGetByteWidth(pBitMap);
+	UWORD uwReadBytesPerRow = (uwSrcWidth + 7) / 8;
 	if(bitmapIsInterleaved(pBitMap)) {
-		for(y = 0; y != uwSrcHeight; ++y) {
-			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
-				fileRead(
-					pFile,
-					&pBitMap->Planes[0][uwWidth*(((uwStartY + y)*pBitMap->Depth)+ubPlane)+(uwStartX>>3)],
-					((uwSrcWidth+7)>>3)
-				);
+		UWORD uwDestOffs = uwWidth * (uwStartY * pBitMap->Depth) + (uwStartX / 8);
+		if(uwStartX == 0 && uwSrcWidth == uwDstWidth) {
+			fileRead(
+				pFile,
+				&pBitMap->Planes[0][uwDestOffs],
+				pBitMap->BytesPerRow * uwSrcHeight
+			);
+		}
+		else {
+			for(y = 0; y < uwSrcHeight; ++y) {
+				for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
+					fileRead(
+						pFile,
+						&pBitMap->Planes[0][uwDestOffs],
+						uwReadBytesPerRow
+					);
+					uwDestOffs += uwWidth;
+				}
 			}
 		}
 	}
 	else {
 		for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
 			for(y = 0; y != uwSrcHeight; ++y) {
+				UWORD uwDestOffs = uwWidth * uwStartY + (uwStartX / 8);
 				fileRead(
 					pFile,
-					&pBitMap->Planes[ubPlane][uwWidth*(uwStartY+y) + (uwStartX>>3)],
-					((uwSrcWidth+7)>>3)
+					&pBitMap->Planes[ubPlane][uwDestOffs],
+					uwReadBytesPerRow
 				);
+				uwDestOffs += uwWidth;
 			}
 		}
 	}
 	fileClose(pFile);
-	logBlockEnd("bitmapLoadFromFile()");
+	logBlockEnd("bitmapLoadFromFd()");
 	systemUnuse();
 }
 
-void bitmapLoadFromMem(
-	tBitMap *pBitMap, const UBYTE* pData, UWORD uwStartX, UWORD uwStartY
-) {
-	UWORD uwSrcWidth, uwDstWidth, uwSrcHeight;
-	UBYTE ubSrcFlags, ubSrcBpp, ubSrcVersion;
-	UWORD y;
-	UWORD uwWidth;
-	UBYTE ubPlane;
-	ULONG ulCurByte = 0;
-
-	logBlockBegin(
-		"bitmapLoadFromMem(pBitMap: %p, uwStartX: %u, uwStartY: %u)",
-		pBitMap, uwStartX, uwStartY
-	);
-
-
-	// Read header
-	memcpy(&uwSrcWidth,&pData[ulCurByte],sizeof(UWORD));
-	ulCurByte+=sizeof(UWORD);
-
-	memcpy(&uwSrcHeight,&pData[ulCurByte],sizeof(UWORD));
-	ulCurByte+=sizeof(UWORD);
-
-	memcpy(&ubSrcBpp,&pData[ulCurByte],sizeof(UBYTE));
-	ulCurByte+=sizeof(UBYTE);
-
-	memcpy(&ubSrcVersion,&pData[ulCurByte],sizeof(UBYTE));
-	ulCurByte+=sizeof(UBYTE);
-
-	memcpy(&ubSrcFlags,&pData[ulCurByte],sizeof(UBYTE));
-	ulCurByte+=sizeof(UBYTE);
-
-	ulCurByte+=2*sizeof(UBYTE);
-
-	if(ubSrcVersion != 0) {
-		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
-		logBlockEnd("bitmapLoadFromMem()");
-		return;
-	}
-	logWrite("Source dimensions: %ux%u\n", uwSrcWidth, uwSrcHeight);
-
-	// Interleaved check
-	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
-		logWrite("ERR: Interleaved flag conflict\n");
-		logBlockEnd("bitmapLoadFromMem()");
-		return;
-	}
-
-	// Depth check
-	if(ubSrcBpp > pBitMap->Depth) {
-		logWrite(
-			"ERR: Source has greater BPP than destination: %hu > %hu\n",
-			ubSrcBpp, pBitMap->Depth
-		);
-		logBlockEnd("bitmapLoadFromMem()");
-		return;
-	}
-
-	// Check bitmap dimensions
-	uwDstWidth = bitmapGetByteWidth(pBitMap) << 3;
-	if(uwStartX + uwSrcWidth > uwDstWidth || uwStartY + uwSrcHeight > (pBitMap->Rows)) {
-		logWrite(
-			"ERR: Source doesn't fit on dest: %ux%u @%u,%u > %ux%u\n",
-			uwSrcWidth, uwSrcHeight,
-			uwStartX, uwStartY,
-			uwDstWidth, pBitMap->Rows
-		);
-		logBlockEnd("bitmapLoadFromMem()");
-		return;
-	}
-
-	// Read data
-	uwWidth = bitmapGetByteWidth(pBitMap);
-	if(bitmapIsInterleaved(pBitMap)) {
-		for(y = 0; y != uwSrcHeight; ++y) {
-			for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
-				memcpy(&pBitMap->Planes[0][uwWidth*(((uwStartY + y)*pBitMap->Depth)+ubPlane)+(uwStartX>>3)],&pData[ulCurByte],((uwSrcWidth+7)>>3));
-				ulCurByte+=((uwSrcWidth+7)>>3);
-			}
-		}
-	}
-	else {
-		for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
-			for(y = 0; y != uwSrcHeight; ++y) {
-				memcpy(&pBitMap->Planes[ubPlane][uwWidth*(uwStartY+y) + (uwStartX>>3)],&pData[ulCurByte],((uwSrcWidth+7)>>3));
-				ulCurByte+=((uwSrcWidth+7)>>3);
-			}
-		}
-	}
-	logBlockEnd("bitmapLoadFromMem()");
+tBitMap *bitmapCreateFromPath(const char *szPath, UBYTE isFast) {
+	return bitmapCreateFromFd(diskFileOpen(szPath, "rb"), isFast);
 }
 
-tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
+tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
 	tBitMap *pBitMap;
-	tFile *pFile;
 	UWORD uwWidth, uwHeight;  // Image dimensions
 	UBYTE ubVersion, ubFlags; // Format version & flags
 	UBYTE ubPlaneCount;       // Bitplane count
 	UBYTE i;
 
 	systemUse();
-	logBlockBegin("bitmapCreateFromFile(szFilePath: '%s')", szFilePath);
-	pFile = fileOpen(szFilePath, "r");
+	logBlockBegin("bitmapCreateFromFd(pFile: %p)", pFile);
 	if(!pFile) {
-		fileClose(pFile);
-		logWrite("ERR: File does not exist\n");
-		logBlockEnd("bitmapCreateFromFile()");
+		logWrite("ERR: Null file handle\n");
+		logBlockEnd("bitmapCreateFromFd()");
 		systemUnuse();
 		return 0;
 	}
@@ -345,9 +279,9 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 	fileRead(pFile, &ubFlags, sizeof(UBYTE));
 	fileSeek(pFile, 2 * sizeof(UBYTE), SEEK_CUR); // Skip unused 2 bytes
 	if(ubVersion != 0) {
-		fileClose(pFile);
 		logWrite("ERR: Unknown file version: %hu\n", ubVersion);
-		logBlockEnd("bitmapCreateFromFile()");
+		fileClose(pFile);
+		logBlockEnd("bitmapCreateFromFd()");
 		systemUnuse();
 		return 0;
 	}
@@ -375,7 +309,7 @@ tBitMap *bitmapCreateFromFile(const char *szFilePath, UBYTE isFast) {
 		"Dimensions: %ux%u@%uBPP, version: %hu, flags: %hu\n",
 		uwWidth, uwHeight, ubPlaneCount, ubVersion, ubFlags
 	);
-	logBlockEnd("bitmapCreateFromFile()");
+	logBlockEnd("bitmapCreateFromFd()");
 	systemUnuse();
 	return pBitMap;
 }
@@ -436,7 +370,7 @@ void bitmapSave(const tBitMap *pBitMap, const char *szPath) {
 	systemUse();
 	logBlockBegin("bitmapSave(pBitMap: %p, szPath: '%s')", pBitMap, szPath);
 
-	tFile *pFile = fileOpen(szPath, "wb");
+	tFile *pFile = diskFileOpen(szPath, "wb");
 	if(!pFile) {
 		logWrite("ERR: Couldn't save bitmap at '%s'\n", szPath);
 		logBlockEnd("bitmapSave()");
@@ -481,7 +415,12 @@ void bitmapSaveBmp(
 
 	systemUse();
 	UWORD uwWidth = bitmapGetByteWidth(pBitMap) << 3;
-	tFile *pOut = fileOpen(szFilePath, "w");
+	tFile *pOut = diskFileOpen(szFilePath, "w");
+	if(!pOut) {
+		logWrite("ERR: Couldn't save bmp at '%s'\n", szFilePath);
+		logBlockEnd("bitmapSaveBmp()");
+		return;
+	}
 
 	// BMP header
 	fileWrite(pOut, "BM", 2);

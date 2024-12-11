@@ -16,6 +16,7 @@ void printUsage(const std::string &szAppName)
 	print("extraOpts:\n");
 	print("\t-o outPath\tSpecify output file path. If ommited, it will perform default conversion\n");
 	print("\t-i\t\tEnable interleaved mode\n");
+	print("\t-ehb\t\tExtend palette with EHB colors\n");
 	print("\t-mc #RRGGBB\tTreat color #RRGGBB as mask\n");
 	print("\t-mf outMaskPath\tSpecify path for mask.bm file. If omitted, it will try\n");
 	print("\t\t\tto use same path as .bm with \"_mask.bm\" suffix\n");
@@ -38,6 +39,7 @@ int main(int lArgCount, const char *pArgs[])
 	std::string szPalette = pArgs[1], szInput = pArgs[2];
 	std::string szOutput = "", szMask = "";
 	bool isWriteInterleaved = false;
+	bool isEhb = false;
 	bool isEnabledOutputMask = true;
 	bool isEnabledOutput = true;
 	bool isMaskColor = false;
@@ -50,6 +52,9 @@ int main(int lArgCount, const char *pArgs[])
 		}
 		else if(pArgs[ArgIndex] == std::string("-i")) {
 			isWriteInterleaved = true;
+		}
+		else if(pArgs[ArgIndex] == std::string("-ehb")) {
+			isEhb = true;
 		}
 		else if(pArgs[ArgIndex] == std::string("-mc") && ArgIndex < lArgCount - 1) {
 			isMaskColor = true;
@@ -80,7 +85,7 @@ int main(int lArgCount, const char *pArgs[])
 		return EXIT_FAILURE;
 	}
 	if(szOutput.empty()) {
-		szOutput = nFs::trimExt(szInput);
+		szOutput = nFs::removeExt(szInput);
 		if(szInExt == "png") {
 			szOutput += ".bm";
 		}
@@ -92,10 +97,10 @@ int main(int lArgCount, const char *pArgs[])
 
 	if(szMask == "" && isMaskColor) {
 		if(szOutExt == "bm") {
-			szMask = nFs::trimExt(szOutput) + "_mask." + szOutExt;
+			szMask = nFs::removeExt(szOutput) + "_mask." + szOutExt;
 		}
 		else if(szInExt == "bm") {
-			szMask = nFs::trimExt(szInput) + "_mask." + szInExt;
+			szMask = nFs::removeExt(szInput) + "_mask." + szInExt;
 		}
 	}
 
@@ -104,6 +109,11 @@ int main(int lArgCount, const char *pArgs[])
 	if(!Palette.isValid()) {
 		nLog::error("Couldn't read palette '{}'", szPalette);
 		return EXIT_FAILURE;
+	}
+	if(isEhb) {
+		if(!Palette.convertToEhb()) {
+			nLog::error("Couldn't convert palette to EHB! Does it have at most 32 colors?");
+		}
 	}
 
 
@@ -121,7 +131,7 @@ int main(int lArgCount, const char *pArgs[])
 			for(std::uint16_t i = 1; i < 256; ++i) {
 				PaletteMask.m_vColors.push_back(MaskColor);
 			}
-			auto szInMask = nFs::trimExt(szInput) + "_mask." + szInExt;
+			auto szInMask = nFs::removeExt(szInput) + "_mask." + szInExt;
 			auto InMask = tChunkyBitmap(tPlanarBitmap::fromBm(szInMask), PaletteMask);
 			if(!In.mergeWithMask(InMask)) {
 				nLog::error("Mask incompatible with bitmap");
@@ -144,7 +154,8 @@ int main(int lArgCount, const char *pArgs[])
 			tRgb MaskAntiColor(~MaskColor.ubR, ~MaskColor.ubG, ~MaskColor.ubB);
 			// Generate mask palette - 0 is transparent, everything else is not
 			if(isWriteInterleaved) {
-				PaletteMask.m_vColors.resize(1 << Palette.getBpp(), tRgb(1, 1, 1));
+				auto PaletteSize = 1u << Palette.getBpp();
+				PaletteMask.m_vColors.resize(PaletteSize, tRgb(1, 1, 1));
 				PaletteMask.m_vColors.front() = MaskColor;
 				PaletteMask.m_vColors.back() = MaskAntiColor;
 			}

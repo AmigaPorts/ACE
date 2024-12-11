@@ -306,7 +306,7 @@ UBYTE blitUnsafeCopyAligned(
 	else {
 		if(bitmapIsInterleaved(pSrc) || bitmapIsInterleaved(pDst)) {
 			// Since you're using this fn for speed
-			logWrite("WARN: Mixed interleaved - you're losing lots of performance here!\n");
+			logWrite("WARN: Mixed interleaved - you're losing lots of performance here\n");
 		}
 
 		WORD wSrcModulo = pSrc->BytesPerRow - (uwBlitWords<<1);

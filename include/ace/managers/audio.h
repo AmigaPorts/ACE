@@ -15,6 +15,7 @@ extern "C" {
 
 #include <ace/types.h>
 #include <hardware/dmabits.h> // DMAF_* flags
+#include <ace/utils/file.h>
 
 #define AUDIO_CHANNEL_0 DMAB_AUD0
 #define AUDIO_CHANNEL_1 DMAB_AUD1
@@ -80,7 +81,16 @@ tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod);
  * @param uwSampleRateHz Playback rate to be assigned to sample, in Hz.
  * @return tSample* Pointer to newly allocated sample, 0 on fail.
  */
-tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateHz);
+tSample *sampleCreateFromPath(const char *szPath, UWORD uwSampleRateHz);
+
+/**
+ * @brief Creates sample from file handle, assigning to it specified playback rate.
+ *
+ * @param pSampleFile Handle to sample file. Will be closed on function return.
+ * @param uwSampleRateHz Playback rate to be assigned to sample, in Hz.
+ * @return tSample* Pointer to newly allocated sample, 0 on fail.
+ */
+tSample *sampleCreateFromFd(tFile *pSampleFile, UWORD uwSampleRateHz);
 
 /**
  * @brief Destroys sample, freeing all associated memory.

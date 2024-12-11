@@ -34,6 +34,8 @@ public:
 
 	std::uint8_t getBpp(void) const;
 
+	bool convertToEhb(void);
+
 	std::vector<tRgb> m_vColors;
 
 	tPalette(void) {}

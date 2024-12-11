@@ -7,7 +7,7 @@
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
 
-LONG fileGetSize(const char *szPath) {
+LONG fileGetSize(tFile *pFile) {
 	// One could use std library to seek to end of file and use ftell,
 	// but SEEK_END is not guaranteed to work.
 	// http://www.cplusplus.com/reference/cstdio/fseek/
@@ -15,181 +15,112 @@ LONG fileGetSize(const char *szPath) {
 	// for doing Open() on same file after using it.
 	// So I ultimately do it using fseek.
 
-	systemUse();
-	systemReleaseBlitterToOs();
-	logBlockBegin("fileGetSize(szPath: '%s')", szPath);
-	FILE *pFile = fopen(szPath, "r");
+	logBlockBegin("fileGetSize(pFile: %p)", pFile);
 	if(!pFile) {
-		logWrite("ERR: File doesn't exist");
+		logWrite("ERR: Null file handle\n");
 		logBlockEnd("fileGetSize()");
-		systemGetBlitterFromOs();
-		systemUnuse();
 		return -1;
 	}
-	fseek(pFile, 0, SEEK_END);
-	LONG lSize = ftell(pFile);
-	fclose(pFile);
+	LONG lOldPos = fileGetPos(pFile);
+	fileSeek(pFile, 0, SEEK_END);
+	LONG lSize = fileGetPos(pFile);
+	fileSeek(pFile, lOldPos, SEEK_SET);
 
 	logBlockEnd("fileGetSize()");
-	systemGetBlitterFromOs();
-	systemUnuse();
-
 	return lSize;
 }
 
-tFile *fileOpen(const char *szPath, const char *szMode) {
-	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
-	systemUse();
-	systemReleaseBlitterToOs();
-	FILE *pFile = fopen(szPath, szMode);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return pFile;
-}
-
-void fileClose(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	fclose(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-}
-
-ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
-#ifdef ACE_DEBUG
-	if(!ulSize) {
-		logWrite("ERR: File read size = 0!\n");
-	}
-#endif
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulReadCount = fread(pDest, ulSize, 1, pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulReadCount;
-}
-
-ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
-	fflush(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulResult;
-}
-
-ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulResult = fseek(pFile, ulPos, wMode);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulResult;
-}
-
-ULONG fileGetPos(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	ULONG ulResult = ftell(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ulResult;
-}
-
-UBYTE fileIsEof(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE ubResult = feof(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return ubResult;
-}
-
-#if !defined(BARTMAN_GCC) // Not implemented in mini_std for now, sorry!
-LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	LONG lResult = vfprintf(pFile, szFmt, vaArgs);
-	fflush(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return lResult;
-}
-
-LONG filePrintf(tFile *pFile, const char *szFmt, ...) {
-	va_list vaArgs;
-	va_start(vaArgs, szFmt);
-	LONG lResult = fileVaPrintf(pFile, szFmt, vaArgs);
-	va_end(vaArgs);
-	return lResult;
-}
-
-LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	LONG lResult = vfscanf(pFile, szFmt, vaArgs);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return lResult;
-}
-
-LONG fileScanf(tFile *pFile, const char *szFmt, ...) {
-	va_list vaArgs;
-	va_start(vaArgs, szFmt);
-	LONG lResult = fileVaScanf(pFile, szFmt, vaArgs);
-	va_end(vaArgs);
-	return lResult;
-}
-#endif
-
-void fileFlush(tFile *pFile) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	fflush(pFile);
-	systemGetBlitterFromOs();
-	systemUnuse();
-}
-
 void fileWriteStr(tFile *pFile, const char *szLine) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
 	fileWrite(pFile, szLine, strlen(szLine));
 }
 
-UBYTE fileExists(const char *szPath) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE isExisting = 0;
-	tFile *pFile = fileOpen(szPath, "r");
-	if(pFile) {
-		isExisting = 1;
-		fileClose(pFile);
+#if defined(ACE_FILE_USE_ONLY_DISK)
+#include <ace/utils/disk_file_private.h>
+
+void fileClose(tFile *pFile) {
+	diskFileClose(pFile);
+}
+
+ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
+	return diskFileRead(pFile, pDest, ulSize);
+}
+
+ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	return diskFileWrite(pFile, pSrc, ulSize);
+}
+
+ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode) {
+	return diskFileSeek(pFile, lPos, wMode);
+}
+
+ULONG fileGetPos(tFile *pFile) {
+	return diskFileGetPos(pFile);
+}
+
+UBYTE fileIsEof(tFile *pFile) {
+	return diskFileIsEof(pFile);
+}
+
+void fileFlush(tFile *pFile) {
+	diskFileFlush(pFile);
+}
+
+#else
+void fileClose(tFile *pFile) {
+	logWrite("Closing file %p\n", pFile);
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+		return;
 	}
-	systemGetBlitterFromOs();
-	systemUnuse();
-
-	return isExisting;
+	pFile->pCallbacks->cbFileClose(pFile->pData);
+	memFree(pFile, sizeof(*pFile));
 }
 
-UBYTE fileDelete(const char *szFilePath) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE isSuccess = remove(szFilePath);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return isSuccess;
+ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	if(!ulSize) {
+		logWrite("ERR: File read size = 0\n");
+	}
+	return pFile->pCallbacks->cbFileRead(pFile->pData, pDest, ulSize);
 }
 
-UBYTE fileMove(const char *szSource, const char *szDest) {
-	systemUse();
-	systemReleaseBlitterToOs();
-	UBYTE isSuccess = rename(szSource, szDest);
-	systemGetBlitterFromOs();
-	systemUnuse();
-	return isSuccess;
+ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	return pFile->pCallbacks->cbFileWrite(pFile->pData, pSrc, ulSize);
 }
+
+ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	return pFile->pCallbacks->cbFileSeek(pFile->pData, lPos, wMode);
+}
+
+ULONG fileGetPos(tFile *pFile) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	return pFile->pCallbacks->cbFileGetPos(pFile->pData);
+}
+
+UBYTE fileIsEof(tFile *pFile) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	return pFile->pCallbacks->cbFileIsEof(pFile->pData);
+}
+
+void fileFlush(tFile *pFile) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	pFile->pCallbacks->cbFileFlush(pFile->pData);
+}
+#endif

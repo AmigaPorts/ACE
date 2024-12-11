@@ -15,7 +15,7 @@ static void _checkNull(
 ) {
 	if (!pPointer) {
 		logWrite(
-			"ERR: Pointer %s is zero at %s:%u! Crash imminent!\n",
+			"ERR: Pointer %s is zero at %s:%u! Crash imminent\n",
 			szPointerName, szFile, uwLine
 		);
 	}

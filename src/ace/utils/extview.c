@@ -40,11 +40,22 @@ tView *viewCreate(void *pTags, ...) {
 		pView->pCopList = copListCreate(0, TAG_DONE);
 	}
 
-	// Additional palette tags
-	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_PALETTE, 0)) {
+	// Global display mode tags
+	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_PALETTE, 1)) {
 		pView->uwFlags |= VIEW_FLAG_GLOBAL_PALETTE;
-		logWrite("Global palette mode enabled\n");
 	}
+	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_HRES, 1)) {
+		pView->uwFlags |= VIEW_FLAG_GLOBAL_HRES;
+	}
+	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_BPP, 1)) {
+		pView->uwFlags |= VIEW_FLAG_GLOBAL_BPP;
+	}
+	logWrite(
+		"Extra flags: %s%s%s\n",
+		(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE) ? "GLOBAL_PALETTE " : "",
+		(pView->uwFlags & VIEW_FLAG_GLOBAL_BPP) ? "GLOBAL_BPP " : "",
+		(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) ? "GLOBAL_HRES " : ""
+	);
 
 	// Get the Y pos and height
 	const UWORD uwDefaultHeight = -1;
@@ -87,9 +98,12 @@ tView *viewCreate(void *pTags, ...) {
 		pView->ubPosY = ubPosY;
 		pView->uwHeight = uwHeight;
 	}
+	pView->ubPosX = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_START_X, SCREEN_XOFFSET);
+	pView->uwWidth = tagGet(pTags, vaTags, TAG_VIEW_WINDOW_WIDTH, SCREEN_PAL_WIDTH);
+
 	logWrite(
 		"Display pos: %hhu,%hhu, size: %hu,%hu\n",
-		0x81, pView->ubPosY, SCREEN_PAL_WIDTH, pView->uwHeight
+		pView->ubPosX, pView->ubPosY, pView->uwWidth, pView->uwHeight
 	);
 // Additional CLUT tags
 	if (tagGet(pTags, vaTags, TAG_VIEW_USES_AGA, 0))
@@ -150,8 +164,7 @@ void viewProcessManagers(tView *pView)
 	}
 }
 
-void viewUpdatePalette(tView *pView)
-{
+void viewUpdateGlobalPalette(const tView *pView) {
 #ifdef AMIGA
 	if (pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE)
 	{
@@ -188,10 +201,6 @@ void viewUpdatePalette(tView *pView)
 			}
 		}
 	}
-	else
-	{
-		// na petli: vPortUpdateCLUT();
-	}
 #endif // AMIGA
 }
 
@@ -211,8 +220,9 @@ void viewLoad(tView *pView)
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
+		g_pCustom->fmode = 0;   // AGA fix
 		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->fmode = 0;	// AGA fix
+		g_pCustom->bplcon4 = 0x0011; // AGA fix
 		for (UBYTE i = 0; i < 8; ++i)
 		{
 			g_pCustom->bplpt[i] = 0;
@@ -236,6 +246,15 @@ void viewLoad(tView *pView)
 			}
 		}
 #endif
+		pView->uwBplCon0 = 0;
+		if(pView->uwFlags & VIEW_FLAG_GLOBAL_BPP) {
+			pView->uwBplCon0 |= pView->pFirstVPort->ubBpp << 12;
+		}
+		if(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) {
+			pView->uwBplCon0 |= ((pView->pFirstVPort->eFlags & VP_FLAG_HIRES) != 0) << 15;
+		}
+		pView->uwBplCon0 |= BV(9); // composite output
+
 		g_sCopManager.pCopList = pView->pCopList;
 		// Seems strange that everything relies on the first viewport flags, and palette etc
 		if (pView->uwFlags & VIEWPORT_USES_AGA) {
@@ -252,6 +271,7 @@ void viewLoad(tView *pView)
 		g_pCustom->fmode = 0;        // AGA fix
 		g_pCustom->bplcon3 = 0;      // AGA fix
 		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
+		g_pCustom->bplcon4 = 0x0011; // AGA fix
 		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
 		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
 			logWrite(
@@ -259,8 +279,9 @@ void viewLoad(tView *pView)
 				uwDiwStopY, BTST(uwDiwStopY, 8), BTST(uwDiwStopY, 7)
 			);
 		}
-		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | 0xC1; // HSTOP: 0xC1
-		viewUpdatePalette(pView);
+		g_pCustom->diwstrt = (pView->ubPosY << 8) | uwDiwStartX; // HSTART: 0x81
+		g_pCustom->diwstop = ((uwDiwStopY & 0xFF) << 8) | uwDiwStopX; // HSTOP: 0xC1
+		viewUpdateGlobalPalette(pView);
 	}
 	copProcessBlocks();
 	g_pCustom->copjmp1 = 1;
@@ -285,18 +306,13 @@ tVPort *vPortCreate(void *pTagList, ...)
 	logWrite("Addr: %p\n", pVPort);
 
 	// Determine parent view
-	tView *pView = (tView *)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
-	if (!pView)
-	{
-		logWrite("ERR: no view ptr in TAG_VPORT_VIEW specified!\n");
+	tView *pView = (tView*)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
+	if(!pView) {
+		logWrite("ERR: no view ptr in TAG_VPORT_VIEW specified\n");
 		goto fail;
 	}
 	pVPort->pView = pView;
 	logWrite("Parent view: %p\n", pView);
-
-	const UWORD uwDefaultWidth = s_isPAL ? SCREEN_PAL_WIDTH : SCREEN_NTSC_WIDTH;
-	const UWORD uwDefaultHeight = -1;
-	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower @ 5bpp & more in OCS
 
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
@@ -313,16 +329,36 @@ tVPort *vPortCreate(void *pTagList, ...)
 	pVPort->uwOffsY += ulAddOffsY;
 	logWrite("Offsets: %ux%u\n", pVPort->uwOffsX, pVPort->uwOffsY);
 
+	if(
+		tagGet(pTagList, vaTags, TAG_VPORT_HIRES, 0) ||
+		((pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) && pPrevVPort && pPrevVPort->eFlags & VP_FLAG_HIRES)
+	) {
+		pVPort->eFlags |= VP_FLAG_HIRES;
+	}
+	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower on 5bpp+ in OCS
+	pVPort->ubBpp = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
+
 	// Get dimensions
+	// FIXME: this doesn't work correctly due to diwstrt/stop being set globally
+	// in view, but is needed for vport manger bitmap default size calcs.
+	UWORD uwDefaultWidth = pView->uwWidth;
+	if(pVPort->eFlags & VP_FLAG_HIRES) {
+		uwDefaultWidth *= 2;
+	}
+	const UWORD uwDefaultHeight = -1;
+
 	pVPort->uwWidth = tagGet(pTagList, vaTags, TAG_VPORT_WIDTH, uwDefaultWidth);
 	pVPort->uwHeight = tagGet(pTagList, vaTags, TAG_VPORT_HEIGHT, uwDefaultHeight);
 	if(pVPort->uwHeight == uwDefaultHeight) {
 		pVPort->uwHeight = pView->uwHeight - pVPort->uwOffsY;
 	}
-	pVPort->ubBPP = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
+
 	logWrite(
-		"Dimensions: %ux%u@%hu\n", pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBPP);
-	
+		"Dimensions: %ux%u@%hu (%s)\n",
+		pVPort->uwWidth, pVPort->uwHeight, pVPort->ubBpp,
+		((pVPort->eFlags & VP_FLAG_HIRES) ? "HIRES" : "LORES")
+	);
+
 	// Update view - add to vPort list
 	++pView->ubVpCount;
 	if (!pView->pFirstVPort)
@@ -476,7 +512,7 @@ void vPortUpdatePalette(tVPort *pVPort) {
 	// (like expanding HUD to fullscreen like we did in Goblin Villages).
 	// On copblocks implementing it is somewhat easy, but on raw copperlist
 	// something clever must be done.
-	if(pVPort->uwFlags & VIEWPORT_HAS_OWN_PALETTE) {
+	if(pVPort->eFlags & VP_FLAG_HAS_OWN_PALETTE) {
 		logWrite("TODO: implement vPortUpdatePalette!\n");
 	}
 }
@@ -556,11 +592,9 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager)
 		pVpManager, pVpCurr, pVPort);
 }
 
-void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager)
-{
-	if (!pVPort->pFirstManager)
-	{
-		logWrite("ERR: vPort %p has no managers!\n", pVPort);
+void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
+	if(!pVPort->pFirstManager) {
+		logWrite("ERR: vPort %p has no managers\n", pVPort);
 		return;
 	}
 	if (pVPort->pFirstManager == pVpManager)
@@ -581,7 +615,7 @@ void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager)
 			return;
 		}
 	}
-	logWrite("ERR: vPort %p manager %p not found!\n", pVPort, pVpManager);
+	logWrite("ERR: vPort %p manager %p not found\n", pVPort, pVpManager);
 }
 
 tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId)
