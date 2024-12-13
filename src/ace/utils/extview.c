@@ -254,7 +254,7 @@ tVPort *vPortCreate(void *pTagList, ...) {
 	// Determine parent view
 	tView *pView = (tView*)tagGet(pTagList, vaTags, TAG_VPORT_VIEW, 0);
 	if(!pView) {
-		logWrite("ERR: no view ptr in TAG_VPORT_VIEW specified!\n");
+		logWrite("ERR: no view ptr in TAG_VPORT_VIEW specified\n");
 		goto fail;
 	}
 	pVPort->pView = pView;
@@ -477,7 +477,7 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 
 void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
 	if(!pVPort->pFirstManager) {
-		logWrite("ERR: vPort %p has no managers!\n", pVPort);
+		logWrite("ERR: vPort %p has no managers\n", pVPort);
 		return;
 	}
 	if(pVPort->pFirstManager == pVpManager) {
@@ -495,7 +495,7 @@ void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
 			return;
 		}
 	}
-	logWrite("ERR: vPort %p manager %p not found!\n", pVPort, pVpManager);
+	logWrite("ERR: vPort %p manager %p not found\n", pVPort, pVpManager);
 }
 
 tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {

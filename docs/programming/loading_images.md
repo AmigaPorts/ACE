@@ -61,10 +61,10 @@ void gameGsCreate(void) {
   // Load palette from file to first viewport - second one will use the same
   // due to TAG_VIEW_GLOBAL_PALETTE being by default set to 1. We're using
   // 4BPP display, which means max 16 colors.
-  paletteLoad("data/pong.plt", s_pVpScore->pPalette, 16);
+  paletteLoadFromPath("data/pong.plt", s_pVpScore->pPalette, 16);
 
   // Load background graphics and draw them immediately
-  tBitMap *pBmBackground = bitmapCreateFromFile("data/pong_bg.bm", 0);
+  tBitMap *pBmBackground = bitmapCreateFromPath("data/pong_bg.bm", 0);
   for(UWORD uwX = 0; uwX < s_pMainBuffer->uBfrBounds.uwX; uwX += 16) {
     for(UWORD uwY = 0; uwY < s_pMainBuffer->uBfrBounds.uwY; uwY += 16) {
       blitCopyAligned(pBmBackground, 0, 0, s_pMainBuffer->pBack, uwX, uwY, 16, 16);

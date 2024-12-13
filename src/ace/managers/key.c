@@ -96,7 +96,7 @@ void keyCreate(void) {
 #if defined(ACE_DEBUG)
 	if(s_bInitCount++ != 0) {
 		// You should call keyCreate() only once
-		logWrite("ERR: Keyboard already initialized!\n");
+		logWrite("ERR: Keyboard already initialized\n");
 	}
 #endif
 	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, keyIntServer, &g_sKeyManager);
@@ -108,7 +108,7 @@ void keyDestroy(void) {
 #if defined(ACE_DEBUG)
 	if(s_bInitCount-- != 1) {
 		// You should call keyDestroy() only once for each keyCreate()
-		logWrite("ERR: Keyboard was initialized multiple times!\n");
+		logWrite("ERR: Keyboard was initialized multiple times\n");
 	}
 #endif
 	systemSetCiaInt(CIA_A, CIAICRB_SERIAL, 0, 0);

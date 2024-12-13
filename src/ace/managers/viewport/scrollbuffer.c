@@ -36,7 +36,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	tCopList *pCopList = 0;
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_VPORT, 0);
 	if(!pVPort) {
-		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified!\n");
+		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified\n");
 		goto fail;
 	}
 	pManager->sCommon.pVPort = pVPort;
@@ -47,7 +47,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	);
 	if(ubMarginWidth == UCHAR_MAX) {
 		logWrite(
-			"ERR: No margin width (TAG_SCROLLBUFFER_MARGIN_WIDTH) specified!\n"
+			"ERR: No margin width (TAG_SCROLLBUFFER_MARGIN_WIDTH) specified\n"
 		);
 		goto fail;
 	}
@@ -89,7 +89,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 		);
 		if(pManager->uwCopperOffsetStart == uwInvalidCopOffs) {
 			logWrite(
-				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_START) not specified!\n"
+				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_START) not specified\n"
 			);
 			goto fail;
 		}
@@ -98,7 +98,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 		);
 		if(pManager->uwCopperOffsetBreak == uwInvalidCopOffs) {
 			logWrite(
-				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK) not specified!\n"
+				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK) not specified\n"
 			);
 			goto fail;
 		}

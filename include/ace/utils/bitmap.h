@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 #include <ace/types.h>
+#include <ace/utils/file.h>
 
 // File has its own 'flags' field - could be used in new ACE bitmap struct
 #define BITMAP_INTERLEAVED 1
@@ -84,8 +85,8 @@ typedef struct _tAceBitmap {
  *  @return Newly created OS-compatible bitmap, 0 on error.
  *
  *  @see bitmapDestroy
- *  @see bitmapCreateFromFile
- *  @see bitmapLoadFromFile
+ *  @see bitmapCreateFromFd
+ *  @see bitmapLoadFromFd
  */
 tBitMap* bitmapCreate(
 	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
@@ -96,50 +97,72 @@ tBitMap* bitmapCreate(
  *  If source is smaller than destination, you can use uwStartX & uwStartY
  *  params to load bitmap on given coords.
  *
- *  @param pBitMap    Pointer to destination bitmap
+ *  @param pBitMap Pointer to destination bitmap
  *  @param szFilePath Source bitmap file path.
- *  @param uwStartX   Start X-coordinate on destination bitmap, 8-pixel aligned.
- *  @param uwStartY   Start Y-coordinate on destination bitmap
+ *  @param uwStartX Start X-coordinate on destination bitmap, 8-pixel aligned.
+ *  @param uwStartY Start Y-coordinate on destination bitmap
  *
  *  @see bitmapCreate
- *  @see bitmapCreateFromFile
+ *  @see bitmapCreateFromFd
+ *  @see bitmapCreateFromPath
+ *  @see bitmapLoadFromFd
  */
-void bitmapLoadFromFile(
-	tBitMap *pBitMap, char *szFilePath, UWORD uwStartX, UWORD uwStartY
+void bitmapLoadFromPath(
+	tBitMap *pBitMap, const char *szPath, UWORD uwStartX, UWORD uwStartY
 );
 
 /**
- *  @brief Loads bitmap data from memory to already existing bitmap.
+ *  @brief Loads bitmap data from file to already existing bitmap.
  *  If source is smaller than destination, you can use uwStartX & uwStartY
  *  params to load bitmap on given coords.
  *
- *  @param pBitMap    Pointer to destination bitmap
- *  @param pData      Source bitmap pointer.
- *  @param uwStartX   Start X-coordinate on destination bitmap, 8-pixel aligned.
- *  @param uwStartY   Start Y-coordinate on destination bitmap
+ *  @param pBitMap Pointer to destination bitmap
+ *  @param pFile Handle to the bitmap file. Will be closed on function return.
+ *  @param uwStartX Start X-coordinate on destination bitmap, 8-pixel aligned.
+ *  @param uwStartY Start Y-coordinate on destination bitmap
  *
  *  @see bitmapCreate
- *  @see bitmapCreateFromFile
+ *  @see bitmapCreateFromFd
+ *  @see bitmapCreateFromPath
+ *  @see bitmapLoadFromPath
  */
-void bitmapLoadFromMem(
-	tBitMap *pBitMap,const UBYTE *pData, UWORD uwStartX, UWORD uwStartY
+void bitmapLoadFromFd(
+	tBitMap *pBitMap, tFile *pFile, UWORD uwStartX, UWORD uwStartY
 );
-
 
 /**
  *  @brief Creates bitmap and loads its data from file.
- *  As opposed to bitmapLoadFromFile, this function creates bitmap based
+ *  As opposed to bitmapLoadFromPath, this function creates bitmap based
  *  on dimensions, BPP & flags stored in file.
  *
  *  @param szFilePath Source bitmap file path.
  *  @param isFast True to allocate bitmap in FAST RAM
  *  @return Pointer to newly created bitmap based on file, 0 on error.
  *
- *  @see bitmapLoadFromFile
+ *  @see bitmapCreateFromFd
+ *  @see bitmapLoadFromFd
+ *  @see bitmapLoadFromPath
  *  @see bitmapCreate
  *  @see bitmapDestroy
  */
-tBitMap* bitmapCreateFromFile(const char *szFileName, UBYTE isFast);
+tBitMap* bitmapCreateFromPath(const char *szPath, UBYTE isFast);
+
+/**
+ *  @brief Creates bitmap and loads its data from file.
+ *  As opposed to bitmapLoadFromFd, this function creates bitmap based
+ *  on dimensions, BPP & flags stored in file.
+ *
+ *  @param pFile Handle to the bitmap file. Will be closed on function return.
+ *  @param isFast True to allocate bitmap in FAST RAM
+ *  @return Pointer to newly created bitmap based on file, 0 on error.
+ *
+ *  @see bitmapCreateFromPath
+ *  @see bitmapLoadFromFd
+ *  @see bitmapLoadFromPath
+ *  @see bitmapCreate
+ *  @see bitmapDestroy
+ */
+tBitMap* bitmapCreateFromFd(tFile *pFile, UBYTE isFast);
 
 /**
  *  @brief Destroys given bitmap, freeing its resources to OS.
@@ -149,7 +172,7 @@ tBitMap* bitmapCreateFromFile(const char *szFileName, UBYTE isFast);
  *  @param pBitMap Bitmap to be destroyed.
  *
  *  @see bitmapCreate
- *  @see bitmapCreateFromFile
+ *  @see bitmapCreateFromFd
  */
 void bitmapDestroy(tBitMap *pBitMap);
 

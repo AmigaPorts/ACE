@@ -96,7 +96,7 @@ static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
 		TAG_VPORT_BPP, TEST_SCROLL_BPP,
 		TAG_VPORT_HIRES, isHires,
 	TAG_DONE);
-	paletteLoad("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
+	paletteLoadFromPath("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
 
 	tSimpleBufferManager *s_pBfr = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
@@ -124,7 +124,7 @@ static void initScrollBuffer(UBYTE isHires) {
 		TAG_VPORT_BPP, TEST_SCROLL_BPP,
 		TAG_VPORT_HIRES, isHires,
 	TAG_DONE);
-	paletteLoad("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
+	paletteLoadFromPath("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
 
 	// This will create buffer which is shorter than 640 with capability of
 	// wrapped scrolling to simulate bigger buffer size

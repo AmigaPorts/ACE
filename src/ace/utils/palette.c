@@ -5,43 +5,32 @@
 #include <ace/utils/palette.h>
 #include <ace/managers/blit.h>
 #include <ace/utils/bitmap.h>
-#include <ace/utils/file.h>
+#include <ace/utils/disk_file.h>
 
-void paletteLoad(const char *szFileName, UWORD *pPalette, UBYTE ubMaxLength) {
-	tFile *pFile;
-	UBYTE ubPaletteLength;
-
-	logBlockBegin(
-		"paletteLoad(szFileName: '%s', pPalette: %p, ubMaxLength: %hu)",
-		szFileName, pPalette, ubMaxLength
-	);
-
-	pFile = fileOpen(szFileName, "r");
-	if(!pFile) {
-		logWrite("ERR: File doesn't exist!\n");
-		logBlockEnd("paletteLoad()");
-		return;
-	}
-	else {
-		fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
-		UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
-		logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
-		fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
-		fileClose(pFile);
-	}
-
-	logBlockEnd("paletteLoad()");
+void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UBYTE ubMaxLength) {
+	return paletteLoadFromFd(diskFileOpen(szPath, "rb"), pPalette, ubMaxLength);
 }
 
-void paletteLoadFromMem(const UBYTE* pData, UWORD *pPalette, UBYTE ubMaxLength) {
+void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 	logBlockBegin(
-		"paletteLoadFromMem(pPalette: %p, ubMaxLength: %hu)", pPalette, ubMaxLength
+		"paletteLoadFromFd(pFile: %p, pPalette: %p, ubMaxLength: %hu)",
+		pFile, pPalette, ubMaxLength
 	);
 
-	UBYTE ubPaletteLength = pData[0];
-	memcpy(pPalette, &pData[1], sizeof(UWORD) * MIN(ubMaxLength, ubPaletteLength));
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+		logBlockEnd("paletteLoadFromFd()");
+		return;
+	}
 
-	logBlockEnd("paletteLoadFromMem()");
+	UBYTE ubPaletteLength;
+	fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
+	UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
+	logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
+	fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
+	fileClose(pFile);
+
+	logBlockEnd("paletteLoadFromFd()");
 }
 
 void paletteDim(
@@ -91,9 +80,9 @@ void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
 		pPalette, ubColorCnt, szPath
 	);
 
-	tFile *pFile = fileOpen(szPath, "wb");
+	tFile *pFile = diskFileOpen(szPath, "wb");
 	if(!pFile) {
-		logWrite("ERR: Can't write file!\n");
+		logWrite("ERR: Can't write file\n");
 		logBlockEnd("paletteSave()");
 		return;
 	}
