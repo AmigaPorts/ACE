@@ -22,7 +22,7 @@ extern "C" {
  * bobInit(&sBob1, ...)
  * bobInit(&sBob2, ...)
  * bobInit(&sBobN, ...)
- * bobReallocateBgBuffers()
+ * bobReallocateBuffers()
  *
  * in gamestate loop:
  * bobBegin()
@@ -84,7 +84,7 @@ typedef struct tBob {
  * If you use single buffering, pass same pointer in pFront and pBack.
  *
  * After calling this fn you should call series of bobInit() followed by
- * single bobReallocateBgBuffers().
+ * single bobReallocateBuffers().
  *
  * @param pFront Double buffering's front buffer bitmap.
  * @param pBack Double buffering's back buffer bitmap.
@@ -93,7 +93,7 @@ typedef struct tBob {
  * For scrollBuffer you should use `pScrollBuffer->uwBmAvailHeight`.
  *
  * @see bobInit()
- * @see bobReallocateBgBuffers()
+ * @see bobReallocateBuffers()
  * @see bobManagerDestroy()
  */
 void bobManagerCreate(
@@ -137,7 +137,7 @@ void bobInit(
  *
  * After call to this function, you can't call bobInit() anymore!
  */
-void bobReallocateBgBuffers(void);
+void bobReallocateBuffers(void);
 
 /**
  * @brief Changes bob's animation frame.

@@ -166,9 +166,9 @@ void bobManagerCreate(
 	logBlockEnd("bobManagerCreate()");
 }
 
-void bobReallocateBgBuffers(void) {
+void bobReallocateBuffers(void) {
 	systemUse();
-	logBlockBegin("bobReallocateBgBuffers()");
+	logBlockBegin("bobReallocateBuffers()");
 
 #if !defined(ACE_BOB_PRISTINE_BUFFER)
 	if(s_pQueues[0].pBg) {
@@ -187,7 +187,7 @@ void bobReallocateBgBuffers(void) {
 	s_pQueues[1].pBg = bitmapCreate(16, s_uwBgBufferLength, s_ubBpp, BMF_INTERLEAVED);
 	logWrite("Undraw bg buffer length: %hu\n", s_uwBgBufferLength);
 #endif
-	logBlockEnd("bobReallocateBgBuffers()");
+	logBlockEnd("bobReallocateBuffers()");
 	systemUnuse();
 }
 
