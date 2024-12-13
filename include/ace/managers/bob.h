@@ -5,8 +5,6 @@
 #ifndef _ACE_MANAGERS_BOB_H_
 #define _ACE_MANAGERS_BOB_H_
 
-// #define ACE_BOB_PRISTINE_BUFFER
-
 #ifdef __cplusplus
 extern "C" {
 #endif
