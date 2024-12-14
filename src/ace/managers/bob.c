@@ -363,10 +363,10 @@ UBYTE bobProcessNext(void) {
 			uwBltCon0 = uwBltCon1 | USEB|USED | MINTERM_B;
 		}
 
-		ULONG ulDestinationOffset = bobCalculateBitplaneOffset(pBob, pQueue->pDst);
 		WORD wDstModulo = s_uwDestByteWidth - (uwBlitWords<<1);
 		UBYTE *pB = pBob->pFrameData;
 #if defined(ACE_BOB_PRISTINE_BUFFER)
+		ULONG ulDestinationOffset = bobCalculateBitplaneOffset(pBob, pQueue->pDst);
 		UBYTE *pCD = &pQueue->pDst->Planes[0][ulDestinationOffset];
 		pBob->_pSaveOffsets[s_ubBufferCurr] = ulDestinationOffset;
 #else
