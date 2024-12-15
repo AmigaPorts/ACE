@@ -41,7 +41,13 @@ static void simpleBufferInitializeCopperList(
 
 	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
 	UWORD uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
-	UWORD uwDDfStop = uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
+	
+	UWORD uwDDFStep = ((pManager->sCommon.pVPort->pView->uwWidth / 16)-1)*8;
+	if (pManager->sCommon.pVPort->ubFmode == 3)
+	{
+		uwDDFStep = ((pManager->sCommon.pVPort->pView->uwWidth / 16)-1)*6;
+	}
+	UWORD uwDDfStop = uwDDfStrt + uwDDFStep;
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		uwDDfStrt += 4;
 		uwDDfStop += 4;

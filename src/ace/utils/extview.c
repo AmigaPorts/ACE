@@ -108,7 +108,7 @@ tView *viewCreate(void *pTags, ...) {
 // Additional CLUT tags
 	if (tagGet(pTags, vaTags, TAG_VIEW_USES_AGA, 0))
 	{
-		pView->uwFlags |= VIEWPORT_USES_AGA;
+		pView->uwFlags |= VP_FLAG_AGA;
 		logWrite("Global AGA mode enabled\n");
 	}
 
@@ -171,7 +171,7 @@ void viewUpdateGlobalPalette(const tView *pView) {
 		// for(UBYTE i = 0; i < 32; ++i) {
 		// 	g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 		// }
-		if (pView->uwFlags & VIEWPORT_USES_AGA) {
+		if (pView->uwFlags & VP_FLAG_AGA) {
 
 			WORD colourBanks = (1 << pView->pFirstVPort->ubBpp) /32 ;
 			// oh AGA palette, how convoluted you are.
@@ -220,9 +220,8 @@ void viewLoad(tView *pView)
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
-		g_pCustom->fmode = 0;   // AGA fix
 		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->bplcon4 = 0x0011; // AGA fix
+		g_pCustom->fmode = pView->pFirstVPort->ubFmode;	// AGA fix
 		for (UBYTE i = 0; i < 8; ++i)
 		{
 			g_pCustom->bplpt[i] = 0;
@@ -257,7 +256,7 @@ void viewLoad(tView *pView)
 
 		g_sCopManager.pCopList = pView->pCopList;
 		// Seems strange that everything relies on the first viewport flags, and palette etc
-		if (pView->uwFlags & VIEWPORT_USES_AGA) {
+		if (pView->uwFlags & VP_FLAG_AGA) {
 			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9) | BV(4); // BPP + composite output
 			if ( pView->pFirstVPort->ubBpp == 6) {
 			
@@ -268,7 +267,7 @@ void viewLoad(tView *pView)
 			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
 			g_pCustom->bplcon2 = 0; // No need to KILLEHB because we are not AGA, so just blank the flag.
 		}
-		g_pCustom->fmode = 0;        // AGA fix
+		g_pCustom->fmode = pView->pFirstVPort->ubFmode;        // AGA fix
 		g_pCustom->bplcon3 = 0;      // AGA fix
 		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
 		g_pCustom->bplcon4 = 0x0011; // AGA fix
@@ -341,6 +340,9 @@ tVPort *vPortCreate(void *pTagList, ...)
 	const UWORD uwDefaultBpp = 4; // 'Cuz copper is slower on 5bpp+ in OCS
 	pVPort->ubBpp = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 
+	const UBYTE ubDefaultFmode = 0;
+	pVPort->ubFmode = tagGet(pTagList, vaTags, TAG_VPORT_FMODE, ubDefaultFmode);
+	
 	// Get dimensions
 	// FIXME: this doesn't work correctly due to diwstrt/stop being set globally
 	// in view, but is needed for vport manger bitmap default size calcs.
@@ -383,7 +385,7 @@ tVPort *vPortCreate(void *pTagList, ...)
 	// Palette tag
 
 	// Allocate memory for the palette;
-	if (pView->uwFlags & VIEWPORT_USES_AGA) {
+	if (pView->uwFlags & VP_FLAG_AGA) {
 		// AGA uses 24 bit palette entries. 		
 		pVPort->pPalette = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBpp)); 
 		UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
@@ -472,7 +474,7 @@ void vPortDestroy(tVPort *pVPort)
 			}
 			logBlockEnd("Destroying managers");
 
-			if (pVPort->uwFlags & VIEWPORT_USES_AGA)
+			if (pVPort->eFlags & VP_FLAG_AGA)
 			{
 				// AGA uses 24 bit palette entries. 
 				memFree(pVPort->pPalette, sizeof(ULONG) * (1 << pVPort->ubBpp));

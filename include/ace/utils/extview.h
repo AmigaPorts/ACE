@@ -68,6 +68,7 @@ typedef enum tTagVport {
 	TAG_VPORT_OFFSET_TOP   = TAG_USER | 7,
 	// Set to 1 to enable hires mode, set to zero for lores
 	TAG_VPORT_HIRES        = TAG_USER | 8,
+	TAG_VPORT_FMODE		= TAG_USER | 9,
 } tTagVport;
 
 
@@ -90,9 +91,9 @@ typedef enum tViewFlags {
 typedef enum tVpFlag {
 	VP_FLAG_HAS_OWN_PALETTE = BV(0),
 	VP_FLAG_HIRES           = BV(1),
+	VP_FLAG_AGA			 	= BV(2),
 } tVpFlag;
 
-#define VIEWPORT_USES_AGA	  2
 /**
  *  Viewport manager IDs.
  *  Number determines processing order. Camera is last, so rest may see
@@ -154,6 +155,7 @@ typedef struct _tVPort {
 
 	// Color info
 	UBYTE ubBpp;        ///< Bitplane count
+	UBYTE ubFmode;	  ///< FMODE value
 	
 	UWORD* pPalette;
 

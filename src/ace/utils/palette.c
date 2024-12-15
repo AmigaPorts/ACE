@@ -23,6 +23,7 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 		return;
 	}
 	else {
+		UBYTE ubPaletteLength;
 		fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
 		UWORD uwColorsRead = MIN(ubPaletteLength, ubMaxLength);
 		if(uwColorsRead ==255)
@@ -47,12 +48,12 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 		fileClose(pFile);
 	}
 
-	UBYTE ubPaletteLength;
-	fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
-	UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
-	logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
-	fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
-	fileClose(pFile);
+	// UBYTE ubPaletteLength;
+	// fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
+	// UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
+	// logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
+	// fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
+	// fileClose(pFile);
 
 	logBlockEnd("paletteLoadFromFd()");
 }
