@@ -140,7 +140,7 @@ void gsTestInputCreate(void) {
 	s_pTestInputVPort->pPalette[3] = 0xFFF;
 	s_pTestInputVPort->pPalette[4] = 0x333;
 
-	s_pFont = fontCreate("data/fonts/silkscreen.fnt");
+	s_pFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 
 	fontDrawStr(

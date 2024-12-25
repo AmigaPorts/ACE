@@ -188,7 +188,7 @@ void gsTestBufferScrollCreate(void) {
 	s_pView = viewCreate(0,
 	TAG_DONE);
 
-	s_pFont = fontCreate("data/fonts/silkscreen.fnt");
+	s_pFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 	s_eCurrentMode = MODE_SIMPLE_LORES;
 	changeMode(s_eCurrentMode);

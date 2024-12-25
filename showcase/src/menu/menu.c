@@ -47,7 +47,7 @@ void gsMenuCreate(void) {
 	s_pMenuVPort->pPalette[4] = 0x111;
 
 	// Load font
-	s_pMenuFont = fontCreate("data/fonts/silkscreen.fnt");
+	s_pMenuFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pMenuFont->uwHeight);
 
 	// Prepare menu lists
