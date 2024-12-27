@@ -55,9 +55,8 @@ static inline ULONG ror32(ULONG ulIn, UBYTE ubRot) {
 
 /**
  * @brief Swaps contents of two vars.
- * VBCC doesn't have typeof() so there is no type-safe way to do it.
  */
-#define SWAP(a, b) do {ULONG tmp; tmp = a; a = b; b = tmp;} while(0)
+#define SWAP(a, b) do {typeof(a) tmp; tmp = a; a = b; b = tmp;} while(0)
 
 // Math
 #define ABS(x) ((x)<0 ? -(x) : (x))
