@@ -5,10 +5,6 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 
-#define BLIT_LINE_OR ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
-#define BLIT_LINE_XOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
-#define BLIT_LINE_ERASE ((NABC | NANBC | ANBC) | (SRCA | SRCC | DEST))
-
 void blitManagerCreate(void) {
 	logBlockBegin("blitManagerCreate");
 	systemSetDmaBit(DMAB_BLITTER, 1);
@@ -267,10 +263,10 @@ UBYTE blitUnsafeCopyAligned(
 	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
 ) {
 	// Use C channel instead of A - same speed, less regs to set up
-	UWORD uwBlitWords = wWidth >> 4;
+	UWORD uwBlitWords = wWidth / 16;
 	UWORD uwBltCon0 = USEC|USED | MINTERM_C;
-	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX>>3);
-	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX>>3);
+	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
+	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
 
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		WORD wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
@@ -560,8 +556,57 @@ UBYTE blitSafeRect(
 	return blitUnsafeRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor);
 }
 
+void blitUnsafeFillAligned(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubPlane, UBYTE ubFillMode
+) {
+	UWORD uwBlitWords = wWidth / 16;
+
+	UWORD uwWordMaskA = 0xFFFF;
+	ULONG ulDstOffs = pDst->BytesPerRow * (wDstY + wHeight - 1) + ((wDstX + wWidth) / 8) - sizeof(UWORD);
+	WORD wDstModulo = pDst->BytesPerRow - (uwBlitWords * 2);
+	UWORD uwBltCon0 = USEA | USED | MINTERM_A;
+	UWORD uwBltCon1 = BLITREVERSE | ubFillMode;
+	UBYTE *pPlaneOffset = pDst->Planes[ubPlane] + ulDstOffs;
+
+	blitWait(); // Don't modify registers when other blit is in progress
+	g_pCustom->bltcon1 = uwBltCon1;
+	g_pCustom->bltafwm = uwWordMaskA;
+	g_pCustom->bltalwm = uwWordMaskA;
+
+	g_pCustom->bltamod = wDstModulo;
+	g_pCustom->bltdmod = wDstModulo;
+
+	g_pCustom->bltcon0 = uwBltCon0;
+	// This hell of a casting must stay here or else large offsets get bugged!
+	g_pCustom->bltapt = pPlaneOffset;
+	g_pCustom->bltdpt = pPlaneOffset;
+#if defined(ACE_USE_ECS_FEATURES)
+	g_pCustom->bltsizv = wHeight;
+	g_pCustom->bltsizh = uwBlitWords;
+#else
+	g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+#endif
+}
+
+UBYTE blitSafeFillAligned(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubPlane, UBYTE ubFillMode, UWORD uwLine, const char *szFile
+) {
+	if((wDstX | wWidth) & 0x000F) {
+		logWrite("ERR: Dimensions are not divisible by 16\n");
+		return 0;
+	}
+	if(!blitCheck(0,0,0,pDst, wDstX, wDstY, wWidth, wHeight, uwLine, szFile)) {
+		return 0;
+	}
+
+	blitUnsafeFillAligned(pDst, wDstX, wDstY, wWidth, wHeight, ubPlane, ubFillMode);
+	return 1;
+}
+
 void blitLine(
-	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
+	tBitMap *pDst, WORD wX1, WORD wY1, WORD wX2, WORD wY2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
 ) {
 	// Based on Cahir's function from:
@@ -573,16 +618,14 @@ void blitLine(
 	}
 
 	// Always draw the line downwards.
-	if (y1 > y2) {
-		SWAP(x1, x2);
-		SWAP(y1, y2);
+	if (wY1 > wY2) {
+		SWAP(wX1, wX2);
+		SWAP(wY1, wY2);
 	}
 
-	// Word containing the first pixel of the line.
-	WORD wDx = x2 - x1;
-	WORD wDy = y2 - y1;
-
 	// Setup octant bits
+	WORD wDx = wX2 - wX1;
+	WORD wDy = wY2 - wY1;
 	if (wDx < 0) {
 		wDx = -wDx;
 		if (wDx >= wDy) {
@@ -606,10 +649,11 @@ void blitLine(
 	if (wDerr < 0) {
 		uwBltCon1 |= SIGNFLAG;
 	}
-	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
 
-	UWORD uwBltCon0 = ror16(x1&15, 4);
-	ULONG ulDataOffs = pDst->BytesPerRow * y1 + ((x1 >> 3) & ~1);
+	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
+	UWORD uwBltCon0 = ror16(wX1 & 15, 4);
+	ULONG ulDataOffs = pDst->BytesPerRow * wY1 + ((wX1 / 8) & ~1);
+
 	blitWait(); // Don't modify registers when other blit is in progress
 	g_pCustom->bltafwm = -1;
 	g_pCustom->bltalwm = -1;
@@ -622,14 +666,80 @@ void blitLine(
 	g_pCustom->bltcon1 = uwBltCon1;
 	g_pCustom->bltapt = (APTR)(LONG)wDerr;
 	for(UBYTE ubPlane = 0; ubPlane != pDst->Depth; ++ubPlane) {
-		UBYTE *pData = pDst->Planes[ubPlane] + ulDataOffs;
-		UWORD uwOp = ((ubColor & BV(ubPlane)) ? BLIT_LINE_OR : BLIT_LINE_ERASE);
+		UBYTE *pFirstLineWord = pDst->Planes[ubPlane] + ulDataOffs;
+		UWORD uwOp = ((ubColor & BV(ubPlane)) ? BLIT_LINE_MODE_OR : BLIT_LINE_MODE_ERASE);
 
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0 | uwOp;
-		g_pCustom->bltcpt = pData;
-		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pData);
+		g_pCustom->bltcpt = pFirstLineWord;
+		g_pCustom->bltdpt = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pFirstLineWord);
 		g_pCustom->bltsize = uwBltSize;
 	}
 }
+
+void blitLinePlane(
+	tBitMap *pDst, WORD wX1, WORD wY1, WORD wX2, WORD wY2,
+	UBYTE ubPlane, UWORD uwPattern, tBlitLineMode eMode, UBYTE isOneDot
+) {
+	// Based on Cahir's function from:
+	// https://github.com/cahirwpz/demoscene/blob/master/a500/base/libsys/blt-line.c
+	UWORD uwBltCon1 = LINEMODE;
+	if(isOneDot) {
+		uwBltCon1 |= ONEDOT;
+	}
+
+	// Always draw the line downwards.
+	if (wY1 > wY2) {
+		SWAP(wX1, wX2);
+		SWAP(wY1, wY2);
+	}
+
+	// Setup octant bits
+	WORD wDx = wX2 - wX1;
+	WORD wDy = wY2 - wY1;
+	if (wDx < 0) {
+		wDx = -wDx;
+		if (wDx >= wDy) {
+			uwBltCon1 |= AUL | SUD;
+		}
+		else {
+			uwBltCon1 |= SUL;
+			SWAP(wDx, wDy);
+		}
+	}
+	else {
+		if (wDx >= wDy) {
+			uwBltCon1 |= SUD;
+		}
+		else {
+			SWAP(wDx, wDy);
+		}
+	}
+
+	WORD wDerr = wDy + wDy - wDx;
+	if (wDerr < 0) {
+		uwBltCon1 |= SIGNFLAG;
+	}
+
+	UWORD uwBltSize = (wDx << HSIZEBITS) + 66;
+	UWORD uwBltCon0 = ror16(wX1 & 15, 4);
+	ULONG ulDataOffs = pDst->BytesPerRow * wY1 + ((wX1 / 8) & ~1);
+	UBYTE *pFirstLineWord = pDst->Planes[ubPlane] + ulDataOffs;
+	UBYTE *pD = (APTR)(isOneDot ? pDst->Planes[pDst->Depth] : pFirstLineWord);
+
+	blitWait(); // Don't modify registers when other blit is in progress
+	g_pCustom->bltafwm = -1;
+	g_pCustom->bltalwm = -1;
+	g_pCustom->bltadat = 0x8000;
+	g_pCustom->bltbdat = uwPattern;
+	g_pCustom->bltamod = wDerr - wDx;
+	g_pCustom->bltbmod = wDy + wDy;
+	g_pCustom->bltcmod = pDst->BytesPerRow;
+	g_pCustom->bltdmod = pDst->BytesPerRow;
+	g_pCustom->bltcon1 = uwBltCon1;
+	g_pCustom->bltapt = (APTR)(LONG)wDerr;
+	g_pCustom->bltcon0 = uwBltCon0 | (UWORD)eMode;
+	g_pCustom->bltcpt = pFirstLineWord;
+	g_pCustom->bltdpt = pD;
+	g_pCustom->bltsize = uwBltSize;
 }
