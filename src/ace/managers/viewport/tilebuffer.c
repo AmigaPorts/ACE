@@ -245,7 +245,7 @@ void tileBufferReset(
 	if(uwTileX && uwTileY) {
 		pManager->pTileData = memAllocFast(uwTileX * sizeof(pManager->pTileData[0]));
 		for(UWORD uwCol = uwTileX; uwCol--;) {
-			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(pManager->pTileData[uwCol]));
+			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(pManager->pTileData[uwCol][0]));
 		}
 	}
 
