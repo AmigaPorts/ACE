@@ -49,7 +49,6 @@ tConfig::tConfig(const std::vector<const char*> &vArgs)
 			m_isInterleaved = true;
 		}
 		else if(vArgs[ArgIndex] == std::string("-vh")) {
-			fmt::print("VARIABLE HEIGHT ON\n\n\n\n");
 			m_isVaryingHeight = true;
 		}
 		else if(vArgs[ArgIndex] == std::string("-plt") && ArgIndex < ArgCount - 1) {
