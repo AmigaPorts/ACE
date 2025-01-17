@@ -49,8 +49,8 @@ typedef struct tSprite {
  * @param uwRawCopPos In raw mode, specifies an offset on where
  * the sprite commands should reside. Requires space of 16 copper commands.
  *
- * @see copBlockDisableSprites()
- * @see copRawDisableSprites()
+ * @see spriteDisableInCopBlockMode()
+ * @see spriteDisableInCopRawMode()
  * @see systemSetDmaBit()
  * @see spriteManagerDestroy()
  */
