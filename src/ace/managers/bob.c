@@ -223,6 +223,9 @@ void bobSetHeight(tBob *pBob, UWORD uwHeight)
 }
 
 UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY) {
+	if(uwOffsetY >= pBitmap->Rows) {
+		logWrite("ERR: bobCalcFrameAddress() OffsY %hu > bitmap height: %hu", uwOffsetY, pBitmap->Rows);
+	}
 	return &pBitmap->Planes[0][pBitmap->BytesPerRow * uwOffsetY];
 }
 
