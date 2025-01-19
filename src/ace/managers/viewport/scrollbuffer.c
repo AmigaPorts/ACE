@@ -7,8 +7,6 @@
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <limits.h>
 
-#ifdef AMIGA
-
 static UWORD nearestPowerOf2(UWORD uwVal) {
 	// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 	// Decrease by one and fill result with ones, then increase by one
@@ -22,68 +20,63 @@ static UWORD nearestPowerOf2(UWORD uwVal) {
 }
 
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
-	va_list vaTags;
-	tCopList *pCopList = 0;
-	tScrollBufferManager *pManager;
-	UBYTE ubMarginWidth;
-	UWORD uwBoundWidth, uwBoundHeight;
-	UBYTE ubBitmapFlags;
-	UBYTE isCameraCreated = 0;
-	UBYTE isDblBuf;
-
 	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
+
+	va_list vaTags;
 	va_start(vaTags, pTags);
 
 	// Init manager
-	pManager = memAllocFastClear(sizeof(tScrollBufferManager));
+	tScrollBufferManager *pManager = memAllocFastClear(sizeof(tScrollBufferManager));
 	pManager->sCommon.process = (tVpManagerFn)scrollBufferProcess;
 	pManager->sCommon.destroy = (tVpManagerFn)scrollBufferDestroy;
 	pManager->sCommon.ubId = VPM_SCROLL;
 	logWrite("Addr: %p\n", pManager);
 
+	UBYTE isCameraCreated = 0;
+	tCopList *pCopList = 0;
 	tVPort *pVPort = (tVPort*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_VPORT, 0);
 	if(!pVPort) {
-		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified!\n");
+		logWrite("ERR: No parent viewport (TAG_SCROLLBUFFER_VPORT) specified\n");
 		goto fail;
 	}
 	pManager->sCommon.pVPort = pVPort;
 	logWrite("Parent VPort: %p\n", pVPort);
 
-	ubMarginWidth = tagGet(
+	UBYTE ubMarginWidth = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_MARGIN_WIDTH, UCHAR_MAX
 	);
 	if(ubMarginWidth == UCHAR_MAX) {
 		logWrite(
-			"ERR: No margin width (TAG_SCROLLBUFFER_MARGIN_WIDTH) specified!\n"
+			"ERR: No margin width (TAG_SCROLLBUFFER_MARGIN_WIDTH) specified\n"
 		);
 		goto fail;
 	}
 
 	// Buffer bitmap
-	uwBoundWidth = tagGet(
+	UWORD uwBoundWidth = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_BOUND_WIDTH, pVPort->uwWidth
 	);
-	uwBoundHeight = tagGet(
+	UWORD uwBoundHeight = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_BOUND_HEIGHT, pVPort->uwHeight
 	);
-	ubBitmapFlags = tagGet(
+	UBYTE ubBitmapFlags = tagGet(
 		pTags, vaTags, TAG_SCROLLBUFFER_BITMAP_FLAGS, BMF_CLEAR
 	);
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
 
-	isDblBuf = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
+	UBYTE isDblBuf = tagGet(pTags, vaTags, TAG_SCROLLBUFFER_IS_DBLBUF, 0);
 
 	// Create copperlist entries
 	pCopList = pVPort->pView->pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
 		pManager->pStartBlock = copBlockCreate(
-			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 8,
+			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 8,
 			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			s_pCopperWaitXByBitplanes[pVPort->ubBPP], pVPort->uwOffsY + pVPort->pView->ubPosY -1
+			s_pCopperWaitXByBitplanes[pVPort->ubBpp], pVPort->uwOffsY + pVPort->pView->ubPosY -1
 		);
 		pManager->pBreakBlock = copBlockCreate(
-			pVPort->pView->pCopList, 2 * pVPort->ubBPP + 2,
+			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 2,
 			// Dummy position - will be updated
 			0x7F, 0xFF
 		);
@@ -96,7 +89,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 		);
 		if(pManager->uwCopperOffsetStart == uwInvalidCopOffs) {
 			logWrite(
-				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_START) not specified!\n"
+				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_START) not specified\n"
 			);
 			goto fail;
 		}
@@ -105,7 +98,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 		);
 		if(pManager->uwCopperOffsetBreak == uwInvalidCopOffs) {
 			logWrite(
-				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK) not specified!\n"
+				"ERR: Copperlist offset (TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK) not specified\n"
 			);
 			goto fail;
 		}
@@ -192,20 +185,25 @@ UBYTE scrollBufferGetRawCopperlistInstructionCountBreak(UBYTE ubBpp) {
 	);
 }
 
-static void resetStartCopperlist(tCopCmd *pCmds, const UWORD uwOffsY, const UBYTE ubBPP, const UWORD uwModulo) {
+static void resetStartCopperlist(tCopCmd *pCmds, tScrollBufferManager *pManager) {
+	UWORD uwOffsY = (
+		pManager->sCommon.pVPort->pView->ubPosY +
+		pManager->sCommon.pVPort->uwOffsY -1
+	);
+	UBYTE ubBpp = pManager->sCommon.pVPort->ubBpp;
 	UBYTE i = 0;
-	copSetWait(&pCmds[i++].sWait, s_pCopperWaitXByBitplanes[ubBPP], uwOffsY);
+	copSetWait(&pCmds[i++].sWait, s_pCopperWaitXByBitplanes[ubBpp], uwOffsY);
 	// prepare bitplane ptrs & bplcon commands. will be updated in process
 	copSetMove(&pCmds[i++].sMove, &g_pCustom->bplcon1, 0);
-	for(UBYTE j = 0; j < ubBPP; j++) {
+	for(UBYTE j = 0; j < ubBpp; j++) {
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwHi, 0);
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwLo, 0);
 	}
 	// After bitplane ptrs & bplcon
-	copSetMove(&pCmds[i++].sMove, &g_pCustom->ddfstrt, 0x0030);   // Fetch start
-	copSetMove(&pCmds[i++].sMove, &g_pCustom->bpl1mod, uwModulo); // Odd planes modulo
-	copSetMove(&pCmds[i++].sMove, &g_pCustom->bpl2mod, uwModulo); // Even planes modulo
-	copSetMove(&pCmds[i++].sMove, &g_pCustom->ddfstop, 0x00D0);   // Fetch stop
+	copSetMove(&pCmds[i++].sMove, &g_pCustom->ddfstrt, pManager->uwDDfStrt); // Fetch start
+	copSetMove(&pCmds[i++].sMove, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
+	copSetMove(&pCmds[i++].sMove, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
+	copSetMove(&pCmds[i++].sMove, &g_pCustom->ddfstop, pManager->uwDDfStop); // Fetch stop
 }
 
 static void updateStartCopperlist(tCopCmd *pCmds, const tBitMap *pBitmap, const UWORD uwShift, const ULONG ulPlaneOffs) {
@@ -218,10 +216,10 @@ static void updateStartCopperlist(tCopCmd *pCmds, const tBitMap *pBitmap, const 
 	}
 }
 
-static void resetBreakCopperlist(tCopCmd *pCmds, const UWORD uwOffsY, const UBYTE ubBPP) {
+static void resetBreakCopperlist(tCopCmd *pCmds, const UWORD uwOffsY, const UBYTE ubBpp) {
 	UBYTE i = 0;
 	// copper jump location & strobe to jump past the break block
-	UBYTE offset = scrollBufferGetRawCopperlistInstructionCountBreak(ubBPP);
+	UBYTE offset = scrollBufferGetRawCopperlistInstructionCountBreak(ubBpp);
 	copSetMove(&pCmds[i++].sMove, &g_pCop2Lc->uwHi, (ULONG)(pCmds + offset) >> 16);
 	copSetMove(&pCmds[i++].sMove, &g_pCop2Lc->uwLo, (ULONG)(pCmds + offset) & 0xFFFF);
 	// prepare a wait/skip instruction that will always be true immediately
@@ -231,7 +229,7 @@ static void resetBreakCopperlist(tCopCmd *pCmds, const UWORD uwOffsY, const UBYT
 
 	// wait & bitplane ptrs
 	copSetWait(&pCmds[i++].sWait, 0, uwOffsY);
-	for(UBYTE j = 0; j < ubBPP; j++) {
+	for(UBYTE j = 0; j < ubBpp; j++) {
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwHi, 0);
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwLo, 0);
 	}
@@ -263,12 +261,18 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	// convert camera pos to scroll pos
 	UWORD uwScrollX = pManager->pCamera->uPos.uwX;
-	UWORD uwScrollY = pManager->pCamera->uPos.uwY & (pManager->uwBmAvailHeight - 1);
+	UWORD uwScrollY = SCROLLBUFFER_HEIGHT_MODULO(
+		pManager->pCamera->uPos.uwY, pManager->uwBmAvailHeight
+	);
 
 	// preparations for new copperlist
 	UWORD uwShift = (16 - (uwScrollX & 0xF)) & 0xF; // Bitplane shift - single
-	uwShift = (uwShift << 4) | uwShift;             // Bitplane shift - PF1 | PF2
 	ULONG ulBplAddX = ((uwScrollX - 1) >> 4) << 1;  // must be ULONG!
+	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
+		uwShift >>= 1; // Usable scroll values are 0..7, shifts 2 pixels per value
+		ulBplAddX -= 2; // Fetch 4 bytes (2 words) in scrolling instead of 2 (4)
+	}
+	uwShift = (uwShift << 4) | uwShift;             // Bitplane shift - PF1 | PF2
 
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
@@ -295,7 +299,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		pBlock->uwCurrCount = 0; // Rewind copBlock
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, uwShift);
-		for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
+		for(UBYTE i = pManager->sCommon.pVPort->ubBpp; i--;) {
 			ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulPlaneOffs;
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
@@ -312,12 +316,12 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			if(pBlock->ubDisabled) {
 				copBlockEnable(pCopList, pBlock);
 			}
-			copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBPP], (
+			copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBpp], (
 				pManager->sCommon.pVPort->pView->ubPosY +
 				pManager->sCommon.pVPort->uwOffsY +
 				pManager->uwBmAvailHeight - uwScrollY - 1
 			));
-			for(UBYTE i = pManager->sCommon.pVPort->ubBPP; i--;) {
+			for(UBYTE i = pManager->sCommon.pVPort->ubBpp; i--;) {
 				ULONG ulPlaneAddr = (ULONG)(pManager->pBack->Planes[i]) + ulBplAddX;
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 				copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
@@ -342,22 +346,24 @@ void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
 	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBuf
 ) {
-	UWORD uwVpWidth, uwVpHeight;
-	UWORD uwCalcWidth, uwCalcHeight;
 	logBlockBegin(
 		"scrollBufferReset(pManager: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)",
 		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight
 	);
 	// Helper vars
-	uwVpWidth = pManager->sCommon.pVPort->uwWidth;
-	uwVpHeight = pManager->sCommon.pVPort->uwHeight;
+	UWORD uwVpWidth = pManager->sCommon.pVPort->uwWidth;
+	UWORD uwVpHeight = pManager->sCommon.pVPort->uwHeight;
 
 	// Reset manager fields
 	pManager->uwVpHeightPrev = 0;
 	pManager->uBfrBounds.uwX = uwBoundWidth;
 	pManager->uBfrBounds.uwY = uwBoundHeight;
 	// Optimize avail height to power of two so that modulo can be an AND
-	pManager->uwBmAvailHeight = nearestPowerOf2(ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 4));
+	pManager->uwBmAvailHeight =
+		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
+#if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
+	pManager->uwBmAvailHeight = nearestPowerOf2(pManager->uwBmAvailHeight);
+#endif
 
 	// Destroy old buffer bitmap
 	if(pManager->pFront && pManager->pFront != pManager->pBack) {
@@ -368,14 +374,14 @@ void scrollBufferReset(
 	}
 
 	// Create new buffer bitmap
-	uwCalcWidth = uwVpWidth + ubMarginWidth*4;
-	uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
+	UWORD uwCalcWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
+	UWORD uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 	pManager->pBack = bitmapCreate(
-		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, ubBitmapFlags
+		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
 	);
 	if(isDblBuf) {
 		pManager->pFront = bitmapCreate(
-			uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBPP, ubBitmapFlags
+			uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
 		);
 	}
 	else {
@@ -383,46 +389,56 @@ void scrollBufferReset(
 	}
 	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3) - 2;
 
+	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
+	pManager->uwDDfStop = pManager->uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
+	pManager->uwDDfStrt -= 8; // for scroll reasons
+	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
+		// Start/stop one 4-step bitplane fetch pattern later: 3120
+		pManager->uwDDfStrt += 4;
+		pManager->uwDDfStop += 4;
+
+		// One word more for fetch
+		pManager->uwModulo -= 2;
+	}
+	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", pManager->uwDDfStrt, pManager->uwDDfStop, pManager->uwModulo);
+
 	// Constant stuff in copperlist
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
 		resetStartCopperlist(
-				&pCopList->pBackBfr->pList[pManager->uwCopperOffsetStart],
-				pManager->sCommon.pVPort->pView->ubPosY +
-				pManager->sCommon.pVPort->uwOffsY -1,
-				pManager->sCommon.pVPort->ubBPP,
-				pManager->uwModulo);
+			&pCopList->pBackBfr->pList[pManager->uwCopperOffsetStart],
+			pManager
+		);
 		resetBreakCopperlist(
-				&pCopList->pBackBfr->pList[pManager->uwCopperOffsetBreak],
-				pManager->sCommon.pVPort->pView->ubPosY +
-				pManager->sCommon.pVPort->uwOffsY -1,
-				pManager->sCommon.pVPort->ubBPP);
+			&pCopList->pBackBfr->pList[pManager->uwCopperOffsetBreak],
+			pManager->sCommon.pVPort->pView->ubPosY +
+			pManager->sCommon.pVPort->uwOffsY - 1,
+			pManager->sCommon.pVPort->ubBpp);
 		// again for double bufferred
 		resetStartCopperlist(
-				&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetStart],
-				pManager->sCommon.pVPort->pView->ubPosY +
-				pManager->sCommon.pVPort->uwOffsY -1,
-				pManager->sCommon.pVPort->ubBPP,
-				pManager->uwModulo);
+			&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetStart],
+			pManager
+		);
 		resetBreakCopperlist(
-				&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetBreak],
-				pManager->sCommon.pVPort->pView->ubPosY +
-				pManager->sCommon.pVPort->uwOffsY -1,
-				pManager->sCommon.pVPort->ubBPP);
+			&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetBreak],
+			pManager->sCommon.pVPort->pView->ubPosY +
+			pManager->sCommon.pVPort->uwOffsY - 1,
+			pManager->sCommon.pVPort->ubBpp
+		);
 	}
 	else {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		// Set initial WAIT
-		copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBPP], (
+		copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBpp], (
 			pManager->sCommon.pVPort->pView->ubPosY +
 			pManager->sCommon.pVPort->uwOffsY - 1
 		));
 		// After bitplane ptrs & bplcon
-		pBlock->uwCurrCount = 2 * pManager->sCommon.pVPort->ubBPP + 1;
-		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, 0x0030);             // Fetch start
-		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
-		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
-		copMove(pCopList, pBlock, &g_pCustom->ddfstop, 0x00D0);             // Fetch stop
+		pBlock->uwCurrCount = 2 * pManager->sCommon.pVPort->ubBpp + 1;
+		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, pManager->uwDDfStrt); // Fetch start
+		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo);  // Odd planes modulo
+		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo);  // Even planes modulo
+		copMove(pCopList, pBlock, &g_pCustom->ddfstop, pManager->uwDDfStop); // Fetch stop
 	}
 
 	// Refresh bitplane pointers in copperlist - 2x for double buffered and with swapped cop front and back buffers
@@ -468,5 +484,3 @@ void scrollBufferBlitMask(
 		);
 	}
 }
-
-#endif // AMIGA

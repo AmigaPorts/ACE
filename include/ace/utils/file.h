@@ -16,9 +16,32 @@ extern "C" {
 #define FILE_SEEK_SET SEEK_SET
 #define FILE_SEEK_END SEEK_END
 
-typedef FILE tFile;
+#if defined(ACE_FILE_USE_ONLY_DISK)
+typedef void *tFile;
+#else
+typedef void (*tCbFileClose)(void *pData);
+typedef ULONG (*tCbFileRead)(void *pData, void *pDest, ULONG ulSize);
+typedef ULONG (*tCbFileWrite)(void *pData, const void *pSrc, ULONG ulSize);
+typedef ULONG (*tCbFileSeek)(void *pData, LONG lPos, WORD wMode);
+typedef ULONG (*tCbFileGetPos)(void *pData);
+typedef UBYTE (*tCbFileIsEof)(void *pData);
+typedef void (*tCbFileFlush)(void *pData);
 
-tFile *fileOpen(const char *szPath, const char *szMode);
+typedef struct tFileCallbacks {
+	tCbFileClose cbFileClose;
+	tCbFileRead cbFileRead;
+	tCbFileWrite cbFileWrite;
+	tCbFileSeek cbFileSeek;
+	tCbFileGetPos cbFileGetPos;
+	tCbFileIsEof cbFileIsEof;
+	tCbFileFlush cbFileFlush;
+} tFileCallbacks;
+
+typedef struct tFile {
+	const tFileCallbacks *pCallbacks;
+	void *pData;
+} tFile;
+#endif
 
 void fileClose(tFile *pFile);
 
@@ -26,58 +49,23 @@ ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize);
 
 ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize);
 
-ULONG fileSeek(tFile *pFile, ULONG ulPos, WORD wMode);
+ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode);
 
 ULONG fileGetPos(tFile *pFile);
 
 UBYTE fileIsEof(tFile *pFile);
-
-LONG fileVaPrintf(tFile *pFile, const char *szFmt, va_list vaArgs);
-
-LONG filePrintf(tFile *pFile, const char *szFmt, ...);
-
-LONG fileVaScanf(tFile *pFile, const char *szFmt, va_list vaArgs);
-
-LONG fileScanf(tFile *pFile,const char *szFmt, ...);
 
 void fileFlush(tFile *pFile);
 
 /**
  * @brief Returns file size of file, in bytes.
  *
- * @param szPath Path to file.
+ * @param pFile File handle.
  * @return On fail -1, otherwise file size in bytes.
  */
-LONG fileGetSize(const char *szPath);
+LONG fileGetSize(tFile *pFile);
 
 void fileWriteStr(tFile *pFile, const char *szLine);
-
-/**
- * @brief Check whether file at given path exists and is not a directory.
- *
- * @param szPath Path to file to be checked.
- * @return Success: 1, otherwise 0.
- *
- * @see dirExists()
- */
-UBYTE fileExists(const char *szPath);
-
-/**
- * @brief Deletes the selected file.
- *
- * @param szPath Path to file to be deleted.
- * @return 1 on success, otherwise 0, including if file does not exist.
- */
-UBYTE fileDelete(const char *szPath);
-
-/**
- * @brief Moves or renames selected file into another file.
- *
- * @param szSource Path to source file to be moved.
- * @param szDest Path to new file destination.
- * @return 1 on success, otherwise 0, including if source file doesn't exist or destination path is already occupied.
- */
-UBYTE fileMove(const char *szSource, const char *szDest);
 
 #ifdef __cplusplus
 }

@@ -6,7 +6,7 @@
 #include <ace/macros.h>
 #include <ace/managers/system.h>
 #include <ace/utils/font.h>
-#include <ace/utils/file.h>
+#include <ace/utils/disk_file.h>
 
 /* Globals */
 
@@ -19,23 +19,25 @@ UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 	return pFont->pCharOffsets[ubIdx + 1] - pFont->pCharOffsets[ubIdx];
 }
 
-tFont *fontCreate(const char *szFontName) {
-	tFile *pFontFile;
-	tFont *pFont;
-	logBlockBegin("fontCreate(szFontName: '%s')", szFontName);
+tFont *fontCreateFromPath(const char *szPath) {
+	return fontCreateFromFd(diskFileOpen(szPath, "rb"));
+}
 
-	pFontFile = fileOpen(szFontName, "r");
+tFont *fontCreateFromFd(tFile *pFontFile) {
+
+	logBlockBegin("fontCreateFromFd(pFontFile: %p)", pFontFile);
+
 	if (!pFontFile) {
-		logWrite("ERR: Couldn't open file\n");
-		logBlockEnd("fontCreate()");
+		logWrite("ERR: Null file handle\n");
+		logBlockEnd("fontCreateFromFd()");
 		return 0;
 	}
 
-	pFont = (tFont *) memAllocFast(sizeof(tFont));
+	tFont *pFont = (tFont *) memAllocFast(sizeof(tFont));
 	if (!pFont) {
 		fileClose(pFontFile);
 		logWrite("ERR: Couldn't alloc mem\n");
-		logBlockEnd("fontCreate()");
+		logBlockEnd("fontCreateFromFd()");
 		return 0;
 	}
 
@@ -58,53 +60,12 @@ tFont *fontCreate(const char *szFontName) {
 	logWrite("ERR: Unimplemented\n");
 	memFree(pFont, sizeof(tFont));
 	fileClose(pFontFile);
-	logBlockEnd("fontCreate()");
+	logBlockEnd("fontCreateFromFd()");
 	return 0;
 #endif // AMIGA
 
 	fileClose(pFontFile);
-	logBlockEnd("fontCreate()");
-	return pFont;
-}
-
-tFont *fontCreateFromMem(const UBYTE* pData) {
-	tFont *pFont;
-	UWORD uwCurByte = 0;
-
-	logBlockBegin("fontCreateFromMem(szFontName: '%p')", pData);
- 	pFont = (tFont *) memAllocFast(sizeof(tFont));
-	if (!pFont) {
-		logBlockEnd("fontCreateFromMem()");
-		return 0;
-	}
-	memcpy(&pFont->uwWidth,&pData[uwCurByte],sizeof(UWORD));
-	uwCurByte+=sizeof(UWORD);
-	memcpy(&pFont->uwHeight,&pData[uwCurByte],sizeof(UWORD));
-	uwCurByte+=sizeof(UWORD);
-	memcpy(&pFont->ubChars,&pData[uwCurByte],sizeof(UBYTE));
-	uwCurByte+=sizeof(UBYTE);
-
-	logWrite(
-		"Addr: %p, data width: %upx, chars: %u, font height: %upx\n",
-		pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight
-	);
-
-	pFont->pCharOffsets = memAllocFast(sizeof(UWORD) * pFont->ubChars);
-	memcpy(pFont->pCharOffsets,&pData[uwCurByte],sizeof(UWORD) * pFont->ubChars);
-	uwCurByte+=(sizeof(UWORD) * pFont->ubChars);
-
-	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
-
-#ifdef AMIGA
-	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
-	memcpy(pFont->pRawData->Planes[0],&pData[uwCurByte],uwPlaneByteSize);
-#else
-	logWrite("ERR: Unimplemented\n");
-	memFree(pFont, sizeof(tFont));
-	logBlockEnd("fontCreateFromMem()");
-	return 0;
-#endif // AMIGA
-	logBlockEnd("fontCreateFromMem()");
+	logBlockEnd("fontCreateFromFd()");
 	return pFont;
 }
 
@@ -288,7 +249,7 @@ void fontDrawTextBitMap(
 #if defined(ACE_DEBUG)
 	if(!pTextBitMap->uwActualWidth) {
 		// you can usually figure that out and skip this call before even doing fontDrawStr() or fontFillTextBitMap()
-		logWrite("ERR: pTextBitMap %p has text of zero width - do the check beforehand!\n", pTextBitMap);
+		logWrite("ERR: pTextBitMap %p has text of zero width - do the check beforehand\n", pTextBitMap);
 		return;
 	}
 #endif
@@ -359,7 +320,7 @@ void fontDrawStr(
 	const char *szText, UBYTE ubColor, UBYTE ubFlags, tTextBitMap *pTextBitMap
 ) {
 	if(!pTextBitMap) {
-		logWrite("ERR: pTextBitMap must be non-null!\n");
+		logWrite("ERR: pTextBitMap must be non-null\n");
 	}
 	fontFillTextBitMap(pFont, pTextBitMap, szText);
 	fontDrawTextBitMap(pDest, pTextBitMap, uwX, uwY, ubColor, ubFlags);

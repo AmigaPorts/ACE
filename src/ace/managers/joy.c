@@ -36,7 +36,7 @@ void joyOpen(void) {
 #if defined(ACE_DEBUG)
 	if(s_bInitCount++ != 0) {
 		// You should call keyCreate() only once
-		logWrite("ERR: Joy already initialized!\n");
+		logWrite("ERR: Joy already initialized\n");
 	}
 #endif
 }
@@ -45,7 +45,7 @@ void joyClose(void) {
 #if defined(ACE_DEBUG)
 	if(s_bInitCount-- != 1) {
 		// You should call joyClose() only once for each joyCreate()
-		logWrite("ERR: Joy was initialized multiple times!\n");
+		logWrite("ERR: Joy was initialized multiple times\n");
 	}
 #endif
 	joyDisableParallel();

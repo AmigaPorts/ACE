@@ -744,7 +744,7 @@ void ciaIcrHandlerRemove(UBYTE ubCia, UBYTE ubIcrBit) {
  * More explanation about how it works:
  * http://eab.abime.net/showthread.php?t=87202&page=2
  */
-static void systemFlushIo() {
+static void systemFlushIo(void) {
 	struct StandardPacket *pPacket = (struct StandardPacket*)AllocMem(
 		sizeof(struct StandardPacket), MEMF_CLEAR
 	);
@@ -807,13 +807,13 @@ void systemCreate(void) {
 
 	DOSBase = (struct DosLibrary*)OpenLibrary((CONST_STRPTR)"dos.library", 0);
 	if (!DOSBase) {
-		systemKill("Can't open DOS Library!\n");
+		systemKill("Can't open DOS Library\n");
 		return;
 	}
 
 	GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 0L);
 	if (!GfxBase) {
-		systemKill("Can't open Gfx Library!\n");
+		systemKill("Can't open Gfx Library\n");
 		return;
 	}
 
@@ -978,7 +978,7 @@ void systemUnuse(void) {
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
-		logWrite("ERR: System uses less than 0!\n");
+		logWrite("ERR: System uses less than 0\n");
 		s_wSystemUses = 0;
 	}
 #endif
@@ -1057,13 +1057,15 @@ UBYTE systemIsUsed(void) {
 void systemGetBlitterFromOs(void) {
 	--s_wSystemBlitterUses;
 	if(!s_wSystemBlitterUses) {
+		// Make OS finish its pending operations before it loses blitter!
+		systemFlushIo();
 		OwnBlitter();
 		WaitBlit();
 	}
 
 #if defined(ACE_DEBUG)
 	if(s_wSystemBlitterUses < 0) {
-		logWrite("ERR: System Blitter uses less than 0!\n");
+		logWrite("ERR: System Blitter uses less than 0\n");
 		s_wSystemUses = 0;
 	}
 #endif
@@ -1229,12 +1231,12 @@ void systemCheckStack(void) {
 	register ULONG *pCurrentStackPos __asm("sp");
 
 	if(*pStackLower != SYSTEM_STACK_CANARY) {
-		logWrite("ERR: Stack has probably overflown!");
+		logWrite("ERR: Stack has probably overflown");
 		while(1) {}
 	}
 
 	if((ULONG)pCurrentStackPos < (ULONG)(pStackLower)) {
-		logWrite("ERR: out of stack bounds!\n");
+		logWrite("ERR: out of stack bounds\n");
 		while(1) {}
 	}
 }

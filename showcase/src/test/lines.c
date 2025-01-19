@@ -11,17 +11,23 @@
 #include <fixmath/fixmath.h>
 #include "game.h"
 
+#define STAR_POSITION_COUNT 60
+#define STAR_ARM_COUNT 5
+#define STAR_DIVISION (STAR_POSITION_COUNT / (STAR_ARM_COUNT * 2));
+#define STAR_RADIUS 64
+#define STAR_CENTER_X 200
+#define STAR_CENTER_Y 100
+
 static tView *s_pView;
 static tVPort *s_pVPort;
 static tSimpleBufferManager *s_pBfrManager;
+static tWCoordYX s_pPositions[STAR_POSITION_COUNT];
+static UBYTE s_ubFirstPosIndex;
 
 void gsTestLinesCreate(void) {
-	s_pView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_END
-	);
+	s_pView = viewCreate(0, TAG_END);
 	s_pVPort = vPortCreate(0,
-		TAG_VPORT_BPP, 4,
+		TAG_VPORT_BPP, 2,
 		TAG_VPORT_VIEW, s_pView,
 		TAG_END
 	);
@@ -50,36 +56,20 @@ void gsTestLinesCreate(void) {
 	blitRect(s_pBfrManager->pBack, 32, 32, 32, 32, 2);
 	blitLine(s_pBfrManager->pBack, 16, 16, 80, 80, 1, uwPattern, 0);
 
-	// Prepare circle vertex positions
-	const uint8_t uwVertCount = 12;
-	const fix16_t fHalf = fix16_one>>1;
+	// Prepare circle vertex positions.
+	// For better accuracy, supply your own precalculated points or more accurate sin/cos table
+	const fix16_t fHalf = fix16_one / 2;
 	fix16_t fAngle;
-	tUwCoordYX pVerts[uwVertCount];
-	UWORD uwRadius = 64;
-	for(UBYTE v = 0; v != uwVertCount; ++v) {
-		fAngle = (fix16_pi*v*2) / uwVertCount;
-		pVerts[v].uwX = uwMaxX/2 + fix16_to_int(uwRadius * fix16_sin(fAngle) + fHalf);
-		pVerts[v].uwY = uwMaxY/2 + fix16_to_int(uwRadius * fix16_cos(fAngle) + fHalf);
+	for(UBYTE ubPosIndex = 0; ubPosIndex != STAR_POSITION_COUNT; ++ubPosIndex) {
+		fAngle = (fix16_pi*ubPosIndex*2) / STAR_POSITION_COUNT;
+		WORD wSin = fix16_to_int(STAR_RADIUS * fix16_sin(fAngle) + fHalf);
+		WORD wCos = fix16_to_int(STAR_RADIUS * fix16_cos(fAngle) + fHalf);
+		s_pPositions[ubPosIndex].wX = wSin;
+		s_pPositions[ubPosIndex].wY = wCos;
 	}
 
-	// Draw circle
-	uwPattern = 0xE4E4;
-	UBYTE v;
-	for(v = 0; v < uwVertCount-1; ++v) {
-		blitLine(
-			s_pBfrManager->pBack,
-			pVerts[v].uwX, pVerts[v].uwY,
-			pVerts[v+1].uwX, pVerts[v+1].uwY,
-			2, uwPattern, 0
-		);
-	}
-	// Close the circle
-	blitLine(
-		s_pBfrManager->pBack,
-		pVerts[v].uwX, pVerts[v].uwY,
-		pVerts[0].uwX, pVerts[0].uwY,
-		2, uwPattern, 0
-	);
+	s_ubFirstPosIndex = 0;
+
 
 	viewLoad(s_pView);
 	systemUnuse();
@@ -89,6 +79,72 @@ void gsTestLinesLoop(void) {
 	if(keyUse(KEY_ESCAPE)) {
 		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
+	}
+
+	UWORD uwStartX = (STAR_CENTER_X - STAR_RADIUS - 1) & 0xFFF0;
+	UWORD uwEndX = (STAR_CENTER_X + STAR_RADIUS + 1 + 15) & 0xFFF0;
+
+	// Erase background
+	vPortWaitForPos(s_pVPort, STAR_CENTER_Y + STAR_RADIUS, 0);
+	blitRect(
+		s_pBfrManager->pBack,
+		uwStartX, STAR_CENTER_Y - STAR_RADIUS - 1,
+		uwEndX - uwStartX, (STAR_RADIUS + 1) * 2 + 1, 0
+	);
+
+	// Draw circle
+	UBYTE ubPosIndex = s_ubFirstPosIndex;
+	for(UBYTE ubVertexIndex = 0; ubVertexIndex < STAR_ARM_COUNT * 2; ++ubVertexIndex) {
+		UBYTE ubNextPosIndex = ubPosIndex + STAR_DIVISION;
+		if(ubNextPosIndex >= STAR_POSITION_COUNT) {
+			ubNextPosIndex -= STAR_POSITION_COUNT;
+		}
+
+		tWCoordYX sPoint, sNextPoint;
+		if(ubVertexIndex & 1) {
+			sPoint = (tWCoordYX){
+				.wX = STAR_CENTER_X + s_pPositions[ubPosIndex].wX,
+				.wY = STAR_CENTER_Y + s_pPositions[ubPosIndex].wY
+			};
+			sNextPoint = (tWCoordYX){
+				.wX = STAR_CENTER_X + s_pPositions[ubNextPosIndex].wX / 2,
+				.wY = STAR_CENTER_Y + s_pPositions[ubNextPosIndex].wY / 2
+			};
+		}
+		else {
+			sPoint = (tWCoordYX){
+				.wX = STAR_CENTER_X + s_pPositions[ubPosIndex].wX / 2,
+				.wY = STAR_CENTER_Y + s_pPositions[ubPosIndex].wY / 2
+			};
+			sNextPoint = (tWCoordYX){
+				.wX = STAR_CENTER_X + s_pPositions[ubNextPosIndex].wX,
+				.wY = STAR_CENTER_Y + s_pPositions[ubNextPosIndex].wY
+			};
+		}
+
+		blitLinePlane(
+			s_pBfrManager->pBack, sPoint.wX, sPoint.wY, sNextPoint.wX, sNextPoint.wY,
+			0, 0xFFFF, BLIT_LINE_MODE_XOR, 1
+		);
+		ubPosIndex = ubNextPosIndex;
+	}
+
+	// Fill
+	if(keyCheck(KEY_F)) {
+		blitFillAligned(
+			s_pBfrManager->pBack, uwStartX, STAR_CENTER_Y - STAR_RADIUS - 1,
+			uwEndX - uwStartX, (STAR_RADIUS + 1) * 2 + 1, 0, FILL_XOR
+		);
+	}
+	if(keyCheck(KEY_G)) {
+		blitFillAligned(
+			s_pBfrManager->pBack, uwStartX, STAR_CENTER_Y - STAR_RADIUS - 1,
+			uwEndX - uwStartX, (STAR_RADIUS + 1) * 2 + 1, 0, FILL_CARRYIN | FILL_XOR
+		);
+	}
+
+	if(++s_ubFirstPosIndex >= STAR_POSITION_COUNT) {
+		s_ubFirstPosIndex -= STAR_POSITION_COUNT;
 	}
 
 	vPortWaitForEnd(s_pVPort);

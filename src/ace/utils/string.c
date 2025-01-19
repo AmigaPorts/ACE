@@ -65,7 +65,7 @@ char *stringCopy(const char *szSrc, char *szDest) {
 
 char *stringCopyLimited(const char *szSrc, char *szDest, UWORD uwMaxLength) {
 	if(uwMaxLength == 0) {
-		logWrite("ERR: stringCopyLimited(szSrc: '%s') uwMaxLength is zero!\n", szSrc);
+		logWrite("ERR: stringCopyLimited(szSrc: '%s') uwMaxLength is zero\n", szSrc);
 	}
 
 	while(*szSrc != '\0' && --uwMaxLength > 0) {

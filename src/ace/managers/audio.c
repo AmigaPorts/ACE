@@ -2,6 +2,7 @@
 #include <ace/managers/memory.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/disk_file.h>
 #include <ace/managers/system.h>
 
 typedef struct _tChannelControls {
@@ -81,25 +82,39 @@ tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod) {
 	return pSample;
 }
 
-tSample *sampleCreateFromFile(const char *szPath, UWORD uwSampleRateHz) {
+tSample *sampleCreateFromPath(const char *szPath, UWORD uwSampleRateHz)
+{
+	return sampleCreateFromFd(diskFileOpen(szPath, "rb"), uwSampleRateHz);
+}
+
+tSample *sampleCreateFromFd(tFile *pSampleFile, UWORD uwSampleRateHz)
+{
 	systemUse();
 	logBlockBegin(
-		"sampleCreateFromFile(szPath: '%s', uwSampleRateHz: %hu)",
-		szPath, uwSampleRateHz
+		"sampleCreateFromFd(pSampleFile: %p, uwSampleRateHz: %hu)",
+		pSampleFile, uwSampleRateHz
 	);
-	LONG lLength = fileGetSize(szPath);
+
+	if(!pSampleFile) {
+		logWrite("ERR: Null file handle\n");
+		logBlockEnd("sampleCreateFromFd()");
+		return 0;
+	}
+
+	LONG lLength = fileGetSize(pSampleFile);
 	if(lLength <= 0) {
-		logWrite("ERR: File doesn't exist!\n");
-		logBlockEnd("sampleCreateFromFile()");
+		logWrite("ERR: File doesn't exist\n");
+		fileClose(pSampleFile);
+		logBlockEnd("sampleCreateFromFd()");
+		systemUnuse();
 		return 0;
 	}
 	// NOTE: 3546895 is for PAL, for NTSC use 3579545
 	UWORD uwPeriod = (3546895 + uwSampleRateHz/2) / uwSampleRateHz;
 	tSample *pSample = sampleCreate(lLength, uwPeriod);
-	tFile *pSampleFile = fileOpen(szPath, "rb");
 	fileRead(pSampleFile, pSample->pData, lLength);
 	fileClose(pSampleFile);
-	logBlockEnd("sampleCreateFromFile()");
+	logBlockEnd("sampleCreateFromFd()");
 	systemUnuse();
 	return pSample;
 }

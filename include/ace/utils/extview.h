@@ -20,28 +20,32 @@ extern "C" {
 #include <ace/managers/memory.h>
 #include <ace/managers/copper.h>
 
-typedef enum _tTagView {
+typedef enum tTagView {
 	// Copperlist mode: raw/block
 	TAG_VIEW_COPLIST_MODE      = TAG_USER | 1,
-	// If in raw mode, specify copperlist instruction count
+	// If in raw mode, specifies copperlist instruction count.
 	TAG_VIEW_COPLIST_RAW_COUNT = TAG_USER | 2,
-	// If set to non-zero, view will use first vport's palette as global & ignore other ones
+	// If set to non-zero, view will use first vport's palette as global & ignore other ones.
 	TAG_VIEW_GLOBAL_PALETTE    = TAG_USER | 3,
 	// The X value for display window start.
-	// TAG_VIEW_WINDOW_START_X    = TAG_USER | 4,
+	TAG_VIEW_WINDOW_START_X    = TAG_USER | 4,
 	// The Y value for display window start.
 	TAG_VIEW_WINDOW_START_Y    = TAG_USER | 5,
 	// The width of display window.
-	// TAG_VIEW_WINDOW_WIDTH      = TAG_USER | 6,
+	TAG_VIEW_WINDOW_WIDTH      = TAG_USER | 6,
 	// The height of display window. Defaults to (lastPalScanline - TAG_VIEW_WINDOW_START_Y)
 	TAG_VIEW_WINDOW_HEIGHT     = TAG_USER | 7,
+	// If set to non-zero, view will use first vport's bpp value for whole screen.
+	TAG_VIEW_GLOBAL_BPP        = TAG_USER | 8,
+	// If set to non-zero, view will use first vport's horizontal resolution (hires on/off) setting for whole screen.
+	TAG_VIEW_GLOBAL_HRES       = TAG_USER | 9,
 } tTagView;
 
 // Values for TAG_VIEW_COPLIST_MODE
 #define VIEW_COPLIST_MODE_BLOCK COPPER_MODE_BLOCK
 #define VIEW_COPLIST_MODE_RAW   COPPER_MODE_RAW
 
-typedef enum _tTagVport {
+typedef enum tTagVport {
 	// Ptr to parent view
 	TAG_VPORT_VIEW         = TAG_USER | 1,
 	// vPort dimensions, in pixels
@@ -61,6 +65,8 @@ typedef enum _tTagVport {
 	// manager stuff without letting you including custom instructions in spare
 	// time.
 	TAG_VPORT_OFFSET_TOP   = TAG_USER | 7,
+	// Set to 1 to enable hires mode, set to zero for lores
+	TAG_VPORT_HIRES        = TAG_USER | 8,
 } tTagVport;
 
 /* Types */
@@ -68,13 +74,20 @@ typedef enum _tTagVport {
 /**
  *  View flags.
  */
-#define VIEW_FLAG_GLOBAL_PALETTE 1
-#define VIEW_FLAG_COPLIST_RAW 2
+typedef enum tViewFlags {
+	VIEW_FLAG_GLOBAL_PALETTE = BV(0),
+	VIEW_FLAG_COPLIST_RAW    = BV(1),
+	VIEW_FLAG_GLOBAL_BPP     = BV(2),
+	VIEW_FLAG_GLOBAL_HRES    = BV(3),
+} tViewFlags;
 
 /**
  * Viewport flags.
  */
-#define VIEWPORT_HAS_OWN_PALETTE 1
+typedef enum tVpFlag {
+	VP_FLAG_HAS_OWN_PALETTE = BV(0),
+	VP_FLAG_HIRES           = BV(1),
+} tVpFlag;
 
 /**
  *  Viewport manager IDs.
@@ -90,10 +103,10 @@ typedef enum _tTagVport {
  *  @brief ViewPort manager structure.
  *  Only process and destroy included, each manager has different init params.
  */
-typedef struct _tVpManager {
-	struct _tVpManager *pNext;                      ///< Pointer to next manager.
-	void  (*process)(struct _tVpManager *pManager); ///< Process fn handle.
-	void  (*destroy)(struct _tVpManager *pManager); ///< Destroy fn handle.
+typedef struct tVpManager {
+	struct tVpManager *pNext;                      ///< Pointer to next manager.
+	void  (*process)(struct tVpManager *pManager); ///< Process fn handle.
+	void  (*destroy)(struct tVpManager *pManager); ///< Destroy fn handle.
 	struct _tVPort *pVPort;                         ///< Quick ref to VPort.
 	UBYTE ubId;                                     ///< Manager ID.
 } tVpManager;
@@ -105,11 +118,14 @@ typedef void (*tVpManagerFn)(tVpManager *pManager);
  *  View describes everything what goes to Amiga screen. Each view
  *  is composed of copperlist and viewports.
  */
-typedef struct _tView {
+typedef struct tView {
 	UBYTE ubVpCount;             ///< Viewport count.
 	UWORD uwFlags;               ///< Creation flags.
-	UBYTE ubPosY;               ///< Directly populates the DIWSTRT value.
+	UBYTE ubPosX;                ///< Directly populates the DIWSTRT value.
+	UBYTE ubPosY;                ///< Directly populates the DIWSTRT value.
+	UWORD uwWidth;
 	UWORD uwHeight;
+	UWORD uwBplCon0;             ///< Initial/global bplcon0 values.
 	struct _tCopList *pCopList;  ///< Pointer to copperlist.
 	struct _tVPort *pFirstVPort; ///< Pointer to first VPort on list.
 } tView;
@@ -124,7 +140,7 @@ typedef struct _tVPort {
 	tView *pView;              ///< Pointer to parent tView.
 	struct _tVPort *pNext;     ///< Pointer to next tVPort.
 	tVpManager *pFirstManager; ///< Pointer to first viewport manager on list.
-	UWORD uwFlags;             ///< Creation flags.
+	tVpFlag eFlags;             ///< Creation flags.
 
 	// VPort dimensions
 	UWORD uwOffsX;  ///< Viewport's X offset on view.
@@ -133,7 +149,7 @@ typedef struct _tVPort {
 	UWORD uwHeight; ///< Viewport's height
 
 	// Color info
-	UBYTE ubBPP;        ///< Bitplane count
+	UBYTE ubBpp;        ///< Bitplane count
 	UWORD pPalette[32]; ///< Destination palette
 } tVPort;
 
@@ -173,11 +189,11 @@ void viewDestroy(tView *pView);
 void viewProcessManagers(tView *pView);
 
 /**
- *  Updates palette for every viewport attached to view.
+ *  Updates palette for view, if in global palette mode.
  *
- *  @param pView View to be updated.
+ *  @param pView View to use the colors from.
  */
-void viewUpdatePalette(tView *pView);
+void viewUpdateGlobalPalette(const tView *pView);
 
 /**
  *  Sets given view as current and displays it on screen.

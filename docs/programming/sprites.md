@@ -91,7 +91,7 @@ Apart from data, adding sprite requires channel index.
 
 ```c
 tSprite *s_pSprite0, *s_pSprite3;
-tBitMap *s_pSprite0Data, s_pSprite3Data;
+tBitMap *s_pSprite0Data, *s_pSprite3Data;
 
 // Somewhere in your gamestate creation:
 spriteManagerCreate(...);
