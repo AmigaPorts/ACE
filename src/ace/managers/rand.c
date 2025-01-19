@@ -36,7 +36,7 @@ void randInit(tRandManager *pRand, UWORD uwSeed1, UWORD uwSeed2) {
 		"randInit(pRand: %p, uwSeed1: %hu, uwSeed2: %hu)", pRand, uwSeed1, uwSeed2
 	);
 	if(uwSeed1 == 0 || uwSeed2 == 0) {
-		logWrite("ERR: Seeds can't be zero!\n");
+		logWrite("ERR: Seeds can't be zero\n");
 		logBlockEnd("randInit()");
 		return;
 	}

@@ -22,7 +22,7 @@ extern "C" {
  * bobInit(&sBob1, ...)
  * bobInit(&sBob2, ...)
  * bobInit(&sBobN, ...)
- * bobReallocateBgBuffers()
+ * bobReallocateBuffers()
  *
  * in gamestate loop:
  * bobBegin()
@@ -71,7 +71,12 @@ typedef struct tBob {
 #endif
 	UWORD _uwBlitSize;
 	WORD _wModuloUndrawSave;
-	UBYTE *_pOldDrawOffs[2];
+	UWORD _uwInterleavedHeight;
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	ULONG _pSaveOffsets[2];
+#else
+	UBYTE *_pBufferDrawPtrs[2];
+#endif
 } tBob;
 
 /**
@@ -79,17 +84,25 @@ typedef struct tBob {
  * If you use single buffering, pass same pointer in pFront and pBack.
  *
  * After calling this fn you should call series of bobInit() followed by
- * single bobReallocateBgBuffers().
+ * single bobReallocateBuffers().
  *
  * @param pFront Double buffering's front buffer bitmap.
  * @param pBack Double buffering's back buffer bitmap.
  * @param uwAvailHeight True available height for Y-scroll in passed bitmap.
+ * For tileBuffer you should use `pTileBuffer->pScroll->uwBmAvailHeight`.
+ * For scrollBuffer you should use `pScrollBuffer->uwBmAvailHeight`.
  *
  * @see bobInit()
- * @see bobReallocateBgBuffers()
+ * @see bobReallocateBuffers()
  * @see bobManagerDestroy()
  */
-void bobManagerCreate(tBitMap *pFront, tBitMap *pBack, UWORD uwAvailHeight);
+void bobManagerCreate(
+	tBitMap *pFront, tBitMap *pBack,
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	tBitMap *pPristineBuffer,
+#endif
+	UWORD uwAvailHeight
+);
 
 /**
  * @brief Destroys bob manager, releasing all its resources.
@@ -124,7 +137,7 @@ void bobInit(
  *
  * After call to this function, you can't call bobInit() anymore!
  */
-void bobReallocateBgBuffers(void);
+void bobReallocateBuffers(void);
 
 /**
  * @brief Changes bob's animation frame.

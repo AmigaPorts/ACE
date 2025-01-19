@@ -139,9 +139,7 @@ static UWORD uwPaddleRightPosY = 0;
 //---------------------------------------------------------------- NEW STUFF END
 
 void gameGsCreate(void) {
-  s_pView = viewCreate(0,
-    TAG_VIEW_GLOBAL_PALETTE, 1,
-  TAG_END);
+  s_pView = viewCreate(0, TAG_END);
 
   // Viewport for score bar - on top of screen
   s_pVpScore = vPortCreate(0,

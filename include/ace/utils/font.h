@@ -64,25 +64,25 @@ typedef struct _tTextBitMap {
 /* Functions */
 
 /**
- *  @brief Creates font instance from specified file.
+ * @brief Creates font instance from specified file.
  *
- *  @param szFontName Font file path to be loaded.
- *  @return pointer to loaded font.
+ * @param szPath Path to font file to be loaded.
+ * @return pointer to loaded font.
  *
- *  @see fontDestroy()
+ * @see fontDestroy()
+ * @see fontCreateFromFd
  */
-tFont *fontCreate(const char *szFontName);
+tFont *fontCreateFromPath(const char *szPath);
 
 /**
- *  @brief Creates font instance from ram memory.
+ *  @brief Creates font instance from specified file.
  *
- *  @param pData Pointer to Font data to be loaded.
+ *  @param pFontFile Handle to the font file. Will be closed on function return.
  *  @return pointer to loaded font.
  *
  *  @see fontDestroy()
  */
-tFont *fontCreateFromMem(const UBYTE* pData);
-
+tFont *fontCreateFromFd(tFile *pFontFile);
 
 /**
  *  @brief Destroys given font instance.

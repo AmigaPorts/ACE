@@ -22,10 +22,7 @@ static UBYTE (*s_fnKeyPoll)(UBYTE ubKeyCode);
 
 void gsTestBlitCreate(void) {
 	// Prepare view & viewport
-	s_pTestBlitView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pTestBlitView = viewCreate(0, TAG_DONE);
 	s_pTestBlitVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestBlitView,
 		TAG_VPORT_BPP, SHOWCASE_BPP,

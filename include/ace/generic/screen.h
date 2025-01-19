@@ -11,6 +11,8 @@ extern "C" {
 
 #include <ace/types.h>
 
+#define SCREEN_XOFFSET 0x81
+
 #define SCREEN_PAL_YOFFSET 0x2C
 #define SCREEN_PAL_WIDTH 320
 #define SCREEN_PAL_HEIGHT 256
@@ -38,9 +40,9 @@ extern "C" {
 // KaiN has needed. Add a calculation on proper wait pos (less BPP - later).
 
 // Vairn: AGA modes seem to need a smaller value than EHB, but the value which used to work.
-//  The original value of 0xe2-(7*4), worked for the AGA modes, which equates out to 0xC6, so I'll set it to that for 7bpp and 8bpp. 
+//  The original value of 0xe2-(7*4), worked for the AGA modes, which equates out to 0xC6, so I'll set it to that for 7bpp and 8bpp.
 // TODO: Test and find the most optional values.
-// TODO: Figure out if this is more related to fetchmodes for AGA. 
+// TODO: Figure out if this is more related to fetchmodes for AGA.
 static const UWORD s_pCopperWaitXByBitplanes[9] = {0x00, 0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xC6, 0xC6};
 
 #ifdef __cplusplus

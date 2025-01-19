@@ -155,7 +155,7 @@ void spriteRequestMetadataUpdate(tSprite *pSprite) {
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
 		logWrite(
-			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP!\n",
+			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP\n",
 			pSprite->ubChannelIndex, pBitmap
 		);
 		return;
@@ -232,10 +232,9 @@ void spriteProcess(tSprite *pSprite) {
 	#endif
 	// Sprite in list mode has 2-word header before and after data, each
 	// occupies 1 line of the bitmap.
-	// TODO: get rid of hardcoded 128 X offset in reasonable way.
 	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
 	UWORD uwVStop = uwVStart + pSprite->uwHeight;
-	UWORD uwHStart = 128 + pSprite->wX;
+	UWORD uwHStart = s_pView->ubPosX - 1 + pSprite->wX; // For diwstrt 0x81, x offset equal to 128 worked fine, hence -1
 
 	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
 	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));

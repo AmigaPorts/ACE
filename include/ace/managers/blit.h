@@ -49,6 +49,12 @@ extern "C" {
 #define MINTERM_REVERSE_COOKIE 0xAC
 #define MINTERM_COPY 0xC0
 
+typedef enum tBlitLineMode {
+	BLIT_LINE_MODE_OR = ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST)),
+	BLIT_LINE_MODE_XOR = ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST)),
+	BLIT_LINE_MODE_ERASE = ((NABC | NANBC | ANBC) | (SRCA | SRCC | DEST)),
+} tBlitLineMode;
+
 /**
  * @brief Creates and initializes the blitter manager.
  *
@@ -341,6 +347,61 @@ UBYTE blitSafeRect(
 );
 
 /**
+ * @brief Performs the shape fill on a single bitplane inside given rectangle.
+ *
+ * @note IF ACE is not in ECS mode, OCS blitter limits apply.
+ * Maximum blit size is 1024x1024 pixels.
+ *
+ * @note This function requires that X-coordinate as well as width
+ * of the fill region are multiples of 16.
+ *
+ * @param pDst Destination bitmap.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param ubPlane Bitplane to be used.
+ * @param ubFillMode A combination of `FILL_OR`, `FILL_XOR` and `FILL_CARRYIN`.
+ * @return Always 1.
+ *
+ * @see blitSafeFillAligned()
+ */
+void blitUnsafeFillAligned(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubPlane, UBYTE ubFillMode
+);
+
+/**
+ * @brief Performs the safe version of shape fill on a single bitplane inside
+ * given rectangle.
+ *
+ * The safety comes from extra blitCheck() call within.
+ *
+ * @note IF ACE is not in ECS mode, OCS blitter limits apply.
+ * Maximum blit size is 1024x1024 pixels.
+ *
+ * @note This function requires that X-coordinate as well as width
+ * of the fill region are multiples of 16.
+ *
+ * @param pDst Destination bitmap.
+ * @param wDstX Destination rectangle top-left position's X-coordinate.
+ * @param wDstY Destination rectangle top-left position's Y-coordinate.
+ * @param wWidth Rectangle width.
+ * @param wHeight Rectangle height.
+ * @param ubPlane Bitplane to be used.
+ * @param ubFillMode A combination of `FILL_OR`, `FILL_XOR` and `FILL_CARRYIN`.
+ * @param uwLine Source code line for error message. Use blitFillAligned() for auto-fill.
+ * @param szFile Source code file for error message. Use blitFillAligned() for auto-fill.
+ * @return Always 1.
+ *
+ * @see blitUnsafeFillAligned()
+ */
+UBYTE blitSafeFillAligned(
+	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight,
+	UBYTE ubPlane, UBYTE ubFillMode, UWORD uwLine, const char *szFile
+);
+
+/**
  * @brief Draws line of given color between two points.
  *
  * This function writes through all bitmap's bitplanes, so it's quite slow.
@@ -348,17 +409,41 @@ UBYTE blitSafeRect(
  * most demos do.
  *
  * @param pDst: Destination bitmap.
- * @param x1: Line start position's X-coordinate.
- * @param y1: Line start position's Y-coordinate.
- * @param x2: Line end position's X-coordinate.
- * @param y2: Line end position's Y-coordinate.
+ * @param wX1: Line start position's X-coordinate.
+ * @param wY1: Line start position's Y-coordinate.
+ * @param wX2: Line end position's X-coordinate.
+ * @param wY2: Line end position's Y-coordinate.
  * @param ubColor: Line's color index.
  * @param uwPattern: 16-bit pattern to be used. 1: filled pixel, 0: omitted.
  * @param isOneDot: If set to 1, draws fill-friendly lines.
+ *
+ * @see blitLinePlane()
  */
 void blitLine(
 	tBitMap *pDst, WORD x1, WORD y1, WORD x2, WORD y2,
 	UBYTE ubColor, UWORD uwPattern, UBYTE isOneDot
+);
+
+/**
+ * @brief Draws line between two points on a single bitplane.
+ *
+ * This is way faster than drawing a line across multiple bitplanes.
+ *
+ * @param pDst: Destination bitmap.
+ * @param wX1: Line start position's X-coordinate.
+ * @param wY1: Line start position's Y-coordinate.
+ * @param wX2: Line end position's X-coordinate.
+ * @param wY2: Line end position's Y-coordinate.
+ * @param ubPlane Bitplane index to use.
+ * @param uwPattern: 16-bit pattern to be used. 1: filled pixel, 0: omitted.
+ * @param eMode Set to one of tBlitLineMode values.
+ * @param isOneDot: If set to 1, draws fill-friendly lines.
+ *
+ * @see blitLine()
+ */
+void blitLinePlane(
+	tBitMap *pDst, WORD wX1, WORD wY1, WORD wX2, WORD wY2,
+	UBYTE ubPlane, UWORD uwPattern, tBlitLineMode eMode, UBYTE isOneDot
 );
 
 #ifdef ACE_DEBUG
@@ -394,6 +479,8 @@ UBYTE _blitCheck(
 	blitSafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk, __LINE__, __FILE__)
 #define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \
 	blitSafeRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor, __LINE__, __FILE__)
+#define blitFillAligned(pDst, wDstX, wDstY, wWidth, wHeight, ubPlane, ubFillMode) \
+	blitSafeFillAligned(pDst, wDstX, wDstY, wWidth, wHeight, ubPlane, ubFillMode, __LINE__, __FILE__)
 
 #else
 
@@ -407,6 +494,8 @@ UBYTE _blitCheck(
 	blitUnsafeCopyMask(pSrc, wSrcX, wSrcY, pDst, wDstX, wDstY, wWidth, wHeight, pMsk)
 #define blitRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor) \
 	blitUnsafeRect(pDst, wDstX, wDstY, wWidth, wHeight, ubColor)
+#define blitFillAligned(pDst, wDstX, wDstY, wWidth, wHeight, ubPlane, ubFillMode) \
+	blitUnsafeFillAligned(pDst, wDstX, wDstY, wWidth, wHeight, ubPlane, ubFillMode)
 
 #endif // ACE_DEBUG
 

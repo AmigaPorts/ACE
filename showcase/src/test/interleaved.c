@@ -25,10 +25,7 @@ static WORD wX, wY;
 static BYTE bDx, bDy;
 
 void gsTestInterleavedCreate(void) {
-	s_pTestInterleavedView = viewCreate(0,
-		TAG_VIEW_GLOBAL_PALETTE, 1,
-		TAG_DONE
-	);
+	s_pTestInterleavedView = viewCreate(0, TAG_DONE);
 	s_pTestInterleavedVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pTestInterleavedView,
 		TAG_VPORT_BPP, SHOWCASE_BPP,
@@ -39,10 +36,10 @@ void gsTestInterleavedCreate(void) {
 		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
 		TAG_DONE
 	);
-	paletteLoad(
+	paletteLoadFromPath(
 		"data/amidb32.plt", s_pTestInterleavedVPort->pPalette, 1 << SHOWCASE_BPP
 	);
-	bitmapLoadFromFile(
+	bitmapLoadFromPath(
 		s_pTestInterleavedBfr->pBack, "data/32c_pal_interleaved.bm", 0, 0
 	);
 
