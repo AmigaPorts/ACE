@@ -208,6 +208,10 @@ void bobInit(
 	tBob *pBob, UWORD uwWidth, UWORD uwHeight, UBYTE isUndrawRequired,
 	UBYTE *pFrameData, UBYTE *pMaskData, UWORD uwX, UWORD uwY
 ) {
+	logBlockBegin(
+		"bobInit(pBob: %p, uwWidth: %hu, uwHeight: %hu, isUndrawRequired: %hhu, pFrameData: %p, pMaskData: %p, uwX: %hu, uwY: %hu)",
+		pBob, uwWidth, uwHeight, isUndrawRequired, pFrameData, pMaskData, uwX, uwY
+	);
 #if defined(ACE_DEBUG)
 	pBob->_uwOriginalWidth = uwWidth;
 	pBob->_uwOriginalHeight = uwHeight;
@@ -238,7 +242,7 @@ void bobInit(
 	}
 #endif
 	++s_ubMaxBobCount;
-	// logWrite("Added bob, now max: %hhu\n", s_ubMaxBobCount);
+	logBlockEnd("bobInit()");
 }
 
 void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData) {
