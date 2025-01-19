@@ -156,10 +156,10 @@ UBYTE diskFileExists(const char *szPath) {
 	systemUse();
 	fileAccessEnable();
 	UBYTE isExisting = 0;
-	tFile *pFile = diskFileOpen(szPath, "r");
-	if(pFile) {
+	FILE *pFileHandle = fopen(szPath, "r");
+	if(pFileHandle) {
 		isExisting = 1;
-		fileClose(pFile);
+		fclose(pFileHandle);
 	}
 	fileAccessDisable();
 	systemUnuse();
