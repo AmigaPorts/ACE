@@ -1055,13 +1055,15 @@ UBYTE systemIsUsed(void) {
 }
 
 void systemGetBlitterFromOs(void) {
-	--s_wSystemBlitterUses;
-	if(!s_wSystemBlitterUses) {
+	if(s_wSystemBlitterUses == 1) {
 		// Make OS finish its pending operations before it loses blitter!
 		systemFlushIo();
 		OwnBlitter();
 		WaitBlit();
 	}
+	// This must be decremented after OwnBlitter() so that systemBlitterIsUsed()
+	// checked in interrupt won't return 0 during OS blitter op still in progress.
+	--s_wSystemBlitterUses;
 
 #if defined(ACE_DEBUG)
 	if(s_wSystemBlitterUses < 0) {
