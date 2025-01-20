@@ -1073,8 +1073,8 @@ void systemGetBlitterFromOs(void) {
 
 void systemReleaseBlitterToOs(void) {
 	if (!s_wSystemBlitterUses){
-		DisownBlitter();
 		WaitBlit();
+		DisownBlitter();
 	}
 	++s_wSystemBlitterUses;
 }
