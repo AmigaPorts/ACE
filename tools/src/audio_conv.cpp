@@ -17,7 +17,7 @@ void printUsage(const std::string &szAppName) {
 	print("Extra options:\n");
 	print("\t-o outPath  Specify output file path. If ommited, it will perform default conversion\n");
 	print("\t-d N        Specify amplitude division. Useful for some audio-mixing libraries\n");
-	print("\t-cd N       Ensure that sound effect fits max amplitude divided by specified factor. Useful for some audio-mixing libraries\n");
+	print("\t-cd N       Check if sound effect fits max amplitude divided by specified factor and raise error otherwise. Useful for some audio-mixing libraries\n");
 	print("\t-strict     Treat warinings as errors (recommended)\n");
 	print("\t-n          Normalize audio files\n");
 	print("\t-fpt        Enforce ptplayer-friendly mode: adds empty sample at the beginning, if missing\n");
