@@ -221,7 +221,7 @@ cameraReset(s_pMainBuffer->pCamera, 0, 0, s_uwMapTileWidth*16, s_uwMapTileHeight
 tileBufferRedrawAll(s_pMainBuffer);
 
 // Set initial camera
-cameraSetCoord(s_pMainBuffer->pCamera, g_uCameraX, g_uCameraY);
+cameraSetCoord(s_pMainBuffer->pCamera, g_uwCameraX, g_uwCameraY);
 
 // Load & Display the view
 viewLoad(s_pView);
@@ -251,25 +251,25 @@ joyProcess();
 // W for speeding down (Z in azerty keyboard)
 WORD wDx = 0, wDy = 0;
 if(keyCheck(KEY_Q)) {
-    g_uCameraSpeed+=1;
+    g_uwCameraSpeed+=1;
 }
 if(keyCheck(KEY_W)) {
-    if(g_uCameraSpeed>1) {
-        g_uCameraSpeed-=1;
+    if(g_uwCameraSpeed>1) {
+        g_uwCameraSpeed-=1;
     }
 }
 // Joy direction to move
 if(joyCheck(JOY1_UP || keyCheck(KEY_UP))) {
-    wDy=-1*g_uCameraSpeed;
+    wDy=-1*g_uwCameraSpeed;
 }
 if(joyCheck(JOY1_DOWN) || keyCheck(KEY_DOWN)) {
-    wDy=g_uCameraSpeed;
+    wDy=g_uwCameraSpeed;
 }
 if(joyCheck(JOY1_LEFT) || keyCheck(KEY_LEFT)) {
-    wDx=-1*g_uCameraSpeed;
+    wDx=-1*g_uwCameraSpeed;
 }
 if(joyCheck(JOY1_RIGHT)|| keyCheck(KEY_RIGHT)) {
-    wDx=g_uCameraSpeed;
+    wDx=g_uwCameraSpeed;
 }
 cameraMoveBy(s_pMainBuffer->pCamera, wDx, wDy);
 //[...]//
