@@ -27,7 +27,7 @@ Do `File > Import > Import Sprite Sheet`  it in asesprite in 16x16 sprites.
 
 Apply plugin [Aseprite Script: Amiga OCS/ECS Color Palette Mixe](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors.
 
-Then do `File > Export >  Export Sprite Sheet` and then `File > Saves As` and save as `overworld.png`.
+Then do `File > Export >  Export Sprite Sheet` and then `File > Saves As` and save as `overworld.png`. You must choose **Vertical Strip** for ACE tileBuffer.
 
 The file is ready for use here : [overworld.png](./res/overworld.png)
 
