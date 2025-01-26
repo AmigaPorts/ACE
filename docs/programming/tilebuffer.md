@@ -21,15 +21,15 @@ Let's use this resource from open game art: https://opengameart.org/content/over
 
 Get `TilesetGrass/overworld_tileset_grass.png` and convert it in 32 colors (use [grafx2](http://grafx2.chez.com/) for example).
 
-Now using [Aseprite](https://www.aseprite.org/]).
+Now Select [Aseprite](https://www.aseprite.org/]).
 
-Do `File > Import > Import Sprite Sheet`  it in asesprite in 16x16 sprites.
+1. Do `File > Import > Import Sprite Sheet`  Select 16x16 sprites option.
 
-On the palette editor, reduce the palette to 32 colors. Remove all useless black square after the 32nd colors.
+2. On the palette editor, reduce the palette to 32 colors. Remove all useless black square after the 32nd colors.
 
-Then apply plugin [Aseprite Script: Amiga OCS/ECS Color Palette Mixe](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors. Else you'll get errors.
+3. Use plugin [Aseprite Script: Amiga OCS/ECS Color Palette Mixe](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors.
 
-Then do `File > Export >  Export Sprite Sheet` and then `File > Saves As` and save as `overworld.png`. You must choose **Vertical Strip** for ACE tileBuffer.
+4. Select `File > Export >  Export Sprite Sheet` and then `File > Saves As` and save as `overworld.png`. You must choose **Vertical Strip** for ACE tileBuffer.
 
 The file is ready for use here : [overworld.png](./res/overworld.png)
 
@@ -119,14 +119,14 @@ static UWORD s_uwMapTileWidth;
 static UWORD s_uwMapTileHeight;
 //[...]
 // To controle camera/view on scrolling
-UWORD g_uCameraX=0;
-UWORD g_uCameraY=0;
-UWORD g_uCameraSpeed=2;
+UWORD g_uwCameraX=0;
+UWORD g_uwCameraY=0;
+UWORD g_uwCameraSpeed=2;
 //[...]
 
 ```
 
-Then, add a function to load your map. The map is loaded column by column for speed loading speed purpose :
+Then, add a function to load your map. The map is loaded column by column for speed purpose :
 
 ```c
 static void loadMap(void) {
@@ -146,7 +146,7 @@ static void loadMap(void) {
 }
 ```
 
-And this method (in a next iteration of the tutorial I will be able to explain this one) :
+And this function (in a next iteration of the tutorial I will be able to explain this one) :
 ```c
 static void onTileDraw(
     UWORD uwTileX, UWORD uwTileY,
