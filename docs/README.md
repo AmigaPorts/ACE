@@ -13,24 +13,24 @@ We want to keep those docs as elaborate and easy to understand as possible.
 ## Tutorial
 
 1. [ACE in a nutshell](programming/ace_in_a_nutshell.md)
-2. [Hello World example](programming/hello_world.md)
-3. [View & viewports explained](programming/view.md)
-4. [Blitter](programming/blit.md)
-5. [Moving blitted objects](programming/moving_blits.md)
-6. [Loading images and displaying background](programming/loading_images.md)
-7. [Handling blitted object undraw](programming/blit_undraw.md)
-8. [Blitting with masks](programming/blits_with_mask.md)
-9.  Fonts
-10. [Palettes](programming/palette.md)
-11. Optimizing blits
-12. Audio
-13. Organizing your project
-14. Copperlists
-15. Double buffering
-16. [Sprites](programming/sprites.md)
-17. [Working with and without OS](programming/os.md)
-18. DMA usage
-19. [Multi-directional Scrolling (TileBuffer)](programming/tilebuffer.md)
+1. [Hello World example](programming/hello_world.md)
+1. [View & viewports explained](programming/view.md)
+1. [Blitter](programming/blit.md)
+1. [Moving blitted objects](programming/moving_blits.md)
+1. [Loading images and displaying background](programming/loading_images.md)
+1. [Handling blitted object undraw](programming/blit_undraw.md)
+1. [Blitting with masks](programming/blits_with_mask.md)
+1.  Fonts
+1. [Palettes](programming/palette.md)
+1. Optimizing blits
+1. Audio
+1. Organizing your project
+1. Copperlists
+1. Double buffering
+1. [Sprites](programming/sprites.md)
+1. [Working with and without OS](programming/os.md)
+1. DMA usage
+2. [Multi-directional large tilemaps scrolling with TileBuffer](programming/tilebuffer.md)
 
 ## Reference manual
 

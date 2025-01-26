@@ -1,10 +1,10 @@
-# Multi-directional Scrolling (TileBuffer)
+# Multi-directional large tilemaps scrolling with TileBuffer
 
 ## Basic description
 
 This tutorial will focus on multi-directional scrolling as used for RPG or games like Alien Breed, Chaos Engine or large platform game like Turrican or Superfrog.
 
-In order to do this multi-directional scolling, in ACE you need to use  the [managers/viewport/tilebuffer.h](../../include/ace/managers/viewport/tilebuffer.h). It manages for tiled background/map as a main entry.
+Although you could use simpleBuffer for drawing and scrolling large tilemaps, it would eat a lot of RAM. In order to do this efficiently, you need to use the [managers/viewport/tilebuffer.h](../../include/ace/managers/viewport/tilebuffer.h). It's specifically design for drawing tiles and scrolling in any direction.
 
 ## Prerequisites
 
@@ -21,11 +21,13 @@ Let's use this resource from open game art: https://opengameart.org/content/over
 
 Get `TilesetGrass/overworld_tileset_grass.png` and convert it in 32 colors (use [grafx2](http://grafx2.chez.com/) for example).
 
-Now using [aseprite](https://www.aseprite.org/]).
+Now using [Aseprite](https://www.aseprite.org/]).
 
 Do `File > Import > Import Sprite Sheet`  it in asesprite in 16x16 sprites.
 
-Apply plugin [Aseprite Script: Amiga OCS/ECS Color Palette Mixe](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors.
+On the palette editor, reduce the palette to 32 colors. Remove all useless black square after the 32nd colors.
+
+Then apply plugin [Aseprite Script: Amiga OCS/ECS Color Palette Mixe](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors. Else you'll get errors.
 
 Then do `File > Export >  Export Sprite Sheet` and then `File > Saves As` and save as `overworld.png`. You must choose **Vertical Strip** for ACE tileBuffer.
 
@@ -99,7 +101,6 @@ Declare constants and main static variables
 #define GAME_BPP 5 // 32 colors
 #define SCORE_HEIGHT 16
 
-
 // View containing all the viewports
 static tView *s_pView; 
 // For score - won't be used in this tuto
@@ -129,27 +130,27 @@ Then, add a function to load your map. The map is loaded column by column for sp
 
 ```c
 static void loadMap(void) {
-	logWrite("Map Loading...\n");
-	tFile *pFileTilemap = diskFileOpen("data/overworld.dat", "rb");
-	fileRead(pFileTilemap, &s_uwMapTileWidth, sizeof(s_uwMapTileWidth));
-	fileRead(pFileTilemap, &s_uwMapTileHeight, sizeof(s_uwMapTileHeight));
-	s_uwMapTileWidth++;
-	s_uwMapTileHeight++;
-  	logWrite("Map Width %u",s_uwMapTileWidth);
-  	logWrite("Map Height %u",s_uwMapTileHeight);
-	for (int x = 0; x < s_uwMapTileWidth; x++) {
+    logWrite("Map Loading...\n");
+    tFile *pFileTilemap = diskFileOpen("data/overworld.dat", "rb");
+    fileRead(pFileTilemap, &s_uwMapTileWidth, sizeof(s_uwMapTileWidth));
+    fileRead(pFileTilemap, &s_uwMapTileHeight, sizeof(s_uwMapTileHeight));
+    s_uwMapTileWidth++;
+    s_uwMapTileHeight++;
+    logWrite("Map Width %u",s_uwMapTileWidth);
+    logWrite("Map Height %u",s_uwMapTileHeight);
+    for (int x = 0; x < s_uwMapTileWidth; x++) {
         fileRead(pFileTilemap, s_pMainBuffer->pTileData[x], s_uwMapTileHeight);
     }
-	fileClose(pFileTilemap); 
-	logWrite("Map Loaded!\n");
+    fileClose(pFileTilemap); 
+    logWrite("Map Loaded!\n");
 }
 ```
 
 And this method (in a next iteration of the tutorial I will be able to explain this one) :
 ```c
 static void onTileDraw(
-	UWORD uwTileX, UWORD uwTileY,
-	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
+    UWORD uwTileX, UWORD uwTileY,
+    tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
 ) {
 }
 ```
@@ -157,127 +158,127 @@ static void onTileDraw(
 Then, in your `gameGsCreate` function:
 
 ```c
-  // To move scrolling
-  keyCreate(); // We'll use keyboard
-	joyOpen();
+// To move scrolling
+keyCreate();
+joyOpen();
 
-  s_pView = viewCreate(0, TAG_END);
+s_pView = viewCreate(0, TAG_END);
 
-  // Viewport for score bar - on top of screen
-	s_pVpScore = vPortCreate(0,
-		TAG_VPORT_VIEW, s_pView,
-		TAG_VPORT_BPP, GAME_BPP,
-		TAG_VPORT_HEIGHT, SCORE_HEIGHT,
-	TAG_END);
+// Viewport for score bar - on top of screen
+s_pVpScore = vPortCreate(0,
+    TAG_VPORT_VIEW, s_pView,
+    TAG_VPORT_BPP, GAME_BPP,
+vTAG_VPORT_HEIGHT, SCORE_HEIGHT,
+TAG_END);
 
-	s_pScoreBuffer = simpleBufferCreate(0,
-		TAG_SIMPLEBUFFER_VPORT, s_pVpScore,
-		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
-		TAG_SIMPLEBUFFER_BOUND_WIDTH, 320,
-		TAG_SIMPLEBUFFER_BOUND_HEIGHT, SCORE_HEIGHT,
-	TAG_END);
+s_pScoreBuffer = simpleBufferCreate(0,
+    TAG_SIMPLEBUFFER_VPORT, s_pVpScore,
+    TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+    TAG_SIMPLEBUFFER_BOUND_WIDTH, 320,
+    TAG_SIMPLEBUFFER_BOUND_HEIGHT, SCORE_HEIGHT,
+TAG_END);
 
-	// Now let's do the same for main playfield where the scrolling happen
-	s_pVpMain = vPortCreate(0,
-		TAG_VPORT_VIEW, s_pView,
-		TAG_VPORT_BPP, GAME_BPP,
-	TAG_END);
+// Now let's do the same for main playfield where the scrolling happen
+s_pVpMain = vPortCreate(0,
+    TAG_VPORT_VIEW, s_pView,
+    TAG_VPORT_BPP, GAME_BPP,
+TAG_END);
 
-  // Load tiles
-	s_pTiles = bitmapCreateFromPath("data/overworld.bm", 0);
+// Load tiles
+s_pTiles = bitmapCreateFromPath("data/overworld.bm", 0);
 
-	logWrite("Tiles Loaded!\n");
+logWrite("Tiles Loaded!\n");
 
-  // Init your scrolling tile buffer 
-	s_pMainBuffer = tileBufferCreate(0,
-		TAG_TILEBUFFER_VPORT, s_pVpMain,  // Select View Port
-		TAG_TILEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,  // If you put interleaved there, it should be also in your cmakelist part.
-		TAG_TILEBUFFER_BOUND_TILE_X, TILE_MAP_SIZE_X, // Map size in number of tile
-		TAG_TILEBUFFER_BOUND_TILE_Y, TILE_MAP_SIZE_Y, // Map size in number of tile
-		TAG_TILEBUFFER_IS_DBLBUF, 1, // Activatey double buffering
-		TAG_TILEBUFFER_TILE_SHIFT, 4, //Size of tile, given in bitshift. Set to 4 for 16px, 5 for 32px, etc. Mandatory.
-		TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 200, // cursor between handling fast scrolling versus your amiga power
-		TAG_TILEBUFFER_CALLBACK_TILE_DRAW, onTileDraw, // To be documented
-		TAG_TILEBUFFER_TILESET, s_pTiles,
-	TAG_END);
-
-
-  // Load and apply palette
-  paletteLoadFromPath("data/overworld.plt", s_pPalette, 1 << GAME_BPP);
-	memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
-	memcpy(s_pVpMain->pPalette, s_pPalette, sizeof(s_pVpMain->pPalette));
+// Init your scrolling tile buffer 
+s_pMainBuffer = tileBufferCreate(0,
+    TAG_TILEBUFFER_VPORT, s_pVpMain,  // Select View Port
+    TAG_TILEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,  // If you put interleaved there, it should be also in your cmakelist part.
+    TAG_TILEBUFFER_BOUND_TILE_X, TILE_MAP_SIZE_X, // Map size in number of tile
+    TAG_TILEBUFFER_BOUND_TILE_Y, TILE_MAP_SIZE_Y, // Map size in number of tile
+    TAG_TILEBUFFER_IS_DBLBUF, 1, // Activatey double buffering
+    TAG_TILEBUFFER_TILE_SHIFT, 4, //Size of tile, given in bitshift. Set to 4 for 16px, 5 for 32px, etc. Mandatory.
+    TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 200, // cursor between handling fast scrolling versus your amiga power
+    TAG_TILEBUFFER_CALLBACK_TILE_DRAW, onTileDraw, // To be documented
+    TAG_TILEBUFFER_TILESET, s_pTiles,
+TAG_END);
 
 
-	loadMap();
+// Load and apply palette
+paletteLoadFromPath("data/overworld.plt", s_pPalette, 1 << GAME_BPP);
+memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
+memcpy(s_pVpMain->pPalette, s_pPalette, sizeof(s_pVpMain->pPalette));
 
-  // End of IO let's display somme stuff - unlaod OS
-	systemUnuse();
 
-	logWrite("Camera Reset\n");
-	cameraReset(s_pMainBuffer->pCamera, 0, 0, s_uwMapTileWidth*16, s_uwMapTileHeight * 16, 1);
+loadMap();
 
-  // Initial draw
-	tileBufferRedrawAll(s_pMainBuffer);
+//IO operations end here - let's unload the OS and display some stuff
+systemUnuse();
 
-  // Set initiale camera
-	cameraSetCoord(s_pMainBuffer->pCamera, g_uCameraX, g_uCameraY);
+logWrite("Camera Reset\n");
+cameraReset(s_pMainBuffer->pCamera, 0, 0, s_uwMapTileWidth*16, s_uwMapTileHeight * 16, 1);
 
-	// Load & Display the view
-	viewLoad(s_pView);
+// Initial draw
+tileBufferRedrawAll(s_pMainBuffer);
+
+// Set initial camera
+cameraSetCoord(s_pMainBuffer->pCamera, g_uCameraX, g_uCameraY);
+
+// Load & Display the view
+viewLoad(s_pView);
 ```
 
 And in your `gameGsDestroy` method to unload memory :
 
 ```c
 void gameGsDestroy(void) {
-  systemUse();
-  bitmapDestroy(s_pTiles);
-  viewDestroy(s_pView);
-  keyDestroy();
-  joyClose(); 
+    systemUse();
+    bitmapDestroy(s_pTiles);
+    viewDestroy(s_pView);
+    keyDestroy();
+    oyClose(); 
 }
 ```
 
 Finally let's control our scrolling in `gameGsLoop`:
 
 ```c
-  // Handle keyboard and joystick events
-  keyProcess();
-  joyProcess();
-  //[...]//
-  // Let's control your scrolling
-  // Q for speeding up (A in azerty keyboard)
-  // W for speeding up (Z in azerty keyboard)
-  WORD wDx = 0, wDy = 0;
-	if(keyCheck(KEY_Q)) {
-		g_uCameraSpeed+=1;
-	}
-	if(keyCheck(KEY_W)) {
-		if(g_uCameraSpeed>1) {
-			g_uCameraSpeed-=1;
-		}
-	}
-  // Joy direction to move
-	if(joyCheck(JOY1_UP)) {
-		wDy=-1*g_uCameraSpeed;
-	}
-	if(joyCheck(JOY1_DOWN)) {
-		wDy=g_uCameraSpeed;
-	}
-	if(joyCheck(JOY1_LEFT)) {
-		wDx=-1*g_uCameraSpeed;
-	}
-	if(joyCheck(JOY1_RIGHT)) {
-		wDx=g_uCameraSpeed;
-	}
-	cameraMoveBy(s_pMainBuffer->pCamera, wDx, wDy);
-  //[...]//
-  // Process scrolling Mandatory
-  viewProcessManagers(s_pView);
-  // Process Copper list - mandatory
-  copProcessBlocks();
-  // Wait for end of frame
-  vPortWaitForEnd(s_pVpMain); 
+// Handle keyboard and joystick events
+keyProcess();
+joyProcess();
+//[...]//
+// Let's control your scrolling
+// Q for speeding up (A in azerty keyboard)
+// W for speeding down (Z in azerty keyboard)
+WORD wDx = 0, wDy = 0;
+if(keyCheck(KEY_Q)) {
+    g_uCameraSpeed+=1;
+}
+if(keyCheck(KEY_W)) {
+    if(g_uCameraSpeed>1) {
+        g_uCameraSpeed-=1;
+    }
+}
+// Joy direction to move
+if(joyCheck(JOY1_UP || keyCheck(KEY_UP))) {
+    wDy=-1*g_uCameraSpeed;
+}
+if(joyCheck(JOY1_DOWN) || keyCheck(KEY_DOWN)) {
+    wDy=g_uCameraSpeed;
+}
+if(joyCheck(JOY1_LEFT) || keyCheck(KEY_LEFT)) {
+    wDx=-1*g_uCameraSpeed;
+}
+if(joyCheck(JOY1_RIGHT)|| keyCheck(KEY_RIGHT)) {
+    wDx=g_uCameraSpeed;
+}
+cameraMoveBy(s_pMainBuffer->pCamera, wDx, wDy);
+//[...]//
+// Process scrolling Mandatory
+viewProcessManagers(s_pView);
+// Process Copper list - mandatory
+copProcessBlocks();
+// Wait for end of frame
+vPortWaitForEnd(s_pVpMain); 
 ```
 
 At the end you should scroll over the map :
