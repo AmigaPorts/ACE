@@ -13,17 +13,17 @@ Because **.gpl** is from the opensource world, this article will focus on it.
 
 ## Extracting .gpl palette from your tools.
 
-### From aseprite
+### From Aseprite
 
-You migh have to apply plugin [Aseprite Script: Amiga OCS/ECS Color Palette Mixe](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors.
+You might have to apply addon [Aseprite Script: Amiga OCS/ECS Color Palette Mixer](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors.
 
-You need to add a add on just process to this installation : https://github.com/behreajj/AsepriteAddons/
+You need to add an addon just process to this installation : https://github.com/behreajj/AsepriteAddons/
 
 Then go to `File > Script > dialogs > palette > gplExport` and put your `.tpl` into your `res` folder.
 
 NOTE: in asesprite you can also save directely in `.act` format.
 
-### From Gimp
+### From GIMP
 
 _To be completed_
 
@@ -51,10 +51,10 @@ static UWORD s_pPalette[1 << GAME_BPP];
 void gameGsCreate(void) {
     // [...]
     // Load your palette
-  	paletteLoadFromPath("data/mypalette.plt", s_pPalette, 1 << GAME_BPP);
+    paletteLoadFromPath("data/mypalette.plt", s_pPalette, 1 << GAME_BPP);
     // One way to apply palette, copy it to the 2 view ports
-	memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
-	memcpy(s_pVpMain->pPalette, s_pPalette, sizeof(s_pVpMain->pPalette));
+    memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
+    memcpy(s_pVpMain->pPalette, s_pPalette, sizeof(s_pVpMain->pPalette));
     // [...]
 }
 // [...]
