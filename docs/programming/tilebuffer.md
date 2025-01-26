@@ -2,7 +2,7 @@
 
 ## Basic description
 
-This tutoriel only focus on multi-directional scolling as used for RPG or games like Alien Breed, Chaos Engine or large platform game like Turrican or Superfrog.
+This tutorial will focus on multi-directional scrolling as used for RPG or games like Alien Breed, Chaos Engine or large platform game like Turrican or Superfrog.
 
 In order to do this multi-directional scolling, in ACE you need to use  the [managers/viewport/tilebuffer.h](../../include/ace/managers/viewport/tilebuffer.h). It manages for tiled background/map as a main entry.
 
@@ -17,7 +17,7 @@ Last pre-requisites, you need the *palette* linked to your tiles graphic. [See P
 
 ### Prepare the set of tiles
 
-Let's use this ressource from open game art : https://opengameart.org/content/overworld-grass-biome
+Let's use this resource from open game art: https://opengameart.org/content/overworld-grass-biome
 
 Get `TilesetGrass/overworld_tileset_grass.png` and convert it in 32 colors (use [grafx2](http://grafx2.chez.com/) for example).
 
@@ -31,7 +31,7 @@ Then do `File > Export >  Export Sprite Sheet` and then `File > Saves As` and sa
 
 The file is ready for use here : [overworld.png](./res/overworld.png)
 
-Don't forget to export the [palette](./palette.md) as `overworld.gpl`
+Also, be sure to [export the palette](./palette.md) as `overworld.gpl`
 
 The palette file is ready for use here : [overworld.gpl](./res/overworld.gpl)
 
@@ -91,7 +91,7 @@ file(COPY ${RES_DIR}/overworld.dat DESTINATION ${DATA_DIR})
 
 Then on on your `game.c` or equivalent.
 
-Declare constants and main static variable
+Declare constants and main static variables
 
 ```c
 #define TILE_MAP_SIZE_X 200
@@ -125,7 +125,7 @@ UWORD g_uCameraSpeed=2;
 
 ```
 
-Then add a method to load your map. The map is loaded column by column for speed loading speed purpose :
+Then, add a function to load your map. The map is loaded column by column for speed loading speed purpose :
 
 ```c
 static void loadMap(void) {
@@ -154,7 +154,7 @@ static void onTileDraw(
 }
 ```
 
-Then in your `gameGsCreate` method :
+Then, in your `gameGsCreate` function:
 
 ```c
   // To move scrolling
