@@ -23,7 +23,11 @@ typedef struct tSpriteChannel {
 
 static const tView *s_pView;
 static tSpriteChannel s_pChannelsData[HARDWARE_SPRITE_CHANNEL_COUNT];
+#ifdef ACE_DISABLE_SPRITE_MANAGER
+static const tHardwareSpriteHeader s_uBlankSprite;
+#else
 static const tHardwareSpriteHeader CHIP s_uBlankSprite;
+#endif
 static tCopBlock *s_pInitialClearCopBlock;
 
 static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {

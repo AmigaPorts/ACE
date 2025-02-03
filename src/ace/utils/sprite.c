@@ -5,7 +5,11 @@
 #include <ace/utils/sprite.h>
 #include <ace/utils/custom.h>
 
+#ifdef ACE_DISABLE_SPRITE_MANAGER
+static const tHardwareSpriteHeader s_uBlankSprite;
+#else
 static const tHardwareSpriteHeader CHIP s_uBlankSprite;
+#endif
 
 tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask) {
 	// TODO: move to sprite manager?
