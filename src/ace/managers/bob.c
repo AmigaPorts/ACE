@@ -208,6 +208,10 @@ void bobInit(
 	tBob *pBob, UWORD uwWidth, UWORD uwHeight, UBYTE isUndrawRequired,
 	UBYTE *pFrameData, UBYTE *pMaskData, UWORD uwX, UWORD uwY
 ) {
+	logBlockBegin(
+		"bobInit(pBob: %p, uwWidth: %hu, uwHeight: %hu, isUndrawRequired: %hhu, pFrameData: %p, pMaskData: %p, uwX: %hu, uwY: %hu)",
+		pBob, uwWidth, uwHeight, isUndrawRequired, pFrameData, pMaskData, uwX, uwY
+	);
 #if defined(ACE_DEBUG)
 	pBob->_uwOriginalWidth = uwWidth;
 	pBob->_uwOriginalHeight = uwHeight;
@@ -238,7 +242,7 @@ void bobInit(
 	}
 #endif
 	++s_ubMaxBobCount;
-	// logWrite("Added bob, now max: %hhu\n", s_ubMaxBobCount);
+	logBlockEnd("bobInit()");
 }
 
 void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData) {
@@ -279,6 +283,9 @@ void bobSetHeight(tBob *pBob, UWORD uwHeight)
 }
 
 UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY) {
+	if(uwOffsetY >= pBitmap->Rows) {
+		logWrite("ERR: bobCalcFrameAddress() OffsY %hu > bitmap height: %hu", uwOffsetY, pBitmap->Rows);
+	}
 	return &pBitmap->Planes[0][pBitmap->BytesPerRow * uwOffsetY];
 }
 
@@ -549,4 +556,10 @@ void bobEnd(void) {
 void bobDiscardUndraw(void) {
 	s_pQueues[0].ubUndrawCount = 0;
 	s_pQueues[1].ubUndrawCount = 0;
+}
+
+void bobSetCurrentBuffer(tBitMap *pCurrent) {
+	if(s_pQueues[!s_ubBufferCurr].pDst == pCurrent) {
+		s_ubBufferCurr = !s_ubBufferCurr;
+	}
 }
