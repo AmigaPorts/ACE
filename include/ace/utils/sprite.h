@@ -17,6 +17,8 @@ extern "C" {
 
 #include <ace/managers/copper.h>
 
+extern ULONG *s_pBlankSprite;
+
 /**
  * @brief Disables given sprites on supplied copperlist at given cmd offset.
  *

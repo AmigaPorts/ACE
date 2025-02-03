@@ -36,6 +36,10 @@ typedef struct tSprite {
 	UBYTE isAttached; // Odd Sprites Only.
 } tSprite;
 
+#define SELECT_SPRITE_MANAGER_CREATE_FUNCTION(_1, _2, _3, FUNCTION, ...) FUNCTION
+void spriteManagerCreate1(const tView *pView, UWORD uwRawCopPos);
+void spriteManagerCreate2(const tView *pView, UWORD uwRawCopPos, ULONG *pBlankSprite);
+
 /**
  * @brief Initializes the hardware sprite manager.
  *
@@ -45,16 +49,20 @@ typedef struct tSprite {
  * @note This function doesn't handle the mouse input etc. automatically,
  * since one may want to control it with joy, keyboard or in other kind of way.
  *
- * @param pView View used for displaying sprites.
- * @param uwRawCopPos In raw mode, specifies an offset on where
+ * @param const tView *pView View used for displaying sprites.
+ * @param UWORD uwRawCopPos In raw mode, specifies an offset on where
  * the sprite commands should reside. Requires space of 16 copper commands.
+ * @param ULONG CHIP *pBlankSprite OPTIONALLY a pointer to two words of
+ * chipmem to serve as empty sprite header. This is used to disable sprites and
+ * is useful for cases where the caller wants to manage the CHIP memory for
+ * this control word themselves.
  *
  * @see spriteDisableInCopBlockMode()
  * @see spriteDisableInCopRawMode()
  * @see systemSetDmaBit()
  * @see spriteManagerDestroy()
  */
-void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos);
+#define spriteManagerCreate(...) SELECT_SPRITE_MANAGER_CREATE_FUNCTION(__VA_ARGS__, spriteManagerCreate2, spriteManagerCreate1)(__VA_ARGS__)
 
 /**
  * @brief Destroys the hardware sprite manager.

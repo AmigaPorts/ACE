@@ -23,14 +23,29 @@ typedef struct tSpriteChannel {
 
 static const tView *s_pView;
 static tSpriteChannel s_pChannelsData[HARDWARE_SPRITE_CHANNEL_COUNT];
-static const tHardwareSpriteHeader CHIP s_uBlankSprite;
+static UBYTE s_ubOwnsBlankSprite;
 static tCopBlock *s_pInitialClearCopBlock;
+ULONG *s_pBlankSprite;
 
 static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
 	pChannel->ubCopperRegenCount = 2; // for front/back buffers in raw mode
 }
 
-void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
+void spriteManagerCreate1(const tView *pView, UWORD uwRawCopPos) {
+	s_pBlankSprite = memAllocChipClear(sizeof(ULONG));
+	spriteManagerCreate2(pView, uwRawCopPos, s_pBlankSprite);
+	s_ubOwnsBlankSprite = 1;
+}
+
+void spriteManagerCreate2(const tView *pView, UWORD uwRawCopPos, ULONG *pBlankSprite) {
+#ifdef ACE_DEBUG
+	if ((ULONG)pBlankSprite > memGetChipSize() - sizeof(ULONG)) {
+		logWrite("ERR: ILLEGAL NON-CHIP memory location for blank sprite!");
+	}
+#endif
+	s_ubOwnsBlankSprite = 0;
+	s_pBlankSprite = pBlankSprite;
+
 	// TODO: add support for non-chained mode (setting sprxdat with copper)?
 	s_pView = pView;
 	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
@@ -68,6 +83,9 @@ void spriteManagerDestroy(void) {
 	}
 	if(s_pInitialClearCopBlock) {
 		copBlockDestroy(s_pView->pCopList, s_pInitialClearCopBlock);
+	}
+	if (s_ubOwnsBlankSprite) {
+		memFree(s_pBlankSprite, sizeof(ULONG));
 	}
 	systemUnuse();
 }
@@ -191,7 +209,7 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 		pCopBlock->uwCurrCount = 0;
 		ULONG ulSprAddr = (
 			pSprite->isEnabled ?
-			(ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw
+			(ULONG)(pSprite->pBitmap->Planes[0]) : (ULONG)s_pBlankSprite
 		);
 		copMove(
 			s_pView->pCopList, pCopBlock,
@@ -209,7 +227,7 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 
 		ULONG ulSprAddr = (
 			pSprite && pSprite->isEnabled ?
-			(ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw
+			(ULONG)(pSprite->pBitmap->Planes[0]) : (ULONG)s_pBlankSprite
 		);
 		copSetMoveVal(&pList[0].sMove, ulSprAddr >> 16);
 		copSetMoveVal(&pList[1].sMove, ulSprAddr & 0xFFFF);

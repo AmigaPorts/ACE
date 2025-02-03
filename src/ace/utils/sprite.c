@@ -5,8 +5,6 @@
 #include <ace/utils/sprite.h>
 #include <ace/utils/custom.h>
 
-static const tHardwareSpriteHeader CHIP s_uBlankSprite;
-
 tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask) {
 	// TODO: move to sprite manager?
 	UBYTE ubCmdCount = 0;
@@ -21,7 +19,7 @@ tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask)
 	}
 
 	// Set instructions
-	ULONG ulBlank = s_uBlankSprite.ulRaw;
+	ULONG ulBlank = (ULONG)s_pBlankSprite;
 	tCopBlock *pBlock = copBlockCreate(pList, ubCmdCount, 0, 0);
 	eMask = eSpriteMask;
 	for(UBYTE i = 0; i < HARDWARE_SPRITE_CHANNEL_COUNT; ++i) {
@@ -39,7 +37,7 @@ UBYTE spriteDisableInCopRawMode(
 ) {
 	// TODO: move to sprite
 	UBYTE ubCmdCount = 0;
-	ULONG ulBlank = s_uBlankSprite.ulRaw;
+	ULONG ulBlank = (ULONG)s_pBlankSprite;
 
 	// No WAIT - could be done earlier by other stuff
 	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[uwCmdOffs].sMove;
