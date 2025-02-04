@@ -97,7 +97,7 @@ tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 				return 0;
 			}
 #endif
-			pChannel->pCopBlock = copBlockCreate(s_pView->pCopList, 2, 0, 0);
+			pChannel->pCopBlock = copBlockCreate(s_pView->pCopList, 2, 0, 1);
 		}
 	}
 
