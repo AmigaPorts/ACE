@@ -238,6 +238,21 @@ UBYTE bobProcessNext(void);
 void bobPushingDone(void);
 
 /**
+ * @brief Processes all pending bobs so far.
+ * This is only for advanced usage while ensuring that the bobs pushed so far
+ * were already processed, e.g. alter the bitmaps mid-bob (un)draw.
+ */
+void bobProcessAll(void);
+
+/**
+ * @brief Gets the index of currently processed buffer in double buffering.
+ * Used only in advanced scenarios to allow external access to bob struct's
+ * private fields.
+ * @return Index of the buffer - either 0 or 1.
+ */
+UBYTE bobGetCurrentBufferIndex(void);
+
+/**
  * @brief Ends bob processing, enforcing all remaining bobs to be drawn.
  * After making this call all other blitter operations are safe again.
  */

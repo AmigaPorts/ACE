@@ -545,10 +545,17 @@ void bobPushingDone(void) {
 	s_isPushingDone = 1;
 }
 
+void bobProcessAll(void) {
+	while(bobProcessNext()) continue;
+}
+
+UBYTE bobGetCurrentBufferIndex(void) {
+	return s_ubBufferCurr;
+}
+
 void bobEnd(void) {
 	bobPushingDone();
-	do {
-	} while(bobProcessNext());
+	bobProcessAll();
 	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_ubBobsPushed;
 	s_ubBufferCurr = !s_ubBufferCurr;
 }
