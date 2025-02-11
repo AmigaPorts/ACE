@@ -270,6 +270,7 @@ function(convertAudio)
 		OUTPUT ${args_DESTINATION}
 		COMMAND ${TOOL_AUDIO_CONV} ${args_SOURCE} -o ${args_DESTINATION} ${argsOptional}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${args_SOURCE}
 	)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
