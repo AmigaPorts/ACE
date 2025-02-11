@@ -24,6 +24,7 @@
 #include <proto/cia.h>
 #if defined(BARTMAN_GCC)
 #include <bartman/gcc8_c_support.h> // Idle measurement
+#include <workbench/startup.h>
 #endif
 
 // There are hardware interrupt vectors
@@ -117,6 +118,8 @@ static UWORD s_uwOsVectorInts = (
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
 struct ExecBase *SysBase = 0;
+static struct Message *s_pReturnMsg = 0;
+const char *s_szOldDir = 0;
 #endif
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
@@ -817,8 +820,18 @@ void systemCreate(void) {
 		return;
 	}
 
-	// Determine original stack size
 	s_pProcess = (struct Process *)FindTask(NULL);
+#if defined(BARTMAN_GCC)
+	if(!s_pProcess->pr_CLI) {
+		// Called from the workbench - get the message for later reply
+		// Taken from https://github.com/alpine9000/EWGM/blob/master/game/wbstartup.i
+		WaitPort(&s_pProcess->pr_MsgPort); // Wait for the message
+		s_pReturnMsg = GetMsg(&s_pProcess->pr_MsgPort); // Get the message for later reply
+		s_szOldDir = (const char*)CurrentDir(((struct WBStartup*)s_pReturnMsg)->sm_ArgList[0].wa_Lock);
+	}
+#endif
+
+	// Determine original stack size
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
 	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
 	if(s_pProcess->pr_CLI) {
@@ -939,10 +952,22 @@ void systemDestroy(void) {
 
 	systemCheckStack();
 
+#if defined(BARTMAN_GCC)
+	if(s_szOldDir) {
+		CurrentDir(s_szOldDir);
+	}
+#endif
+
 	logWrite("Closing graphics.library...\n");
 	CloseLibrary((struct Library *) GfxBase);
 	logWrite("Closing dos.library...\n");
 	CloseLibrary((struct Library *) DOSBase);
+
+#if defined(BARTMAN_GCC)
+	if(s_pReturnMsg) {
+		ReplyMsg(s_pReturnMsg);
+	}
+#endif
 }
 
 void systemUnuse(void) {
