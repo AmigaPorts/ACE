@@ -356,21 +356,19 @@ UBYTE bobProcessNext(void) {
 		++s_ubBobsDrawn;
 		UBYTE ubDstOffs = pPos->uwX & 0xF;
 		UWORD uwBlitWidth = (pBob->uwWidth + ubDstOffs + 15) & 0xFFF0;
-		UWORD uwBlitWords = uwBlitWidth >> 4;
+		UWORD uwBlitWords = uwBlitWidth / 16;
 		UWORD uwBlitSize = ((pBob->_uwInterleavedHeight) << HSIZEBITS) | uwBlitWords;
-		WORD wSrcModulo = (pBob->uwWidth >> 3) - (uwBlitWords<<1);
+		WORD wSrcModulo = pBob->uwWidth / 8 - uwBlitWords * 2;
 		UWORD uwBltCon1 = ubDstOffs << BSHIFTSHIFT;
 		UWORD uwBltCon0;
 		if(pBob->pMaskData) {
 			uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
 		}
 		else {
-			// TODO change to A - performance boost
-			// TODO setting B & C regs isn't necessary - few write cycles less
-			uwBltCon0 = uwBltCon1 | USEB|USED | MINTERM_B;
+			uwBltCon0 = uwBltCon1 | USEB|USEC|USED | MINTERM_COOKIE;
 		}
 
-		WORD wDstModulo = s_uwDestByteWidth - (uwBlitWords<<1);
+		WORD wDstModulo = s_uwDestByteWidth - uwBlitWords * 2;
 		UBYTE *pB = pBob->pFrameData;
 #if defined(ACE_BOB_PRISTINE_BUFFER)
 		ULONG ulDestinationOffset = bobCalculateBitplaneOffset(pBob, pQueue->pDst);
@@ -383,16 +381,19 @@ UBYTE bobProcessNext(void) {
 		UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight);
 #endif
 
+		UWORD uwLastMask = 0xFFFF << (uwBlitWidth-pBob->uwWidth);
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = uwBltCon1;
 
+		g_pCustom->bltalwm = uwLastMask;
 		if(pBob->pMaskData) {
-			UWORD uwLastMask = 0xFFFF << (uwBlitWidth-pBob->uwWidth);
 			UBYTE *pA = pBob->pMaskData;
-			g_pCustom->bltalwm = uwLastMask;
 			g_pCustom->bltamod = wSrcModulo;
 			g_pCustom->bltapt = (APTR)pA;
+		}
+		else {
+			g_pCustom->bltadat = 0xFFFF;
 		}
 
 		g_pCustom->bltbmod = wSrcModulo;
