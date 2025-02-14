@@ -48,6 +48,8 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
 
     if(pSpriteVerticalStripBitmap->Depth == 4) {
         pAdvancedSprite->is4PP = 1;
+    } else {
+        pAdvancedSprite->is4PP = 0;
     }
 
     if(pAdvancedSprite->ubByteWidth == 2) {
@@ -56,7 +58,6 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
         } else if (pSpriteVerticalStripBitmap->Depth == 4) {
             pAdvancedSprite->ubSpriteCount=2;
         }
-        pAdvancedSprite->is4PP = 0;
     }
     if(pAdvancedSprite->ubByteWidth == 4) {
         if(pSpriteVerticalStripBitmap->Depth == 2) {
@@ -64,31 +65,33 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
         } else if (pSpriteVerticalStripBitmap->Depth == 4) {
             pAdvancedSprite->ubSpriteCount=4;
         }
-        pAdvancedSprite->is4PP = 1;
     }
 
-    pAdvancedSprite->pAnimBitmap= (tBitMap **)memAllocFastClear(pAdvancedSprite->uwAnimCount*sizeof(tBitMap)*(1 << ((pAdvancedSprite->ubByteWidth == 4) + pAdvancedSprite->is4PP)));
+    unsigned int nbBitmap=pAdvancedSprite->uwAnimCount*pAdvancedSprite->ubSpriteCount;
 
-    for (unsigned int i = 0; i < pAdvancedSprite->uwAnimCount; i++) {
-        pAdvancedSprite->pAnimBitmap[i] = bitmapCreate(
-            SPRITE_WIDTH, pAdvancedSprite->uwHeight+2,
-            pSpriteVerticalStripBitmap->Depth, BMF_CLEAR | BMF_INTERLEAVED
-        );
+    pAdvancedSprite->pAnimBitmap= (tBitMap **)memAllocFastClear(nbBitmap*sizeof(tBitMap));
+
+    unsigned int k = 0;
+    for (unsigned int i = 0; i < nbBitmap;) {
         // One time if 16 pixel wide, Two times if 32 pixel wide
         for(unsigned j = 0; j < pAdvancedSprite->ubByteWidth/2; j++) {
+            // Init +2 on height for sprite management data
+             pAdvancedSprite->pAnimBitmap[i] = bitmapCreate(
+                SPRITE_WIDTH, pAdvancedSprite->uwHeight+2,
+                pSpriteVerticalStripBitmap->Depth, BMF_CLEAR | BMF_INTERLEAVED
+            );
+            // Copy bitmap
             blitCopy(
-                pSpriteVerticalStripBitmap, 0, i * pAdvancedSprite->uwHeight,
+                pSpriteVerticalStripBitmap, 0+j*SPRITE_WIDTH, k * pAdvancedSprite->uwHeight,
                 pAdvancedSprite->pAnimBitmap[i],
                 0,1, // first line will be for sprite control data
                 SPRITE_WIDTH, pAdvancedSprite->uwHeight,
                 MINTERM_COOKIE
-            );
-            if (j>0) {
-                i++;
-            }
-            
+            ); 
+            i++;
         }
-        //TODO Mange 4BPP
+        k++;
+        //TODO Manage 4BPP
     }
 
     pAdvancedSprite->pSprites = (tSprite **)memAllocFastClear(sizeof(tSprite*) * pAdvancedSprite->ubSpriteCount);
@@ -143,7 +146,6 @@ void advancedSpriteSetFrame(tAdvancedSprite *pAdvancedSprite, UWORD animFrame) {
     UWORD animIndex = animFrame << ((pAdvancedSprite->ubByteWidth == 4) + pAdvancedSprite->is4PP);
     for (int i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
         spriteSetBitmap(pAdvancedSprite->pSprites[i], pAdvancedSprite->pAnimBitmap[animIndex+i]);
-        pAdvancedSprite->pSprites[i]->isHeaderToBeUpdated = 1; // To force header rewrite
         pAdvancedSprite->isHeaderToBeUpdated = 1; // To force header rewrite
     }    
 }
