@@ -9,7 +9,6 @@
  * @file sprite.h
  * @brief The advanced sprite manager which rely on the basic sprite manager.
  *
- * @todo 4BPP/16 colors sprites management.
  * @todo Multiplexed sprites
  */
 
