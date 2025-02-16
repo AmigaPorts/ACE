@@ -37,7 +37,7 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
 	}
 
     pAdvancedSprite->ubByteWidth = bitmapGetByteWidth(pSpriteVerticalStripBitmap);
-	if(pAdvancedSprite->ubByteWidth != 2 || pAdvancedSprite->ubByteWidth != 4) {
+	if(pAdvancedSprite->ubByteWidth != 2 && pAdvancedSprite->ubByteWidth != 4) {
 		logWrite(
 			"ERR: Unsupported sprite width: %hhu, expected 16 or 32\n",
 			pAdvancedSprite->ubByteWidth * 8
@@ -68,20 +68,32 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
         }
     }
 
-    unsigned int nbBitmap=pAdvancedSprite->uwAnimCount*pAdvancedSprite->ubSpriteCount*(1+pAdvancedSprite->is4PP);
+    unsigned int nbBitmap=pAdvancedSprite->uwAnimCount*pAdvancedSprite->ubSpriteCount;
 
     pAdvancedSprite->pAnimBitmap= (tBitMap **)memAllocFastClear(nbBitmap*sizeof(tBitMap));
 
+    
+    tBitMap *tmpBitmap = bitmapCreate(
+        SPRITE_WIDTH, pAdvancedSprite->uwHeight,
+        4, BMF_CLEAR | BMF_INTERLEAVED
+    );
+    tBitMap *pointers_low;
+    tBitMap *pointers_high;
+
+    pointers_high = bitmapCreate(
+        TWOBPP_BYTEWIDTH*8, pAdvancedSprite->uwHeight,
+        2, BMF_CLEAR | BMF_INTERLEAVED);
+
+    pointers_low = bitmapCreate(
+        TWOBPP_BYTEWIDTH*8, pAdvancedSprite->uwHeight,
+        2, BMF_CLEAR | BMF_INTERLEAVED);
+        
     unsigned int k = 0;
     for (unsigned int i = 0; i < nbBitmap;) {
         // One time if 16 pixel wide, Two times if 32 pixel wide
         for(unsigned j = 0; j < pAdvancedSprite->ubByteWidth/2; j++) {
             if (pAdvancedSprite->is4PP) {
                 // Convert the 4bpp bitmap to 2bpp.
-                tBitMap *tmpBitmap =bitmapCreate(
-                    SPRITE_WIDTH, pAdvancedSprite->uwHeight,
-                    4, BMF_CLEAR | BMF_INTERLEAVED
-                );;
                 blitCopy(
                     pSpriteVerticalStripBitmap, 0+j*SPRITE_WIDTH, k * pAdvancedSprite->uwHeight,
                     tmpBitmap,
@@ -89,19 +101,6 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
                     SPRITE_WIDTH, pAdvancedSprite->uwHeight,
                     MINTERM_COOKIE
                 );
-
-                tBitMap *pointers_low;
-		        tBitMap *pointers_high;
-
-                pointers_high = bitmapCreate(
-                    TWOBPP_BYTEWIDTH*8, pAdvancedSprite->uwHeight,
-                    2, BMF_CLEAR | BMF_INTERLEAVED);
-
-                pointers_low = bitmapCreate(
-                    TWOBPP_BYTEWIDTH*8, pAdvancedSprite->uwHeight,
-                    2, BMF_CLEAR | BMF_INTERLEAVED);
-                
-                
                 for (UWORD r = 0; r < tmpBitmap->Rows; r++)
                 {
                     UWORD offetSrc = r * tmpBitmap->BytesPerRow;
@@ -137,9 +136,6 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
                     MINTERM_COOKIE
                 );
                 i++;
-                bitmapDestroy(pointers_low);
-                bitmapDestroy(pointers_high);
-                bitmapDestroy(tmpBitmap);
             } else {
                 // Init +2 on height for sprite management data
                 pAdvancedSprite->pAnimBitmap[i] = bitmapCreate(
@@ -159,6 +155,9 @@ tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, tBitMap *pSpriteVertica
         }
         k++;
     }
+    bitmapDestroy(pointers_low);
+    bitmapDestroy(pointers_high);
+    bitmapDestroy(tmpBitmap);
 
     pAdvancedSprite->pSprites = (tSprite **)memAllocFastClear(sizeof(tSprite*) * pAdvancedSprite->ubSpriteCount);
 
