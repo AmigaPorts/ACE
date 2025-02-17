@@ -79,7 +79,7 @@ int main(int lArgCount, const char *pArgs[]) {
 		}
 		else if(Arg == "-fpad"sv && ArgIndex < lArgCount -1) {
 			oForcePad = uint8_t(std::stoul(pArgs[++ArgIndex]));
-			if(oForcePad.value() < 1 || oForcePad.value() < 4) {
+			if(oForcePad.value() < 1 || 4 < oForcePad.value()) {
 				nLog::error("Illegal -fpad value: '{}'", oForcePad.value());
 				return EXIT_FAILURE;
 			}
