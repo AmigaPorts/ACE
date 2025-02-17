@@ -95,6 +95,9 @@ void statePush(tStateManager *pStateManager, tState *pState) {
 
 	pState->pPrev = pStateManager->pCurrent;
 	pStateManager->pCurrent = pState;
+	if(pState->pPrev == pState) {
+		logWrite("ERR: Malformed state, pState == pState->pPrev\n");
+	}
 
 	if (pStateManager->pCurrent && pStateManager->pCurrent->cbCreate) {
 		pStateManager->pCurrent->cbCreate();
@@ -153,6 +156,9 @@ void stateChange(tStateManager *pStateManager, tState *pState) {
 
 	if (pStateManager->pCurrent) {
 		pState->pPrev = pStateManager->pCurrent->pPrev;
+		if(pState->pPrev == pState) {
+			logWrite("ERR: Malformed state, pState == pState->pPrev\n");
+		}
 	}
 	else {
 		pState->pPrev = 0;

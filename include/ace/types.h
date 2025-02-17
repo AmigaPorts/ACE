@@ -52,24 +52,6 @@ typedef int32_t LONG;
 #define FN_HOTSPOT
 #define FN_COLDSPOT
 #define BITFIELD_STRUCT struct __attribute__((packed))
-#elif defined(__VBCC__)
-#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
-#define INTERRUPT __amigainterrupt __saveds
-#define INTERRUPT_END do {} while(0)
-#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
-#define INTERRUPT
-#define INTERRUPT_END do {} while(0)
-#endif
-
-#define HWINTERRUPT __interrupt __saveds
-#define UNUSED_ARG
-#define REGARG(arg, reg) __reg(reg) arg
-#define CHIP __chip
-#define FAR
-#define INTERRUPT_END do {} while(0)
-#define FN_HOTSPOT
-#define FN_COLDSPOT
-#define BITFIELD_STRUCT struct
 #elif defined(BARTMAN_GCC)
 #define INTERRUPT
 #define INTERRUPT_END do {} while(0)
