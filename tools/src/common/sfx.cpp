@@ -58,7 +58,68 @@ bool tSfx::toSfx(const std::string &szPath) const {
 	FileOut.write(reinterpret_cast<const char*>(&ubVersion), sizeof(ubVersion));
 	FileOut.write(reinterpret_cast<const char*>(&uwWordLength), sizeof(uwWordLength));
 	FileOut.write(reinterpret_cast<const char*>(&uwSampleReateHz), sizeof(uwSampleReateHz));
-	FileOut.write(reinterpret_cast<const char*>(m_vData.data()), m_vData.size());
+
+	constexpr auto PackNibble = [](std::int8_t bNibble) -> std::uint8_t {
+		return ((bNibble < 0) ? 0b1000 : 0) | abs(bNibble);
+	};
+
+	std::int8_t bPrevSample = 0;
+	std::uint16_t uwCtl = 0;
+	std::vector<uint8_t> vOut;
+	std::vector<uint8_t> vChunk;
+	std::uint16_t uwFullSamples = 0;
+	vChunk.reserve(16);
+	for(auto i = 0; i < m_vData.size(); ++i) {
+		auto Delta = m_vData[i] - bPrevSample;
+		bool isPacked = false;
+		if(i + 1 < m_vData.size()) {
+			auto DeltaNext = m_vData[i + 1] - m_vData[i];
+			if(std::abs(Delta) <= 7 && std::abs(DeltaNext) <= 7) {
+				uwCtl |= 1 << 15;
+				std::uint8_t ubPacked = (
+					(PackNibble(Delta) << 4) | PackNibble(DeltaNext)
+				);
+				vChunk.push_back(ubPacked);
+				isPacked = true;
+				// fmt::print("G: {}, {}, samples: {}, {}\n", Delta, DeltaNext, m_vData[i], m_vData[i + 1]);
+				bPrevSample = m_vData[i + 1];
+				++i;
+			}
+			else {
+				// fmt::print("B: {}, {}, samples: {}, {}\n", Delta, DeltaNext, m_vData[i], m_vData[i + 1]);
+			}
+		}
+		if(!isPacked) {
+			++uwFullSamples;
+			vChunk.push_back(m_vData[i]);
+			bPrevSample = m_vData[i];
+		}
+		if(vChunk.size() == 16) {
+			vOut.push_back(uwCtl >> 8);
+			vOut.push_back(uwCtl & 0xFF);
+			vOut.insert(vOut.end(), vChunk.begin(), vChunk.end());
+			vChunk.clear();
+			uwCtl = 0;
+		}
+		else {
+			uwCtl >>= 1;
+		}
+	}
+
+	// trailing stuff, incomplete chunk - fill with zeros
+	uwCtl >>= 15 - vChunk.size();
+	vOut.push_back(uwCtl >> 8);
+	vOut.push_back(uwCtl & 0xFF);
+	vOut.insert(vOut.end(), vChunk.begin(), vChunk.end());
+
+	std::uint16_t uwCompressedLength = std::uint16_t(vOut.size());
+	FileOut.write(reinterpret_cast<const char*>(&uwCompressedLength), sizeof(uwCompressedLength));
+	FileOut.write(reinterpret_cast<const char*>(vOut.data()), vOut.size());
+	fmt::print(
+		FMT_STRING("Compressed: {}/{} ({:.2f}%), full samples: {}\n"),
+		vOut.size(), m_vData.size(), (float(vOut.size()) / m_vData.size() * 100),
+		uwFullSamples
+	);
 
 	return true;
 }
@@ -70,7 +131,7 @@ bool tSfx::isEmpty(void) const
 
 std::uint32_t tSfx::getLength(void) const
 {
-	return m_vData.size();
+	return std::uint32_t(m_vData.size());
 }
 
 void tSfx::normalize(void)
