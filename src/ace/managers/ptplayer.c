@@ -2908,13 +2908,59 @@ tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
 		UWORD uwSampleRateHz;
 		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
 		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
-		logWrite("Length: %lu, sample rate: %hu, period: %hu\n", ulByteSize, uwSampleRateHz, pSfx->uwPeriod);
+		ULONG ulCompressedSize;
+		fileRead(pFileSfx, &ulCompressedSize, sizeof(ulCompressedSize));
+		logWrite(
+			"Length: %lu, compressed: %lu, sample rate: %hu, period: %hu\n",
+			ulByteSize, ulCompressedSize, uwSampleRateHz, pSfx->uwPeriod
+	);
 
 		pSfx->pData = isFast ? memAllocFast(ulByteSize) : memAllocChip(ulByteSize);
 		if(!pSfx->pData) {
 			goto fail;
 		}
-		fileRead(pFileSfx, pSfx->pData, ulByteSize);
+
+		if(ulCompressedSize) {
+			UBYTE *pByteData = (UBYTE*)pSfx->pData;
+			fileRead(pFileSfx, &pByteData[ulByteSize - ulCompressedSize], ulCompressedSize);
+			ULONG ulReadPos = ulByteSize - ulCompressedSize;
+			UWORD uwCtl;
+			ULONG ulWritePos = 0;
+			BYTE bLastSample = 0;
+			while(ulReadPos < ulByteSize) {
+				uwCtl = pByteData[ulReadPos++] << 8;
+				uwCtl |= pByteData[ulReadPos++];
+				for(UBYTE i = MIN(16, ulByteSize - ulReadPos); i--;) {
+					if(uwCtl & 1) {
+						struct {BYTE x:4;} sTmp;
+						if(ulWritePos > ulReadPos) {
+							logWrite("ERR: Write pos %lu > read pos %lu", ulWritePos, ulReadPos);
+							goto fail;
+						}
+						UBYTE ubNibbles = pByteData[ulReadPos++];
+						sTmp.x = (ubNibbles & 0xF);
+						bLastSample += sTmp.x;
+						ubNibbles >>= 4;
+						pByteData[ulWritePos++] = bLastSample;
+						sTmp.x = (ubNibbles & 0xF);
+						bLastSample += sTmp.x;
+						pByteData[ulWritePos++] = bLastSample;
+					}
+					else {
+						if(ulWritePos > ulReadPos) {
+							logWrite("ERR: Write pos %lu > read pos %lu", ulWritePos, ulReadPos);
+							goto fail;
+						}
+						bLastSample = pByteData[ulReadPos++];
+						pByteData[ulWritePos++] = bLastSample;
+					}
+					uwCtl >>= 1;
+				}
+			}
+		}
+		else {
+			fileRead(pFileSfx, pSfx->pData, ulByteSize);
+		}
 
 		// Check if pData[0] is zeroed-out - it should be because after sfx playback
 		// ptplayer sets the channel playback to looped first word. This should
