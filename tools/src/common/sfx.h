@@ -14,7 +14,7 @@ public:
 
 	tSfx(const tWav &Wav, bool isStrict);
 
-	bool toSfx(const std::string &szPath) const;
+	bool toSfx(const std::string &szPath, bool isCompress) const;
 
 	bool isEmpty(void) const;
 

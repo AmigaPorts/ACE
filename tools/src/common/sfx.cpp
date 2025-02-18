@@ -48,7 +48,7 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 	}
 }
 
-bool tSfx::toSfx(const std::string &szPath) const {
+bool tSfx::toSfx(const std::string &szPath, bool isCompress) const {
 	std::ofstream FileOut(szPath, std::ios::binary);
 
 	const std::uint8_t ubVersion = 1;
@@ -59,115 +59,123 @@ bool tSfx::toSfx(const std::string &szPath) const {
 	FileOut.write(reinterpret_cast<const char*>(&uwWordLength), sizeof(uwWordLength));
 	FileOut.write(reinterpret_cast<const char*>(&uwSampleReateHz), sizeof(uwSampleReateHz));
 
-	constexpr auto PackNibble = [](std::int8_t bNibble) -> std::uint8_t {
-		return bNibble & 0b1111;
-	};
-
-	std::int8_t bPrevSample = 0;
-	std::uint16_t uwCtl = 0;
-	std::vector<uint8_t> vOut;
-	std::vector<uint8_t> vChunk;
-	std::uint16_t uwFullSamples = 0;
-	vChunk.reserve(16);
-	for(auto i = 0; i < m_vData.size(); ++i) {
-		auto Delta = m_vData[i] - bPrevSample;
-		bool isPacked = false;
-		if(i + 1 < m_vData.size()) {
-			auto DeltaNext = m_vData[i + 1] - m_vData[i];
-			if(std::abs(Delta) <= 7 && std::abs(DeltaNext) <= 7) {
-				uwCtl |= 1 << 15;
-				std::uint8_t ubPacked = (
-					(PackNibble(DeltaNext) << 4) | PackNibble(Delta)
-				);
-				vChunk.push_back(ubPacked);
-				isPacked = true;
-				// fmt::print("G: {}, {}, samples: {}, {}\n", Delta, DeltaNext, m_vData[i], m_vData[i + 1]);
-				bPrevSample = m_vData[i + 1];
-				++i;
-			}
-			else {
-				// fmt::print("B: {}, {}, samples: {}, {}\n", Delta, DeltaNext, m_vData[i], m_vData[i + 1]);
-			}
-		}
-		if(!isPacked) {
-			++uwFullSamples;
-			vChunk.push_back(m_vData[i]);
-			bPrevSample = m_vData[i];
-		}
-		if(vChunk.size() == 16) {
-			vOut.push_back(uwCtl >> 8);
-			vOut.push_back(uwCtl & 0xFF);
-			vOut.insert(vOut.end(), vChunk.begin(), vChunk.end());
-			vChunk.clear();
-			uwCtl = 0;
-		}
-		else {
-			uwCtl >>= 1;
-		}
-	}
-
-	// trailing stuff, incomplete chunk - fill with zeros
-	uwCtl >>= 15 - vChunk.size();
-	vOut.push_back(uwCtl >> 8);
-	vOut.push_back(uwCtl & 0xFF);
-	vOut.insert(vOut.end(), vChunk.begin(), vChunk.end());
-
-	std::uint32_t ulCompressedLength = std::uint16_t(vOut.size());
-	FileOut.write(reinterpret_cast<const char*>(&ulCompressedLength), sizeof(ulCompressedLength));
-	FileOut.write(reinterpret_cast<const char*>(vOut.data()), vOut.size());
-	fmt::print(
-		FMT_STRING("Compressed: {}/{} ({:.2f}%), full samples: {} ({:.2f}%)\n"),
-		vOut.size(), m_vData.size(), (float(vOut.size()) / m_vData.size() * 100),
-		uwFullSamples, float(uwFullSamples) / m_vData.size() * 100
-	);
-
-	{
-		constexpr auto UnpackNibble = [](uint8_t x) {
-			struct {int8_t y: 4;} s;
-			return s.y = x;
+	if(isCompress) {
+		static constexpr auto PackNibble = [](std::int8_t bNibble) -> std::uint8_t {
+			return bNibble & 0b1111;
 		};
 
-		// Verify that compression actually works
-		std::vector<std::int8_t> vDecompressed;
-		vDecompressed.resize(m_vData.size());
-		std::copy(vOut.begin(), vOut.end(), &vDecompressed[m_vData.size() - ulCompressedLength]);
-		std::uint32_t ulReadPos = std::uint32_t(m_vData.size()) - ulCompressedLength;
-		std::uint16_t uwCtl;
-		std::uint16_t uwWritePos = 0;
-		std::int8_t bLastSample = 0;
-		while(ulReadPos < m_vData.size()) {
-			uwCtl = (uint8_t(vDecompressed[ulReadPos++]) << 8) | uint8_t(vDecompressed[ulReadPos++]);
-			for(auto i = std::min<std::uint32_t>(16, std::uint32_t(m_vData.size()) - ulReadPos); i--;) {
-				if(uwCtl & 1) {
-					if(uwWritePos > ulReadPos) {
-						nLog::error("write pos {} > read pos {}", uwWritePos, ulReadPos);
-						return false;
-					}
-					std::uint8_t ubNibbles = vDecompressed[ulReadPos++];
-					bLastSample += UnpackNibble(ubNibbles & 0xF);
-					ubNibbles >>= 4;
-					vDecompressed[uwWritePos++] = bLastSample;
-					bLastSample += UnpackNibble(ubNibbles & 0xF);
-					vDecompressed[uwWritePos++] = bLastSample;
+		std::int8_t bPrevSample = 0;
+		std::uint16_t uwCtl = 0;
+		std::vector<uint8_t> vOut;
+		std::vector<uint8_t> vChunk;
+		std::uint16_t uwFullSamples = 0;
+		vChunk.reserve(16);
+		for(auto i = 0; i < m_vData.size(); ++i) {
+			auto Delta = m_vData[i] - bPrevSample;
+			bool isPacked = false;
+			if(i + 1 < m_vData.size()) {
+				auto DeltaNext = m_vData[i + 1] - m_vData[i];
+				if(std::abs(Delta) <= 7 && std::abs(DeltaNext) <= 7) {
+					uwCtl |= 1 << 15;
+					std::uint8_t ubPacked = (
+						(PackNibble(DeltaNext) << 4) | PackNibble(Delta)
+					);
+					vChunk.push_back(ubPacked);
+					isPacked = true;
+					// fmt::print("G: {}, {}, samples: {}, {}\n", Delta, DeltaNext, m_vData[i], m_vData[i + 1]);
+					bPrevSample = m_vData[i + 1];
+					++i;
 				}
 				else {
-					if(uwWritePos > ulReadPos) {
-						nLog::error("write pos {} > read pos {}", uwWritePos, ulReadPos);
-						return false;
-					}
-					bLastSample = vDecompressed[ulReadPos++];
-					vDecompressed[uwWritePos++] = bLastSample;
+					// fmt::print("B: {}, {}, samples: {}, {}\n", Delta, DeltaNext, m_vData[i], m_vData[i + 1]);
 				}
+			}
+			if(!isPacked) {
+				++uwFullSamples;
+				vChunk.push_back(m_vData[i]);
+				bPrevSample = m_vData[i];
+			}
+			if(vChunk.size() == 16) {
+				vOut.push_back(uwCtl >> 8);
+				vOut.push_back(uwCtl & 0xFF);
+				vOut.insert(vOut.end(), vChunk.begin(), vChunk.end());
+				vChunk.clear();
+				uwCtl = 0;
+			}
+			else {
 				uwCtl >>= 1;
 			}
 		}
 
-		for(auto i = 0; i < m_vData.size(); ++i) {
-			if(vDecompressed[i] != m_vData[i]) {
-				nLog::error("mismatch on byte {}", i);
-				return false;
+		// trailing stuff, incomplete chunk - fill with zeros
+		uwCtl >>= 15 - vChunk.size();
+		vOut.push_back(uwCtl >> 8);
+		vOut.push_back(uwCtl & 0xFF);
+		vOut.insert(vOut.end(), vChunk.begin(), vChunk.end());
+
+		std::uint32_t ulCompressedLength = std::uint16_t(vOut.size());
+		std::uint32_t ulCompressedLengthBe = nEndian::toBig32(ulCompressedLength);
+		FileOut.write(reinterpret_cast<const char*>(&ulCompressedLengthBe), sizeof(ulCompressedLengthBe));
+		FileOut.write(reinterpret_cast<const char*>(vOut.data()), vOut.size());
+		fmt::print(
+			FMT_STRING("Compressed: {}/{} ({:.2f}%), full samples: {} ({:.2f}%)\n"),
+			vOut.size(), m_vData.size(), (float(vOut.size()) / m_vData.size() * 100),
+			uwFullSamples, float(uwFullSamples) / m_vData.size() * 100
+		);
+
+		{
+			constexpr auto UnpackNibble = [](uint8_t x) {
+				struct {int8_t y: 4;} s;
+				return s.y = x;
+			};
+
+			// Verify that compression actually works
+			std::vector<std::int8_t> vDecompressed;
+			vDecompressed.resize(m_vData.size());
+			std::copy(vOut.begin(), vOut.end(), &vDecompressed[m_vData.size() - ulCompressedLength]);
+			std::uint32_t ulReadPos = std::uint32_t(m_vData.size()) - ulCompressedLength;
+			std::uint16_t uwCtl;
+			std::uint32_t ulWritePos = 0;
+			std::int8_t bLastSample = 0;
+			while(ulReadPos < m_vData.size()) {
+				uwCtl = (uint8_t(vDecompressed[ulReadPos++]) << 8) | uint8_t(vDecompressed[ulReadPos++]);
+				for(auto i = std::min<std::uint32_t>(16, std::uint32_t(m_vData.size()) - ulReadPos); i--;) {
+					if(uwCtl & 1) {
+						if(ulWritePos > ulReadPos) {
+							nLog::error("write pos {} > read pos {}", ulWritePos, ulReadPos);
+							return false;
+						}
+						std::uint8_t ubNibbles = vDecompressed[ulReadPos++];
+						bLastSample += UnpackNibble(ubNibbles & 0xF);
+						ubNibbles >>= 4;
+						vDecompressed[ulWritePos++] = bLastSample;
+						bLastSample += UnpackNibble(ubNibbles & 0xF);
+						vDecompressed[ulWritePos++] = bLastSample;
+					}
+					else {
+						if(ulWritePos > ulReadPos) {
+							nLog::error("write pos {} > read pos {}", ulWritePos, ulReadPos);
+							return false;
+						}
+						bLastSample = vDecompressed[ulReadPos++];
+						vDecompressed[ulWritePos++] = bLastSample;
+					}
+					uwCtl >>= 1;
+				}
+			}
+
+			for(auto i = 0; i < m_vData.size(); ++i) {
+				if(vDecompressed[i] != m_vData[i]) {
+					nLog::error("mismatch on byte {}", i);
+					return false;
+				}
 			}
 		}
+	}
+	else {
+		std::uint32_t ulCompressedLength = 0;
+		FileOut.write(reinterpret_cast<const char*>(&ulCompressedLength), sizeof(ulCompressedLength));
+		FileOut.write(reinterpret_cast<const char*>(m_vData.data()), m_vData.size());
 	}
 
 	return true;
