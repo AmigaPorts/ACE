@@ -2921,38 +2921,32 @@ tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
 		}
 
 		if(ulCompressedSize) {
-			UBYTE *pByteData = (UBYTE*)pSfx->pData;
-			fileRead(pFileSfx, &pByteData[ulByteSize - ulCompressedSize], ulCompressedSize);
-			ULONG ulReadPos = ulByteSize - ulCompressedSize;
+			UBYTE *pWrite = (UBYTE*)pSfx->pData;
+			UBYTE *pRead = &pWrite[ulByteSize - ulCompressedSize];
+			const UBYTE *pEnd = &pWrite[ulByteSize];
+			fileRead(pFileSfx, pRead, ulCompressedSize);
 			UWORD uwCtl;
-			ULONG ulWritePos = 0;
 			BYTE bLastSample = 0;
-			while(ulReadPos < ulByteSize) {
-				uwCtl = pByteData[ulReadPos++] << 8;
-				uwCtl |= pByteData[ulReadPos++];
-				for(UBYTE i = MIN(16, ulByteSize - ulReadPos); i--;) {
+			while(pRead < pEnd) {
+				uwCtl = *(pRead++) << 8;
+				uwCtl |= *(pRead++);
+				for(UBYTE i = MIN(16, pEnd - pRead); i--;) {
+					if(pWrite > pRead) {
+						logWrite("ERR: Write pos %p > read pos %p", pWrite, pRead);
+						goto fail;
+					}
 					if(uwCtl & 1) {
 						struct {BYTE x:4;} sTmp;
-						if(ulWritePos > ulReadPos) {
-							logWrite("ERR: Write pos %lu > read pos %lu", ulWritePos, ulReadPos);
-							goto fail;
-						}
-						UBYTE ubNibbles = pByteData[ulReadPos++];
-						sTmp.x = (ubNibbles & 0xF);
-						bLastSample += sTmp.x;
+						UBYTE ubNibbles = *(pRead++);
+						bLastSample += sTmp.x = (ubNibbles & 0xF);
+						*(pWrite++) = bLastSample;
 						ubNibbles >>= 4;
-						pByteData[ulWritePos++] = bLastSample;
-						sTmp.x = (ubNibbles & 0xF);
-						bLastSample += sTmp.x;
-						pByteData[ulWritePos++] = bLastSample;
+						bLastSample += sTmp.x = ubNibbles;
+						*(pWrite++) = bLastSample;
 					}
 					else {
-						if(ulWritePos > ulReadPos) {
-							logWrite("ERR: Write pos %lu > read pos %lu", ulWritePos, ulReadPos);
-							goto fail;
-						}
-						bLastSample = pByteData[ulReadPos++];
-						pByteData[ulWritePos++] = bLastSample;
+						bLastSample = *(pRead++);
+						*(pWrite++) = bLastSample;
 					}
 					uwCtl >>= 1;
 				}
