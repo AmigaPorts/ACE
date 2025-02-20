@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <fstream>
 #include <fmt/format.h>
+#include "common/sfx.h"
 
-// mod_tool -i ../../../../res/germz1.mod -i ../../../../res/germz2.mod -sp ../../../../build/data/samples.samplepack -o ../../../../build/data/germz1.mod -o ../../../../build/data/germz2.mod
 int main(int lArgCount, const char *pArgs[])
 {
 	if(lArgCount <= 1) {
@@ -128,11 +128,38 @@ int main(int lArgCount, const char *pArgs[])
 		fmt::print("Writing sample pack to {}...\n", szSamplePackPath);
 		std::ofstream FileSamplePack;
 		FileSamplePack.open(szSamplePackPath, std::ios::binary);
+		std::uint8_t ubSampleCount = std::uint8_t(vMergedSamples.size());
+		FileSamplePack.write(reinterpret_cast<char*>(&ubSampleCount), sizeof(ubSampleCount));
 		for(const auto &Sample: vMergedSamples) {
-			FileSamplePack.write(
-				reinterpret_cast<const char*>(Sample.m_vData.data()),
-				Sample.m_vData.size() * sizeof(Sample.m_vData[0])
-			);
+			std::uint16_t uwSampleWordLength = std::uint16_t(Sample.m_vData.size());
+			FileSamplePack.write(reinterpret_cast<char*>(&uwSampleWordLength), sizeof(uwSampleWordLength));
+			if(true) {
+				std::uint32_t ulUncompressedSize = std::uint32_t(Sample.m_vData.size() * sizeof(Sample.m_vData[0]));
+				auto vCompressed = tSfx::compressLosslessDpcm(
+					std::span(reinterpret_cast<const int8_t*>(Sample.m_vData.data()),
+					ulUncompressedSize
+				));
+				fmt::print(
+					FMT_STRING("Compressed: {}/{} ({:.2f}%)\n"),
+					vCompressed.size(), ulUncompressedSize,
+					(float(vCompressed.size()) / ulUncompressedSize * 100)
+				);
+
+				std::uint32_t ulCompressedSize = std::uint32_t(vCompressed.size());
+				FileSamplePack.write(reinterpret_cast<char*>(&ulCompressedSize), sizeof(ulCompressedSize));
+				FileSamplePack.write(
+					reinterpret_cast<const char*>(vCompressed.data()),
+					vCompressed.size() * sizeof(vCompressed[0])
+				);
+			}
+			else {
+				std::uint32_t ulCompressedSize = 0;
+				FileSamplePack.write(reinterpret_cast<char*>(&ulCompressedSize), sizeof(ulCompressedSize));
+				FileSamplePack.write(
+					reinterpret_cast<const char*>(Sample.m_vData.data()),
+					Sample.m_vData.size() * sizeof(Sample.m_vData[0])
+				);
+			}
 		}
 	}
 
