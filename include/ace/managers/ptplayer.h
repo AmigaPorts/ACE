@@ -60,8 +60,8 @@ typedef struct _tPtplayerMod {
 } tPtplayerMod;
 
 typedef struct tPtplayerSamplePack {
-	ULONG ulSize;
-	UWORD *pData;
+	UBYTE ubSampleCount;
+	tPtplayerSfx pSamples[PTPLAYER_MOD_SAMPLE_COUNT];
 } tPtplayerSamplePack;
 
 typedef void (*tPtplayerCbSongEnd)(void);

@@ -147,26 +147,34 @@ int main(int lArgCount, const char *pArgs[])
 			FileSamplePack.write(reinterpret_cast<char*>(&uwSampleWordLengthBe), sizeof(uwSampleWordLengthBe));
 			if(isCompressed) {
 				std::uint32_t ulUncompressedSize = std::uint32_t(Sample.m_vData.size() * sizeof(Sample.m_vData[0]));
-				auto vCompressed = tSfx::compressLosslessDpcm(
-					std::span(reinterpret_cast<const int8_t*>(Sample.m_vData.data()),
-					ulUncompressedSize
-				));
+				auto UncompressedBytes = std::span(reinterpret_cast<const int8_t*>(Sample.m_vData.data()), ulUncompressedSize);
+				auto vCompressed = tSfx::compressLosslessDpcm(UncompressedBytes);
 				fmt::print(
 					FMT_STRING("Compressed: {}/{} ({:.2f}%)\n"),
 					vCompressed.size(), ulUncompressedSize,
 					(float(vCompressed.size()) / ulUncompressedSize * 100)
 				);
 
-				std::uint32_t ulCompressedSize = std::uint32_t(vCompressed.size());
-				FileSamplePack.write(reinterpret_cast<char*>(&ulCompressedSize), sizeof(ulCompressedSize));
+				auto vDecompressed = tSfx::decompressLosslessDpcm(
+					vCompressed, std::uint32_t(Sample.m_vData.size() * sizeof(std::uint16_t))
+				);
+				for(auto i = 0; i < UncompressedBytes.size(); ++i) {
+					if(vDecompressed[i] != UncompressedBytes[i]) {
+						nLog::error("mismatch on byte {}", i);
+						return EXIT_FAILURE;
+					}
+				}
+
+				std::uint32_t ulCompressedSizeBe = nEndian::toBig32(std::uint32_t(vCompressed.size()));
+				FileSamplePack.write(reinterpret_cast<char*>(&ulCompressedSizeBe), sizeof(ulCompressedSizeBe));
 				FileSamplePack.write(
 					reinterpret_cast<const char*>(vCompressed.data()),
 					vCompressed.size() * sizeof(vCompressed[0])
 				);
 			}
 			else {
-				std::uint32_t ulCompressedSize = 0;
-				FileSamplePack.write(reinterpret_cast<char*>(&ulCompressedSize), sizeof(ulCompressedSize));
+				std::uint32_t ulCompressedSizeBe = 0;
+				FileSamplePack.write(reinterpret_cast<char*>(&ulCompressedSizeBe), sizeof(ulCompressedSizeBe));
 				FileSamplePack.write(
 					reinterpret_cast<const char*>(Sample.m_vData.data()),
 					Sample.m_vData.size() * sizeof(Sample.m_vData[0])
