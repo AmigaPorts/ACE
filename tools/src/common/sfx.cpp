@@ -51,7 +51,7 @@ tSfx::tSfx(const tWav &Wav, bool isStrict):
 bool tSfx::toSfx(const std::string &szPath, bool isCompress) const {
 	std::ofstream FileOut(szPath, std::ios::binary);
 
-	const std::uint8_t ubVersion = 1;
+	const std::uint8_t ubVersion = 2;
 	const std::uint16_t uwWordLength = nEndian::toBig16(uint16_t(m_vData.size() / 2));
 	const std::uint16_t uwSampleReateHz = nEndian::toBig16(m_ulFreq);
 

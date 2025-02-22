@@ -280,21 +280,26 @@ endfunction()
 
 function(mergeMods)
 	getToolPath(mod_tool TOOL_MOD_TOOL)
-	set(oneValArgs SAMPLE_PACK TARGET)
-	set(multiValArgs SOURCES DESTINATIONS)
 	set(cmdParams "")
 	cmake_parse_arguments(
-		args "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
+		args
+		"COMPRESS"
+		"SAMPLE_PACK;TARGET"
+		"SOURCES;DESTINATIONS" ${ARGN}
 	)
 
 	if(NOT ("${args_SAMPLE_PACK} " STREQUAL " "))
 		list(APPEND cmdParams -sp ${args_SAMPLE_PACK})
 	endif()
 
+	if(${args_COMPRESS})
+		list(APPEND cmdParams -c)
+	endif()
+
 	list(LENGTH args_SOURCES srcCount)
 	list(LENGTH args_DESTINATIONS dstCount)
 	if(NOT ${srcCount} EQUAL ${dstCount})
-		message(FATAL_ERROR "[mergeMods] SOURCES count doesn't match DESTINATIONS count")
+		message(FATAL_ERROR "[mergeMods] SOURCES count ${srcCount} doesn't match DESTINATIONS count ${dstCount}")
 	endif()
 
 	MATH(EXPR srcCount "${srcCount}-1")
