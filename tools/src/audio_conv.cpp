@@ -176,7 +176,9 @@ int main(int lArgCount, const char *pArgs[]) {
 			auto PartOutPath = fmt::format(FMT_STRING("{}_{}.{}"), BaseOutputPath, ubPart, szOutExt);
 			fmt::print("Writing to {}\n", PartOutPath);
 			if(szOutExt == "sfx") {
-				In.toSfx(PartOutPath, isCompressed);
+				if(!In.toSfx(PartOutPath, isCompressed)) {
+					return EXIT_FAILURE;
+				}
 			}
 			else {
 				nLog::error("Output file type not supported: {}", szInExt);
@@ -191,7 +193,9 @@ int main(int lArgCount, const char *pArgs[]) {
 		// Save to output
 		fmt::print("Writing to {}...\n", szOutput);
 		if(szOutExt == "sfx") {
-			In.toSfx(szOutput, isCompressed);
+			if(!In.toSfx(szOutput, isCompressed)) {
+				return EXIT_FAILURE;
+			}
 		}
 		else {
 			nLog::error("Output file type not supported: {}", szInExt);

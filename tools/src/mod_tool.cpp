@@ -2,19 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "common/mod.h"
 #include <cstdlib>
 #include <vector>
 #include <memory>
 #include <algorithm>
 #include <fstream>
+#include <string_view>
 #include <fmt/format.h>
+#include "common/mod.h"
 #include "common/sfx.h"
+#include "common/logging.h"
+#include "common/endian.h"
+
+using namespace std::string_view_literals;
 
 int main(int lArgCount, const char *pArgs[])
 {
 	if(lArgCount <= 1) {
-		fmt::print("ERR: no parameters specified\n");
+		nLog::error("no parameters specified\n");
 		return EXIT_FAILURE;
 	}
 
@@ -22,22 +27,26 @@ int main(int lArgCount, const char *pArgs[])
 	std::vector<std::string> vOutNames;
 	std::string szSamplePackPath;
 	bool isStripSamples = true;
+	bool isCompressed = false;
 
 	for(auto ArgIndex = 0; ArgIndex < lArgCount; ++ArgIndex) {
-		if(pArgs[ArgIndex] == std::string("-i")) {
+		if(pArgs[ArgIndex] == "-i"sv) {
 			vModsIn.push_back(std::make_shared<tMod>(pArgs[++ArgIndex]));
 		}
-		else if(pArgs[ArgIndex] == std::string("-o")) {
+		else if(pArgs[ArgIndex] == "-o"sv) {
 			vOutNames.push_back(pArgs[++ArgIndex]);
 		}
-		else if(pArgs[ArgIndex] == std::string("-sp")) {
+		else if(pArgs[ArgIndex] == "-sp"sv) {
 			szSamplePackPath = pArgs[++ArgIndex];
+		}
+		else if(pArgs[ArgIndex] == "-c"sv) {
+			isCompressed = true;
 		}
 	}
 
 	if(vModsIn.size() != vOutNames.size()) {
-		fmt::print(
-			"ERR: Output path count ({}) doesn't match input file count ({})\n",
+		nLog::error(
+			"Output path count ({}) doesn't match input file count ({})\n",
 			vOutNames.size(), vModsIn.size()
 		);
 		return EXIT_FAILURE;
@@ -52,8 +61,8 @@ int main(int lArgCount, const char *pArgs[])
 					!ModSamples[SampleIndex].m_szName.empty() &&
 					ModSamples[SampleIndex].m_szName == ModSamples[OtherIndex].m_szName
 				) {
-					fmt::print(
-						"ERR: Mod '{}' has duplicate sample name: '{}'\n",
+					nLog::error(
+						"Mod '{}' has duplicate sample name: '{}'\n",
 						pMod->getSongName(), ModSamples[SampleIndex].m_szName
 					);
 					return EXIT_FAILURE;
@@ -87,8 +96,8 @@ int main(int lArgCount, const char *pArgs[])
 			else {
 				// Verify that Samples are exactly the same
 				if(ModSample != *FoundMergedSample) {
-					fmt::print(
-						"ERR: sample {} '{}' have different contents in mod '{}' than in others\n",
+					nLog::error(
+						"sample {} '{}' have different contents in mod '{}' than in others\n",
 						(&ModSample - ModSamples.data()), ModSample.m_szName, pMod->getSongName()
 					);
 					return EXIT_FAILURE;
@@ -128,12 +137,15 @@ int main(int lArgCount, const char *pArgs[])
 		fmt::print("Writing sample pack to {}...\n", szSamplePackPath);
 		std::ofstream FileSamplePack;
 		FileSamplePack.open(szSamplePackPath, std::ios::binary);
+		std::uint8_t ubVersion = 2;
 		std::uint8_t ubSampleCount = std::uint8_t(vMergedSamples.size());
+		FileSamplePack.write(reinterpret_cast<char*>(&ubVersion), sizeof(ubVersion));
 		FileSamplePack.write(reinterpret_cast<char*>(&ubSampleCount), sizeof(ubSampleCount));
+
 		for(const auto &Sample: vMergedSamples) {
-			std::uint16_t uwSampleWordLength = std::uint16_t(Sample.m_vData.size());
-			FileSamplePack.write(reinterpret_cast<char*>(&uwSampleWordLength), sizeof(uwSampleWordLength));
-			if(true) {
+			std::uint16_t uwSampleWordLengthBe = nEndian::toBig16(std::uint16_t(Sample.m_vData.size()));
+			FileSamplePack.write(reinterpret_cast<char*>(&uwSampleWordLengthBe), sizeof(uwSampleWordLengthBe));
+			if(isCompressed) {
 				std::uint32_t ulUncompressedSize = std::uint32_t(Sample.m_vData.size() * sizeof(Sample.m_vData[0]));
 				auto vCompressed = tSfx::compressLosslessDpcm(
 					std::span(reinterpret_cast<const int8_t*>(Sample.m_vData.data()),
