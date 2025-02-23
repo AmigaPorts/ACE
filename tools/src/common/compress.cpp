@@ -64,59 +64,64 @@ static void rleTableWrite(uint8_t *table, unsigned *index, uint8_t byte)
 	(*index) &= 0xfff;
 }
 
-void compressUnpack(
-	const uint8_t *pSrc, size_t src_size,
-	uint8_t *pDst, size_t dst_size, bool isVerbose
+void compressUnpackStateInit(
+	tCompressUnpackState *pState, const uint8_t *pSrc, size_t srcSize,
+	uint8_t *pDst, size_t dstSize, bool isVerbose
 )
 {
-	unsigned bit, i, count, src_offset = 0, dst_offset = 0, table_index = 0, rle_index;
-	uint8_t table[0x1000] = {0};
-	uint16_t word;
-	uint8_t ctrl_byte, byte;
+	memset(pState, 0, sizeof(*pState));
+	pState->pSrc = pSrc;
+	pState->srcSize = srcSize;
+	pState->pDst = pDst;
+	pState->dstSize = dstSize;
+	pState->isVerbose = isVerbose;
+}
 
-	if(isVerbose) fmt::println("Decompress start");
-	while (dst_offset < dst_size) {
-		auto ctl_offset = src_offset;
-		ctrl_byte = pSrc[src_offset++];
-		for (bit = 0; bit < 8; bit++) {
-			if (dst_offset >= dst_size) {
+void compressUnpackProcess(tCompressUnpackState *pState)
+{
+	if(pState->isVerbose) fmt::println("Decompress start");
+	while (pState->dst_offset < pState->dstSize) {
+		auto ctl_offset = pState->src_offset;
+		pState->ctrl_byte = pState->pSrc[pState->src_offset++];
+		for (pState->bit = 0; pState->bit < 8; pState->bit++) {
+			if (pState->dst_offset >= pState->dstSize) {
 				break;
 			}
 
-			if (ctrl_byte & (1 << bit)) {
+			if (pState->ctrl_byte & (1 << pState->bit)) {
 				/* Output the next byte and store it in the table */
-				byte = pSrc[src_offset++];
-				if(isVerbose) fmt::println("byte at {}: {:02X}", src_offset - 1, byte);
-				pDst[dst_offset++] = byte;
-				rleTableWrite(table, &table_index, byte);
+				pState->byte = pState->pSrc[pState->src_offset++];
+				if(pState->isVerbose) fmt::println("byte at {}: {:02X}", pState->src_offset - 1, pState->byte);
+				pState->pDst[pState->dst_offset++] = pState->byte;
+				rleTableWrite(pState->table, &pState->table_index, pState->byte);
 			}
 			else {
 				/*
 				 *
 				 */
-				word = (pSrc[src_offset + 0] << 0) | (pSrc[src_offset + 1] << 8);
-				src_offset += 2;
+				pState->word = (pState->pSrc[pState->src_offset + 0] << 0) | (pState->pSrc[pState->src_offset + 1] << 8);
+				pState->src_offset += 2;
 
-				count = ((word & 0xf000) >> 12) + 3;
-				rle_index = word & 0xfff;
+				pState->rleLength = ((pState->word & 0xf000) >> 12) + 3;
+				pState->rleIndex = pState->word & 0xfff;
 
-				if(isVerbose) fmt::print(
+				if(pState->isVerbose) fmt::print(
 					"sequence at {}, word: {:04X}, len: {}, index: {}, sequence:",
-					src_offset - 2, word, count, rle_index
+					pState->src_offset - 2, pState->word, pState->rleLength, pState->rleIndex
 				);
 
-				for (i = 0; i < count; i++) {
-					byte = rleTableRead(table, &rle_index);
-					if(isVerbose) fmt::print(" {:02X}", byte);
-					rleTableWrite(table, &table_index, byte);
-					pDst[dst_offset++] = byte;
+				for (pState->rlePos = 0; pState->rlePos < pState->rleLength; pState->rlePos++) {
+					pState->byte = rleTableRead(pState->table, &pState->rleIndex);
+					if(pState->isVerbose) fmt::print(" {:02X}", pState->byte);
+					rleTableWrite(pState->table, &pState->table_index, pState->byte);
+					pState->pDst[pState->dst_offset++] = pState->byte;
 				}
-				if(isVerbose) fmt::print("\n");
+				if(pState->isVerbose) fmt::print("\n");
 			}
 		}
-		if(isVerbose) fmt::println("used ctl at {}: {:02X}", ctl_offset, ctrl_byte);
+		if(pState->isVerbose) fmt::println("used ctl at {}: {:02X}", ctl_offset, pState->ctrl_byte);
 	}
-	if(isVerbose) fmt::println("Decompress done");
+	if(pState->isVerbose) fmt::println("Decompress done");
 }
 
 size_t compressPack(
