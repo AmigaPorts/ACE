@@ -126,11 +126,24 @@ int main(int lArgCount, const char *pArgs[])
 			vPackBuffer.resize(Entry.ulSize * 2);
 		}
 
-		auto CompressedSize = (std::uint32_t)compressPack(FileContents.data(), Entry.ulSize, vPackBuffer.data(), vPackBuffer.size());
-		vDecompressed.resize(Entry.ulSize);
+		auto CompressedSize = (std::uint32_t)compressPack(
+			FileContents.data(), Entry.ulSize, vPackBuffer.data(), vPackBuffer.size()
+		);
+
+		vDecompressed.resize(0);
 		tCompressUnpackState UnpackState;
-		compressUnpackStateInit(&UnpackState, vPackBuffer.data(), CompressedSize, vDecompressed.data(), Entry.ulSize);
-		compressUnpackProcess(&UnpackState);
+		compressUnpackStateInit(&UnpackState, vPackBuffer.data(), CompressedSize, Entry.ulSize);
+		while(true) {
+			std::uint8_t ubRead;
+			tCompressUnpackResult eResult = compressUnpackProcess(&UnpackState, &ubRead);
+			if(eResult == COMPRESS_UNPACK_RESULT_DONE) {
+				break;
+			}
+			if(eResult == COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE) {
+				vDecompressed.push_back(ubRead);
+			}
+		}
+
 		for(std::size_t i = 0; i < Entry.ulSize; ++i) {
 			if(vDecompressed[i] != FileContents[i]) {
 				nLog::error("mismatch at index {}", i);
