@@ -18,38 +18,36 @@ enum tCompressUnpackResult {
 	COMPRESS_UNPACK_RESULT_DONE,
 };
 
-struct tCompressUnpackState {
+struct tCompressUnpacker {
 	tCompressUnpackStateKind eCurrentState;
-	std::uint8_t table[0x1000];
+	std::uint8_t pLookup[0x1000];
 	const std::uint8_t *pCompressed;
 	std::size_t ulCompressedSize;
 	std::size_t ulUncompressedSize;
 	bool isVerbose;
-	unsigned int bit;
-	unsigned int rlePos;
-	unsigned int rleLength;
-	unsigned int src_offset;
-	unsigned int dst_offset;
-	unsigned int table_index;
-	unsigned int rleIndex;
-	unsigned int ctl_offset;
-	std::uint16_t word;
-	std::uint8_t ctrl_byte;
-	std::uint8_t byte;
+	std::uint8_t ubCtlByte;
+	std::uint8_t ubCtlBitIndex;
+	std::uint8_t ubRlePos;
+	std::uint8_t ubRleLength;
+	std::uint16_t uwRleStart;
+	std::uint16_t uwLookupPos;
+	std::uint32_t ulReadOffset;
+	std::uint32_t ulWriteOffset;
+	std::uint32_t ulCtlOffset;
 };
 
-size_t compressPack(
-	const uint8_t *pSrc, size_t srcSize, uint8_t *pDst, size_t dstSize,
-	bool isVerbose = false
+std::uint32_t compressPack(
+	const uint8_t *pSrc, std::uint32_t ulSrcSize,
+	uint8_t *pDest, bool isVerbose = false
 );
 
-void compressUnpackStateInit(
-	tCompressUnpackState *pState, const uint8_t *pSrc, size_t srcSize,
-	size_t dstSize, bool isVerbose = false
+void compressUnpackerInit(
+	tCompressUnpacker *pUnpacker, const uint8_t *pCompressed, size_t ulCompressedSize,
+	size_t ulUncompressedSize, bool isVerbose = false
 );
 
-tCompressUnpackResult compressUnpackProcess(
-	tCompressUnpackState *State, std::uint8_t *pOut
+tCompressUnpackResult compressUnpackerProcess(
+	tCompressUnpacker *State, std::uint8_t *pOut
 );
 
 #endif // _ACE_TOOLS_COMMON_COMPRESS_H_

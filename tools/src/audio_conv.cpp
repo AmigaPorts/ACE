@@ -34,7 +34,7 @@ int main(int lArgCount, const char *pArgs[]) {
 
 	std::uint8_t ubMandatoryArgCnt = 2;
 
-	if(lArgCount < ubMandatoryArgCnt) {
+	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
