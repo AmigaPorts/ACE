@@ -14,8 +14,9 @@
 struct tPakCompressEntry {
 	std::string ShortPath;
 	std::string Path;
-	std::uint32_t ulSize;
 	std::uint32_t ulChecksum;
+	std::uint32_t ulUncompressedSize;
+	std::vector<std::uint8_t> vData;
 };
 
 static std::uint32_t adler32Buffer(const std::uint8_t *pData, std::uint32_t ulDataSize) {
@@ -36,23 +37,40 @@ static std::uint32_t adler32Buffer(const std::uint8_t *pData, std::uint32_t ulDa
 
 static void printUsage(const std::string &szAppName) {
 	using fmt::print;
-	print("Usage:\n\t{} inDir outPak\n\n", szAppName);
-	print("inDir\t- path to input directory.\n");
-	print("outPak\t- path to output pak file.\n");
+	print("Usage:\n\t{} inDir outPak [extraOpts]\n\n", szAppName);
+	print("Required arguments:\n");
+	print("\tinDir   Path to input directory.\n");
+	print("\toutPak  Path to output pak file.\n");
+	print("Extra options:\n");
+	print("\t-c  Enable compression.\n");
 }
 
 int main(int lArgCount, const char *pArgs[])
 {
+	using namespace std::string_view_literals;
+
 	const std::uint8_t ubMandatoryArgCnt = 2;
-	// Mandatory args
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
 	}
 
-	std::string InPath = pArgs[1];
-	std::string OutPath = pArgs[2];
+	std::string InPath(pArgs[1]);
+	std::string OutPath(pArgs[2]);
+	bool isCompressed = false;
+
+	for(auto ArgIndex = 3; ArgIndex < lArgCount; ++ArgIndex) {
+		std::string_view Arg = pArgs[ArgIndex];
+		if(Arg == "-c"sv) {
+			isCompressed = true;
+		}
+		else {
+			nLog::error("Unknown arg or missing value: '{}'", pArgs[ArgIndex]);
+			printUsage(pArgs[0]);
+			return EXIT_FAILURE;
+		}
+	}
 
 	if(!nFs::isDir(InPath)) {
 		nLog::error("Path {} isn't a folder", InPath);
@@ -66,12 +84,15 @@ int main(int lArgCount, const char *pArgs[])
 
 	auto AbsoluteBasePath = std::filesystem::absolute(InPath);
 	bool isCollided = false;
+	std::vector<std::uint8_t> vFileContents;
+	std::vector<std::uint8_t> vPackBuffer;
+	std::vector<std::uint8_t> vDecompressed;
   for (std::filesystem::recursive_directory_iterator i(InPath), end; i != end; ++i) {
     if (!is_directory(i->path())) {
 			tPakCompressEntry Entry;
 			Entry.ShortPath = std::filesystem::relative(i->path(), AbsoluteBasePath).generic_string();
 			Entry.Path = i->path().generic_string();
-			Entry.ulSize = std::uint32_t(std::filesystem::file_size(Entry.Path));
+			Entry.ulUncompressedSize = std::uint32_t(std::filesystem::file_size(Entry.Path));
 			Entry.ulChecksum = adler32Buffer(
 				reinterpret_cast<const std::uint8_t*>(Entry.ShortPath.c_str()),
 				std::uint32_t(Entry.ShortPath.size())
@@ -82,6 +103,47 @@ int main(int lArgCount, const char *pArgs[])
 					isCollided = true;
 				}
 			}
+
+			std::ifstream FileIn;
+			FileIn.open(Entry.Path, std::ios::binary);
+			vFileContents.resize(Entry.ulUncompressedSize);
+			FileIn.read(reinterpret_cast<char*>(vFileContents.data()), Entry.ulUncompressedSize);
+
+			if(isCompressed) {
+				if(vPackBuffer.size() < Entry.ulUncompressedSize * 2) {
+					vPackBuffer.resize(Entry.ulUncompressedSize * 2);
+				}
+				auto CompressedSize = (std::uint32_t)compressPack(
+					vFileContents.data(), Entry.ulUncompressedSize, vPackBuffer.data()
+				);
+
+				vDecompressed.resize(Entry.ulUncompressedSize);
+				tCompressUnpacker UnpackState;
+				compressUnpackerInit(&UnpackState, vPackBuffer.data(), CompressedSize, Entry.ulUncompressedSize);
+				while(true) {
+					std::uint8_t ubRead;
+					tCompressUnpackResult eResult = compressUnpackerProcess(&UnpackState, &ubRead);
+					if(eResult == COMPRESS_UNPACK_RESULT_DONE) {
+						break;
+					}
+					if(eResult == COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE) {
+						vDecompressed[UnpackState.ulWriteOffset] = ubRead;
+					}
+				}
+
+				for(std::size_t i = 0; i < Entry.ulUncompressedSize; ++i) {
+					if(vDecompressed[i] != vFileContents[i]) {
+						nLog::error("mismatch at index {}", i);
+						return EXIT_FAILURE;
+					}
+				}
+
+				Entry.vData = std::vector(&vPackBuffer[0], &vPackBuffer[CompressedSize]);
+			}
+			else {
+				Entry.vData = vFileContents;
+			}
+
 			vEntries.push_back(Entry);
 		}
 	}
@@ -94,66 +156,31 @@ int main(int lArgCount, const char *pArgs[])
 	std::uint16_t uwFileCount = std::uint16_t(vEntries.size());
 	std::uint16_t uwFileCountBe = nEndian::toBig16(uwFileCount);
 	FilePak.write(reinterpret_cast<char*>(&uwFileCountBe), sizeof(uwFileCountBe));
-	std::uint32_t ulNextFileOffs = sizeof(uwFileCount) + (uwFileCount * 3 * sizeof(std::uint32_t));
+	std::uint32_t ulNextFileOffs = sizeof(uwFileCount) + (uwFileCount * 4 * sizeof(std::uint32_t));
 	std::uint16_t i = 0;
 	for(const auto &Entry: vEntries) {
 		fmt::print(
 			"Adding file {:4d}: '{}', offset: {}, size: {}, checksum: {:08X}...\n",
-			i++, Entry.ShortPath, ulNextFileOffs, Entry.ulSize,
+			i++, Entry.ShortPath, ulNextFileOffs, Entry.vData.size(),
 			Entry.ulChecksum
 		);
+
 		std::uint32_t ulChecksumBe = nEndian::toBig32(Entry.ulChecksum);
 		std::uint32_t ulOffsBe = nEndian::toBig32(ulNextFileOffs);
-		std::uint32_t ulSizeBe = nEndian::toBig32(Entry.ulSize);
+		std::uint32_t ulUncompressedSizeBe = nEndian::toBig32(Entry.ulUncompressedSize);
+		std::uint32_t ulDataSizeBe = nEndian::toBig32(std::uint32_t(Entry.vData.size()));
 
 		FilePak.write(reinterpret_cast<char*>(&ulChecksumBe), sizeof(ulChecksumBe));
 		FilePak.write(reinterpret_cast<char*>(&ulOffsBe), sizeof(ulOffsBe));
-		FilePak.write(reinterpret_cast<char*>(&ulSizeBe), sizeof(ulSizeBe));
+		FilePak.write(reinterpret_cast<const char*>(&ulUncompressedSizeBe), sizeof(ulUncompressedSizeBe));
+		FilePak.write(reinterpret_cast<char*>(&ulDataSizeBe), sizeof(ulDataSizeBe));
 
-		ulNextFileOffs += Entry.ulSize;
+		ulNextFileOffs += std::uint32_t(Entry.vData.size());
 	}
 
-	std::vector<std::uint8_t> FileContents;
-	std::vector<std::uint8_t> vPackBuffer;
-	std::vector<std::uint8_t> vDecompressed;
 	for(const auto &Entry: vEntries) {
-		std::ifstream FileIn;
-		FileIn.open(Entry.Path, std::ios::binary);
-		FileContents.resize(Entry.ulSize);
-		FileIn.read(reinterpret_cast<char*>(FileContents.data()), Entry.ulSize);
-
-		if(vPackBuffer.size() < Entry.ulSize * 2) {
-			vPackBuffer.resize(Entry.ulSize * 2);
-		}
-
-		auto CompressedSize = (std::uint32_t)compressPack(
-			FileContents.data(), Entry.ulSize, vPackBuffer.data(), vPackBuffer.size()
-		);
-
-		vDecompressed.resize(0);
-		tCompressUnpackState UnpackState;
-		compressUnpackStateInit(&UnpackState, vPackBuffer.data(), CompressedSize, Entry.ulSize);
-		while(true) {
-			std::uint8_t ubRead;
-			tCompressUnpackResult eResult = compressUnpackProcess(&UnpackState, &ubRead);
-			if(eResult == COMPRESS_UNPACK_RESULT_DONE) {
-				break;
-			}
-			if(eResult == COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE) {
-				vDecompressed.push_back(ubRead);
-			}
-		}
-
-		for(std::size_t i = 0; i < Entry.ulSize; ++i) {
-			if(vDecompressed[i] != FileContents[i]) {
-				nLog::error("mismatch at index {}", i);
-				return EXIT_FAILURE;
-			}
-		}
-
-		std::uint32_t CompressedSizeBe = nEndian::toBig32(CompressedSize);
-		FilePak.write(reinterpret_cast<char*>(&CompressedSizeBe), sizeof(CompressedSizeBe));
-		FilePak.write(reinterpret_cast<char *>(vPackBuffer.data()), CompressedSize);
+		std::uint32_t UncompressedSizeBe = isCompressed ? nEndian::toBig32(Entry.ulUncompressedSize) : 0;
+		FilePak.write(reinterpret_cast<const char *>(Entry.vData.data()), Entry.vData.size());
 	}
 
 	fmt::print("All done!\n");
