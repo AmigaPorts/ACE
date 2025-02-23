@@ -9,6 +9,7 @@
 #include "common/logging.h"
 #include "common/fs.h"
 #include "common/endian.h"
+#include "common/compress.hpp"
 
 struct tPakCompressEntry {
 	std::string ShortPath;
@@ -112,13 +113,32 @@ int main(int lArgCount, const char *pArgs[])
 		ulNextFileOffs += Entry.ulSize;
 	}
 
-	std::vector<char> FileContents;
+	std::vector<std::uint8_t> FileContents;
+	std::vector<std::uint8_t> vPackBuffer;
+	std::vector<std::uint8_t> vDecompressed;
 	for(const auto &Entry: vEntries) {
 		std::ifstream FileIn;
 		FileIn.open(Entry.Path, std::ios::binary);
 		FileContents.resize(Entry.ulSize);
-		FileIn.read(FileContents.data(), Entry.ulSize);
-		FilePak.write(FileContents.data(), Entry.ulSize);
+		FileIn.read(reinterpret_cast<char*>(FileContents.data()), Entry.ulSize);
+
+		if(vPackBuffer.size() < Entry.ulSize * 2) {
+			vPackBuffer.resize(Entry.ulSize * 2);
+		}
+
+		auto CompressedSize = (std::uint32_t)compressPack(FileContents.data(), Entry.ulSize, vPackBuffer.data(), vPackBuffer.size());
+		vDecompressed.resize(Entry.ulSize);
+		compressUnpack(vPackBuffer.data(), CompressedSize, vDecompressed.data(), Entry.ulSize);
+		for(std::size_t i = 0; i < Entry.ulSize; ++i) {
+			if(vDecompressed[i] != FileContents[i]) {
+				nLog::error("mismatch at index {}", i);
+				return EXIT_FAILURE;
+			}
+		}
+
+		std::uint32_t CompressedSizeBe = nEndian::toBig32(CompressedSize);
+		FilePak.write(reinterpret_cast<char*>(&CompressedSizeBe), sizeof(CompressedSizeBe));
+		FilePak.write(reinterpret_cast<char *>(vPackBuffer.data()), CompressedSize);
 	}
 
 	fmt::print("All done!\n");
