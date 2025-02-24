@@ -507,6 +507,16 @@ static void audioChannelFree(void) {
 	msgPortDelete(pMsgPort);
 }
 
+static void cdtvCdCommand(UWORD cmd) {
+	if (s_pCdtvIOReq) {
+		s_pCdtvIOReq->io_Command = cmd;
+		s_pCdtvIOReq->io_Offset  = 0;
+		s_pCdtvIOReq->io_Length  = 0;
+		s_pCdtvIOReq->io_Data    = NULL;
+		DoIO((struct IORequest *)s_pCdtvIOReq);
+	}
+}
+
 static void cdtvPortAlloc(void) {
 	if (!(s_pCdtvIOPort = msgPortCreate(NULL, ADALLOC_MAXPREC))) {
 		logWrite("ERR: Couldn't allocate message port for cdtv alloc\n");
@@ -847,6 +857,9 @@ void systemCreate(void) {
 	// prepare disabling/enabling CDTV device as per Alpine9000 code
 	// from https://eab.abime.net/showthread.php?t=89836
 	cdtvPortAlloc();
+	// immediately disable CDTV device, it gets re-enabled
+	// at the end of this function in systemUse()
+	cdtvCdCommand(CMD_STOP);
 
 	inputHandlerAdd();
 
@@ -857,9 +870,6 @@ void systemCreate(void) {
 	interruptHandlerAdd(INTB_AUD3);
 	interruptHandlerAdd(INTB_VERTB);
 
-	// prepare disabling/enabling CDTV device as per Alpine9000 code
-	// from https://eab.abime.net/showthread.php?t=89836
-	cdtvPortAlloc();
 
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
@@ -988,13 +998,7 @@ void systemUnuse(void) {
 		}
 
 		// Disable CDTV CD drive if present
-		if (s_pCdtvIOReq) {
-			s_pCdtvIOReq->io_Command = CMD_STOP;
-			s_pCdtvIOReq->io_Offset  = 0;
-			s_pCdtvIOReq->io_Length  = 0;
-			s_pCdtvIOReq->io_Data    = NULL;
-			DoIO((struct IORequest *)s_pCdtvIOReq);
-		}
+		cdtvCdCommand(CMD_STOP);
 
 		// save the state of the hardware registers (INTENA)
 		s_uwOsIntEna = g_pCustom->intenar;
@@ -1059,13 +1063,7 @@ void systemUse(void) {
 		keyReset();
 
 		// Re-enable CDTV CD drive if present
-		if (s_pCdtvIOReq) {
-			s_pCdtvIOReq->io_Command = CMD_START;
-			s_pCdtvIOReq->io_Offset  = 0;
-			s_pCdtvIOReq->io_Length  = 0;
-			s_pCdtvIOReq->io_Data    = NULL;
-			DoIO((struct IORequest *)s_pCdtvIOReq);
-		}
+		cdtvCdCommand(CMD_START);
 	}
 	++s_wSystemUses;
 
