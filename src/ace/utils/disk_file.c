@@ -8,6 +8,15 @@
 #include <ace/managers/log.h>
 #include <ace/utils/disk_file_private.h>
 
+#define DISK_FILE_BUFFER_SIZE 512
+
+typedef struct tDiskFileData {
+	FILE *pFileHandle;
+	UBYTE pBuffer[DISK_FILE_BUFFER_SIZE];
+	UWORD uwBufferFill;
+	UWORD uwBufferReadPos;
+} tDiskFileData;
+
 #if !defined(ACE_FILE_USE_ONLY_DISK)
 static const tFileCallbacks s_sDiskFileCallbacks = {
 	.cbFileClose = diskFileClose,
@@ -43,34 +52,83 @@ static void fileAccessDisable(void) {
 }
 
 DISKFILE_PRIVATE void diskFileClose(void *pData) {
-	FILE *pFile = (FILE*)pData;
+	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	systemUse();
 	fileAccessEnable();
-	fclose(pFile);
+	fclose(pDiskFileData->pFileHandle);
 	fileAccessDisable();
+	memFree(pDiskFileData, sizeof(*pDiskFileData));
 	systemUnuse();
 }
 
 DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
-	FILE *pFile = (FILE*)pData;
+	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
+	UBYTE *pDestBytes = (UBYTE*)pDest;
+	ULONG ulReadCount = 0;
 
-	systemUse();
-	fileAccessEnable();
-	ULONG ulReadCount = fread(pDest, ulSize, 1, pFile);
-	fileAccessDisable();
-	systemUnuse();
+	// copy some data from buffer
+	UWORD uwReadyBytes = pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos;
+	UWORD uwBytesToCopy = MIN(uwReadyBytes, ulSize);
+	if(uwBytesToCopy) {
+		for(UWORD i = 0; i < uwBytesToCopy; ++i) {
+			*(pDestBytes++) = pDiskFileData->pBuffer[pDiskFileData->uwBufferReadPos + i];
+		}
+		// memcpy(pDest, &pDiskFileData->pBuffer[pDiskFileData->uwBufferReadPos], uwBytesToCopy);
+		ulReadCount += uwBytesToCopy;
+		pDiskFileData->uwBufferReadPos += uwBytesToCopy;
+		ulSize -= uwBytesToCopy;
+	}
+
+	if(ulSize > DISK_FILE_BUFFER_SIZE) {
+		// if remaining data is bigger than buffer, read rest directly
+		systemUse();
+		fileAccessEnable();
+		ULONG ulReadPartSize = fread(pDestBytes, ulSize, 1, pDiskFileData->pFileHandle);
+		pDestBytes += ulReadPartSize;
+		ulReadCount += ulReadPartSize;
+		fileAccessDisable();
+		systemUnuse();
+	}
+
+	if(ulSize) {
+		// if not, fill the buffer and read remaining data from buffer
+		if(pDiskFileData->uwBufferFill == pDiskFileData->uwBufferReadPos) {
+			systemUse();
+			fileAccessEnable();
+			pDiskFileData->uwBufferFill = fread(
+				pDiskFileData->pBuffer, DISK_FILE_BUFFER_SIZE, 1,
+				pDiskFileData->pFileHandle
+			);
+			fileAccessDisable();
+			systemUnuse();
+			pDiskFileData->uwBufferReadPos = 0;
+		}
+
+		uwReadyBytes = pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos;
+		uwBytesToCopy = MIN(uwReadyBytes, ulSize);
+		if(uwBytesToCopy) {
+			for(UWORD i = 0; i < uwBytesToCopy; ++i) {
+				*(pDestBytes++) = pDiskFileData->pBuffer[i];
+			}
+			// memcpy(pDest, &pDiskFileData->pBuffer[pDiskFileData->uwBufferReadPos], uwBytesToCopy);
+				ulReadCount += uwBytesToCopy;
+			ulSize -= uwBytesToCopy;
+			pDiskFileData->uwBufferReadPos += uwBytesToCopy;
+		}
+	}
+
 
 	return ulReadCount;
 }
 
 DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize) {
-	FILE *pFile = (FILE*)pData;
+	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	systemUse();
 	fileAccessEnable();
-	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
-	fflush(pFile);
+	ULONG ulResult = fwrite(pSrc, ulSize, 1, pDiskFileData->pFileHandle);
+	fflush(pDiskFileData->pFileHandle);
 	fileAccessDisable();
 	systemUnuse();
 
@@ -78,11 +136,19 @@ DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize
 }
 
 DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
-	FILE *pFile = (FILE*)pData;
-
+	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 	systemUse();
 	fileAccessEnable();
-	ULONG ulResult = fseek(pFile, lPos, wMode);
+
+	// Failsafe for buffering
+	if(wMode == SEEK_CUR) {
+		wMode = SEEK_SET;
+		lPos += diskFileGetPos(pData);
+	}
+
+	ULONG ulResult = fseek(pDiskFileData->pFileHandle, lPos, wMode);
+	pDiskFileData->uwBufferReadPos = 0;
+	pDiskFileData->uwBufferFill = 0;
 	fileAccessDisable();
 	systemUnuse();
 
@@ -90,11 +156,12 @@ DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 }
 
 DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData) {
-	FILE *pFile = (FILE*)pData;
+	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	systemUse();
 	fileAccessEnable();
-	ULONG ulResult = ftell(pFile);
+	ULONG ulResult = ftell(pDiskFileData->pFileHandle);
+	ulResult -= pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos;
 	fileAccessDisable();
 	systemUnuse();
 
@@ -102,23 +169,26 @@ DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData) {
 }
 
 DISKFILE_PRIVATE UBYTE diskFileIsEof(void *pData) {
-	FILE *pFile = (FILE*)pData;
+	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	systemUse();
 	fileAccessEnable();
-	UBYTE ubResult = feof(pFile);
+	UBYTE isEof = (
+		(pDiskFileData->uwBufferReadPos == pDiskFileData->uwBufferFill) &&
+		feof(pDiskFileData->pFileHandle)
+	);
 	fileAccessDisable();
 	systemUnuse();
 
-	return ubResult;
+	return isEof;
 }
 
 DISKFILE_PRIVATE void diskFileFlush(void *pData) {
-	FILE *pFile = (FILE*)pData;
+	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	systemUse();
 	fileAccessEnable();
-	fflush(pFile);
+	fflush(pDiskFileData->pFileHandle);
 	fileAccessDisable();
 	systemUnuse();
 }
@@ -128,6 +198,7 @@ DISKFILE_PRIVATE void diskFileFlush(void *pData) {
 tFile *diskFileOpen(const char *szPath, const char *szMode) {
 	logBlockBegin("diskFileOpen(szPath: '%s', szMode: '%s')", szPath, szMode);
 	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
+	// TODO: disable buffering in a/w/x modes
 	systemUse();
 	fileAccessEnable();
 	tFile *pFile = 0;
@@ -136,12 +207,16 @@ tFile *diskFileOpen(const char *szPath, const char *szMode) {
 		logWrite("ERR: Can't open file\n");
 	}
 	else {
-#if defined(ACE_FILE_USE_ONLY_DISK)
+#if defined(ACE_FILE_USE_ONLY_DISK) // TODO: verify if still viable
 	pFile = (tFile*)pFileHandle;
 #else
+		tDiskFileData *pData = memAllocFast(sizeof(*pData));
+		pData->pFileHandle = pFileHandle;
+		pData->uwBufferFill = 0;
+		pData->uwBufferReadPos = 0;
 		pFile = memAllocFast(sizeof(*pFile));
 		pFile->pCallbacks = &s_sDiskFileCallbacks;
-		pFile->pData = pFileHandle;
+		pFile->pData = pData;
 		logWrite("File handle: %p, data: %p\n", pFile, pFile->pData);
 #endif
 	}
