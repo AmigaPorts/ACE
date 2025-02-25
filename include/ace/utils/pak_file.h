@@ -16,7 +16,8 @@ extern "C" {
 
 typedef struct tPakFileEntry {
 	ULONG ulOffs;
-	ULONG ulSize;
+	ULONG ulSizeUncompressed;
+	ULONG ulSizeData;
 	ULONG ulPathChecksum; // adler32
 } tPakFileEntry;
 
