@@ -72,14 +72,13 @@ void compressUnpackerInit(
 	pUnpacker->ulCompressedSize = ulCompressedSize;
 	pUnpacker->ulUncompressedSize = ulUncompressedSize;
 	pUnpacker->isVerbose = isVerbose;
+	if(pUnpacker->isVerbose) fmt::println("Decompress start");
 }
 
 tCompressUnpackResult compressUnpackerProcess(
 	tCompressUnpacker *pUnpacker, std::uint8_t *pOut
 )
 {
-	if(pUnpacker->isVerbose) fmt::println("Decompress start");
-
 	switch(pUnpacker->eCurrentState) {
 		case COMPRESS_UNPACK_STATE_KIND_READ_CTL:
 			pUnpacker->ulCtlOffset = pUnpacker->ulReadOffset;

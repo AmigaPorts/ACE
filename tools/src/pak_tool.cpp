@@ -127,7 +127,7 @@ int main(int lArgCount, const char *pArgs[])
 						break;
 					}
 					if(eResult == COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE) {
-						vDecompressed[UnpackState.ulWriteOffset] = ubRead;
+						vDecompressed[UnpackState.ulWriteOffset - 1] = ubRead;
 					}
 				}
 
