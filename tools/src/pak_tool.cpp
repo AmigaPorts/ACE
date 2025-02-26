@@ -138,7 +138,12 @@ int main(int lArgCount, const char *pArgs[])
 					}
 				}
 
-				Entry.vData = std::vector(&vPackBuffer[0], &vPackBuffer[CompressedSize]);
+				if(CompressedSize < vFileContents.size() - 10) {
+					Entry.vData = std::vector(&vPackBuffer[0], &vPackBuffer[CompressedSize]);
+				}
+				else {
+					Entry.vData = vFileContents;
+				}
 			}
 			else {
 				Entry.vData = vFileContents;
@@ -160,9 +165,9 @@ int main(int lArgCount, const char *pArgs[])
 	std::uint16_t i = 0;
 	for(const auto &Entry: vEntries) {
 		fmt::print(
-			"Adding file {:4d}: '{}', offset: {}, size: {}, checksum: {:08X}...\n",
-			i++, Entry.ShortPath, ulNextFileOffs, Entry.vData.size(),
-			Entry.ulChecksum
+			"Adding file {:4d}: '{}', offset: {}, uncompressed: {}, size: {}, ratio: {:.2f}, checksum: {:08X}...\n",
+			i++, Entry.ShortPath, ulNextFileOffs, Entry.ulUncompressedSize,
+			Entry.vData.size(), float(Entry.vData.size()) / Entry.ulUncompressedSize * 100, Entry.ulChecksum
 		);
 
 		std::uint32_t ulChecksumBe = nEndian::toBig32(Entry.ulChecksum);
