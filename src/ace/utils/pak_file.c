@@ -136,10 +136,9 @@ static tCompressUnpackerResult compressUnpackerProcess(
 					return COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE;
 				}
 				else {
-					UBYTE ubHi, ubLo;
-					pakSubfileRead(pUnpacker->pSubfileData, &ubLo, 1);
-					pakSubfileRead(pUnpacker->pSubfileData, &ubHi, 1);
-					UWORD uwRleCtl = (ubLo << 0) | (ubHi << 8);
+					UWORD uwRleCtl;
+					pakSubfileRead(pUnpacker->pSubfileData, &uwRleCtl, 2);
+					uwRleCtl = rol16(uwRleCtl, 8);
 
 					pUnpacker->ubRleLength = ((uwRleCtl & 0xf000) >> 12) + 3;
 					pUnpacker->uwRleStart = uwRleCtl & 0xfff;
