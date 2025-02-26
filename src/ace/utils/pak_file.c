@@ -30,14 +30,13 @@ typedef enum tCompressUnpackerResult {
 typedef struct tCompressUnpacker {
 	tCompressUnpackStateKind eCurrentState;
 	UBYTE pLookup[0x1000];
-	tCbCompressReadByte cbReadByte;
-	void *pCbData;
+	void *pSubfileData;
 	ULONG ulCompressedSize;
 	ULONG ulUncompressedSize;
 	UBYTE ubCtlByte;
 	UBYTE ubCtlBitIndex;
-	UBYTE ubRlePos;
 	UBYTE ubRleLength;
+	UBYTE ubOut;
 	UWORD uwRleStart;
 	UWORD uwLookupPos;
 	ULONG ulUnpackedCount;
@@ -93,14 +92,13 @@ static const tFileCallbacks s_sPakCompressedCallbacks = {
 //------------------------------------------------------------------ PRIVATE FNS
 
 void compressUnpackerInit(
-	tCompressUnpacker *pUnpacker, tCbCompressReadByte cbReadByte, void *pCbData,
-	ULONG ulCompressedSize, size_t ulUncompressedSize
+	tCompressUnpacker *pUnpacker, ULONG ulCompressedSize, size_t ulUncompressedSize,
+	void *pSubfileData
 ) {
 	memset(pUnpacker, 0, sizeof(*pUnpacker));
 	pUnpacker->ulCompressedSize = ulCompressedSize;
 	pUnpacker->ulUncompressedSize = ulUncompressedSize;
-	pUnpacker->cbReadByte = cbReadByte;
-	pUnpacker->pCbData = pCbData;
+	pUnpacker->pSubfileData = pSubfileData;
 }
 
 static void rleTableWrite(UBYTE *pTable, UWORD *pPos, UBYTE ubData) {
@@ -120,62 +118,54 @@ static UBYTE rleTableRead(const UBYTE *pTable, UWORD *pPos) {
 }
 
 static tCompressUnpackerResult compressUnpackerProcess(
-	tCompressUnpacker *pUnpacker, UBYTE *pOut
+	tCompressUnpacker *pUnpacker
 ) {
 	// TODO: handle cbReadByte not returning any bytes
 	switch(pUnpacker->eCurrentState) {
-		case COMPRESS_UNPACK_STATE_KIND_READ_CTL:
-			pUnpacker->cbReadByte(&pUnpacker->ubCtlByte, pUnpacker->pCbData);
-			pUnpacker->ubCtlBitIndex = 0;
-			pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_PROCESS_CTL_BIT;
-			break;
-
 		case COMPRESS_UNPACK_STATE_KIND_PROCESS_CTL_BIT:
-			if(pUnpacker->ubCtlBitIndex < 8 && pUnpacker->ulUnpackedCount < pUnpacker->ulUncompressedSize) {
-				UBYTE ubBitValue = pUnpacker->ubCtlByte & (1 << pUnpacker->ubCtlBitIndex);
-				pUnpacker->ubCtlBitIndex++;
+			if(pUnpacker->ubCtlBitIndex--) {
+				UBYTE ubBitValue = pUnpacker->ubCtlByte & 1;
+				pUnpacker->ubCtlByte >>= 1;
 				if (ubBitValue) {
 					// Output the next byte and store it in the table
 					UBYTE ubRawByte;
-					pUnpacker->cbReadByte(&ubRawByte, pUnpacker->pCbData);
+					pakSubfileRead(pUnpacker->pSubfileData, &ubRawByte, 1);
 					rleTableWrite(pUnpacker->pLookup, &pUnpacker->uwLookupPos, ubRawByte);
-					*pOut = ubRawByte;
+					pUnpacker->ubOut = ubRawByte;
 					pUnpacker->ulUnpackedCount++;
 					return COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE;
 				}
 				else {
 					UBYTE ubHi, ubLo;
-					pUnpacker->cbReadByte(&ubLo, pUnpacker->pCbData);
-					pUnpacker->cbReadByte(&ubHi, pUnpacker->pCbData);
+					pakSubfileRead(pUnpacker->pSubfileData, &ubLo, 1);
+					pakSubfileRead(pUnpacker->pSubfileData, &ubHi, 1);
 					UWORD uwRleCtl = (ubLo << 0) | (ubHi << 8);
 
 					pUnpacker->ubRleLength = ((uwRleCtl & 0xf000) >> 12) + 3;
 					pUnpacker->uwRleStart = uwRleCtl & 0xfff;
-					pUnpacker->ubRlePos = 0;
 					pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_WRITE_RLE;
 				}
+				break;
 			}
-			else {
-				pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_END_CTL;
-			}
-			break;
-
+			// fallthrough
 		case COMPRESS_UNPACK_STATE_KIND_END_CTL:
 			if (pUnpacker->ulUnpackedCount >= pUnpacker->ulUncompressedSize) {
 				pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_DONE;
+				break;
 			}
-			else {
-				pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_READ_CTL;
-			}
+			// fallthrough
+		case COMPRESS_UNPACK_STATE_KIND_READ_CTL:
+			pakSubfileRead(pUnpacker->pSubfileData, &pUnpacker->ubCtlByte, 1);
+			ULONG ulRemaining = pUnpacker->ulUncompressedSize - pUnpacker->ulUnpackedCount;
+			pUnpacker->ubCtlBitIndex = MIN(8, ulRemaining);
+			pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_PROCESS_CTL_BIT;
 			break;
-
 		case COMPRESS_UNPACK_STATE_KIND_WRITE_RLE:
-			if(pUnpacker->ubRlePos < pUnpacker->ubRleLength) {
+			if(pUnpacker->ubRleLength--) {
 				UBYTE ubRawByte = rleTableRead(pUnpacker->pLookup, &pUnpacker->uwRleStart);
 				rleTableWrite(pUnpacker->pLookup, &pUnpacker->uwLookupPos, ubRawByte);
-				*pOut = ubRawByte;
+				pUnpacker->ubOut = ubRawByte;
 				pUnpacker->ulUnpackedCount++;
-				++pUnpacker->ubRlePos;
 				return COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE;
 			}
 			else {
@@ -272,16 +262,11 @@ static ULONG pakSubfileGetPos(void *pData) {
 static UBYTE pakSubfileIsEof(void *pData) {
 	tPakFileSubfileData *pSubfileData = (tPakFileSubfileData*)pData;
 
-	return pSubfileData->ulPos <= pSubfileData->pPak->pEntries[pSubfileData->uwFileIndex].ulSizeUncompressed;
+	return pSubfileData->ulPos >= pSubfileData->pPak->pEntries[pSubfileData->uwFileIndex].ulSizeData;
 }
 
 static void pakSubfileFlush(UNUSED_ARG void *pData) {
 	// no-op
-}
-
-static UBYTE pakCompressedReadByte(UBYTE *pOut, void *pData) {
-	tPakFileCompressedData *pCompressedData = (tPakFileCompressedData*)pData;
-	return fileRead(pCompressedData->pSubfile, pOut, 1);
 }
 
 static void pakCompressedClose(void *pData) {
@@ -292,24 +277,21 @@ static void pakCompressedClose(void *pData) {
 
 static ULONG pakCompressedRead(void *pData, void *pDest, ULONG ulSize) {
 	tPakFileCompressedData *pCompressedData = (tPakFileCompressedData*)pData;
-	ULONG ulBytesRead = 0;
+	tCompressUnpacker *pUnpacker = &pCompressedData->sUnpacker;
+	ULONG ulRemaining = ulSize;
 	UBYTE *pDestBytes = pDest;
 
-	while(ulSize) {
-		UBYTE ubUnpacked;
-		tCompressUnpackerResult eUnpackResult = compressUnpackerProcess(
-			&pCompressedData->sUnpacker, &ubUnpacked
-		);
+	while(ulRemaining) {
+		tCompressUnpackerResult eUnpackResult = compressUnpackerProcess(pUnpacker);
 		if(eUnpackResult == COMPRESS_UNPACK_RESULT_BUSY_WROTE_BYTE) {
-			*(pDestBytes++) = ubUnpacked;
-			++ulBytesRead;
-			--ulSize;
+			*(pDestBytes++) = pUnpacker->ubOut;
+			--ulRemaining;
 		}
 		else if(eUnpackResult == COMPRESS_UNPACK_RESULT_DONE) {
 			break;
 		}
 	}
-	return ulBytesRead;
+	return ulSize - ulRemaining;
 }
 
 static ULONG pakCompressedWrite(
@@ -354,9 +336,10 @@ static ULONG pakCompressedSeek(void *pData, LONG lPos, WORD wMode) {
 	if(ulPosTarget < ulPosCurrent) {
 		logWrite("WARN: Huge performance penalty due to going back in compressed file. Do you *really* need to do it?\n");
 		compressUnpackerInit(
-			&pCompressedData->sUnpacker, pakCompressedReadByte, pCompressedData,
+			&pCompressedData->sUnpacker,
 			pCompressedData->sUnpacker.ulCompressedSize,
-			pCompressedData->sUnpacker.ulUncompressedSize
+			pCompressedData->sUnpacker.ulUncompressedSize,
+			pCompressedData->pSubfile->pData
 		);
 	}
 
@@ -460,9 +443,10 @@ tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 		tPakFileCompressedData *pCompressedData = memAllocFast(sizeof(*pCompressedData));
 		pCompressedData->pSubfile = pFile;
 		compressUnpackerInit(
-			&pCompressedData->sUnpacker, pakCompressedReadByte, pCompressedData,
+			&pCompressedData->sUnpacker,
 			pPakFile->pEntries[uwFileIndex].ulSizeData,
-			pPakFile->pEntries[uwFileIndex].ulSizeUncompressed
+			pPakFile->pEntries[uwFileIndex].ulSizeUncompressed,
+			pCompressedData->pSubfile->pData
 		);
 
 		tFile *pCompressedFile = memAllocFast(sizeof(*pCompressedFile));
