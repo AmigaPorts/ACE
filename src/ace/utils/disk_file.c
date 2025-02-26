@@ -8,7 +8,7 @@
 #include <ace/managers/log.h>
 #include <ace/utils/disk_file_private.h>
 
-#define DISK_FILE_BUFFER_SIZE 512
+#define DISK_FILE_BUFFER_SIZE 1024
 
 typedef struct tDiskFileData {
 	FILE *pFileHandle;
@@ -74,19 +74,19 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 		for(UWORD i = 0; i < uwBytesToCopy; ++i) {
 			*(pDestBytes++) = pDiskFileData->pBuffer[pDiskFileData->uwBufferReadPos + i];
 		}
-		// memcpy(pDest, &pDiskFileData->pBuffer[pDiskFileData->uwBufferReadPos], uwBytesToCopy);
 		ulReadCount += uwBytesToCopy;
 		pDiskFileData->uwBufferReadPos += uwBytesToCopy;
 		ulSize -= uwBytesToCopy;
 	}
 
-	if(ulSize > DISK_FILE_BUFFER_SIZE) {
+	if(ulSize && ulSize > DISK_FILE_BUFFER_SIZE) {
 		// if remaining data is bigger than buffer, read rest directly
 		systemUse();
 		fileAccessEnable();
 		ULONG ulReadPartSize = fread(pDestBytes, ulSize, 1, pDiskFileData->pFileHandle);
 		pDestBytes += ulReadPartSize;
 		ulReadCount += ulReadPartSize;
+		ulSize -= ulReadPartSize;
 		fileAccessDisable();
 		systemUnuse();
 	}
@@ -111,13 +111,11 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 			for(UWORD i = 0; i < uwBytesToCopy; ++i) {
 				*(pDestBytes++) = pDiskFileData->pBuffer[i];
 			}
-			// memcpy(pDest, &pDiskFileData->pBuffer[pDiskFileData->uwBufferReadPos], uwBytesToCopy);
-				ulReadCount += uwBytesToCopy;
+			ulReadCount += uwBytesToCopy;
 			ulSize -= uwBytesToCopy;
 			pDiskFileData->uwBufferReadPos += uwBytesToCopy;
 		}
 	}
-
 
 	return ulReadCount;
 }
