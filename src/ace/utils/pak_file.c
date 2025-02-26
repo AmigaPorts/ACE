@@ -308,7 +308,7 @@ static ULONG pakCompressedSeek(void *pData, LONG lPos, WORD wMode) {
 
 	ULONG ulPosCurrent = pCompressedData->sUnpacker.ulUnpackedCount;
 	ULONG ulPosTarget;
-	ULONG ulFileSize = fileGetSize(pCompressedData->pSubfile);
+	ULONG ulFileSize = pCompressedData->sUnpacker.ulUncompressedSize;
 	if(wMode == SEEK_CUR) {
 		ulPosTarget = ulPosCurrent + lPos;
 	}
