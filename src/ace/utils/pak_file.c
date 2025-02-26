@@ -239,15 +239,15 @@ static ULONG pakSubfileSeek(void *pData, LONG lPos, WORD wMode) {
 		pSubfileData->ulPos += lPos;
 	}
 	else if(wMode == FILE_SEEK_END) {
-		pSubfileData->ulPos = pPakEntry->ulSizeUncompressed + lPos;
+		pSubfileData->ulPos = pPakEntry->ulSizeData + lPos;
 	}
 	pPak->pPrevReadSubfile = 0; // Invalidate cache
 
-	if(pSubfileData->ulPos > pPakEntry->ulSizeUncompressed) {
+	if(pSubfileData->ulPos > pPakEntry->ulSizeData) {
 		logWrite("ERR: Seek position %lu out of range %lu for pakFile %hu\n",
-			pSubfileData->ulPos, pPakEntry->ulSizeUncompressed, pSubfileData->uwFileIndex
+			pSubfileData->ulPos, pPakEntry->ulSizeData, pSubfileData->uwFileIndex
 		);
-		pSubfileData->ulPos = pPakEntry->ulSizeUncompressed;
+		pSubfileData->ulPos = pPakEntry->ulSizeData;
 		return 0;
 	}
 	return 1;
