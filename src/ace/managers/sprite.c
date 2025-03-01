@@ -34,7 +34,7 @@ static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
 void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSprite[1]) {
 	if (pBlankSprite) {
 #ifdef ACE_DEBUG
-		if ((ULONG)pBlankSprite > memGetChipSize() - sizeof(ULONG)) {
+		if (!(memType(pBlankSprite) & MEMF_CHIP)) {
 			logWrite("ERR: ILLEGAL NON-CHIP memory location for blank sprite!");
 		}
 #endif
