@@ -102,13 +102,13 @@ tCompressUnpackResult compressUnpackerProcess(
 				}
 				else {
 					std::uint16_t uwRleCtl = (
-						(pUnpacker->pCompressed[pUnpacker->ulReadOffset + 0] << 0) |
-						(pUnpacker->pCompressed[pUnpacker->ulReadOffset + 1] << 8)
+						(pUnpacker->pCompressed[pUnpacker->ulReadOffset + 0] << 8) |
+						(pUnpacker->pCompressed[pUnpacker->ulReadOffset + 1] << 0)
 					);
 					pUnpacker->ulReadOffset += 2;
 
-					pUnpacker->ubRleLength = ((uwRleCtl & 0xf000) >> 12) + 3;
-					pUnpacker->uwRleStart = uwRleCtl & 0xfff;
+					pUnpacker->ubRleLength = (uwRleCtl & 0xf) + 3;
+					pUnpacker->uwRleStart = uwRleCtl >> 4;
 
 					if(pUnpacker->isVerbose) fmt::print(
 						"sequence at {}, word: {:04X}, len: {}, index: {}, sequence:",
@@ -189,16 +189,16 @@ std::uint32_t compressPack(
 			if (isFound) {
 				// RLE sequence found. Encode a 16-bit word for length
 				// and index. Control byte flag is not set.
-				uwRleCtl = ((ubRleLength - 3) & 0xf) << 12;
-				uwRleCtl |= uwRleIndex & 0xfff;
+				uwRleCtl = (ubRleLength - 3) & 0xf;
+				uwRleCtl |= (uwRleIndex & 0xfff) << 4;
 
 				if(isVerbose) fmt::println(
 					"sequence at {}, word: {:04X}, len: {}, index: {}, sequence: {:02X}",
 					ulDestOffset, uwRleCtl, ubRleLength, uwRleIndex,
 					fmt::join(&pSrc[ulSrcOffset], &pSrc[ulSrcOffset + ubRleLength], " ")
 				);
-				pDest[ulDestOffset++] = std::uint8_t(uwRleCtl);
 				pDest[ulDestOffset++] = uwRleCtl >> 8;
+				pDest[ulDestOffset++] = std::uint8_t(uwRleCtl);
 
 				for (std::uint8_t i = 0; i < ubRleLength; i++) {
 					rleTableWrite(pLookup, &uwLookupIndex, pSrc[ulSrcOffset++]);
