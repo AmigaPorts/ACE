@@ -31,9 +31,9 @@ typedef struct tCompressUnpacker {
 	ULONG ulUnpackedCount;
 	UWORD uwLookupPos;
 
-	UBYTE ubPackedPos;
 	UBYTE ubUnpackedChunkPos;
 	UBYTE ubUnpackedChunkSize;
+	UBYTE *pPackedCurrent;
 	UBYTE pLookup[0x1000];
 	UBYTE pUnpacked[UNPACKER_UNPACKED_BUFFER_SIZE];
 	UBYTE pPacked[UNPACKER_PACKED_BUFFER_SIZE];
@@ -96,7 +96,7 @@ void compressUnpackerInit(
 	pUnpacker->ulCompressedSize = ulCompressedSize;
 	pUnpacker->ulUncompressedSize = ulUncompressedSize;
 	pUnpacker->pSubfileData = pSubfileData;
-	pUnpacker->ubPackedPos = UNPACKER_PACKED_BUFFER_SIZE;
+	pUnpacker->pPackedCurrent = &pUnpacker->pPacked[UNPACKER_PACKED_BUFFER_SIZE];
 }
 
 static void rleTableWrite(UBYTE *pTable, UWORD *pPos, UBYTE ubData) {
@@ -115,66 +115,60 @@ static UBYTE rleTableRead(const UBYTE *pTable, UWORD *pPos) {
 	return ubData;
 }
 
-static UBYTE compressUnpackerReadNext(
-	tCompressUnpacker *pUnpacker, UBYTE *pDataOut
-) {
+static WORD compressUnpackerReadNext(tCompressUnpacker *pUnpacker) {
 	if(pUnpacker->ubUnpackedChunkPos < pUnpacker->ubUnpackedChunkSize) {
-		*pDataOut = pUnpacker->pUnpacked[pUnpacker->ubUnpackedChunkPos++];
 		++pUnpacker->ulUnpackedCount;
-		return 1;
+		return pUnpacker->pUnpacked[pUnpacker->ubUnpackedChunkPos++];
 	}
 
 	if(pUnpacker->ulUnpackedCount >= pUnpacker->ulUncompressedSize) {
-		return 0;
+		return -1;
 	}
 
 	// Move unparsed bytes to beginning, fill up the packed buffer
-	for(UBYTE i = 0; pUnpacker->ubPackedPos + i < UNPACKER_PACKED_BUFFER_SIZE; ++i) {
-		pUnpacker->pPacked[i] = pUnpacker->pPacked[pUnpacker->ubPackedPos + i];
+	UBYTE *pPackedCurrent = pUnpacker->pPackedCurrent;
+	UBYTE *pDst = &pUnpacker->pPacked[0];
+	UBYTE *pEnd = &pUnpacker->pPacked[UNPACKER_PACKED_BUFFER_SIZE];
+	while(pPackedCurrent < pEnd) {
+		*(pDst++) = *(pPackedCurrent++);
 	}
-	pakSubfileRead(
-		pUnpacker->pSubfileData,
-		&pUnpacker->pPacked[UNPACKER_PACKED_BUFFER_SIZE - pUnpacker->ubPackedPos],
-		pUnpacker->ubPackedPos
-	);
+	pakSubfileRead(pUnpacker->pSubfileData, pDst, pEnd - pDst);
 
 	// Decode next portion of data
-	UBYTE ubPackedPos = 0;
-	UBYTE ubChunkSize = 0;
-	UBYTE ubCtl = pUnpacker->pPacked[ubPackedPos++];
+	pPackedCurrent = &pUnpacker->pPacked[0];
+	UBYTE ubCtl = *(pPackedCurrent++);
 	ULONG ulRemaining = pUnpacker->ulUncompressedSize - pUnpacker->ulUnpackedCount;
 	UBYTE ubBits = MIN(8, ulRemaining);
+	UBYTE *pUnpacked = pUnpacker->pUnpacked;
 
 	while(ubBits--) {
 		if(ubCtl & 1) {
-			// Output the next byte and store it in the table
-			UBYTE ubRawByte = pUnpacker->pPacked[ubPackedPos++];
+			UBYTE ubRawByte = *(pPackedCurrent++);
 			rleTableWrite(pUnpacker->pLookup, &pUnpacker->uwLookupPos, ubRawByte);
-			pUnpacker->pUnpacked[ubChunkSize++] = ubRawByte;
+			*(pUnpacked++) = ubRawByte;
 		}
 		else {
-			UBYTE ubLo = pUnpacker->pPacked[ubPackedPos++];
-			UBYTE ubHi = pUnpacker->pPacked[ubPackedPos++];
-			UWORD uwRleCtl = (ubHi << 8) | ubLo;
+			UBYTE ubHi = *(pPackedCurrent++);
+			UBYTE ubLo = *(pPackedCurrent++);
+			ULONG ulRleCtl = (ubHi << 8) | ubLo;
 
-			UBYTE ubRleLength = ((uwRleCtl & 0xf000) >> 12) + 3;
-			UWORD uwRlePos = uwRleCtl & 0xfff;
-			while(ubRleLength--) {
+			UWORD uwRleLength = (ulRleCtl & 0xF) + 3;
+			UWORD uwRlePos = ulRleCtl >> 4;
+			while(uwRleLength--) {
 				UBYTE ubRawByte = rleTableRead(pUnpacker->pLookup, &uwRlePos);
 				rleTableWrite(pUnpacker->pLookup, &pUnpacker->uwLookupPos, ubRawByte);
-				pUnpacker->pUnpacked[ubChunkSize++] = ubRawByte;
+				*(pUnpacked++) = ubRawByte;
 			}
 		}
 		ubCtl >>= 1;
 	}
-	pUnpacker->ubUnpackedChunkSize = ubChunkSize;
-	pUnpacker->ubPackedPos = ubPackedPos;
+	pUnpacker->ubUnpackedChunkSize = pUnpacked - pUnpacker->pUnpacked;
+	pUnpacker->pPackedCurrent = pPackedCurrent;
 
 	// Output first byte
 	pUnpacker->ubUnpackedChunkPos = 0;
-	*pDataOut = pUnpacker->pUnpacked[pUnpacker->ubUnpackedChunkPos++];
 	++pUnpacker->ulUnpackedCount;
-	return 1;
+	return pUnpacker->pUnpacked[pUnpacker->ubUnpackedChunkPos++];
 }
 
 static ULONG adler32Buffer(const UBYTE *pData, ULONG ulDataSize) {
@@ -278,10 +272,11 @@ static ULONG pakCompressedRead(void *pData, void *pDest, ULONG ulSize) {
 	UBYTE *pDestByte = pDest;
 
 	while(ulRemaining) {
-		if(!compressUnpackerReadNext(pUnpacker, pDestByte)) {
+		WORD wRead = compressUnpackerReadNext(pUnpacker);
+		if(wRead < 0) {
 			break;
 		}
-		++pDestByte;
+		*(pDestByte++) = (UBYTE)wRead;
 		--ulRemaining;
 	}
 	return ulSize - ulRemaining;
