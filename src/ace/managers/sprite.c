@@ -44,7 +44,7 @@ void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSpri
 		s_isOwningBlankSprite = 1;
 		s_pBlankSprite = memAllocChipClear(sizeof(ULONG));
 		// Just to make sure we don't accidentally mismatch the control words size
-		_Static_assert(sizeof(ULONG) == sizeof(tHardwareSpriteHeader));
+		_Static_assert(sizeof(ULONG) == sizeof(tHardwareSpriteHeader), "We expect a Hardware sprite to have a ULONG sized header");
 	}
 	// TODO: add support for non-chained mode (setting sprxdat with copper)?
 	s_pView = pView;
