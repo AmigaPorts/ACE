@@ -22,13 +22,33 @@ static const tFileCallbacks s_sDiskFileCallbacks = {
 
 //------------------------------------------------------------------ PRIVATE FNS
 
+// TODO: move to system to be able to use for dir functions?
+
+static void fileAccessEnable(void) {
+	systemUse();
+
+	// Needed only for KS1.3
+	// TODO: do only when reading from floppy
+	if(systemGetVersion() < 36) {
+		systemReleaseBlitterToOs();
+	}
+}
+
+static void fileAccessDisable(void) {
+	if(systemGetVersion() < 36) {
+		systemGetBlitterFromOs();
+	}
+
+	systemUnuse();
+}
+
 DISKFILE_PRIVATE void diskFileClose(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	fclose(pFile);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 }
 
@@ -36,9 +56,9 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	ULONG ulReadCount = fread(pDest, ulSize, 1, pFile);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 
 	return ulReadCount;
@@ -48,10 +68,10 @@ DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	ULONG ulResult = fwrite(pSrc, ulSize, 1, pFile);
 	fflush(pFile);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 
 	return ulResult;
@@ -61,9 +81,9 @@ DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	ULONG ulResult = fseek(pFile, lPos, wMode);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 
 	return ulResult;
@@ -73,9 +93,9 @@ DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	ULONG ulResult = ftell(pFile);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 
 	return ulResult;
@@ -85,9 +105,9 @@ DISKFILE_PRIVATE UBYTE diskFileIsEof(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	UBYTE ubResult = feof(pFile);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 
 	return ubResult;
@@ -97,9 +117,9 @@ DISKFILE_PRIVATE void diskFileFlush(void *pData) {
 	FILE *pFile = (FILE*)pData;
 
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	fflush(pFile);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 }
 
@@ -109,7 +129,7 @@ tFile *diskFileOpen(const char *szPath, const char *szMode) {
 	logBlockBegin("diskFileOpen(szPath: '%s', szMode: '%s')", szPath, szMode);
 	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	tFile *pFile = 0;
 	FILE *pFileHandle = fopen(szPath, szMode);
 	if(pFileHandle == 0) {
@@ -125,7 +145,7 @@ tFile *diskFileOpen(const char *szPath, const char *szMode) {
 		logWrite("File handle: %p, data: %p\n", pFile, pFile->pData);
 #endif
 	}
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 
 	logBlockEnd("diskFileOpen()");
@@ -134,14 +154,14 @@ tFile *diskFileOpen(const char *szPath, const char *szMode) {
 
 UBYTE diskFileExists(const char *szPath) {
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	UBYTE isExisting = 0;
-	tFile *pFile = diskFileOpen(szPath, "r");
-	if(pFile) {
+	FILE *pFileHandle = fopen(szPath, "r");
+	if(pFileHandle) {
 		isExisting = 1;
-		fileClose(pFile);
+		fclose(pFileHandle);
 	}
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 
 	return isExisting;
@@ -149,18 +169,18 @@ UBYTE diskFileExists(const char *szPath) {
 
 UBYTE diskFileDelete(const char *szFilePath) {
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	UBYTE isSuccess = remove(szFilePath);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 	return isSuccess;
 }
 
 UBYTE diskFileMove(const char *szSource, const char *szDest) {
 	systemUse();
-	systemReleaseBlitterToOs();
+	fileAccessEnable();
 	UBYTE isSuccess = rename(szSource, szDest);
-	systemGetBlitterFromOs();
+	fileAccessDisable();
 	systemUnuse();
 	return isSuccess;
 }
