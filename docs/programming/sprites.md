@@ -49,8 +49,8 @@ The manager works in block, as well as raw copperlist mode.
 void myGsCreate(void) {
   // Some stuff goes here...
 
-  spriteManagerCreate(s_pView, 0); // For raw copper mode, pass position on
-                                   // copperlist for sprite initialization.
+  spriteManagerCreate(s_pView, 0, NULL); // For raw copper mode, pass position on
+                                         // copperlist for sprite initialization.
   systemSetDmaBit(DMAB_SPRITE, 1); // Enable sprite DMA.
 
   // Stuff continues...

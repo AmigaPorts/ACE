@@ -48,13 +48,15 @@ typedef struct tSprite {
  * @param pView View used for displaying sprites.
  * @param uwRawCopPos In raw mode, specifies an offset on where
  * the sprite commands should reside. Requires space of 16 copper commands.
+ * @param pBlankSprite 2 words of CHIP memory (the blank sprite control words).
+ * Pass NULL to let the manager deal with the blank sprite memory.
  *
  * @see spriteDisableInCopBlockMode()
  * @see spriteDisableInCopRawMode()
  * @see systemSetDmaBit()
  * @see spriteManagerDestroy()
  */
-void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos);
+void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSprite[1]);
 
 /**
  * @brief Destroys the hardware sprite manager.
