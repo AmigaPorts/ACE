@@ -92,7 +92,11 @@ void compressUnpackerInit(
 	tCompressUnpacker *pUnpacker, ULONG ulCompressedSize, size_t ulUncompressedSize,
 	void *pSubfileData
 ) {
-	memset(pUnpacker, 0, sizeof(*pUnpacker));
+	pUnpacker->ulUnpackedCount = 0;
+	pUnpacker->uwLookupPos = 0;
+	pUnpacker->ubUnpackedChunkPos = 0;
+	pUnpacker->ubUnpackedChunkSize = 0;
+
 	pUnpacker->ulCompressedSize = ulCompressedSize;
 	pUnpacker->ulUncompressedSize = ulUncompressedSize;
 	pUnpacker->pSubfileData = pSubfileData;

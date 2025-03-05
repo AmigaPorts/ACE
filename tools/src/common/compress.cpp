@@ -17,36 +17,40 @@ static uint8_t rleTableRead(const uint8_t *table, std::uint16_t *index)
 }
 
 static bool rleTableFind(
-	const uint8_t *table, std::uint16_t table_index,
-	const uint8_t *data, size_t data_size,
-	std::uint16_t *index, std::uint8_t *length
+	const uint8_t *pLookup, std::uint16_t uwLookupLength,
+	std::uint16_t uwLookupWritePos, const uint8_t *pData, std::uint32_t ulMatchLimit,
+	std::uint16_t *pMatchPosition, std::uint8_t *pMatchLength
 )
 {
-	*index = 0;
-	*length = 0;
-	unsigned int seq_len;
+	*pMatchPosition = 0;
+	*pMatchLength = 0;
+	std::uint32_t ulMatchedLength;
 	bool isFound = false;
-	for (auto i = 0u; i < 0x1000; i++) {
-		for (seq_len = 0u; seq_len < data_size; seq_len++) {
-			auto offset = i + seq_len;
-			if (table[offset & 0xfff] != data[seq_len]) {
+	for (auto i = 0u; i < uwLookupLength; i++) {
+		std::uint32_t ulLimit = ulMatchLimit;
+		if(uwLookupLength < 0x1000) {
+			ulLimit = std::min(ulLimit, uwLookupLength - i);
+		}
+		for (ulMatchedLength = 0u; ulMatchedLength < ulLimit; ulMatchedLength++) {
+			auto offset = i + ulMatchedLength;
+			if (pLookup[offset & 0xfff] != pData[ulMatchedLength]) {
 				break;
 			}
 
 			 // Don't return RLE runs that are in the area of the table that
 			 // will be written to, since the values will change.
 			if (
-				(i >= table_index && i <= table_index + seq_len) ||
-				(offset >= table_index && offset <= table_index + seq_len)
+				(i >= uwLookupWritePos && i <= uwLookupWritePos + ulMatchedLength) ||
+				(offset >= uwLookupWritePos && offset <= uwLookupWritePos + ulMatchedLength)
 			) {
-				seq_len = 0;
+				ulMatchedLength = 0;
 				break;
 			}
 		}
-		if (seq_len >= s_RleMinLength) {
-			if(seq_len > *length) {
-				*index = i;
-				*length = seq_len;
+		if (ulMatchedLength >= s_RleMinLength) {
+			if(ulMatchedLength > *pMatchLength) {
+				*pMatchPosition = i;
+				*pMatchLength = ulMatchedLength;
 				isFound = true;
 			}
 		}
@@ -68,6 +72,9 @@ void compressUnpackerInit(
 )
 {
 	memset(pUnpacker, 0, sizeof(*pUnpacker));
+	for(std::uint16_t i = 0; i < 0x1000; ++i) {
+		pUnpacker->pLookup[i] = rand();
+	}
 	pUnpacker->pCompressed = pCompressed;
 	pUnpacker->ulCompressedSize = ulCompressedSize;
 	pUnpacker->ulUncompressedSize = ulUncompressedSize;
@@ -163,12 +170,13 @@ std::uint32_t compressPack(
 	uint8_t *pDest, bool isVerbose
 ) {
 	if(isVerbose) fmt::println("Compress start, size {}", ulSrcSize);
-	uint8_t pLookup[0x1000] = {0};
+	std::uint8_t pLookup[0x1000] = {0};
 	std::uint32_t ulSrcOffset = 0, ulDestOffset = 0, ulCtrlByteOffset;
-	std::uint16_t uwLookupIndex = 0;
-	std::uint16_t uwRleIndex;
-	std::uint8_t ubRleLength;
-	uint16_t uwRleCtl;
+	std::uint16_t uwLookupWritePos = 0;
+	std::uint16_t uwRleMatchPosition;
+	std::uint8_t ubRleMatchLength;
+	std::uint16_t uwLookupLength = 0;
+	std::uint16_t uwRleCtl;
 
 	while (ulSrcOffset < ulSrcSize) {
 		// Write a place-holder control byte
@@ -182,26 +190,27 @@ std::uint32_t compressPack(
 
 			// Try to find an repeated sequence
 			bool isFound = rleTableFind(
-				pLookup, uwLookupIndex, &pSrc[ulSrcOffset],
-				std::min<std::size_t>(ulSrcSize - ulSrcOffset, s_RleMaxLength),
-				&uwRleIndex, &ubRleLength
+				pLookup, uwLookupLength, uwLookupWritePos, &pSrc[ulSrcOffset],
+				std::min(ulSrcSize - ulSrcOffset, s_RleMaxLength),
+				&uwRleMatchPosition, &ubRleMatchLength
 			);
 			if (isFound) {
 				// RLE sequence found. Encode a 16-bit word for length
 				// and index. Control byte flag is not set.
-				uwRleCtl = (ubRleLength - 3) & 0xf;
-				uwRleCtl |= (uwRleIndex & 0xfff) << 4;
+				uwRleCtl = (ubRleMatchLength - 3) & 0xf;
+				uwRleCtl |= (uwRleMatchPosition & 0xfff) << 4;
 
 				if(isVerbose) fmt::println(
 					"sequence at {}, word: {:04X}, len: {}, index: {}, sequence: {:02X}",
-					ulDestOffset, uwRleCtl, ubRleLength, uwRleIndex,
-					fmt::join(&pSrc[ulSrcOffset], &pSrc[ulSrcOffset + ubRleLength], " ")
+					ulDestOffset, uwRleCtl, ubRleMatchLength, uwRleMatchPosition,
+					fmt::join(&pSrc[ulSrcOffset], &pSrc[ulSrcOffset + ubRleMatchLength], " ")
 				);
 				pDest[ulDestOffset++] = uwRleCtl >> 8;
 				pDest[ulDestOffset++] = std::uint8_t(uwRleCtl);
 
-				for (std::uint8_t i = 0; i < ubRleLength; i++) {
-					rleTableWrite(pLookup, &uwLookupIndex, pSrc[ulSrcOffset++]);
+				for (std::uint8_t i = 0; i < ubRleMatchLength; i++) {
+					rleTableWrite(pLookup, &uwLookupWritePos, pSrc[ulSrcOffset++]);
+					uwLookupLength = std::min(0x1000, uwLookupLength + 1);
 				}
 			}
 			else {
@@ -211,7 +220,8 @@ std::uint32_t compressPack(
 				auto RawByte = pSrc[ulSrcOffset++];
 				if(isVerbose) fmt::println("byte at {}: {:02X}", ulDestOffset, RawByte);
 				pDest[ulDestOffset++] = RawByte;
-				rleTableWrite(pLookup, &uwLookupIndex, RawByte);
+				rleTableWrite(pLookup, &uwLookupWritePos, RawByte);
+				uwLookupLength = std::min(0x1000, uwLookupLength + 1);
 			}
 		}
 		if(isVerbose) fmt::println("used ctl at {}: {:02X}", ulCtrlByteOffset, pDest[ulCtrlByteOffset]);
