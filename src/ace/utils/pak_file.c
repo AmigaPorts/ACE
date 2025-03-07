@@ -55,6 +55,7 @@ static ULONG pakSubfileRead(void *pData, void *pDest, ULONG ulSize);
 static ULONG pakSubfileWrite(void *pData, const void *pSrc, ULONG ulSize);
 static ULONG pakSubfileSeek(void *pData, LONG lPos, WORD wMode);
 static ULONG pakSubfileGetPos(void *pData);
+static ULONG pakSubfileGetSize(void *pData);
 static UBYTE pakSubfileIsEof(void *pData);
 static void pakSubfileFlush(void *pData);
 
@@ -63,6 +64,7 @@ static ULONG pakCompressedRead(void *pData, void *pDest, ULONG ulSize);
 static ULONG pakCompressedWrite(void *pData, const void *pSrc, ULONG ulSize);
 static ULONG pakCompressedSeek(void *pData, LONG lPos, WORD wMode);
 static ULONG pakCompressedGetPos(void *pData);
+static ULONG pakCompressedGetSize(void *pData);
 static UBYTE pakCompressedIsEof(void *pData);
 static void pakCompressedFlush(void *pData);
 
@@ -72,6 +74,7 @@ static const tFileCallbacks s_sPakSubfileCallbacks = {
 	.cbFileWrite = pakSubfileWrite,
 	.cbFileSeek = pakSubfileSeek,
 	.cbFileGetPos = pakSubfileGetPos,
+	.cbFileGetSize = pakSubfileGetSize,
 	.cbFileIsEof = pakSubfileIsEof,
 	.cbFileFlush = pakSubfileFlush,
 };
@@ -82,6 +85,7 @@ static const tFileCallbacks s_sPakCompressedCallbacks = {
 	.cbFileWrite = pakCompressedWrite,
 	.cbFileSeek = pakCompressedSeek,
 	.cbFileGetPos = pakCompressedGetPos,
+	.cbFileGetSize = pakCompressedGetSize,
 	.cbFileIsEof = pakCompressedIsEof,
 	.cbFileFlush = pakCompressedFlush,
 };
@@ -253,10 +257,16 @@ static ULONG pakSubfileGetPos(void *pData) {
 	return pSubfileData->ulPos;
 }
 
+static ULONG pakSubfileGetSize(void *pData) {
+	tPakFileSubfileData *pSubfileData = (tPakFileSubfileData*)pData;
+
+	return pSubfileData->pPak->pEntries[pSubfileData->uwFileIndex].ulSizeData;
+}
+
 static UBYTE pakSubfileIsEof(void *pData) {
 	tPakFileSubfileData *pSubfileData = (tPakFileSubfileData*)pData;
 
-	return pSubfileData->ulPos >= pSubfileData->pPak->pEntries[pSubfileData->uwFileIndex].ulSizeData;
+	return pSubfileData->ulPos >= pakSubfileGetSize(pData);
 }
 
 static void pakSubfileFlush(UNUSED_ARG void *pData) {
@@ -345,6 +355,11 @@ static ULONG pakCompressedSeek(void *pData, LONG lPos, WORD wMode) {
 static ULONG pakCompressedGetPos(void *pData) {
 	tPakFileCompressedData *pCompressedData = (tPakFileCompressedData*)pData;
 	return pCompressedData->sUnpacker.ulUnpackedCount;
+}
+
+static ULONG pakCompressedGetSize(void *pData) {
+	tPakFileCompressedData *pCompressedData = (tPakFileCompressedData*)pData;
+	return pCompressedData->sUnpacker.ulUncompressedSize;
 }
 
 static UBYTE pakCompressedIsEof(void *pData) {

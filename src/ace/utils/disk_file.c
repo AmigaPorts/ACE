@@ -24,6 +24,7 @@ static const tFileCallbacks s_sDiskFileCallbacks = {
 	.cbFileWrite = diskFileWrite,
 	.cbFileSeek = diskFileSeek,
 	.cbFileGetPos = diskFileGetPos,
+	.cbFileGetSize = diskFileGetSize,
 	.cbFileIsEof = diskFileIsEof,
 	.cbFileFlush = diskFileFlush,
 };
@@ -135,6 +136,14 @@ DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize
 
 DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
+	if(wMode == SEEK_CUR && (
+		(lPos > 0 && lPos < pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos) ||
+		(lPos < pDiskFileData->uwBufferReadPos)
+	)) {
+		pDiskFileData->uwBufferReadPos += lPos;
+		return 0;
+	}
+
 	systemUse();
 	fileAccessEnable();
 
@@ -145,8 +154,11 @@ DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	}
 
 	ULONG ulResult = fseek(pDiskFileData->pFileHandle, lPos, wMode);
-	pDiskFileData->uwBufferReadPos = 0;
-	pDiskFileData->uwBufferFill = 0;
+	if(pDiskFileData->uwBufferFill) {
+		logWrite("WARN: slow - read buffer discard");
+		pDiskFileData->uwBufferReadPos = 0;
+		pDiskFileData->uwBufferFill = 0;
+	}
 	fileAccessDisable();
 	systemUnuse();
 
@@ -164,6 +176,26 @@ DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData) {
 	systemUnuse();
 
 	return ulResult;
+}
+
+DISKFILE_PRIVATE ULONG diskFileGetSize(void *pData) {
+	// One could use std library to seek to end of file and use ftell,
+	// but SEEK_END is not guaranteed to work.
+	// http://www.cplusplus.com/reference/cstdio/fseek/
+	// On the other hand, Lock/UnLock is bugged on KS1.3 and doesn't allow
+	// for doing Open() on same file after using it.
+	// So I ultimately do it using fseek.
+
+	systemUse();
+	fileAccessEnable();
+	LONG lOldPos = diskFileGetPos(pData);
+	diskFileSeek(pData, 0, SEEK_END);
+	LONG lSize = diskFileGetPos(pData);
+	diskFileSeek(pData, lOldPos, SEEK_SET);
+	fileAccessDisable();
+	systemUnuse();
+
+	return lSize;
 }
 
 DISKFILE_PRIVATE UBYTE diskFileIsEof(void *pData) {
