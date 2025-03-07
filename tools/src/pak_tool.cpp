@@ -11,7 +11,7 @@
 #include "common/endian.h"
 #include "common/compress.hpp"
 
-struct tPakCompressEntry {
+struct tPakEntry {
 	std::string ShortPath;
 	std::string Path;
 	std::uint32_t ulChecksum;
@@ -42,7 +42,8 @@ static void printUsage(const std::string &szAppName) {
 	print("\tinDir   Path to input directory.\n");
 	print("\toutPak  Path to output pak file.\n");
 	print("Extra options:\n");
-	print("\t-c  Enable compression.\n");
+	print("\t-c                Enable compression.\n");
+	print("\t-r orderfile.txt  Reorder files with list file - one path per line. Omitted files will be appended at the end.\n");
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -58,12 +59,16 @@ int main(int lArgCount, const char *pArgs[])
 
 	std::string InPath(pArgs[1]);
 	std::string OutPath(pArgs[2]);
+	std::string OrderPath;
 	bool isCompressed = false;
 
 	for(auto ArgIndex = 3; ArgIndex < lArgCount; ++ArgIndex) {
 		std::string_view Arg = pArgs[ArgIndex];
 		if(Arg == "-c"sv) {
 			isCompressed = true;
+		}
+		else if(Arg == "-r"sv && ArgIndex + 1 < lArgCount) {
+			OrderPath = pArgs[++ArgIndex];
 		}
 		else {
 			nLog::error("Unknown arg or missing value: '{}'", pArgs[ArgIndex]);
@@ -79,8 +84,11 @@ int main(int lArgCount, const char *pArgs[])
 
 	std::ofstream FilePak;
 	FilePak.open(OutPath, std::ios::binary);
-	std::vector<tPakCompressEntry> vEntries;
-
+	if(FilePak.fail()) {
+		nLog::error("Can't open the file for writing");
+		return EXIT_FAILURE;
+	}
+	std::vector<tPakEntry> vEntries;
 
 	auto AbsoluteBasePath = std::filesystem::absolute(InPath);
 	bool isCollided = false;
@@ -89,7 +97,7 @@ int main(int lArgCount, const char *pArgs[])
 	std::vector<std::uint8_t> vDecompressed;
   for (std::filesystem::recursive_directory_iterator i(InPath), end; i != end; ++i) {
     if (!is_directory(i->path())) {
-			tPakCompressEntry Entry;
+			tPakEntry Entry;
 			Entry.ShortPath = std::filesystem::relative(i->path(), AbsoluteBasePath).generic_string();
 			Entry.Path = i->path().generic_string();
 			Entry.ulUncompressedSize = std::uint32_t(std::filesystem::file_size(Entry.Path));
@@ -106,6 +114,10 @@ int main(int lArgCount, const char *pArgs[])
 
 			std::ifstream FileIn;
 			FileIn.open(Entry.Path, std::ios::binary);
+			if(FileIn.fail()) {
+				nLog::error("Can't open the file");
+				return EXIT_FAILURE;
+			}
 			vFileContents.resize(Entry.ulUncompressedSize);
 			FileIn.read(reinterpret_cast<char*>(vFileContents.data()), Entry.ulUncompressedSize);
 
@@ -158,6 +170,38 @@ int main(int lArgCount, const char *pArgs[])
 		return EXIT_FAILURE;
 	}
 
+	if(!OrderPath.empty()) {
+		fmt::println(FMT_STRING("Reordering files with {}..."), OrderPath);
+		std::vector<tPakEntry> vOrderedEntries;
+		std::ifstream FileOrder;
+		FileOrder.open(OrderPath);
+		if(FileOrder.fail()) {
+			nLog::error("Can't open the file");
+			return EXIT_FAILURE;
+		}
+		std::string NextPath;
+		while(std::getline(FileOrder, NextPath)) {
+			auto Found = std::find_if(
+				vEntries.begin(), vEntries.end(),
+				[&NextPath](tPakEntry &Entry){ return Entry.ShortPath == NextPath;}
+			);
+			if(Found != vEntries.end()) {
+				vOrderedEntries.push_back(*Found);
+				vEntries.erase(Found);
+			}
+			else {
+				fmt::println(FMT_STRING("WARN: ordered path '{}' not found or duplicate in added files"), NextPath);
+			}
+		}
+
+		for(const auto &Unordered: vEntries) {
+			fmt::println(FMT_STRING("WARN: unassigned order for file {}"), Unordered.ShortPath);
+		}
+
+		vOrderedEntries.insert(vOrderedEntries.end(), vEntries.begin(), vEntries.end());
+		vEntries = vOrderedEntries;
+	}
+
 	std::uint16_t uwFileCount = std::uint16_t(vEntries.size());
 	std::uint16_t uwFileCountBe = nEndian::toBig16(uwFileCount);
 	FilePak.write(reinterpret_cast<char*>(&uwFileCountBe), sizeof(uwFileCountBe));
@@ -165,7 +209,7 @@ int main(int lArgCount, const char *pArgs[])
 	std::uint16_t i = 0;
 	for(const auto &Entry: vEntries) {
 		fmt::print(
-			"Adding file {:4d}: '{}', offset: {}, uncompressed: {}, size: {}, ratio: {:.2f}, checksum: {:08X}...\n",
+			"Writing subfile {:4d}: '{}', offset: {}, uncompressed: {}, size: {}, ratio: {:.2f}, checksum: {:08X}...\n",
 			i++, Entry.ShortPath, ulNextFileOffs, Entry.ulUncompressedSize,
 			Entry.vData.size(), float(Entry.vData.size()) / Entry.ulUncompressedSize * 100, Entry.ulChecksum
 		);
