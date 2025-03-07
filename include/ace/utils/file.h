@@ -24,6 +24,7 @@ typedef ULONG (*tCbFileRead)(void *pData, void *pDest, ULONG ulSize);
 typedef ULONG (*tCbFileWrite)(void *pData, const void *pSrc, ULONG ulSize);
 typedef ULONG (*tCbFileSeek)(void *pData, LONG lPos, WORD wMode);
 typedef ULONG (*tCbFileGetPos)(void *pData);
+typedef ULONG (*tCbFileGetSize)(void *pData);
 typedef UBYTE (*tCbFileIsEof)(void *pData);
 typedef void (*tCbFileFlush)(void *pData);
 
@@ -33,6 +34,7 @@ typedef struct tFileCallbacks {
 	tCbFileWrite cbFileWrite;
 	tCbFileSeek cbFileSeek;
 	tCbFileGetPos cbFileGetPos;
+	tCbFileGetSize cbFileGetSize;
 	tCbFileIsEof cbFileIsEof;
 	tCbFileFlush cbFileFlush;
 } tFileCallbacks;
