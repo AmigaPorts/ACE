@@ -329,7 +329,7 @@ function(packDirectory)
 	cmake_parse_arguments(
 		args
 		"COMPRESS"
-		"SOURCE_DIR;DEST_FILE;TARGET"
+		"SOURCE_DIR;DEST_FILE;TARGET;REORDER_FILE"
 		""
 		${ARGN}
 	)
@@ -340,6 +340,9 @@ function(packDirectory)
 
 	if(${args_COMPRESS})
 		set(argsOptional ${argsOptional} -c)
+	endif()
+	if(NOT "${args_REORDER_FILE} " STREQUAL " ")
+		set(argsOptional ${argsOptional} -r ${args_REORDER_FILE})
 	endif()
 
 	add_custom_command(
