@@ -68,7 +68,7 @@ Then you inject your bitmap while creating your advanced sprites :
 
 ```c
 // 2 is the channel number, 32 is the height
-s_pASprite = advancedSpriteAdd(2, s_pStripe32, 32);
+s_pASprite = advancedSpriteAdd(2, 32, s_pStripe32, NULL);
 // Set Init position (x,y)
 advancedSpriteSetPos(s_pASprite,180,100);
 ```
@@ -78,6 +78,15 @@ Please note, that you can destroy the stripe bitmap just after you've added the 
 ```c
 bitmapDestroy(s_pStripe32);
 ```
+
+NULL can be replaced by a second stripe (bitmap are limited to 4096 height).
+
+```c
+s_pHeroSprite = advancedSpriteAdd(MAIN_SPRITE_CHANNEL, MAIN_SPRITE_HEIGHT, pLeftSprites, pRightSprites); 
+bitmapDestroy(pRightSprites);
+bitmapDestroy(pLeftSprites);
+```
+
 
 ***Bonus :*** If your sprite is showing behind the view layer add this line after the `viewLoad` :
 ```c
@@ -123,7 +132,7 @@ advancedSpriteSetEnabled(s_pASprite,1); // enable
 advancedSpriteSetEnabled(s_pASprite,0); // disable
 ```
 
-By default it's enabled pn  on `advancedSpriteAdd`. 
+By default it's enabled on `advancedSpriteAdd`. 
 
 
 ## Destroy Management
