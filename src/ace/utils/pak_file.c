@@ -41,8 +41,8 @@ typedef struct tCompressUnpacker {
 
 typedef struct tPakFileSubfileData {
 	tPakFile *pPak;
+	tPakFileEntry *pEntry;
 	ULONG ulPos;
-	UWORD uwFileIndex;
 } tPakFileSubfileData;
 
 typedef struct tPakFileCompressedData {
@@ -208,11 +208,12 @@ static ULONG pakSubfileRead(void *pData, void *pDest, ULONG ulSize) {
 		// Other file was accessed or there was a seek recently - seek back
 		fileSeek(
 			pPak->pFile,
-			pPak->pEntries[pSubfileData->uwFileIndex].ulOffs + pSubfileData->ulPos,
+			pSubfileData->pEntry->ulOffs + pSubfileData->ulPos,
 			FILE_SEEK_SET
 		);
 		pPak->pPrevReadSubfile = pSubfileData;
 	}
+
 	ULONG ulRead = fileRead(pPak->pFile, pDest, ulSize);
 	pSubfileData->ulPos += ulRead;
 	return ulRead;
@@ -227,8 +228,7 @@ static ULONG pakSubfileWrite(
 
 static ULONG pakSubfileSeek(void *pData, LONG lPos, WORD wMode) {
 	tPakFileSubfileData *pSubfileData = (tPakFileSubfileData*)pData;
-	tPakFile *pPak = pSubfileData->pPak;
-	const tPakFileEntry *pPakEntry = &pPak->pEntries[pSubfileData->uwFileIndex];
+	ULONG ulSizeData = pSubfileData->pEntry->ulSizeData;
 
 	if(wMode == FILE_SEEK_SET) {
 		pSubfileData->ulPos = lPos;
@@ -237,15 +237,15 @@ static ULONG pakSubfileSeek(void *pData, LONG lPos, WORD wMode) {
 		pSubfileData->ulPos += lPos;
 	}
 	else if(wMode == FILE_SEEK_END) {
-		pSubfileData->ulPos = pPakEntry->ulSizeData + lPos;
+		pSubfileData->ulPos = ulSizeData + lPos;
 	}
-	pPak->pPrevReadSubfile = 0; // Invalidate cache
+	pSubfileData->pPak->pPrevReadSubfile = 0; // Invalidate cache
 
-	if(pSubfileData->ulPos > pPakEntry->ulSizeData) {
-		logWrite("ERR: Seek position %lu out of range %lu for pakFile %hu\n",
-			pSubfileData->ulPos, pPakEntry->ulSizeData, pSubfileData->uwFileIndex
+	if(pSubfileData->ulPos > ulSizeData) {
+		logWrite("ERR: Seek position %lu out of range %lu for pakFile data %p\n",
+			pSubfileData->ulPos, ulSizeData, pSubfileData
 		);
-		pSubfileData->ulPos = pPakEntry->ulSizeData;
+		pSubfileData->ulPos = ulSizeData;
 		return 0;
 	}
 	return 1;
@@ -260,7 +260,7 @@ static ULONG pakSubfileGetPos(void *pData) {
 static ULONG pakSubfileGetSize(void *pData) {
 	tPakFileSubfileData *pSubfileData = (tPakFileSubfileData*)pData;
 
-	return pSubfileData->pPak->pEntries[pSubfileData->uwFileIndex].ulSizeData;
+	return pSubfileData->pEntry->ulSizeData;
 }
 
 static UBYTE pakSubfileIsEof(void *pData) {
@@ -436,7 +436,7 @@ tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 	// Create tFile, fill subfileData
 	tPakFileSubfileData *pSubfileData = memAllocFast(sizeof(*pSubfileData));
 	pSubfileData->pPak = pPakFile;
-	pSubfileData->uwFileIndex = uwFileIndex;
+	pSubfileData->pEntry = &pPakFile->pEntries[uwFileIndex];
 	pSubfileData->ulPos = 0;
 	// Prevent reading from same place if pSubfileData gets mem from recently closed file
 	pPakFile->pPrevReadSubfile = 0;
