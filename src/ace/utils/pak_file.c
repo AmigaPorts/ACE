@@ -126,10 +126,16 @@ static UBYTE rleTableRead(const UBYTE *pTable, UWORD *pPos) {
 	return ubData;
 }
 
-static WORD compressUnpackerReadNext(tCompressUnpacker *pUnpacker) {
-	if(pUnpacker->ubUnpackedChunkPos < pUnpacker->ubUnpackedChunkSize) {
-		++pUnpacker->ulUnpackedCount;
-		return pUnpacker->pUnpacked[pUnpacker->ubUnpackedChunkPos++];
+static WORD compressUnpackerReadNext(tCompressUnpacker *pUnpacker, UBYTE *pOut, ULONG ulReadSize) {
+	UBYTE ubReadSize = MIN((UBYTE)(pUnpacker->ubUnpackedChunkSize - pUnpacker->ubUnpackedChunkPos), ulReadSize);
+	UBYTE ubReadPos = pUnpacker->ubUnpackedChunkPos;
+	for(UWORD i = 0; i < ubReadSize; ++i) {
+		*(pOut++) = pUnpacker->pUnpacked[ubReadPos++];
+	}
+	if(ubReadSize) {
+		pUnpacker->ulUnpackedCount += ubReadSize;
+		pUnpacker->ubUnpackedChunkPos = ubReadPos;
+		return ubReadSize;
 	}
 
 	if(pUnpacker->ulUnpackedCount >= pUnpacker->ulUncompressedSize) {
@@ -183,11 +189,8 @@ static WORD compressUnpackerReadNext(tCompressUnpacker *pUnpacker) {
 	}
 	pUnpacker->ubUnpackedChunkSize = pUnpacked - pUnpacker->pUnpacked;
 	pUnpacker->pPackedCurrent = pPackedCurrent;
-
-	// Output first byte
 	pUnpacker->ubUnpackedChunkPos = 0;
-	++pUnpacker->ulUnpackedCount;
-	return pUnpacker->pUnpacked[pUnpacker->ubUnpackedChunkPos++];
+	return 0;
 }
 
 static ULONG adler32Buffer(const UBYTE *pData, ULONG ulDataSize) {
@@ -306,12 +309,12 @@ static ULONG pakCompressedRead(void *pData, void *pDest, ULONG ulSize) {
 	UBYTE *pDestByte = pDest;
 
 	while(ulRemaining) {
-		WORD wRead = compressUnpackerReadNext(pUnpacker);
+		WORD wRead = compressUnpackerReadNext(pUnpacker, pDestByte, ulRemaining);
 		if(wRead < 0) {
 			break;
 		}
-		*(pDestByte++) = (UBYTE)wRead;
-		--ulRemaining;
+		pDestByte += wRead;
+		ulRemaining -= wRead;
 	}
 	return ulSize - ulRemaining;
 }
