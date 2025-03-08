@@ -43,6 +43,9 @@
 #define SYSTEM_INT_HANDLER_COUNT 15
 #define SYSTEM_STACK_CANARY '\xBA'
 
+#define SYSTEM_ACE_MIN_NO_OS_INTERRUPTS (INTF_VERTB | INTF_PORTS | INTF_EXTER)
+#define SYSTEM_ACE_MIN_OS_INTERRUPTS (INTF_VERTB | INTF_EXTER)
+
 //------------------------------------------------------------------------ TYPES
 
 typedef void (*tHwIntVector)(void);
@@ -66,8 +69,8 @@ static UWORD s_uwOsDmaCon;
 static UWORD s_uwAceDmaCon = 0;
 static UWORD s_uwOsInitialDma;
 
-static UWORD s_pOsCiaTimerA[CIA_COUNT];
-static UWORD s_pOsCiaTimerB[CIA_COUNT];
+static UWORD s_ubOsCiaATimerA;
+static UWORD s_ubOsCiaBTimerB;
 static UBYTE s_pOsCiaIcr[CIA_COUNT], s_pOsCiaCra[CIA_COUNT], s_pOsCiaCrb[CIA_COUNT];
 static UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
 static UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
@@ -90,7 +93,7 @@ static volatile tHwIntVector * s_pHwVectors = 0;
 static tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
+static UWORD s_uwAceIntEna = 0;
 static tKeyInputHandler s_cbKeyInputHandler;
 
 // Manager logic vars
@@ -374,6 +377,12 @@ ULONG osIntServer(void) {
 	register volatile ULONG regData __asm("a1");
 
 	UBYTE ubIntBit = regData;
+	if(ubIntBit == INTB_VERTB) {
+		// Do ACE-specific stuff
+		// TODO when ACE gets ported to C++ this could be constexpr if'ed
+		timerOnInterrupt();
+	}
+
 	if(s_pAceInterrupts[ubIntBit].pHandler) {
 		s_pAceInterrupts[ubIntBit].pHandler(
 			g_pCustom, s_pAceInterrupts[ubIntBit].pData
@@ -679,10 +688,8 @@ static void systemOsDisable(void) {
 		g_pCia[CIA_B]->crb = CIACRB_LOAD;
 
 		// Save OS CIA timer values
-		s_pOsCiaTimerA[CIA_A] = ciaGetTimerA(g_pCia[CIA_A]);
-		s_pOsCiaTimerB[CIA_A] = ciaGetTimerB(g_pCia[CIA_A]);
-		s_pOsCiaTimerA[CIA_B] = ciaGetTimerA(g_pCia[CIA_B]);
-		s_pOsCiaTimerB[CIA_B] = ciaGetTimerB(g_pCia[CIA_B]);
+		s_ubOsCiaATimerA = ciaGetTimerA(g_pCia[CIA_A]);
+		s_ubOsCiaBTimerB = ciaGetTimerB(g_pCia[CIA_A]);
 
 		// set ACE CIA timers
 		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
@@ -718,32 +725,37 @@ static void systemOsDisable(void) {
 
 		// Enable needed DMA (and interrupt) channels
 		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
-		// Everything that's supported by ACE to simplify things for now,
-		// but not audio channels since ptplayer relies on polling them, and I'm not
-		// currently being able to debug audio interrupt handler variant.
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna | SYSTEM_ACE_MIN_NO_OS_INTERRUPTS;
 
 		// HACK: OS resets potgo in vblank int, preventing scanning fire2 on most joysticks.
 		// TODO: make sure this doesn't break anything, e.g. mice
 		// TODO: add setting this value to OS-friendly vblank handler with proper priority
 		// https://eab.abime.net/showthread.php?t=74981
 		g_pCustom->potgo = 0xFF00;
-
 }
 
 void ciaIcrHandlerAdd(UBYTE ubCia, UBYTE ubIcrBit) {
+	// https://wiki.amigaos.net/wiki/CIA_Resource
 	memset(&s_pOsCiaIcrHandlers[ubCia][ubIcrBit], 0, sizeof(s_pOsCiaIcrHandlers[ubCia][ubIcrBit]));
 	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Code = (void(*)(void))ciaIcrHandler;
 	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Data = (void*)&s_pAceCiaInterrupts[ubCia][ubIcrBit];
 	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Name = "ACE CIA ICR handler";
 	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Pri = 127;
 	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Type = NT_INTERRUPT;
+	// AddICRVector auto-activates ints, leave it be to mimic what ACE does on no-os side
 	if(AddICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pOsCiaIcrHandlers[ubCia][ubIcrBit])) {
-		logWrite("CIA %c ICR %d add failed", CIA_A ? 'A' : 'B', ubIcrBit);
+		logWrite("CIA %c ICR %d add failed", (ubCia == CIA_A) ? 'A' : 'B', ubIcrBit);
 	}
+	// TODO: check if AddICRVector allocated the same timer as desired using
+	// private fields of CIA Resource (beware of changed layout in v36)
 
-	// Disable interrupt since AddICRVector auto-enables it
-	// AbleICR(s_pCiaResource[CIA_B], CIAICRF_TIMER_A);
+	// Set timeout as long as possible, to be reconfigured by int handler registrar
+	if(ubIcrBit == CIAICRB_TIMER_A) {
+		ciaSetTimerA(g_pCia[ubCia], 0xFFFF);
+	}
+	else {
+		ciaSetTimerB(g_pCia[ubCia], 0xFFFF);
+	}
 }
 
 void ciaIcrHandlerRemove(UBYTE ubCia, UBYTE ubIcrBit) {
@@ -870,10 +882,10 @@ void systemCreate(void) {
 	interruptHandlerAdd(INTB_AUD3);
 	interruptHandlerAdd(INTB_VERTB);
 
-
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
 
+	// Allocate CIA-B timers for exclusive use
 	ciaIcrHandlerAdd(CIA_B, CIAICRB_TIMER_A);
 	ciaIcrHandlerAdd(CIA_B, CIAICRB_TIMER_B);
 
@@ -1036,11 +1048,9 @@ void systemUse(void) {
 		g_pCia[CIA_B]->cra = 0;
 		g_pCia[CIA_B]->crb = 0;
 
-		// Restore old CIA timer values
-		ciaSetTimerA(g_pCia[CIA_A], s_pOsCiaTimerA[CIA_A]);
-		ciaSetTimerB(g_pCia[CIA_A], s_pOsCiaTimerB[CIA_A]);
-		ciaSetTimerA(g_pCia[CIA_B], s_pOsCiaTimerA[CIA_B]);
-		ciaSetTimerB(g_pCia[CIA_B], s_pOsCiaTimerB[CIA_B]);
+		// Restore old CIA timer A values
+		ciaSetTimerA(g_pCia[CIA_A], s_ubOsCiaATimerA);
+		ciaSetTimerB(g_pCia[CIA_A], s_ubOsCiaBTimerB);
 
 		// Restore OS's CIA interrupts
 		// According to UAE debugger there's nothing in CIA_A
@@ -1056,7 +1066,7 @@ void systemUse(void) {
 		// restore old DMA/INTENA/ADKCON etc. settings
 		// All interrupts but only needed DMA
 		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | (s_uwOsDmaCon & s_uwOsMinDma);
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN  | s_uwOsIntEna;
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN  | s_uwOsIntEna | s_uwAceIntEna | SYSTEM_ACE_MIN_OS_INTERRUPTS;
 
 		// Nasty keyboard hack - if any key gets pressed / released while system is
 		// inactive, we won't be able to catch it.
