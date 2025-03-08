@@ -55,21 +55,21 @@ typedef struct tPakFileCompressedData {
 
 static void pakSubfileClose(void *pData);
 static ULONG pakSubfileRead(void *pData, void *pDest, ULONG ulSize);
-static ULONG pakSubfileWrite(void *pData, const void *pSrc, ULONG ulSize);
+static ULONG pakSubfileWrite(UNUSED_ARG void *pData, UNUSED_ARG const void *pSrc, UNUSED_ARG ULONG ulSize);
 static ULONG pakSubfileSeek(void *pData, LONG lPos, WORD wMode);
 static ULONG pakSubfileGetPos(void *pData);
 static ULONG pakSubfileGetSize(void *pData);
 static UBYTE pakSubfileIsEof(void *pData);
-static void pakSubfileFlush(void *pData);
+static void pakSubfileFlush(UNUSED_ARG void *pData);
 
 static void pakCompressedClose(void *pData);
 static ULONG pakCompressedRead(void *pData, void *pDest, ULONG ulSize);
-static ULONG pakCompressedWrite(void *pData, const void *pSrc, ULONG ulSize);
+static ULONG pakCompressedWrite(UNUSED_ARG void *pData, UNUSED_ARG const void *pSrc, UNUSED_ARG ULONG ulSize);
 static ULONG pakCompressedSeek(void *pData, LONG lPos, WORD wMode);
 static ULONG pakCompressedGetPos(void *pData);
 static ULONG pakCompressedGetSize(void *pData);
 static UBYTE pakCompressedIsEof(void *pData);
-static void pakCompressedFlush(void *pData);
+static void pakCompressedFlush(UNUSED_ARG void *pData);
 
 static const tFileCallbacks s_sPakSubfileCallbacks = {
 	.cbFileClose = pakSubfileClose,
@@ -205,7 +205,7 @@ static ULONG adler32Buffer(const UBYTE *pData, ULONG ulDataSize) {
 	return (b << 16) | a;
 }
 
-static void pakSubfileClose(UNUSED_ARG void *pData) {
+static void pakSubfileClose(void *pData) {
 	tPakFileSubfileData *pSubfileData = (tPakFileSubfileData*)pData;
 
 	memFree(pSubfileData, sizeof(*pSubfileData));
