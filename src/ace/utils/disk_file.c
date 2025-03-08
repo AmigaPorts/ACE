@@ -140,8 +140,8 @@ DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	if(wMode == SEEK_SET) {
 		LONG lDelta = lPos - diskFileGetPos(pData);
 		if(
-			(lDelta > 0 && lDelta < pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos) ||
-			(lDelta < 0 && -lDelta < pDiskFileData->uwBufferReadPos)
+			(lDelta <= 0 && -lDelta < pDiskFileData->uwBufferReadPos) ||
+			(lDelta > 0 && lDelta < pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos)
 		) {
 			pDiskFileData->uwBufferReadPos += lDelta;
 			return 0;
@@ -167,7 +167,7 @@ DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 
 	ULONG ulResult = fseek(pDiskFileData->pFileHandle, lPos, wMode);
 	if(pDiskFileData->uwBufferFill) {
-		logWrite("WARN: slow - read buffer discard");
+		logWrite("WARN: slow - read buffer discard\n");
 		pDiskFileData->uwBufferReadPos = 0;
 		pDiskFileData->uwBufferFill = 0;
 	}
