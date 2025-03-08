@@ -21,8 +21,11 @@ typedef enum tCompressUnpackStateKind {
 	COMPRESS_UNPACK_STATE_KIND_DONE,
 } tCompressUnpackStateKind;
 
-#define UNPACKER_PACKED_BUFFER_SIZE (8 * 2 + 1)
-#define UNPACKER_UNPACKED_BUFFER_SIZE (8 * (15+3))
+#define UNPACKER_CTL_BITS 8
+#define UNPACKER_RLE_CTL_BYTES 2
+#define UNPACKER_RLE_MAX_LENGTH (15 + 3)
+#define UNPACKER_PACKED_BUFFER_SIZE (UNPACKER_CTL_BITS * UNPACKER_RLE_CTL_BYTES + (UNPACKER_CTL_BITS / 8))
+#define UNPACKER_UNPACKED_BUFFER_SIZE (UNPACKER_CTL_BITS * UNPACKER_RLE_MAX_LENGTH)
 
 typedef struct tCompressUnpacker {
 	void *pSubfileData;
@@ -147,7 +150,7 @@ static WORD compressUnpackerReadNext(tCompressUnpacker *pUnpacker) {
 	// Decode next portion of data
 	pPackedCurrent = &pUnpacker->pPacked[0];
 	UBYTE ubCtl = *(pPackedCurrent++);
-	UBYTE ubBits = 8;
+	UBYTE ubBits = UNPACKER_CTL_BITS;
 	UBYTE *pUnpacked = pUnpacker->pUnpacked;
 
 	while(ubBits--) {
