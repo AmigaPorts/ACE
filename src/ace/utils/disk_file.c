@@ -8,7 +8,7 @@
 #include <ace/managers/log.h>
 #include <ace/utils/disk_file_private.h>
 
-#define DISK_FILE_BUFFER_SIZE 1024
+#define DISK_FILE_BUFFER_SIZE 512
 
 typedef struct tDiskFileData {
 	FILE *pFileHandle;
@@ -136,6 +136,18 @@ DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize
 
 DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
+
+	if(wMode == SEEK_SET) {
+		LONG lDelta = lPos - diskFileGetPos(pData);
+		if(
+			(lDelta > 0 && lDelta < pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos) ||
+			(lDelta < 0 && -lDelta < pDiskFileData->uwBufferReadPos)
+		) {
+			pDiskFileData->uwBufferReadPos += lDelta;
+			return 0;
+		}
+	}
+
 	if(wMode == SEEK_CUR && (
 		(lPos > 0 && lPos < pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos) ||
 		(lPos < pDiskFileData->uwBufferReadPos)
