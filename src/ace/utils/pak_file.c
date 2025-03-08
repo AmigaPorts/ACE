@@ -140,13 +140,14 @@ static WORD compressUnpackerReadNext(tCompressUnpacker *pUnpacker) {
 	while(pPackedCurrent < pEnd) {
 		*(pDst++) = *(pPackedCurrent++);
 	}
-	pakSubfileRead(pUnpacker->pSubfileData, pDst, pEnd - pDst);
+
+	// Read might return 0 if only unparsed bytes are remaining to process
+	pEnd = pDst + pakSubfileRead(pUnpacker->pSubfileData, pDst, pEnd - pDst);
 
 	// Decode next portion of data
 	pPackedCurrent = &pUnpacker->pPacked[0];
 	UBYTE ubCtl = *(pPackedCurrent++);
-	ULONG ulRemaining = pUnpacker->ulUncompressedSize - pUnpacker->ulUnpackedCount;
-	UBYTE ubBits = MIN(8, ulRemaining);
+	UBYTE ubBits = 8;
 	UBYTE *pUnpacked = pUnpacker->pUnpacked;
 
 	while(ubBits--) {
@@ -167,6 +168,13 @@ static WORD compressUnpackerReadNext(tCompressUnpacker *pUnpacker) {
 				rleTableWrite(pUnpacker->pLookup, &pUnpacker->uwLookupPos, ubRawByte);
 				*(pUnpacked++) = ubRawByte;
 			}
+		}
+		if(pPackedCurrent == pEnd) {
+			// TODO: optimize packing so that there are always 8 bits to process
+			// at the end - would allow removing this cmp.
+			// Might be impossible for some files? E.g. one with no RLE sequences -
+			// perhaps don't ever use compression for them.
+			break;
 		}
 		ubCtl >>= 1;
 	}
@@ -212,6 +220,15 @@ static ULONG pakSubfileRead(void *pData, void *pDest, ULONG ulSize) {
 			FILE_SEEK_SET
 		);
 		pPak->pPrevReadSubfile = pSubfileData;
+	}
+
+	// Enforce upper bound of the file size
+	ULONG ulRemaining = pSubfileData->pEntry->ulSizeData - pSubfileData->ulPos;
+	if(ulRemaining < ulSize) {
+		ulSize = ulRemaining;
+		if(!ulSize) {
+			return 0;
+		}
 	}
 
 	ULONG ulRead = fileRead(pPak->pFile, pDest, ulSize);
