@@ -964,7 +964,7 @@ void systemDestroy(void) {
 
 #if defined(BARTMAN_GCC)
 	if(s_szOldDir) {
-		CurrentDir(s_szOldDir);
+		CurrentDir((BPTR)s_szOldDir);
 	}
 #endif
 
