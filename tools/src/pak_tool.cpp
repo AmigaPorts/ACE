@@ -6,6 +6,7 @@
 #include <fstream>
 #include <filesystem>
 #include <vector>
+#include <algorithm>
 #include "common/logging.h"
 #include "common/fs.h"
 #include "common/endian.h"
