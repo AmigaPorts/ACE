@@ -3292,6 +3292,7 @@ tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)
 	systemUse();
 
 	UBYTE ubVersion;
+	tPtplayerSamplePack *pSamplePack = 0;
 	fileRead(pFileSamples, &ubVersion, sizeof(ubVersion));
 	if(ubVersion != PTPLAYER_SUPPORTED_SAMPLEPACK_VERSION) {
 		// ACE only supports most up to date file version to limit its size
@@ -3302,7 +3303,7 @@ tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)
 		goto fail;
 	}
 
-	tPtplayerSamplePack *pSamplePack = memAllocFastClear(sizeof(*pSamplePack));
+	pSamplePack = memAllocFastClear(sizeof(*pSamplePack));
 	if(!pSamplePack) {
 		goto fail;
 	}
