@@ -208,6 +208,10 @@ void bobInit(
 	tBob *pBob, UWORD uwWidth, UWORD uwHeight, UBYTE isUndrawRequired,
 	UBYTE *pFrameData, UBYTE *pMaskData, UWORD uwX, UWORD uwY
 ) {
+	logBlockBegin(
+		"bobInit(pBob: %p, uwWidth: %hu, uwHeight: %hu, isUndrawRequired: %hhu, pFrameData: %p, pMaskData: %p, uwX: %hu, uwY: %hu)",
+		pBob, uwWidth, uwHeight, isUndrawRequired, pFrameData, pMaskData, uwX, uwY
+	);
 #if defined(ACE_DEBUG)
 	pBob->_uwOriginalWidth = uwWidth;
 	pBob->_uwOriginalHeight = uwHeight;
@@ -238,7 +242,7 @@ void bobInit(
 	}
 #endif
 	++s_ubMaxBobCount;
-	// logWrite("Added bob, now max: %hhu\n", s_ubMaxBobCount);
+	logBlockEnd("bobInit()");
 }
 
 void bobSetFrame(tBob *pBob, UBYTE *pFrameData, UBYTE *pMaskData) {
@@ -279,6 +283,9 @@ void bobSetHeight(tBob *pBob, UWORD uwHeight)
 }
 
 UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY) {
+	if(uwOffsetY >= pBitmap->Rows) {
+		logWrite("ERR: bobCalcFrameAddress() OffsY %hu > bitmap height: %hu", uwOffsetY, pBitmap->Rows);
+	}
 	return &pBitmap->Planes[0][pBitmap->BytesPerRow * uwOffsetY];
 }
 
@@ -349,21 +356,19 @@ UBYTE bobProcessNext(void) {
 		++s_ubBobsDrawn;
 		UBYTE ubDstOffs = pPos->uwX & 0xF;
 		UWORD uwBlitWidth = (pBob->uwWidth + ubDstOffs + 15) & 0xFFF0;
-		UWORD uwBlitWords = uwBlitWidth >> 4;
+		UWORD uwBlitWords = uwBlitWidth / 16;
 		UWORD uwBlitSize = ((pBob->_uwInterleavedHeight) << HSIZEBITS) | uwBlitWords;
-		WORD wSrcModulo = (pBob->uwWidth >> 3) - (uwBlitWords<<1);
+		WORD wSrcModulo = pBob->uwWidth / 8 - uwBlitWords * 2;
 		UWORD uwBltCon1 = ubDstOffs << BSHIFTSHIFT;
 		UWORD uwBltCon0;
 		if(pBob->pMaskData) {
 			uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
 		}
 		else {
-			// TODO change to A - performance boost
-			// TODO setting B & C regs isn't necessary - few write cycles less
-			uwBltCon0 = uwBltCon1 | USEB|USED | MINTERM_B;
+			uwBltCon0 = uwBltCon1 | USEB|USEC|USED | MINTERM_COOKIE;
 		}
 
-		WORD wDstModulo = s_uwDestByteWidth - (uwBlitWords<<1);
+		WORD wDstModulo = s_uwDestByteWidth - uwBlitWords * 2;
 		UBYTE *pB = pBob->pFrameData;
 #if defined(ACE_BOB_PRISTINE_BUFFER)
 		ULONG ulDestinationOffset = bobCalculateBitplaneOffset(pBob, pQueue->pDst);
@@ -376,16 +381,19 @@ UBYTE bobProcessNext(void) {
 		UWORD uwPartHeight = s_uwAvailHeight - SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight);
 #endif
 
+		UWORD uwLastMask = 0xFFFF << (uwBlitWidth-pBob->uwWidth);
 		blitWait();
 		g_pCustom->bltcon0 = uwBltCon0;
 		g_pCustom->bltcon1 = uwBltCon1;
 
+		g_pCustom->bltalwm = uwLastMask;
 		if(pBob->pMaskData) {
-			UWORD uwLastMask = 0xFFFF << (uwBlitWidth-pBob->uwWidth);
 			UBYTE *pA = pBob->pMaskData;
-			g_pCustom->bltalwm = uwLastMask;
 			g_pCustom->bltamod = wSrcModulo;
 			g_pCustom->bltapt = (APTR)pA;
+		}
+		else {
+			g_pCustom->bltadat = 0xFFFF;
 		}
 
 		g_pCustom->bltbmod = wSrcModulo;
@@ -538,10 +546,17 @@ void bobPushingDone(void) {
 	s_isPushingDone = 1;
 }
 
+void bobProcessAll(void) {
+	while(bobProcessNext()) continue;
+}
+
+UBYTE bobGetCurrentBufferIndex(void) {
+	return s_ubBufferCurr;
+}
+
 void bobEnd(void) {
 	bobPushingDone();
-	do {
-	} while(bobProcessNext());
+	bobProcessAll();
 	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_ubBobsPushed;
 	s_ubBufferCurr = !s_ubBufferCurr;
 }
@@ -549,4 +564,10 @@ void bobEnd(void) {
 void bobDiscardUndraw(void) {
 	s_pQueues[0].ubUndrawCount = 0;
 	s_pQueues[1].ubUndrawCount = 0;
+}
+
+void bobSetCurrentBuffer(tBitMap *pCurrent) {
+	if(s_pQueues[!s_ubBufferCurr].pDst == pCurrent) {
+		s_ubBufferCurr = !s_ubBufferCurr;
+	}
 }
