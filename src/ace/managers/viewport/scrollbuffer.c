@@ -281,7 +281,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		updateStartCopperlist(&pCopList->pBackBfr->pList[pManager->uwCopperOffsetStart], pManager->pBack, uwShift, ulPlaneOffs);
 
 		tCopCmd *pCmdListBreak = &pCopList->pBackBfr->pList[pManager->uwCopperOffsetBreak];
-		if(pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
+		if(pManager->uwBmAvailHeight - uwScrollY < uwVpHeight) {
 			updateBreakCopperlist(
 				pCmdListBreak, pManager->pBack,
 				pManager->sCommon.pVPort->pView->ubPosY +
@@ -312,7 +312,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		pBlock = pManager->pBreakBlock;
 
 		pBlock->uwCurrCount = 0; // Rewind copBlock
-		if(pManager->uwBmAvailHeight - uwScrollY <= uwVpHeight) {
+		if(pManager->uwBmAvailHeight - uwScrollY < uwVpHeight) {
 			if(pBlock->ubDisabled) {
 				copBlockEnable(pCopList, pBlock);
 			}
