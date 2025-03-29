@@ -12,6 +12,7 @@
 
 typedef struct tDiskFileData {
 	FILE *pFileHandle;
+	tDiskFileMode eMode;
 	UBYTE pBuffer[DISK_FILE_BUFFER_SIZE];
 	UWORD uwBufferFill;
 	UWORD uwBufferReadPos;
@@ -57,6 +58,16 @@ DISKFILE_PRIVATE void diskFileClose(void *pData) {
 
 	systemUse();
 	fileAccessEnable();
+
+	if(pDiskFileData->eMode == DISK_FILE_MODE_WRITE) {
+		// write remaining data
+		fwrite(
+			pDiskFileData->pBuffer, pDiskFileData->uwBufferFill, 1,
+			pDiskFileData->pFileHandle
+		);
+		fflush(pDiskFileData->pFileHandle);
+	}
+
 	fclose(pDiskFileData->pFileHandle);
 	fileAccessDisable();
 	memFree(pDiskFileData, sizeof(*pDiskFileData));
@@ -67,6 +78,10 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 	UBYTE *pDestBytes = (UBYTE*)pDest;
 	ULONG ulReadCount = 0;
+
+	if(pDiskFileData->eMode != DISK_FILE_MODE_READ) {
+		logWrite("ERR: Attempting to read file not opened for read\n");
+	}
 
 	// copy some data from buffer
 	UWORD uwReadyBytes = pDiskFileData->uwBufferFill - pDiskFileData->uwBufferReadPos;
@@ -123,15 +138,44 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 
 DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
+	ULONG ulWritten;
 
-	systemUse();
-	fileAccessEnable();
-	ULONG ulResult = fwrite(pSrc, ulSize, 1, pDiskFileData->pFileHandle);
-	fflush(pDiskFileData->pFileHandle);
-	fileAccessDisable();
-	systemUnuse();
+	if(pDiskFileData->eMode != DISK_FILE_MODE_WRITE) {
+		logWrite("ERR: Attempting to write file not opened for write\n");
+	}
 
-	return ulResult;
+	if(pDiskFileData->uwBufferFill + ulSize < DISK_FILE_BUFFER_SIZE) {
+		memcpy(&pDiskFileData->pBuffer[pDiskFileData->uwBufferFill], pSrc, ulSize);
+		pDiskFileData->uwBufferFill += ulSize;
+		ulWritten = ulSize;
+	}
+	else {
+		systemUse();
+		fileAccessEnable();
+
+		// NOTE: Don't take previously buffered data into account in return value.
+		// TODO: Make sure that all was written here?
+		fwrite(
+			pDiskFileData->pBuffer, pDiskFileData->uwBufferFill, 1,
+			pDiskFileData->pFileHandle
+		);
+		pDiskFileData->uwBufferFill = 0;
+
+		// Only allow small read here so that big write will go to the file directly
+		if(ulSize < 100) {
+			memcpy(&pDiskFileData->pBuffer[pDiskFileData->uwBufferFill], pSrc, ulSize);
+			pDiskFileData->uwBufferFill = ulSize;
+			ulWritten = ulSize;
+		}
+		else {
+			ulWritten = fwrite(pSrc, ulSize, 1, pDiskFileData->pFileHandle);
+		}
+
+		fflush(pDiskFileData->pFileHandle);
+		fileAccessDisable();
+		systemUnuse();
+	}
+	return ulWritten;
 }
 
 DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
@@ -237,25 +281,26 @@ DISKFILE_PRIVATE void diskFileFlush(void *pData) {
 
 //------------------------------------------------------------------- PUBLIC FNS
 
-tFile *diskFileOpen(const char *szPath, const char *szMode) {
-	logBlockBegin("diskFileOpen(szPath: '%s', szMode: '%s')", szPath, szMode);
+tFile *diskFileOpen(const char *szPath, tDiskFileMode eMode) {
+	logBlockBegin("diskFileOpen(szPath: '%s', eMode: %d)", szPath, eMode);
 	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
 	// TODO: disable buffering in a/w/x modes
 	systemUse();
 	fileAccessEnable();
 	tFile *pFile = 0;
-	FILE *pFileHandle = fopen(szPath, szMode);
+	FILE *pFileHandle = fopen(szPath, eMode == DISK_FILE_MODE_WRITE ? "wb" : "rb");
 	if(pFileHandle == 0) {
 		logWrite("ERR: Can't open file\n");
 	}
 	else {
-#if defined(ACE_FILE_USE_ONLY_DISK) // TODO: verify if still viable
-	pFile = (tFile*)pFileHandle;
-#else
 		tDiskFileData *pData = memAllocFast(sizeof(*pData));
 		pData->pFileHandle = pFileHandle;
+		pData->eMode = eMode;
 		pData->uwBufferFill = 0;
 		pData->uwBufferReadPos = 0;
+#if defined(ACE_FILE_USE_ONLY_DISK) // TODO: verify if still viable
+		pFile = (tFile*)pData;
+#else
 		pFile = memAllocFast(sizeof(*pFile));
 		pFile->pCallbacks = &s_sDiskFileCallbacks;
 		pFile->pData = pData;
@@ -273,7 +318,7 @@ UBYTE diskFileExists(const char *szPath) {
 	systemUse();
 	fileAccessEnable();
 	UBYTE isExisting = 0;
-	FILE *pFileHandle = fopen(szPath, "r");
+	FILE *pFileHandle = fopen(szPath, "rb");
 	if(pFileHandle) {
 		isExisting = 1;
 		fclose(pFileHandle);
