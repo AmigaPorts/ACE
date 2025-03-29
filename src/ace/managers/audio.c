@@ -84,7 +84,7 @@ tSample *sampleCreate(UWORD uwLength, UWORD uwPeriod) {
 
 tSample *sampleCreateFromPath(const char *szPath, UWORD uwSampleRateHz)
 {
-	return sampleCreateFromFd(diskFileOpen(szPath, "rb"), uwSampleRateHz);
+	return sampleCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ), uwSampleRateHz);
 }
 
 tSample *sampleCreateFromFd(tFile *pSampleFile, UWORD uwSampleRateHz)

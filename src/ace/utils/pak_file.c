@@ -408,7 +408,7 @@ static UWORD pakFileGetFileIndex(const tPakFile *pPakFile, const char *szPath) {
 
 tPakFile *pakFileOpen(const char *szPath) {
 	logBlockBegin("pakFileOpen(szPath: '%s')", szPath);
-	tFile *pMainFile = diskFileOpen(szPath, "rb");
+	tFile *pMainFile = diskFileOpen(szPath, DISK_FILE_MODE_READ);
 	if(!pMainFile) {
 		logBlockEnd("pakFileOpen()");
 		return 0;
