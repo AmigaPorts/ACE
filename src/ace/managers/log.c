@@ -47,7 +47,7 @@ static UBYTE isWritingToFileAllowed(void) {
 
 void _logOpen(const char *szFilePath) {
 	g_sLogManager.ubShutUp = 1; // Prevent log message for diskFileOpen()
-	g_sLogManager.pFile = szFilePath ? diskFileOpen(szFilePath, DISK_FILE_MODE_WRITE) : 0;
+	g_sLogManager.pFile = szFilePath ? diskFileOpen(szFilePath, DISK_FILE_MODE_WRITE, 0) : 0;
 	g_sLogManager.ubIndent = 0;
 	g_sLogManager.wasLastInline = 0;
 	g_sLogManager.isBlockEmpty = 1;

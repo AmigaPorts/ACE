@@ -28,7 +28,7 @@ typedef struct tPakFile {
 	tPakFileEntry *pEntries;
 } tPakFile;
 
-tPakFile *pakFileOpen(const char *szPath);
+tPakFile *pakFileOpen(const char *szPath, UBYTE isUninterrupted);
 
 void pakFileClose(tPakFile *pPakFile);
 
