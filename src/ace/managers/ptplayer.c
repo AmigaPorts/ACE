@@ -2826,7 +2826,7 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume) {
 }
 
 tPtplayerMod *ptplayerModCreateFromPath(const char *szPath) {
-	return ptplayerModCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ));
+	return ptplayerModCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1));
 }
 
 tPtplayerMod *ptplayerModCreateFromFd(tFile *pFileMod) {
@@ -2933,7 +2933,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod) {
 //-------------------------------------------------------------------------- SFX
 
 tPtplayerSfx *ptplayerSfxCreateFromPath(const char *szPath, UBYTE isFast) {
-	return ptplayerSfxCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ), isFast);
+	return ptplayerSfxCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), isFast);
 }
 
 tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
@@ -3283,7 +3283,7 @@ UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
 }
 
 tPtplayerSamplePack *ptplayerSampleDataCreateFromPath(const char *szPath) {
-	return ptplayerSampleDataCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ));
+	return ptplayerSampleDataCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1));
 }
 
 tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)

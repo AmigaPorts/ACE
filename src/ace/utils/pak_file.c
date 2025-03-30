@@ -406,9 +406,9 @@ static UWORD pakFileGetFileIndex(const tPakFile *pPakFile, const char *szPath) {
 
 //------------------------------------------------------------------- PUBLIC FNS
 
-tPakFile *pakFileOpen(const char *szPath) {
+tPakFile *pakFileOpen(const char *szPath, UBYTE isUninterrupted) {
 	logBlockBegin("pakFileOpen(szPath: '%s')", szPath);
-	tFile *pMainFile = diskFileOpen(szPath, DISK_FILE_MODE_READ);
+	tFile *pMainFile = diskFileOpen(szPath, DISK_FILE_MODE_READ, isUninterrupted);
 	if(!pMainFile) {
 		logBlockEnd("pakFileOpen()");
 		return 0;
