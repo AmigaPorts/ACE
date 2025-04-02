@@ -92,6 +92,8 @@ void systemCheckStack(void);
  */
 UWORD systemGetVersion(void);
 
+UBYTE systemIsStartVolumeWritable(void);
+
 //---------------------------------------------------------------------- GLOBALS
 
 extern struct GfxBase *GfxBase;
