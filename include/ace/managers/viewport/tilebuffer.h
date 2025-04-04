@@ -158,6 +158,8 @@ typedef struct tTileBufferManager {
  * but other refreshing strategies can be used for better load balancing.
  *
  * @param pManager The tile manager to be processed.
+ *
+ * @see tileBufferSetTile()
  * @see tileBufferProcess()
  */
 void tileBufferQueueProcess(tTileBufferManager *pManager);
@@ -259,6 +261,8 @@ UBYTE tileBufferIsRectFullyOnBuffer(
  * @param uwX The X coordinate of tile, in tile-space.
  * @param uwY The Y coordinate of tile, in tile-space.
  * @param Index Index of tile to be placed on given position.
+ *
+ * @see tileBufferQueueProcess()
  */
 void tileBufferSetTile(
 	tTileBufferManager *pManager, UWORD uwX, UWORD uwY, tTileBufferTileIndex Index
