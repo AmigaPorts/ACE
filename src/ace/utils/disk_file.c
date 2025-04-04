@@ -39,17 +39,21 @@ static const tFileCallbacks s_sDiskFileCallbacks = {
 static void fileAccessEnable(void) {
 	systemUse();
 
-	// Needed only for KS1.3
+	// Blitter is needed for floppy drive access NOT only on KS1.3!
+	// Apparently, Aminer crashes on KS3.1 on trying to save the settings
+	// when blitter isn't released and also during in-gameplay loadings.
+	// TODO: Investigate if it's only needed for writes in >= v36,
+	/// and add isWrite param to decide on blitter release
 	// TODO: do only when reading from floppy
-	if(systemGetVersion() < 36) {
-		systemReleaseBlitterToOs();
-	}
+	// if(systemGetVersion() < 36) {
+	systemReleaseBlitterToOs();
+	// }
 }
 
 static void fileAccessDisable(void) {
-	if(systemGetVersion() < 36) {
-		systemGetBlitterFromOs();
-	}
+	// if(systemGetVersion() < 36) {
+	systemGetBlitterFromOs();
+	// }
 
 	systemUnuse();
 }
@@ -58,7 +62,6 @@ DISKFILE_PRIVATE void diskFileClose(void *pData) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	if(!pDiskFileData->isUninterrupted) {
-		systemUse();
 		fileAccessEnable();
 	}
 
@@ -74,7 +77,6 @@ DISKFILE_PRIVATE void diskFileClose(void *pData) {
 	fclose(pDiskFileData->pFileHandle);
 	memFree(pDiskFileData, sizeof(*pDiskFileData));
 	fileAccessDisable();
-	systemUnuse();
 }
 
 DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
@@ -101,7 +103,6 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 	if(ulSize && ulSize > DISK_FILE_BUFFER_SIZE) {
 		// if remaining data is bigger than buffer, read rest directly
 		if(!pDiskFileData->isUninterrupted) {
-			systemUse();
 			fileAccessEnable();
 		}
 		ULONG ulReadPartSize = fread(pDestBytes, ulSize, 1, pDiskFileData->pFileHandle);
@@ -111,7 +112,6 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 
 		if(!pDiskFileData->isUninterrupted) {
 			fileAccessDisable();
-			systemUnuse();
 		}
 	}
 
@@ -119,7 +119,6 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 		// if not, fill the buffer and read remaining data from buffer
 		if(pDiskFileData->uwBufferFill == pDiskFileData->uwBufferReadPos) {
 			if(!pDiskFileData->isUninterrupted) {
-				systemUse();
 				fileAccessEnable();
 			}
 
@@ -130,7 +129,6 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 
 			if(!pDiskFileData->isUninterrupted) {
 				fileAccessDisable();
-				systemUnuse();
 			}
 			pDiskFileData->uwBufferReadPos = 0;
 		}
@@ -165,7 +163,6 @@ DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize
 	}
 	else {
 		if(!pDiskFileData->isUninterrupted) {
-			systemUse();
 			fileAccessEnable();
 		}
 
@@ -190,7 +187,6 @@ DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize
 		if(!pDiskFileData->isUninterrupted) {
 			fflush(pDiskFileData->pFileHandle);
 			fileAccessDisable();
-			systemUnuse();
 		}
 	}
 	return ulWritten;
@@ -219,7 +215,6 @@ DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 	}
 
 	if(!pDiskFileData->isUninterrupted) {
-		systemUse();
 		fileAccessEnable();
 	}
 
@@ -238,7 +233,6 @@ DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode) {
 
 	if(!pDiskFileData->isUninterrupted) {
 		fileAccessDisable();
-		systemUnuse();
 	}
 
 	return ulResult;
@@ -248,7 +242,6 @@ DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	if(!pDiskFileData->isUninterrupted) {
-		systemUse();
 		fileAccessEnable();
 	}
 
@@ -257,7 +250,6 @@ DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData) {
 
 	if(!pDiskFileData->isUninterrupted) {
 		fileAccessDisable();
-		systemUnuse();
 	}
 
 	return ulResult;
@@ -272,7 +264,6 @@ DISKFILE_PRIVATE ULONG diskFileGetSize(void *pData) {
 	// So I ultimately do it using fseek.
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 	if(!pDiskFileData->isUninterrupted) {
-		systemUse();
 		fileAccessEnable();
 	}
 
@@ -283,7 +274,6 @@ DISKFILE_PRIVATE ULONG diskFileGetSize(void *pData) {
 
 	if(!pDiskFileData->isUninterrupted) {
 		fileAccessDisable();
-		systemUnuse();
 	}
 
 	return lSize;
@@ -293,7 +283,6 @@ DISKFILE_PRIVATE UBYTE diskFileIsEof(void *pData) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	if(!pDiskFileData->isUninterrupted) {
-		systemUse();
 		fileAccessEnable();
 	}
 
@@ -304,7 +293,6 @@ DISKFILE_PRIVATE UBYTE diskFileIsEof(void *pData) {
 
 	if(!pDiskFileData->isUninterrupted) {
 		fileAccessDisable();
-		systemUnuse();
 	}
 
 	return isEof;
@@ -314,7 +302,6 @@ DISKFILE_PRIVATE void diskFileFlush(void *pData) {
 	tDiskFileData *pDiskFileData = (tDiskFileData*)pData;
 
 	if(!pDiskFileData->isUninterrupted) {
-		systemUse();
 		fileAccessEnable();
 	}
 
@@ -322,7 +309,6 @@ DISKFILE_PRIVATE void diskFileFlush(void *pData) {
 
 	if(!pDiskFileData->isUninterrupted) {
 		fileAccessDisable();
-		systemUnuse();
 	}
 }
 
@@ -335,14 +321,12 @@ tFile *diskFileOpen(const char *szPath, tDiskFileMode eMode, UBYTE isUninterrupt
 	);
 	// TODO check if disk is read protected when szMode has 'a'/'r'/'x'
 	// TODO: disable buffering in a/w/x modes
-	systemUse();
 	fileAccessEnable();
 	tFile *pFile = 0;
 	FILE *pFileHandle = fopen(szPath, eMode == DISK_FILE_MODE_WRITE ? "wb" : "rb");
 	if(pFileHandle == 0) {
 		logWrite("ERR: Can't open file\n");
 		fileAccessDisable();
-		systemUnuse();
 	}
 	else {
 		tDiskFileData *pData = memAllocFast(sizeof(*pData));
@@ -361,7 +345,6 @@ tFile *diskFileOpen(const char *szPath, tDiskFileMode eMode, UBYTE isUninterrupt
 #endif
 		if(!pData->isUninterrupted) {
 			fileAccessDisable();
-			systemUnuse();
 		}
 	}
 	logBlockEnd("diskFileOpen()");
@@ -369,7 +352,6 @@ tFile *diskFileOpen(const char *szPath, tDiskFileMode eMode, UBYTE isUninterrupt
 }
 
 UBYTE diskFileExists(const char *szPath) {
-	systemUse();
 	fileAccessEnable();
 	UBYTE isExisting = 0;
 	FILE *pFileHandle = fopen(szPath, "rb");
@@ -378,25 +360,20 @@ UBYTE diskFileExists(const char *szPath) {
 		fclose(pFileHandle);
 	}
 	fileAccessDisable();
-	systemUnuse();
 
 	return isExisting;
 }
 
 UBYTE diskFileDelete(const char *szFilePath) {
-	systemUse();
 	fileAccessEnable();
 	UBYTE isSuccess = remove(szFilePath);
 	fileAccessDisable();
-	systemUnuse();
 	return isSuccess;
 }
 
 UBYTE diskFileMove(const char *szSource, const char *szDest) {
-	systemUse();
 	fileAccessEnable();
 	UBYTE isSuccess = rename(szSource, szDest);
 	fileAccessDisable();
-	systemUnuse();
 	return isSuccess;
 }
