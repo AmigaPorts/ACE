@@ -59,7 +59,6 @@ extern "C" {
 typedef struct tBob {
 	UBYTE *pFrameData;
 	UBYTE *pMaskData;
-	tUwCoordYX pOldPositions[2];
 	tUwCoordYX sPos;
 	UWORD uwWidth;
 	UWORD uwHeight;
@@ -76,6 +75,9 @@ typedef struct tBob {
 	ULONG _pSaveOffsets[2];
 #else
 	UBYTE *_pBufferDrawPtrs[2];
+#endif
+#if defined(BOB_WRAP_Y)
+	tUwCoordYX _pOldPositions[2];
 #endif
 } tBob;
 
@@ -245,6 +247,10 @@ void bobEnd(void);
 
 void bobDiscardUndraw(void);
 
+
+void bobOnBegin(void);
+
+void bobOnEnd(void);
 
 #ifdef __cplusplus
 }

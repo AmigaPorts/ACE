@@ -92,9 +92,10 @@ static void bobDeallocBuffers(void) {
 	systemUnuse();
 }
 
-static ULONG bobCalculateBitplaneOffset(const tBob *pBob, tBitMap *pDestination) {
+// TODO: replace pDestination->BytesPerRow with hardcode + validaiton on bobCreate()
+static ULONG bobCalculateBitplaneOffset(const tBob *pBob, UWORD uwDestBytesPerRow) {
 	ULONG ulBitplaneOffset = (
-		pDestination->BytesPerRow * (
+		uwDestBytesPerRow * (
 #if defined(BOB_WRAP_Y)
 			SCROLLBUFFER_HEIGHT_MODULO(pBob->sPos.uwY, s_uwAvailHeight)
 #else
@@ -222,10 +223,12 @@ void bobInit(
 
 	pBob->sPos.uwX = uwX;
 	pBob->sPos.uwY = uwY;
+#if defined(BOB_WRAP_Y)
 	pBob->pOldPositions[0].uwX = uwX;
 	pBob->pOldPositions[0].uwY = uwY;
 	pBob->pOldPositions[1].uwX = uwX;
 	pBob->pOldPositions[1].uwY = uwY;
+#endif
 
 #if defined(ACE_BOB_PRISTINE_BUFFER)
 	pBob->_pSaveOffsets[0] = 0;
@@ -305,7 +308,7 @@ UBYTE bobProcessNext(void) {
 		++s_ubBobsSaved;
 
 		// TODO: for BOB_WRAP_Y and ACE_DEBUG check if bob blit fits s_uwAvailHeight
-		ULONG ulSrcOffs = bobCalculateBitplaneOffset(pBob, pQueue->pDst);
+		ULONG ulSrcOffs = bobCalculateBitplaneOffset(pBob, pQueue->pDst->BytesPerRow);
 		UBYTE *pA = &pQueue->pDst->Planes[0][ulSrcOffs];
 		pBob->_pBufferDrawPtrs[s_ubBufferCurr] = pA;
 
@@ -354,6 +357,8 @@ UBYTE bobProcessNext(void) {
 		WORD wSrcModulo = (pBob->uwWidth >> 3) - (uwBlitWords<<1);
 		UWORD uwBltCon1 = ubDstOffs << BSHIFTSHIFT;
 		UWORD uwBltCon0;
+
+		// TODO: move check to separate fn, add BOB_MASK_ALWAYS and _NEVER optimizations
 		if(pBob->pMaskData) {
 			uwBltCon0 = uwBltCon1 | USEA|USEB|USEC|USED | MINTERM_COOKIE;
 		}
@@ -366,7 +371,7 @@ UBYTE bobProcessNext(void) {
 		WORD wDstModulo = s_uwDestByteWidth - (uwBlitWords<<1);
 		UBYTE *pB = pBob->pFrameData;
 #if defined(ACE_BOB_PRISTINE_BUFFER)
-		ULONG ulDestinationOffset = bobCalculateBitplaneOffset(pBob, pQueue->pDst);
+		ULONG ulDestinationOffset = bobCalculateBitplaneOffset(pBob, pQueue->pDst->BytesPerRow);
 		UBYTE *pCD = &pQueue->pDst->Planes[0][ulDestinationOffset];
 		pBob->_pSaveOffsets[s_ubBufferCurr] = ulDestinationOffset;
 #else
@@ -408,10 +413,10 @@ UBYTE bobProcessNext(void) {
 			g_pCustom->bltdpt = (APTR)pCD;
 			g_pCustom->bltsize =((pBob->_uwInterleavedHeight - uwInterleavedPartHeight) << HSIZEBITS) | uwBlitWords;
 		}
+		pBob->pOldPositions[s_ubBufferCurr].ulYX = pPos->ulYX;
 #else
 		g_pCustom->bltsize = uwBlitSize;
 #endif
-		pBob->pOldPositions[s_ubBufferCurr].ulYX = pPos->ulYX;
 		return 1;
 	}
 
@@ -450,19 +455,23 @@ void bobBegin(tBitMap *pBuffer) {
 #if defined(BOB_WRAP_Y)
 		if(uwPartHeight >= pBob->uwHeight) {
 			g_pCustom->bltsize = pBob->_uwBlitSize;
+			bobOnBegin();
 		}
 		else {
 			UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
 			UWORD uwInterleavedPartHeight = uwPartHeight * s_ubBpp;
 			g_pCustom->bltsize = (uwInterleavedPartHeight << HSIZEBITS) | uwBlitWords;
 			ulBitplaneOffset = pBob->pOldPositions[s_ubBufferCurr].uwX / 8;
+			bobOnBegin();
 			blitWait();
 			g_pCustom->bltapt = &s_pPristineBuffer->Planes[0][ulBitplaneOffset];
 			g_pCustom->bltdpt = &pQueue->pDst->Planes[0][ulBitplaneOffset];
 			g_pCustom->bltsize =((pBob->_uwInterleavedHeight - uwInterleavedPartHeight) << HSIZEBITS) | uwBlitWords;
+			bobOnBegin();
 		}
 #else
 		g_pCustom->bltsize = pBob->_uwBlitSize;
+		bobOnBegin();
 #endif
 	}
 #else
@@ -495,18 +504,22 @@ void bobBegin(tBitMap *pBuffer) {
 #if defined(BOB_WRAP_Y)
 			if(uwPartHeight >= pBob->uwHeight) {
 				g_pCustom->bltsize = pBob->_uwBlitSize;
+				bobOnBegin();
 			}
 			else {
 				UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
 				UWORD uwInterleavedPartHeight = uwPartHeight * s_ubBpp;
 				g_pCustom->bltsize =(uwInterleavedPartHeight << HSIZEBITS) | uwBlitWords;
+				bobOnBegin();
 				pD = &pQueue->pDst->Planes[0][pBob->pOldPositions[s_ubBufferCurr].uwX / 8];
 				blitWait();
 				g_pCustom->bltdpt = pD;
 				g_pCustom->bltsize =((pBob->_uwInterleavedHeight - uwInterleavedPartHeight) << HSIZEBITS) | uwBlitWords;
+				bobOnBegin();
 			}
 #else
 			g_pCustom->bltsize = pBob->_uwBlitSize;
+			bobOnBegin();
 #endif
 
 #ifdef GAME_DEBUG
@@ -541,6 +554,7 @@ void bobPushingDone(void) {
 void bobEnd(void) {
 	bobPushingDone();
 	do {
+		bobOnEnd();
 	} while(bobProcessNext());
 	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_ubBobsPushed;
 	s_ubBufferCurr = !s_ubBufferCurr;
