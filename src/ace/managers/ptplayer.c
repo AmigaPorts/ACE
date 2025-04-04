@@ -1268,7 +1268,7 @@ static void mt_playvoice(
 
 	// Get sample start address from cmd/note - BA is sample number
 	UWORD uwSampleIdx = ( // A...B... -> ......BA
-		((pVoice->uwNote & 0xF000) >> 4) | (pVoice->ubCmdHi & 0xF0)
+		((pVoice->uwNote & 0xF000) >> 4) | pVoice->ubCmdHi
 	) >> 4;
 	if(uwSampleIdx) {
 		// Samples are internally zero-based, in file 1-based
