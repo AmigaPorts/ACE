@@ -564,3 +564,16 @@ void bobDiscardUndraw(void) {
 	s_pQueues[0].ubUndrawCount = 0;
 	s_pQueues[1].ubUndrawCount = 0;
 }
+
+void bobForceUndraw(tBob *pBob) {
+	tBobQueue *pQueue1 = &s_pQueues[0];
+	pQueue1->pBobs[pQueue1->ubUndrawCount++] = pBob;
+	tBobQueue *pQueue2 = &s_pQueues[1];
+	pQueue2->pBobs[pQueue2->ubUndrawCount++] = pBob;
+
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	ULONG ulDestinationOffset = bobCalculateBitplaneOffset(pBob, pQueue1->pDst->BytesPerRow);
+	pBob->_pSaveOffsets[0] = ulDestinationOffset;
+	pBob->_pSaveOffsets[1] = ulDestinationOffset;
+#endif
+}

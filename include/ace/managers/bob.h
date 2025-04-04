@@ -247,6 +247,7 @@ void bobEnd(void);
 
 void bobDiscardUndraw(void);
 
+void bobForceUndraw(tBob *pBob);
 
 void bobOnBegin(void);
 
