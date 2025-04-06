@@ -20,6 +20,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Loading images and displaying background](programming/loading_images.md)
 1. [Handling blitted object undraw](programming/blit_undraw.md)
 1. [Blitting with masks](programming/blits_with_mask.md)
+1. [Using BOBs (Blitter Objects)](programming/using_bobs.md)
 1. Fonts
 1. [Palettes](programming/palette.md)
 1. Optimizing blits
