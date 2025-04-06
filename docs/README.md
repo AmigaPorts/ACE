@@ -21,10 +21,10 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Handling blitted object undraw](programming/blit_undraw.md)
 1. [Blitting with masks](programming/blits_with_mask.md)
 1. [Using BOBs (Blitter Objects)](programming/using_bobs.md)
-1. Fonts
+1. [Working with Fonts](programming/fonts.md)
 1. [Palettes](programming/palette.md)
 1. Optimizing blits
-1. Audio
+1. [Working with Audio](programming/audio.md)
 1. Debugging memory leaks
 1. Organizing your project
 1. Copperlists
@@ -40,9 +40,9 @@ TBD, will be doxy-generated or done as wiki pages, idk yet.
 
 ## Conversion tools
 
-- Pallettes
+- [Palettes](tools/palette_conv.md)
 - [Bitmaps](tools/bitmap_conv.md)
-- Fonts
+- [Fonts](programming/fonts.md)
 
 ## Contributing
 
