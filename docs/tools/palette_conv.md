@@ -44,8 +44,7 @@ ACE is designed for the Amiga OCS/ECS hardware, which uses 12-bit color (4 bits 
 When creating artwork for your game, it's recommended to:
 
 1. Use colors that work within Amiga's 12-bit color limitations (4 bits per channel)
-2. Limit your palette to the number of colors supported by your chosen bit depth
-3. Consider the Extra-Half-Bright (EHB) mode if you need more colors with limited bitplanes
+1. Limit your palette to the number of colors supported by your chosen bit depth
 
 ## CMake Integration
 
