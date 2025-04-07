@@ -61,3 +61,13 @@ void gameGsCreate(void) {
 ```
 
 
+### Additional Palette Functions
+
+ACE provides several utility functions for working with palettes:
+
+- `paletteLoadFromPath()` - Loads a palette from a file
+- `paletteLoadFromFd()` - Loads a palette from an already open file
+- `paletteSave()` - Saves a palette to a file
+- `paletteDim()` - Dims a palette to a specified brightness level (for fades)
+- `paletteColorDim()` - Dims a single color (0-15 brightness, 15=no dim)
+
