@@ -59,33 +59,6 @@ convertPalette(
 ```
 
 This will automatically convert the palette during the build process and add the resulting file as a dependency to your target.
-
-## Using Palettes in Code
-
-Once you have converted your palette to the ACE format, you can load and use it in your code:
-
-```c
-// Define storage for your palette (for 32 colors)
-#define GAME_COLOR_COUNT 32
-static UWORD s_pPalette[GAME_COLOR_COUNT];
-
-// Load palette from converted file
-paletteLoadFromPath("data/palette.plt", s_pPalette, GAME_COLOR_COUNT);
-
-// Apply palette to a viewport
-memcpy(s_pViewPort->pPalette, s_pPalette, sizeof(UWORD) * GAME_COLOR_COUNT);
-```
-
-### Additional Palette Functions
-
-ACE provides several utility functions for working with palettes:
-
-- `paletteLoadFromPath()` - Loads a palette from a file
-- `paletteLoadFromFd()` - Loads a palette from an already open file
-- `paletteSave()` - Saves a palette to a file
-- `paletteDim()` - Dims a palette to a specified brightness level (for fades)
-- `paletteColorDim()` - Dims a single color (0-15 brightness, 15=no dim)
-
 ## Using Palettes with Bitmap Conversion
 
 When converting bitmaps, you can specify the palette to use:
@@ -101,6 +74,8 @@ convertBitmaps(
 ```
 
 This ensures that the bitmap uses the correct palette colors during conversion.
+
+
 
 ## Troubleshooting
 
