@@ -42,7 +42,8 @@ TBD, will be doxy-generated or done as wiki pages, idk yet.
 
 - [Palettes](tools/palette_conv.md)
 - [Bitmaps](tools/bitmap_conv.md)
-- [Fonts](programming/fonts.md)
+- [Fonts](tools/font_conv.md)
+- [Audio](tools/audio_conv.md)
 
 ## Contributing
 
