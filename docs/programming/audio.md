@@ -157,8 +157,9 @@ ptplayerDestroy();
    - Sample rate calculations are different for PAL vs. NTSC
 
 3. **Channel Management**
-   - By default, PTPlayer prioritizes sound effects over music
-   - You can reserve channels for music to prevent effects from interrupting
+   - By default, PTPlayer prioritizes sound effects over music - if you play the sound effect on a channel which is used by the .mod file, some music notes won't play.
+   - Because of that, it is strongly recommended to use PTPlayer to only play music on some channels and use a software audio mixer to play back the samples in remaining channel(s).
+   - Using `ptplayerSetChannelsForPlayer()` will limit ptplayer channel management to only few channels, leaving others intact for e.g. audio mixer to use.
    - Higher priority sound effects will replace lower priority ones if needed
 
 4. **Performance**
