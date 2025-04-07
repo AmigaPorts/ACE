@@ -6,76 +6,12 @@ ACE provides audio capabilities through two main subsystems: a basic audio manag
 
 ACE offers two audio subsystems:
 
-1. **Basic Audio Manager** - Simple, low-level sample player
-   - Provides basic functionality for playing raw audio samples
-   - Supports up to 4 channels (Amiga hardware limitation)
-   - Marked as deprecated in favor of the PTPlayer module
-
-2. **PTPlayer Module** - Full-featured ProTracker replayer
+1. **PTPlayer Module** - Full-featured ProTracker replayer
    - Supports MOD music files (31-sample format)
    - Handles prioritized sound effects playback
    - Offers channel management (reserving channels for music vs. effects)
    - Controls volume at multiple levels
    - **Recommended for most audio needs**
-
-## Converting Audio for ACE
-
-Before using audio in your application, you'll need to convert your audio files using the `audio_conv` tool.
-
-### Command Line Usage
-
-```
-audio_conv input.wav [options]
-```
-
-### Options
-- `-o output.sfx` - Specify output path (default changes extension to .sfx)
-- `-n` - Normalize audio amplitude
-- `-d N` - Divide amplitude by N
-- `-cd N` - Check that amplitude divided by N fits in range
-- `-strict` - Treat warnings as errors (recommended)
-- `-fpt` - Enforce PTPlayer-friendly mode (adds empty first word if missing)
-- `-fpad N` - Force specific byte padding
-
-### CMake Integration
-
-You can automate audio conversion in your build process:
-
-```cmake
-convertAudio(
-  TARGET your_target
-  SOURCE path/to/input.wav
-  DESTINATION path/to/output.sfx
-  PTPLAYER        # Enable PTPlayer-friendly mode
-  NORMALIZE       # Normalize amplitude
-  STRICT          # Treat warnings as errors
-)
-```
-
-## Using the Basic Audio Manager
-
-The basic audio manager provides simple functions for playing samples:
-
-```c
-// Initialize audio system
-audioCreate();
-
-// Load a sample (8000Hz sample rate)
-tSample *pSample = sampleCreateFromPath("sample.raw", 8000);
-
-// Play sample on channel 0 at maximum volume, play once
-audioPlay(AUDIO_CHANNEL_0, pSample, AUDIO_VOLUME_MAX, 1);
-
-// Play sample in a loop
-audioPlay(AUDIO_CHANNEL_1, pSample, AUDIO_VOLUME_MAX, AUDIO_REPLAY_CONTINUOUS);
-
-// Stop playback
-audioStop(AUDIO_CHANNEL_0);
-
-// Clean up
-sampleDestroy(pSample);
-audioDestroy();
-```
 
 ## Using the PTPlayer Module (Recommended)
 
