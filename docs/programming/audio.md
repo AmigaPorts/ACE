@@ -163,8 +163,10 @@ ptplayerDestroy();
    - Higher priority sound effects will replace lower priority ones if needed
 
 4. **Performance**
-   - Sound playback happens via interrupts and doesn't tax the CPU significantly
-   - When using PTPlayer, be mindful of how many channels you reserve for music vs. effects
+Performance will vary depending on following:
+
+- Number of channels used in the song
+- Amount/kinds of commands stored in the song.
 
 ## Advanced Features
 
