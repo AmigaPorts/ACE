@@ -150,7 +150,7 @@ ptplayerDestroy();
 
 1. **Chip Memory Requirements**
    - Samples must be stored in Amiga's chip memory to be played by the hardware
-   - PTPlayer sound effects should have an empty first word for stability
+   - PTPlayer sound effects should have an empty first word to prevent audio glitches after playback
 
 2. **Sound Quality**
    - Amiga has 8-bit audio channels (4 channels total)
