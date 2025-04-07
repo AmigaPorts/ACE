@@ -76,6 +76,8 @@ paletteLoadFromPath("data/palette.plt", s_pPalette, GAME_COLOR_COUNT);
 memcpy(s_pViewPort->pPalette, s_pPalette, sizeof(UWORD) * GAME_COLOR_COUNT);
 ```
 
+You can also load the palette directly to your viewport's pPalette field if you just want to set the colors once without any fancy fades or other palette effects.
+
 ### Additional Palette Functions
 
 ACE provides several utility functions for working with palettes:
