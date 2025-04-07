@@ -62,7 +62,8 @@ bobReallocateBuffers();
 // Begin the BOB drawing cycle - undraws previous BOBs
 bobBegin();
 
-// Update BOB positions
+// Update BOB positions 
+// You can safely modify the `sPos` field to update a BOB's position. Other fields should only be changed using the provided functions.
 sBob1.sPos.uwX = newX;
 sBob1.sPos.uwY = newY;
 
@@ -130,20 +131,3 @@ bobManagerDestroy();
 
 5. **First Frame Handling**:
    - Call `bobDiscardUndraw()` on the first frame to avoid undrawing BOBs that weren't previously drawn.
-
-## The BOB Structure
-
-```c
-typedef struct tBob {
-    UBYTE *pFrameData;      // Current frame bitmap data
-    UBYTE *pMaskData;       // Transparency mask data
-    tUwCoordYX pOldPositions[2]; // Previous positions for undrawing
-    tUwCoordYX sPos;        // Current position (x,y)
-    UWORD uwWidth;          // BOB width
-    UWORD uwHeight;         // BOB height
-    UBYTE isUndrawRequired; // If 1, background is preserved and restored
-    // Private fields follow...
-} tBob;
-```
-
-You can safely modify the `sPos` field to update a BOB's position. Other fields should only be changed using the provided functions.
