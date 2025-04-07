@@ -10,7 +10,7 @@ The palette_conv tool supports the following formats:
 - `.gpl` - GIMP Palette format (text)
 - `.act` - Adobe Color Table format
 - `.pal` - ProMotion NG palette format
-- `.png` - Image preview of the palette
+- `.png` - Image preview of the palette - only for output
 
 ## Command Line Usage
 
