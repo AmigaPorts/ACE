@@ -21,6 +21,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Handling blitted object undraw](programming/blit_undraw.md)
 1. [Blitting with masks](programming/blits_with_mask.md)
 1. Fonts
+1. [Palettes](programming/palette.md)
 1. Optimizing blits
 1. Audio
 1. Debugging memory leaks
@@ -30,6 +31,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Sprites](programming/sprites.md)
 1. [Working with and without OS](programming/os.md)
 1. DMA usage
+2. [Multi-directional large tilemaps scrolling with TileBuffer](programming/tilebuffer.md)
 
 ## Reference manual
 

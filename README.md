@@ -48,6 +48,7 @@ In alphabetical order:
 - [ami-invaders](https://github.com/approxit/amiga-invaders)
 - [AMIner](https://github.com/Last-Minute-Creations/AMIner)
 - [Atarenium Falcon](https://github.com/Last-Minute-Creations/AtareniumFalcon)
+- [Battle Squadron 2](https://github.com/bitwise-brains/AGJ2024_BS2)
 - CastleHack
 - [Chaos Arena](https://github.com/Last-Minute-Creations/chaosArena)
 - [Flappy Ace](https://github.com/NZjeux26/FlappyAceWin)

@@ -5,9 +5,7 @@
 #include <ace/utils/sprite.h>
 #include <ace/utils/custom.h>
 
-static const tHardwareSpriteHeader CHIP s_uBlankSprite;
-
-tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask) {
+tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask, ULONG pBlankSprite[1]) {
 	// TODO: move to sprite manager?
 	UBYTE ubCmdCount = 0;
 	tSpriteMask eMask = eSpriteMask;
@@ -21,7 +19,7 @@ tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask)
 	}
 
 	// Set instructions
-	ULONG ulBlank = s_uBlankSprite.ulRaw;
+	ULONG ulBlank = (ULONG)pBlankSprite;
 	tCopBlock *pBlock = copBlockCreate(pList, ubCmdCount, 0, 0);
 	eMask = eSpriteMask;
 	for(UBYTE i = 0; i < HARDWARE_SPRITE_CHANNEL_COUNT; ++i) {
@@ -35,11 +33,11 @@ tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask)
 }
 
 UBYTE spriteDisableInCopRawMode(
-	tCopList *pList, tSpriteMask eSpriteMask, UWORD uwCmdOffs
+	tCopList *pList, tSpriteMask eSpriteMask, UWORD uwCmdOffs, ULONG pBlankSprite[1]
 ) {
 	// TODO: move to sprite
 	UBYTE ubCmdCount = 0;
-	ULONG ulBlank = s_uBlankSprite.ulRaw;
+	ULONG ulBlank = (ULONG)pBlankSprite;
 
 	// No WAIT - could be done earlier by other stuff
 	tCopMoveCmd *pCmd = &pList->pBackBfr->pList[uwCmdOffs].sMove;

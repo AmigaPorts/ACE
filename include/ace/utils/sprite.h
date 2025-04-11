@@ -26,10 +26,11 @@ extern "C" {
  * @param pList Copperlist to be edited.
  * @param eSpriteMask Determines sprites to be disabled.
  * @param uwCmdOffs Start position on raw copperlist.
+ * @param pBlankSprite 2 words of CHIP memory (the blank sprite control words)
  * @return Number of MOVE instructions added.
  */
 UBYTE spriteDisableInCopRawMode(
-	tCopList *pList, tSpriteMask eSpriteMask, UWORD uwCmdOffs
+	tCopList *pList, tSpriteMask eSpriteMask, UWORD uwCmdOffs, ULONG pBlankSprite[1]
 );
 
 /**
@@ -38,9 +39,10 @@ UBYTE spriteDisableInCopRawMode(
  *
  *  @param pList Copperlist to be edited.
  *  @param eSpriteMask Determines sprites to be disabled.
+ *  @param pBlankSprite 2 words of CHIP memory (the blank sprite control words)
  *
  *  @return Pointer to newly created copBlock.
  */
-tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask);
+tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask, ULONG pBlankSprite[1]);
 
 #endif // _ACE_UTILS_SPRITE_H_
