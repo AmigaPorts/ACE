@@ -4,47 +4,50 @@ The palette_conv tool allows you to convert between various palette formats for 
 
 ## Supported Palette Formats
 
-The palette_conv tool supports the following formats:
+At the time of writing, The `palette_conv` tool supports following formats:
 
 - `.plt` - ACE's native palette format (binary, optimized for Amiga OCS)
-- `.gpl` - GIMP Palette format (text)
+- `.gpl` - GIMP Palette format (text) - full spec can be found at https://developer.gimp.org/core/standards/gpl/
 - `.act` - Adobe Color Table format
 - `.pal` - ProMotion NG palette format
-- `.png` - Image preview of the palette - only for output
+- `.png` - Image preview of the palette - supported only as output format
+
+### Extracting .gpl palette from from Aseprite
+
+You might have to apply addon [Aseprite Script: Amiga OCS/ECS Color Palette Mixer](https://prismaticrealms.itch.io/aseprite-script-amiga-ocsecs-color-palette-mixer) to align png and palette to amiga capacity/rgb colors.
+
+You need to add an addon just process to this installation : https://github.com/behreajj/AsepriteAddons/
+
+Then go to `File > Script > dialogs > palette > gplExport` and put your `.tpl` into your `res` folder.
+
+NOTE: in asesprite you can also save directely in `.act` format.
+
+### Extracting .gpl palette from from GIMP
+
+_To be completed_
 
 ## Command Line Usage
 
-```
-palette_conv inPath.ext [outPath.ext]
-```
+To convert palette.gpl to palette.plt, use following command:
 
-Where:
-- `inPath.ext` - Path to the input palette file with its extension
-- `outPath.ext` - Path to the output palette file with its extension
-
-If no output path is provided, it defaults to converting to `.gpl` format.
-
-### Example Usage
-
-```
-# Converting from GIMP palette to ACE format
+```shell
 palette_conv palette.gpl palette.plt
-
-# Converting from ACE format to Adobe Color Table
-palette_conv palette.plt palette.act
-
-# Creating a PNG preview of a palette
-palette_conv palette.gpl preview.png
 ```
+
+If no output path is provided, it defaults to converting to `.gpl` format with same file name.
+
+> [!NOTE]
+> You can also generate an image with palette preview using `palette_conv palette.gpl preview.png`
 
 ## Color Considerations
 
-ACE is designed for the Amiga OCS/ECS hardware, which uses 12-bit color (4 bits per RGB channel). When converting to ACE's native `.plt` format, the tool ensures colors are compatible with OCS limitations.
+ACE is primarily designed for the Amiga OCS/ECS hardware, which uses 12-bit color (4 bits per RGB channel).
+When converting to ACE's native `.plt` format, the tool ensures that colors are compatible with OCS limitations, throwing errors when that's not the case.
 
-When creating artwork for your game, it's recommended to:
+When creating artwork for your game, you have to:
 
-1. Use colors that work within Amiga's 12-bit color limitations (4 bits per channel)
-1. Limit your palette to the number of colors supported by your chosen bit depth
+- Use colors that work within Amiga's 12-bit color limitations (4 bits per channel), e.g. hex code `#112233` but not `#123456`
+- Limit your palette to the number of colors supported by your chosen bit depth
 
 ## CMake Integration
 
@@ -53,42 +56,9 @@ You can automate palette conversion in your build process using the `convertPale
 ```cmake
 convertPalette(
   ${TARGET_NAME}          # Your target binary
-  ${RES_DIR}/palette.gpl  # Source palette file 
+  ${RES_DIR}/palette.gpl  # Source palette file
   ${DATA_DIR}/palette.plt # Destination palette file
 )
 ```
 
 This will automatically convert the palette during the build process and add the resulting file as a dependency to your target.
-## Using Palettes with Bitmap Conversion
-
-When converting bitmaps, you can specify the palette to use:
-
-```cmake
-convertBitmaps(
-  TARGET ${TARGET_NAME}
-  PALETTE ${RES_DIR}/palette.gpl
-  INTERLEAVED
-  SOURCES ${RES_DIR}/image.png
-  DESTINATIONS ${DATA_DIR}/image.bm
-)
-```
-
-This ensures that the bitmap uses the correct palette colors during conversion.
-
-
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Error: "Invalid input path or palette is empty"**  
-   Verify that the input palette file exists and is a valid palette file.
-
-2. **Error: "Input and output extensions are the same"**  
-   You must specify different formats for input and output.
-
-3. **Error: "Unsupported output extension"**  
-   Check that you're using one of the supported extensions (plt, gpl, act, pal, png).
-
-4. **Colors look different on Amiga**  
-   Remember that Amiga uses 12-bit color (4 bits per channel). The conversion tool will adjust colors to fit this limitation.
