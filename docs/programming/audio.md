@@ -1,23 +1,29 @@
 # Working with Audio in ACE
 
-ACE provides audio capabilities through two main subsystems: a basic audio manager and a more advanced ProTracker player (PTPlayer). This document explains how to use these systems in your ACE applications.
+ACE provides audio capabilities through integrated PTPlayer by Frank Wille rewritten to C for better integration with ACE features.
+The basic capabilities are:
 
-## Audio System Overview
+- MOD music playback (31-sample format)
+- Handling prioritized sound effects playback
+- Offers channel management (reserving channels for music vs. effects)
+- 64-step volume control
+- Custom callback for song end, e.g. for playlists or adaptative music
 
-ACE offers two audio subsystems:
+You can also combine it with 3rd party audio mixers for squeezing out more out of the audio playback.
 
-1. **PTPlayer Module** - Full-featured ProTracker replayer
-   - Supports MOD music files (31-sample format)
-   - Handles prioritized sound effects playback
-   - Offers channel management (reserving channels for music vs. effects)
-   - Controls volume at multiple levels
-   - **Recommended for most audio needs**
+> [!NOTE]
+> Using `ptplayerSetChannelsForPlayer()` will limit ptplayer channel management to only few channels, leaving others intact for e.g. audio mixer to use.
 
-## Using the PTPlayer Module (Recommended)
+## Amiga-Specific Considerations
 
-The PTPlayer module provides more advanced features:
+- PTPlayer must store music samples as well as sound effects in Amiga's CHIP memory.
+- PTPlayer sound effects should have an empty first word to prevent audio glitches after playback - `audio_conv` can ensure that for you
+- Amiga has 8-bit audio channels, totaling to 4 channels, two bound to left channel, two bound to the right one.
+- It's quite common to games to ignore the stereo separation and treat them all as mono, leaving to the user to ensure such playback.
 
-### Initialization and Configuration
+## Initialization and Configuration
+
+In your main or gamestate create function, do the following:
 
 ```c
 // Initialize (1 = PAL mode, 0 = NTSC)
@@ -30,84 +36,81 @@ ptplayerSetMusicChannelMask(0b0011);  // Reserves channels 0 and 1 for music
 ptplayerSetMasterVolume(48);  // Range is 0-64
 
 // Optional: Configure song repeat behavior
-ptplayerConfigureSongRepeat(1, myCallbackFunction);
+ptplayerConfigureSongRepeat(1, onSongEnd);
 ```
 
-### Playing MOD Music
+To play the music in your game, in your main or gamestate create function:
 
 ```c
 // Load a MOD file
 tPtplayerMod *pMod = ptplayerModCreateFromPath("music.mod");
 
-// Start playback (NULL for internal samples, 0 for start position)
+// Start playback (2nd parameter is NULL to use samples from inside the MOD file, set start position to 0)
 ptplayerLoadMod(pMod, NULL, 0);
 
 // Enable music playback
 ptplayerEnableMusic(1);
+```
 
-// Later, stop music
-ptplayerEnableMusic(0);
+While in the game loop, you might want to:
 
-// When completely done
+- change the music by calling `ptplayerLoadMod()` with different `pMod`,
+- change the volume with `ptplayerSetMasterVolume()`
+- enable/disable music temporarily with `ptplayerEnableMusic()`
+
+At the end of the gamestage or the game itself, do the following:
+
+```c
 ptplayerStop();
 ptplayerModDestroy(pMod);
-```
 
-### Playing Sound Effects
-
-```c
-// Load a sound effect
-tPtplayerSfx *pSfx = ptplayerSfxCreateFromPath("explosion.sfx", 0);
-
-// Play the effect:
-// - on any available channel (PTPLAYER_SFX_CHANNEL_ANY)
-// - at maximum volume (PTPLAYER_VOLUME_MAX)
-// - with priority 10
-ptplayerSfxPlay(pSfx, PTPLAYER_SFX_CHANNEL_ANY, PTPLAYER_VOLUME_MAX, 10);
-
-// Play a looped effect on channel 3
-ptplayerSfxPlayLooped(pSfx, 3, PTPLAYER_VOLUME_MAX);
-
-// Stop a looped effect
-ptplayerSfxStopOnChannel(3);
-
-// Clean up
-ptplayerSfxDestroy(pSfx);
-```
-
-### Cleanup
-
-```c
 // When done with all audio
 ptplayerDestroy();
 ```
 
-## Amiga-Specific Considerations
-
-1. **Chip Memory Requirements**
-   - Samples must be stored in Amiga's chip memory to be played by the hardware
-   - PTPlayer sound effects should have an empty first word to prevent audio glitches after playback
-
-2. **Sound Quality**
-   - Amiga has 8-bit audio channels (4 channels total)
-   - Sample rate calculations are different for PAL vs. NTSC
-
-3. **Channel Management**
-   - By default, PTPlayer prioritizes sound effects over music - if you play the sound effect on a channel which is used by the .mod file, some music notes won't play.
-   - Because of that, it is strongly recommended to use PTPlayer to only play music on some channels and use a software audio mixer to play back the samples in remaining channel(s).
-   - Using `ptplayerSetChannelsForPlayer()` will limit ptplayer channel management to only few channels, leaving others intact for e.g. audio mixer to use.
-   - Higher priority sound effects will replace lower priority ones if needed
-
-4. **Performance**
-Performance will vary depending on following:
+Playback performance will vary depending on:
 
 - Number of channels used in the song
-- Amount/kinds of commands stored in the song.
+- Amount/kinds of ProTracker commands stored in the song.
+
+## Playing Sound Effects
+
+To load a sound effect, be sure to have a .sfx file generated by [`audio_conv`](../tools/audio_conv.md) tool.
+
+Manage the sound effect by calling:
+
+```c
+tPtplayerSfx *pSfx = ptplayerSfxCreateFromPath("explosion.sfx", 0);
+
+// When done with the sound effect, after your game loop ends:
+ptplayerSfxDestroy(pSfx);
+```
+
+To play the sound effect:
+
+```c
+ptplayerSfxPlay(pSfx, PTPLAYER_SFX_CHANNEL_ANY, PTPLAYER_VOLUME_MAX, 10);
+```
+
+> [!NOTE]
+> The SFX volume takes into account the volume set by `ptplayerSetMasterVolume()`.
+> Setting the sfx volume to half of the range (`32`) with master volume set to `48` will scale it accordingly to `24`.
+
+You can also set the specific channel, as well as set the sound effect priority.
+When using `PTPLAYER_SFX_CHANNEL_ANY`, PTPlayer will use any free channel, if possible.
+
+Higher priority sound effects will replace lower priority ones if needed.
+
+> [!NOTE]
+> By default, PTPlayer prioritizes sound effects over music - if you play the sound effect on a channel which is used by the .mod file, some music notes won't play.
+> Because of that, it is strongly recommended to use PTPlayer to only play music on some channels and use a software audio mixer to play back the samples in remaining channel(s)
+
+You can also stop the sound effects playing on given channel by calling `ptplayerSfxStopOnChannel()`.
 
 ## Advanced Features
 
-- **MOD E8 Command**: PTPlayer supports Protracker's E8 command for synchronizing game events with music. Use `ptplayerGetE8()` to retrieve the last E8 value.
-
-- **Sample Packs**: You can separate MOD files from their sample data using sample packs to save memory when using multiple songs with shared samples.
-
-- **Sample Volume Control**: You can adjust individual sample volumes with `ptplayerSetSampleVolume()` even while music is playing.
+- PTPlayer supports ProTracker's `E8` command for synchronizing game events with music.
+  Use `ptplayerGetE8()` to retrieve the last E8 value.
+- You can use `mod_tool` to separate MOD files from their sample data using sample packs to save memory when using multiple songs with shared samples.
+  Use `ptplayerSampleDataCreateFromPath()` to load the sample pack and pass it in 2nd parameter of `ptplayerLoadMod()`.
+- You can adjust individual music sample volumes with `ptplayerSetSampleVolume()` even when music is playing.
