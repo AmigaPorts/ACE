@@ -1,6 +1,6 @@
 # Palette Conversion Tool
 
-The palette_conv tool allows you to convert between various palette formats for use with the ACE engine. This document explains how to use the palette_conv tool and how to integrate palette conversion into your build process.
+The palette_conv tool allows you to convert between various palette formats for use with the ACE engine.
 
 ## Supported Palette Formats
 
