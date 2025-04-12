@@ -1,24 +1,54 @@
-# Working with BOBs (Blitter Objects)
+# Working with BOBs (Blitter OBjects)
 
-ACE provides a powerful system for managing and animating 2D sprites using the Amiga's hardware blitter through its BOB (Blitter OBject) system. This document explains how to use BOBs effectively in your ACE applications.
+ACE provides a powerful system for managing and animating 2D sprites using the Amiga's hardware blitter through its BOB (Blitter OBject) system.
 
-## Setting Up Your Display
+BOBs are 2D graphic elements that can be efficiently moved around the screen using the Amiga's hardware blitter.
+They do some busywork for you:
 
-Before using BOBs, you need to set up a proper display buffer. BOBs work best with interleaved and double-buffered simplebuffers:
+- Manage background restoring after moving/removing the object,
+- Optimize blitter operations in contrast to more versatile `blitCopy...()` functions
+- Optimize memory usage for either minimal or extensive usage of bobs by using bg restore buffer or pristine buffer
+- Allow an easy switch of displayed frames for each bob
+
+There are also some caveats:
+
+- Requires interleaved bitmaps for it to work
+- Double-buffering is recommended for any reasonable use
+- Resizing bobs requires some extra attention
+- Adding bob structs must be done outside the game loop, so in dynamic scenarios bob struct pooling might be required
+
+## Pristine Buffer Vs Undraw Buffer
+
+ACE BOBs can work in two ways:
+
+- Undraw Buffer creates two bitmaps of size totalling to all of your initialized BOB dimensions - this scenario is most memory-efficient if you have a limited amount of BOBs, or a large main display buffer (e.g. Simple Buffer with large dimensions).
+- Pristine Buffer creates a third buffer for your display buffer, which is used to do the BOB undraw.
+  - This is a faster approach since it skips the background save phase
+  - It might be more memory-wasteful with small amount of BOBs
+  - On the other hand, it might be more efficient for large amount of BOBs.
+  - If you need to update your backgrounds/tiles, you are responsible for keeping the Pristine Buffer up to date.
+
+To enable Pristine Buffer, be sure to build ACE with `ACE_BOB_PRISTINE_BUFFER` CMake switch enabled.
+
+## Setting Up Your Game for BOBs
+
+> [!NOTE]
+> For non-Tile Buffer games, disable `ACE_BOB_WRAP_Y` CMake switch for better performance.
+
+Before using BOBs, you need to set up a proper display buffer.
+BOBs work best with interleaved and double-buffered simplebuffers:
 
 ```c
 // Create a simple buffer viewport manager with double buffering and interleaved bitmap
 s_pVpManager = simpleBufferCreate(0,
-    TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
-    TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
-    // Add other tags as needed
-    TAG_DONE);
+   TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
+   TAG_SIMPLEBUFFER_IS_DBLBUF, 1,
+   // Add other tags as needed
+TAG_DONE);
 ```
 
-**Important**: 
-- Always use interleaved bitmaps (`BMF_INTERLEAVED`) for best performance
-- Double buffering (`TAG_SIMPLEBUFFER_IS_DBLBUF`) is essential for smooth animation
-- Make sure to export your bitmap resources as interleaved format
+> [!NOTE]
+> Make sure to export your bitmap resources as interleaved format.
 
 At the end of each frame, you should process viewport managers and wait for vertical blank:
 
@@ -29,105 +59,151 @@ copProcessBlocks();
 vPortWaitForEnd(s_pVp);
 ```
 
-## What are BOBs?
+## Using BOBs
 
-BOBs are 2D graphic elements that can be efficiently moved around the screen using the Amiga's hardware blitter. They offer several advantages:
+Define some bob structs for later use.
+You don't need to use them each frame, so you can define as much as you will need in peak scenarios.
 
-- Background preservation for clean undrawing
-- Transparency support via masks
-- Animation capabilities by switching frames
-- Efficient memory usage and blitter operations
-- Support for double-buffering for smooth animation
+```c
+static tBob s_sBobPlayer;
+static tBob s_sBobEnemy;
+```
 
-## Basic BOB Workflow
+In gamestate create, initialize the bob structs, then reallocate buffers for them:
 
-The typical workflow for using BOBs is:
-
-1. **Initialization** (in gamestate create):
 ```c
 // Create manager with your buffers
-bobManagerCreate(pFrontBuffer, pBackBuffer, uwAvailHeight);
+bobManagerCreate(s_pVpManager->pFront, s_pVpManager->pBack, uwAvailHeight);
 
-// Initialize each BOB
-bobInit(&sBob1, uwWidth, uwHeight, 1, pFrameData, pMaskData, uwX, uwY);
-bobInit(&sBob2, uwWidth, uwHeight, 1, pFrameData, pMaskData, uwX, uwY);
+// Initialize each BOB struct
+bobInit(
+   &s_sBobPlayer, uwWidth, uwHeight, 1,
+   bobCalcFrameAddress(s_pBmPlayerFrames, 0),
+   bobCalcFrameAddress(s_pBmPlayerMasks, 0),
+   uwX, uwY
+);
+bobInit(
+   &s_sBobEnemy, uwWidth, uwHeight, 1,
+   bobCalcFrameAddress(s_pBmEnemyFrames, 0),
+   bobCalcFrameAddress(s_pBmEnemyMasks, 0),
+   uwX, uwY
+);
 // ... initialize more BOBs as needed
 
-// Allocate memory for background saving (must be called after all BOBs are initialized)
+// Allocate draw queues and memory for background saving.
+// Must be called after all BOBs are initialized!
 bobReallocateBuffers();
 ```
 
-2. **Game Loop** (in gamestate loop):
+> [!NOTE]
+> If you dare to use single buffering, passing same front/back pointers in `bobManagerCreate()` should work.
+
+In gamestate loop, you need to:
+
+- trigger the undraw,
+- add bobs to draw queue,
+- ensure that all bobs are drawn
+
 ```c
 // Begin the BOB drawing cycle - undraws previous BOBs
 bobBegin();
 
-// Update BOB positions 
-// You can safely modify the `sPos` field to update a BOB's position. Other fields should only be changed using the provided functions.
-sBob1.sPos.uwX = newX;
-sBob1.sPos.uwY = newY;
+// At this point, it's the best time to draw non-bob stuff, e.g. update background.
 
-// Add BOBs to drawing queue
-bobPush(&sBob1);
-// ... perform other calculations
-bobPush(&sBob2);
+// Update BOB positions.
+// You can safely modify the `sPos` field to update a BOB's position at any time.
+// Other fields, especially with underscore prefix, should only be changed
+// using the provided functions.
+s_sBobPlayer.sPos.uwX = newX;
+s_sBobPlayer.sPos.uwY = newY;
 
-// Process some BOBs (save backgrounds) while doing other calculations
-bobProcessNext();
+// Add BOBs to drawing queue - this will trigger a blitter operation if blitter is idle
+bobPush(&s_sBobPlayer);
+// ... perform other calculations, e.g. weave-in game logic processing while the blitter is busy
+bobPush(&s_sBobEnemy);
 
 // Signal no more BOBs will be added this frame
 bobPushingDone();
 
-// Process remaining BOBs (draw them)
-while(bobProcessNext()) {}
-// Or simply call bobEnd() to finish all processing
+// Process remaining BOBs (draw them on the back buffer)
 bobEnd();
 ```
 
-3. **Cleanup** (in gamestate destroy):
+> [!CAUTION]
+> Don't ever do any blitter operations between first `bobPush()` and calling `bobEnd()` - it will destroy the blitter state expected by the bob system!
+
+> [!CAUTION]
+> Drawing anything after `bobEnd()` will likely cause it to be destroyed by the bob undraw.
+> It's best to draw your stuff between `bobBegin()` and first `bobPush()`.
+
+> [!NOTE]
+> If you do some `bobPush()` close to each other, your blits will be enqueued but they won't automatically trigger after the finishing of the previous one.
+> Instead, the next one will try to execute at the end of next `bobPush()` call.
+> To process the queue manually, you can weave in `bobProcessNext()` between your calculations.
+
+To clean up the bob system, do folliwing in your gamestate destroy:
+
 ```c
 bobManagerDestroy();
 ```
 
-## Important BOB Functions
+## Animating your BOBs
 
-### Initialization and Setup
-- `bobManagerCreate()`: Initializes the BOB system with front/back buffers
-- `bobInit()`: Sets up a BOB with its dimensions, position, and frame data
-- `bobReallocateBuffers()`: Allocates memory for background saving
+BOB system expects bitmaps to use single-column bitmaps with frame animations one beneath the other.
+The bitmap itself must be of same width as the BOB.
 
-### Animation and Dimensions
-- `bobSetFrame()`: Changes a BOB's animation frame
-- `bobSetWidth()`: Modifies a BOB's width (be careful with memory allocation)
-- `bobSetHeight()`: Modifies a BOB's height (be careful with memory allocation)
-- `bobCalcFrameAddress()`: Helps calculate the memory address of a specific animation frame
+Use `bobSetFrame()` to change the animation frame:
 
-### Drawing Cycle
-- `bobBegin()`: Starts a new drawing cycle, undraws previous BOBs
-- `bobPush()`: Adds a BOB to the drawing queue
-- `bobProcessNext()`: Processes the next BOB operation (background save or drawing)
-- `bobPushingDone()`: Signals no more BOBs will be added this frame
-- `bobEnd()`: Completes all drawing operations
-- `bobDiscardUndraw()`: Skips undrawing (useful for first frame)
+```c
+bobSetFrame(
+   &s_sBobPlayer,
+   bobCalcFrameAddress(s_pBmPlayerFrames, ubFrameIndex * s_sBobPlayer.uwHeight),
+   bobCalcFrameAddress(s_pBmPlayerMasks, ubFrameIndex * s_sBobPlayer.uwHeight),
+);
+```
 
-## Tips and Best Practices
+To speed things up, you should precalculate results of `bobCalcFrameAddress()` and e.g. store it in array indexed by animation frame index, or something.
 
-1. **Memory Management**:
-   - For BOBs with background preservation (isUndrawRequired=1), the initial width/height should be set to the maximum anticipated size.
-   - Changing width/height to larger than initial size can cause memory corruption.
+> [!NOTE]
+> Since pixel data and mask are stored separately, you can pass the solid color rectangle frame to your bob to make a common hit effect.
 
-2. **Performance Optimization**:
-   - Interleave blitter operations with CPU work by calling `bobProcessNext()` periodically.
-   - Don't use the blitter for other operations between `bobBegin()` and `bobEnd()`.
-   - For non-scrolling games, consider disabling Y-wrapping for better performance.
+## Resizing your BOBs
 
-3. **Animation**:
-   - Store animation frames sequentially in memory for easy frame changes.
-   - Use `bobCalcFrameAddress()` to find the correct memory address for each frame.
+To resize the bobs, use `bobSetWidth()` and `bobSetHeight()` functions.
+Be sure to call them after `bobBegin()` in your current frame.
 
-4. **Double Buffering**:
-   - The BOB system is designed to work with double-buffered displays.
-   - You can use a single buffer by passing the same pointer for front and back buffers.
+> [!CAUTION]
+> When using Undraw Buffer mode, make sure that the bob wasn't drawn in frame preceding the resize, since it will trash the undraw operation.
+> If you need such feature, please report it in the issue on the ACE repository.
+>
+> This doesn't affect the BOBs with `isUndrawRequired` set to `0`.
 
-5. **First Frame Handling**:
-   - Call `bobDiscardUndraw()` on the first frame to avoid undrawing BOBs that weren't previously drawn.
+> [!CAUTION]
+> When resizing BOBs in Undraw Buffer mode, be sure not to exceed initial bob size used prior to `bobReallocateBuffers()` call.
+> Doing so will make the BOB system exceed the background restore buffers, and thus potentially corrupting your game's memory.
+>
+> This doesn't affect the BOBs with `isUndrawRequired` set to `0`.
+
+## Tile Buffer considerations
+
+- make sure that you're building ACE with `ACE_BOB_WRAP_Y` CMake switch enabled - otherwise, drawing bobs on buffers with large height won't work correctly!
+- If you want to "teleport" your camera and/or use `tileBufferRedrawAll()` at any time, you should call `bobDiscardUndraw()` to skip the undraw of your bobs from previous frame.
+- You can easily instruct the Tile Buffer to update the Pristine Buffer for you with a tile callback function:
+
+```c
+static void onTileDraw(
+   UNUSED_ARG UWORD uwTileX, UNUSED_ARG UWORD uwTileY,
+   tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
+) {
+   blitCopyAligned(
+      pBitMap, uwBitMapX, uwBitMapY,
+      s_pPristineBuffer, uwBitMapX, uwBitMapY, TILE_SIZE, TILE_SIZE
+   );
+}
+
+// Initialize the Tile Buffer with following:
+g_pMainBuffer = tileBufferCreate(0,
+   TAG_TILEBUFFER_CALLBACK_TILE_DRAW, onTileDraw,
+   // ... other tags here
+TAG_END);
+```
