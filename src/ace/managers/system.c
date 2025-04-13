@@ -1197,14 +1197,11 @@ void systemSetTimer(UBYTE ubCia, UBYTE ubTimer, UWORD uwTicks) {
 	UWORD *pTimers = ((ubTimer == 0) ? s_pAceCiaTimerA : s_pAceCiaTimerB);
 	pTimers[ubCia] = uwTicks;
 
-	if(!s_wSystemUses) {
-		// OS is already dead - set CIA timer right now
-		if(!ubTimer) {
-			ciaSetTimerA(g_pCia[ubCia], uwTicks);
-		}
-		else {
-			ciaSetTimerB(g_pCia[ubCia], uwTicks);
-		}
+	if(!ubTimer) {
+		ciaSetTimerA(g_pCia[ubCia], uwTicks);
+	}
+	else {
+		ciaSetTimerB(g_pCia[ubCia], uwTicks);
 	}
 }
 
