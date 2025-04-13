@@ -151,7 +151,7 @@
   *
   * @see advancedSpriteProcess()
   */
- void advancedSpriteProcessChannel(UBYTE ubChannelIndex,tAdvancedSprite *pAdvancedSprite);
+ void advancedSpriteProcessChannel(tAdvancedSprite *pAdvancedSprite);
  
  #ifdef __cplusplus
  }

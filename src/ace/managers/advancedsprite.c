@@ -75,9 +75,9 @@
          }
      }
  
-     unsigned int nbBitmap=pAdvancedSprite->uwAnimCount*pAdvancedSprite->ubSpriteCount;
+     UWORD nbBitmap=pAdvancedSprite->uwAnimCount*pAdvancedSprite->ubSpriteCount;
  
-     unsigned int nbBitmapLimit1=bStripe1NbAnim*pAdvancedSprite->ubSpriteCount;
+     UWORD nbBitmapLimit1=bStripe1NbAnim*pAdvancedSprite->ubSpriteCount;
  
      pAdvancedSprite->pAnimBitmap= (tBitMap **)memAllocFastClear(nbBitmap*sizeof(tBitMap));
  
@@ -176,7 +176,7 @@
  
      pAdvancedSprite->pSprites = (tSprite **)memAllocFastClear(sizeof(tSprite*) * pAdvancedSprite->ubSpriteCount);
  
-     for (int i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
+     for (UWORD i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
          if (pAdvancedSprite->is4PP) {
              // 2 channels for 4bpp sprites
              pAdvancedSprite->pSprites[i] = spriteAdd(ubChannelIndex+i, pAdvancedSprite->pAnimBitmap[i]);
@@ -194,10 +194,10 @@
  
  void advancedSpriteRemove(tAdvancedSprite *pAdvancedSprite) {
      systemUse();
-     for (int i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
+     for (UWORD i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
          spriteRemove(pAdvancedSprite->pSprites[i]);
      }
-     for (int i = 0; i < pAdvancedSprite->uwAnimCount; i++) {
+     for (UWORD i = 0; i < pAdvancedSprite->uwAnimCount; i++) {
          bitmapDestroy(pAdvancedSprite->pAnimBitmap[i]);
      }
      memFree(pAdvancedSprite, sizeof(*pAdvancedSprite));
@@ -205,7 +205,7 @@
  }
  
  void advancedSpriteSetEnabled(tAdvancedSprite *pAdvancedSprite, UBYTE isEnabled) {
-     for (int i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
+     for (UWORD i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
          spriteSetEnabled(pAdvancedSprite->pSprites[i], isEnabled);
      }
  }
@@ -233,15 +233,15 @@
      }
      pAdvancedSprite->uwAnimFrame=animFrame;
      UWORD animIndex = animFrame << ((pAdvancedSprite->ubByteWidth == 4) + pAdvancedSprite->is4PP);
-     for (int i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
+     for (UWORD i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
          spriteSetBitmap(pAdvancedSprite->pSprites[i], pAdvancedSprite->pAnimBitmap[animIndex+i]);
          pAdvancedSprite->isHeaderToBeUpdated = 1; // To force header rewrite
      }    
  }
  
- void advancedSpriteProcessChannel(UBYTE ubChannelIndex, tAdvancedSprite *pAdvancedSprite) {
-     for (unsigned int i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
-         spriteProcessChannel(ubChannelIndex+i);
+ void advancedSpriteProcessChannel(tAdvancedSprite *pAdvancedSprite) {
+     for (UWORD i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
+         spriteProcessChannel(pAdvancedSprite->ubChannelIndex + i);
      }
  }
  
@@ -249,7 +249,7 @@
      if(!pAdvancedSprite->isHeaderToBeUpdated) {
          return;
      }
-     for (int i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
+     for (UWORD i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
          if (( pAdvancedSprite->ubByteWidth==4) && (( (i>1) && (pAdvancedSprite->is4PP== 1) ) || ( (i==1) && (pAdvancedSprite->is4PP==0) )))
          {
              pAdvancedSprite->pSprites[i]->wX = pAdvancedSprite->wX+SPRITE_WIDTH;;
