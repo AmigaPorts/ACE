@@ -39,7 +39,7 @@ static tAdvancedSprite *s_pASprite;
 
 Then init your manager in your *creation* part:
 ```c
-advancedSpriteManagerCreate(s_pView, 0);
+spriteManagerCreate(s_pView, 0);
 systemSetDmaBit(DMAB_SPRITE, 1);
 ```
 
@@ -144,9 +144,8 @@ Don't forget to :
 advancedSpriteRemove(s_pASprite);
 ```
 
-
 2 - destroy manager
 ```c
 systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
-advancedSpriteManagerDestroy();
+spriteManagerDestroy();
 ```

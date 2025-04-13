@@ -12,15 +12,6 @@
  #define SPRITE_WIDTH 16
  #define TWOBPP_BYTEWIDTH 2
  
- void advancedSpriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
-     spriteManagerCreate(pView, uwRawCopPos);
- }
- 
- void advancedSpriteManagerDestroy(void) {
-     // TODO: Should do the job, check in testing.
-     spriteManagerDestroy();
- }
- 
  tAdvancedSprite *advancedSpriteAdd(UBYTE ubChannelIndex, UWORD uwSpriteHeight,tBitMap *pSpriteVerticalStripBitmap1, tBitMap *pSpriteVerticalStripBitmap2 ) {
      tAdvancedSprite *pAdvancedSprite = memAllocFastClear(sizeof(*pAdvancedSprite));
      pAdvancedSprite->ubChannelIndex = ubChannelIndex;
