@@ -236,17 +236,22 @@ void advancedSpriteProcessChannel(tAdvancedSprite *pAdvancedSprite) {
     }
 }
 
+
+UWORD addAttachedX(tAdvancedSprite *pAdvancedSprite, UBYTE spriteindex) {
+    if (( pAdvancedSprite->ubByteWidth==4) && (( (spriteindex>1) && (pAdvancedSprite->is4PP== 1) ) || ( (spriteindex==1) && (pAdvancedSprite->is4PP==0) )))
+    {
+        return SPRITE_WIDTH;
+    }
+    return 0;
+}
+
 void advancedSpriteProcess(tAdvancedSprite *pAdvancedSprite) {
     if(!pAdvancedSprite->isHeaderToBeUpdated) {
         return;
     }
     for (UWORD i = 0; i < pAdvancedSprite->ubSpriteCount; i++) {
-        if (( pAdvancedSprite->ubByteWidth==4) && (( (i>1) && (pAdvancedSprite->is4PP== 1) ) || ( (i==1) && (pAdvancedSprite->is4PP==0) )))
-        {
-            pAdvancedSprite->pSprites[i]->wX = pAdvancedSprite->wX+SPRITE_WIDTH;;
-        } else {
-            pAdvancedSprite->pSprites[i]->wX = pAdvancedSprite->wX;
-        }
+        pAdvancedSprite->pSprites[i]->wX = pAdvancedSprite->wX + addAttachedX(pAdvancedSprite, i);
+
         pAdvancedSprite->pSprites[i]->wY = pAdvancedSprite->wY;
 
         pAdvancedSprite->pSprites[i]->isEnabled = pAdvancedSprite->isEnabled;
