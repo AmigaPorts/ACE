@@ -69,8 +69,8 @@ static UWORD s_uwOsDmaCon;
 static UWORD s_uwAceDmaCon = 0;
 static UWORD s_uwOsInitialDma;
 
-static UWORD s_ubOsCiaATimerA;
-static UWORD s_ubOsCiaBTimerB;
+static UWORD s_uwOsCiaATimerA;
+static UWORD s_uwOsCiaBTimerB;
 static UBYTE s_pOsCiaIcr[CIA_COUNT], s_pOsCiaCra[CIA_COUNT], s_pOsCiaCrb[CIA_COUNT];
 static UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
 static UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
@@ -689,8 +689,8 @@ static void systemOsDisable(void) {
 		g_pCia[CIA_B]->crb = CIACRB_LOAD;
 
 		// Save OS CIA timer values
-		s_ubOsCiaATimerA = ciaGetTimerA(g_pCia[CIA_A]);
-		s_ubOsCiaBTimerB = ciaGetTimerB(g_pCia[CIA_A]);
+		s_uwOsCiaATimerA = ciaGetTimerA(g_pCia[CIA_A]);
+		s_uwOsCiaBTimerB = ciaGetTimerB(g_pCia[CIA_A]);
 
 		// set ACE CIA timers
 		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
@@ -1056,8 +1056,8 @@ void systemUse(void) {
 		g_pCia[CIA_B]->crb = 0;
 
 		// Restore old CIA timer A values
-		ciaSetTimerA(g_pCia[CIA_A], s_ubOsCiaATimerA);
-		ciaSetTimerB(g_pCia[CIA_A], s_ubOsCiaBTimerB);
+		ciaSetTimerA(g_pCia[CIA_A], s_uwOsCiaATimerA);
+		ciaSetTimerB(g_pCia[CIA_A], s_uwOsCiaBTimerB);
 
 		// Restore OS's CIA interrupts
 		// According to UAE debugger there's nothing in CIA_A
