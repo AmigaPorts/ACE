@@ -33,6 +33,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Working with and without OS](programming/os.md)
 1. DMA usage
 1. [Multi-directional large tilemaps scrolling with TileBuffer](programming/tilebuffer.md)
+1. [Advanced Sprites](programming/advancedsprites.md)
 
 ## Reference manual
 
