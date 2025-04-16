@@ -73,7 +73,7 @@ void blitManagerDestroy(void);
 /**
  * @brief Checks if blitter is idle.
  *
- * Polls 2 times, taing A1000 Agnus bug workaround into account.
+ * Polls 2 times, taking A1000 Agnus bug workaround into account.
  *
  * @return 1 if blitter is idle, otherwise 0.
  *
@@ -83,6 +83,8 @@ UBYTE blitIsIdle(void);
 
 /**
  * @brief Waits until blitter finishes its work.
+ *
+ * Polls at least 2 times, taking A1000 Agnus bug workaround into account.
  *
  * @todo Investigate if autosetting BLITHOG inside it is beneficial.
  *

@@ -9,6 +9,8 @@
 #include <hardware/intbits.h>
 #include <hardware/dmabits.h>
 #include <devices/audio.h>
+#include <devices/input.h>
+#include <devices/inputevent.h>
 #include <ace/utils/custom.h>
 #include <ace/managers/log.h>
 #include <ace/managers/timer.h>
@@ -22,6 +24,7 @@
 #include <proto/cia.h>
 #if defined(BARTMAN_GCC)
 #include <bartman/gcc8_c_support.h> // Idle measurement
+#include <workbench/startup.h>
 #endif
 
 // There are hardware interrupt vectors
@@ -39,6 +42,9 @@
 #define SYSTEM_INT_VECTOR_COUNT 7
 #define SYSTEM_INT_HANDLER_COUNT 15
 #define SYSTEM_STACK_CANARY '\xBA'
+
+#define SYSTEM_ACE_MIN_NO_OS_INTERRUPTS (INTF_VERTB | INTF_PORTS | INTF_EXTER)
+#define SYSTEM_ACE_MIN_OS_INTERRUPTS (INTF_VERTB | INTF_EXTER)
 
 //------------------------------------------------------------------------ TYPES
 
@@ -58,12 +64,13 @@ static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
 
 // Saved regs
 static UWORD s_uwOsIntEna;
+static UWORD s_uwOsInitialIntEna; ///< Before ACE's OS handlers got installed
 static UWORD s_uwOsDmaCon;
 static UWORD s_uwAceDmaCon = 0;
 static UWORD s_uwOsInitialDma;
 
-static UWORD s_pOsCiaTimerA[CIA_COUNT];
-static UWORD s_pOsCiaTimerB[CIA_COUNT];
+static UWORD s_ubOsCiaATimerA;
+static UWORD s_ubOsCiaBTimerB;
 static UBYTE s_pOsCiaIcr[CIA_COUNT], s_pOsCiaCra[CIA_COUNT], s_pOsCiaCrb[CIA_COUNT];
 static UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
 static UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
@@ -86,7 +93,8 @@ static volatile tHwIntVector * s_pHwVectors = 0;
 static tHwIntVector s_pOsHwInterrupts[SYSTEM_INT_VECTOR_COUNT] = {0};
 static tAceInterrupt s_pAceInterrupts[SYSTEM_INT_HANDLER_COUNT] = {{0}};
 static tAceInterrupt s_pAceCiaInterrupts[CIA_COUNT][5] = {{{0}}};
-static UWORD s_uwAceIntEna = INTF_VERTB | INTF_PORTS | INTF_EXTER;
+static UWORD s_uwAceIntEna = 0;
+static tKeyInputHandler s_cbKeyInputHandler;
 
 // Manager logic vars
 static WORD s_wSystemUses;
@@ -96,14 +104,25 @@ struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
 static const UWORD s_uwOsMinDma = DMAF_DISK | DMAF_BLITTER;
 static struct IOAudio s_sIoAudio = {0};
+static struct IOStdReq s_sIoRequestInput = {0};
 static struct Library *s_pCiaResource[CIA_COUNT];
 static struct Process *s_pProcess;
 static struct MsgPort *s_pCdtvIOPort;
 static struct IOStdReq *s_pCdtvIOReq;
+static struct Interrupt s_sOsHandlerIo;
+static struct Interrupt s_pOsCiaIcrHandlers[CIA_COUNT][5];
+static struct Interrupt *s_pOsOldInterruptHandlers[14];
+static struct Interrupt s_pOsInterruptHandlers[14];
+static UWORD s_uwOsVectorInts = (
+	INTF_TBE | INTF_DSKBLK | INTF_SOFTINT |
+	INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3 | INTF_RBF | INTF_DSKSYNC
+);
 
 #if defined(BARTMAN_GCC)
 struct DosLibrary *DOSBase = 0;
 struct ExecBase *SysBase = 0;
+static struct Message *s_pReturnMsg = 0;
+const char *s_szOldDir = 0;
 #endif
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
@@ -304,6 +323,80 @@ void HWINTERRUPT int7Handler(void) {
 	logPopInt();
 }
 
+//------------------------------------------------------------------ OS HANDLERS
+
+static ULONG aceInputHandler(void) {
+	register volatile ULONG regOldEventChain __asm("a0");
+	// register volatile ULONG regData __asm("a1");
+
+	if(s_cbKeyInputHandler) {
+		struct InputEvent *pEvent = (struct InputEvent *)regOldEventChain;
+		while(pEvent) {
+			if(pEvent->ie_Class == IECLASS_RAWKEY) {
+				// logWrite("OS key event: %hu\n", pEvent->ie_Code);
+				s_cbKeyInputHandler(pEvent->ie_Code);
+			}
+			// TODO: handle IECLASS_DISKREMOVED, IECLASS_DISKINSERTED ?
+
+			pEvent = pEvent->ie_NextEvent;
+		}
+	}
+
+	// Don't propagate any input events to other stuff - ensure full takeover by clearing d0
+	return 0;
+}
+
+ULONG ciaIcrHandler(void) {
+	register volatile ULONG regData __asm("a1");
+
+	tAceInterrupt *pAceInt = (tAceInterrupt *)regData;
+	if(pAceInt->pHandler) {
+		pAceInt->pHandler(g_pCustom, pAceInt->pData);
+	}
+
+	// set the Z flag
+	return 0;
+}
+
+void osIntVector(void) {
+	register volatile ULONG regData __asm("a1");
+
+	UBYTE ubIntBit = regData;
+	if(s_pAceInterrupts[ubIntBit].pHandler) {
+		s_pAceInterrupts[ubIntBit].pHandler(
+			g_pCustom, s_pAceInterrupts[ubIntBit].pData
+		);
+	}
+
+	UWORD uwIntMask = BV(ubIntBit);
+	g_pCustom->intreq = uwIntMask;
+	g_pCustom->intreq = uwIntMask;
+}
+
+ULONG osIntServer(void) {
+	register volatile ULONG regData __asm("a1");
+
+	UBYTE ubIntBit = regData;
+	if(ubIntBit == INTB_VERTB) {
+		// Do ACE-specific stuff
+		// TODO when ACE gets ported to C++ this could be constexpr if'ed
+		timerOnInterrupt();
+	}
+
+	if(s_pAceInterrupts[ubIntBit].pHandler) {
+		s_pAceInterrupts[ubIntBit].pHandler(
+			g_pCustom, s_pAceInterrupts[ubIntBit].pData
+		);
+	}
+
+	UWORD uwIntMask = BV(ubIntBit);
+	g_pCustom->intreq = uwIntMask;
+	g_pCustom->intreq = uwIntMask;
+
+	// End chain for non-VERTB ints
+	return ubIntBit == INTB_VERTB ? 0 : 1;
+}
+
 //-------------------------------------------------------------------- FUNCTIONS
 
 // Messageport creation for KS1.3
@@ -363,39 +456,37 @@ static void ioRequestDestroy(struct IORequest *pIoReq) {
 	FreeMem(pIoReq, pIoReq->io_Message.mn_Length);
 }
 
-static UBYTE audioChannelAlloc(struct IOAudio *pIoAudio) {
-	struct MsgPort *pMsgPort = 0;
-
-	pMsgPort = msgPortCreate("audio alloc", ADALLOC_MAXPREC);
+static UBYTE audioChannelAlloc(void) {
+	struct MsgPort *pMsgPort = msgPortCreate("audio alloc", ADALLOC_MAXPREC);
 	if(!pMsgPort) {
 		logWrite("ERR: Couldn't open message port for audio alloc\n");
 		goto fail;
 	}
 
-	memset(pIoAudio, 0, sizeof(*pIoAudio));
-	ioRequestInitialize(&pIoAudio->ioa_Request, pMsgPort, sizeof(*pIoAudio));
+	memset(&s_sIoAudio, 0, sizeof(s_sIoAudio));
+	ioRequestInitialize(&s_sIoAudio.ioa_Request, pMsgPort, sizeof(s_sIoAudio));
 
 	UBYTE isError = OpenDevice(
-		(CONST_STRPTR)"audio.device", 0, (struct IORequest *)pIoAudio, 0
+		(CONST_STRPTR)"audio.device", 0, (struct IORequest *)&s_sIoAudio, 0
 	);
 	if(isError) {
 		logWrite(
 			"ERR: Couldn't alloc Audio channels, code: %d\n",
-			pIoAudio->ioa_Request.io_Error
+			s_sIoAudio.ioa_Request.io_Error
 		);
 		goto fail;
 	}
 
 	UBYTE ubChannelMask = 0b1111; // Allocate all 4 channels.
-	pIoAudio->ioa_Data = &ubChannelMask;
-	pIoAudio->ioa_Length = sizeof(ubChannelMask);
-	pIoAudio->ioa_Request.io_Command = ADCMD_ALLOCATE;
-	pIoAudio->ioa_Request.io_Flags = ADIOF_NOWAIT;
-	isError = DoIO((struct IORequest *)pIoAudio);
+	s_sIoAudio.ioa_Data = &ubChannelMask;
+	s_sIoAudio.ioa_Length = sizeof(ubChannelMask);
+	s_sIoAudio.ioa_Request.io_Command = ADCMD_ALLOCATE;
+	s_sIoAudio.ioa_Request.io_Flags = ADIOF_NOWAIT;
+	isError = DoIO((struct IORequest *)&s_sIoAudio);
 
 	if(isError) {
 		logWrite(
-			"ERR: io audio request fail, code: %d\n", pIoAudio->ioa_Request.io_Error
+			"ERR: io audio request fail, code: %d\n", s_sIoAudio.ioa_Request.io_Error
 		);
 		goto fail;
 	}
@@ -408,21 +499,31 @@ fail:
 	return 0;
 }
 
-void audioChannelFree(struct IOAudio *pIoAudio) {
-	struct MsgPort *pMsgPort = pIoAudio->ioa_Request.io_Message.mn_ReplyPort;
+static void audioChannelFree(void) {
+	struct MsgPort *pMsgPort = s_sIoAudio.ioa_Request.io_Message.mn_ReplyPort;
 
-	pIoAudio->ioa_Request.io_Command = ADCMD_FINISH;
-	pIoAudio->ioa_Request.io_Flags = 0;
-	pIoAudio->ioa_Request.io_Unit = (APTR)1;
-	UBYTE isError = DoIO((struct IORequest *)pIoAudio);
+	s_sIoAudio.ioa_Request.io_Command = ADCMD_FINISH;
+	s_sIoAudio.ioa_Request.io_Flags = 0;
+	s_sIoAudio.ioa_Request.io_Unit = (APTR)1;
+	UBYTE isError = DoIO((struct IORequest *)&s_sIoAudio);
 	if(isError) {
 		logWrite(
-			"ERR: io audio request fail, code: %d\n", pIoAudio->ioa_Request.io_Error
+			"ERR: io audio request fail, code: %d\n", s_sIoAudio.ioa_Request.io_Error
 		);
 	}
 
-	CloseDevice((struct IORequest *)pIoAudio);
+	CloseDevice((struct IORequest *)&s_sIoAudio);
 	msgPortDelete(pMsgPort);
+}
+
+static void cdtvCdCommand(UWORD cmd) {
+	if (s_pCdtvIOReq) {
+		s_pCdtvIOReq->io_Command = cmd;
+		s_pCdtvIOReq->io_Offset  = 0;
+		s_pCdtvIOReq->io_Length  = 0;
+		s_pCdtvIOReq->io_Data    = NULL;
+		DoIO((struct IORequest *)s_pCdtvIOReq);
+	}
 }
 
 static void cdtvPortAlloc(void) {
@@ -454,6 +555,211 @@ static void cdtvPortFree(void) {
 	if (s_pCdtvIOReq) {
 		ioRequestDestroy((struct IORequest *)s_pCdtvIOReq);
 	}
+}
+
+static UBYTE inputHandlerAdd(void) {
+	struct MsgPort *pMsgPort = msgPortCreate("input handler register", ADALLOC_MAXPREC);
+	if(!pMsgPort) {
+		logWrite("ERR: Couldn't open message port for audio alloc\n");
+		goto fail;
+	}
+
+	// We don't have CreateIORequest on ks1.3, so just zero stuff
+	memset(&s_sIoRequestInput, 0, sizeof(s_sIoRequestInput));
+	UBYTE isError = OpenDevice(
+		(CONST_STRPTR)"input.device", 0, (struct IORequest *)&s_sIoRequestInput, 0
+	);
+	if(isError) {
+		logWrite(
+			"ERR: Couldn't open input device, code: %d\n",
+			s_sIoRequestInput.io_Error
+		);
+		goto fail;
+	}
+
+	memset(&s_sOsHandlerIo, 0, sizeof(s_sOsHandlerIo));
+	s_sOsHandlerIo.is_Code = (void(*)(void))aceInputHandler;
+	s_sOsHandlerIo.is_Data = 0;
+	s_sOsHandlerIo.is_Node.ln_Pri = 127;
+	s_sOsHandlerIo.is_Node.ln_Name = "ACE Input handler";
+	s_sIoRequestInput.io_Data = (APTR)&s_sOsHandlerIo;
+	s_sIoRequestInput.io_Command = IND_ADDHANDLER;
+	s_sIoRequestInput.io_Message.mn_ReplyPort = pMsgPort;
+	isError = DoIO((struct IORequest *)&s_sIoRequestInput);
+
+	if(isError) {
+		logWrite(
+			"ERR: io audio request fail, code: %d\n", s_sIoRequestInput.io_Error
+		);
+		goto fail;
+	}
+	return 1;
+
+fail:
+	if(pMsgPort) {
+		msgPortDelete(pMsgPort);
+	}
+	return 0;
+}
+
+static void inputHandlerRemove(void) {
+	// http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_2._guide/node04E2.html
+
+	struct MsgPort *pMsgPort = s_sIoRequestInput.io_Message.mn_ReplyPort;
+
+	s_sIoRequestInput.io_Command = IND_REMHANDLER;
+	s_sIoRequestInput.io_Data=(APTR)&s_sOsHandlerIo;
+	UBYTE isError = DoIO((struct IORequest *)&s_sIoRequestInput);
+	if(isError) {
+		logWrite(
+			"ERR: io audio request fail, code: %d\n", s_sIoRequestInput.io_Error
+		);
+	}
+
+	// NOTE: IND_REMHANDLER is not immediate
+
+	CloseDevice((struct IORequest *)&s_sIoRequestInput);
+	msgPortDelete(pMsgPort);
+}
+
+static void interruptHandlerAdd(UBYTE ubIntBit) {
+	struct Interrupt *pInterrupt = &s_pOsInterruptHandlers[ubIntBit];
+	memset(pInterrupt, 0, sizeof(*pInterrupt));
+	pInterrupt->is_Data = (void*)(ULONG)ubIntBit;
+	pInterrupt->is_Node.ln_Name = "ACE interrupt handler";
+	pInterrupt->is_Node.ln_Type = NT_INTERRUPT;
+	if(BV(ubIntBit) & s_uwOsVectorInts) {
+		pInterrupt->is_Code = osIntVector;
+
+		// Disable interrupt and swap the int vector
+		g_pCustom->intena = BV(ubIntBit);
+		s_pOsOldInterruptHandlers[ubIntBit] = SetIntVector(ubIntBit, pInterrupt);
+	}
+	else {
+		// VERTB servers should always return Z set and can't be sole handler
+		// NOTE: VERTB server with priority of 10 or greater must set a0 to 0xDFF000
+		pInterrupt->is_Code = (void(*)(void))osIntServer;
+		pInterrupt->is_Node.ln_Pri = (ubIntBit == INTB_VERTB) ? 9 : 127;
+		// Auto-enables intena bit if first server is adder
+		AddIntServer(ubIntBit, pInterrupt);
+	}
+}
+
+static void interruptHandlerRemove(UBYTE ubIntBit) {
+	if(BV(ubIntBit) & s_uwOsVectorInts) {
+		// Disable interrupt in case handler is set to null
+		g_pCustom->intena = BV(ubIntBit);
+		SetIntVector(ubIntBit, s_pOsOldInterruptHandlers[ubIntBit]);
+
+		// A 3rd party handler could be installed but be inactive
+		if(s_uwOsInitialIntEna & BV(ubIntBit)) {
+			g_pCustom->intena = INTF_SETCLR | BV(ubIntBit);
+		}
+	}
+	else {
+		// Auto-disables intena bit if sole server is removed
+		RemIntServer(ubIntBit, &s_pOsInterruptHandlers[ubIntBit]);
+	}
+}
+
+static void systemOsDisable(void) {
+		// Disable interrupts (this is the actual "kill system/OS" part)
+		g_pCustom->intena = 0x7FFF;
+		g_pCustom->intreq = 0x7FFF;
+
+		// Query CIA ICR bits set by OS for later CIA takeover restore
+		s_pOsCiaIcr[CIA_A] = AbleICR(s_pCiaResource[CIA_A], 0);
+		s_pOsCiaIcr[CIA_B] = AbleICR(s_pCiaResource[CIA_B], 0);
+
+		// Disable CIA interrupts
+		g_pCia[CIA_A]->icr = 0x7F;
+		g_pCia[CIA_B]->icr = 0x7F;
+
+		// Save CRA bits
+		s_pOsCiaCra[CIA_A] = g_pCia[CIA_A]->cra;
+		s_pOsCiaCrb[CIA_A] = g_pCia[CIA_A]->crb;
+		s_pOsCiaCra[CIA_B] = g_pCia[CIA_B]->cra;
+		s_pOsCiaCrb[CIA_B] = g_pCia[CIA_B]->crb;
+
+		// Disable timers and trigger reload of value to read preset val
+		g_pCia[CIA_A]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
+		g_pCia[CIA_A]->crb = CIACRB_LOAD;
+		g_pCia[CIA_B]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
+		g_pCia[CIA_B]->crb = CIACRB_LOAD;
+
+		// Save OS CIA timer values
+		s_ubOsCiaATimerA = ciaGetTimerA(g_pCia[CIA_A]);
+		s_ubOsCiaBTimerB = ciaGetTimerB(g_pCia[CIA_A]);
+
+		// set ACE CIA timers
+		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
+		ciaSetTimerB(g_pCia[CIA_A], s_pAceCiaTimerB[CIA_A]);
+		ciaSetTimerA(g_pCia[CIA_B], s_pAceCiaTimerA[CIA_B]);
+		ciaSetTimerB(g_pCia[CIA_B], s_pAceCiaTimerB[CIA_B]);
+
+		// Enable ACE CIA interrupts
+		g_pCia[CIA_A]->icr = (
+			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
+		);
+		g_pCia[CIA_B]->icr = (
+			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
+		);
+
+		// Restore ACE CIA CRA/CRB state
+		g_pCia[CIA_A]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_A];
+		g_pCia[CIA_A]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_A];
+		g_pCia[CIA_B]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_B];
+		g_pCia[CIA_B]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_B];
+
+		// Game's bitplanes & copperlists are still used so don't disable them
+		// Wait for vbl before disabling sprite DMA
+		while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
+		g_pCustom->dmacon = s_uwOsMinDma;
+
+		// Save OS interrupt vectors and enable ACE's
+		g_pCustom->intreq = 0x7FFF;
+		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
+			s_pOsHwInterrupts[i] = s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i];
+			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pAceHwInterrupts[i];
+		}
+
+		// Enable needed DMA (and interrupt) channels
+		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna | SYSTEM_ACE_MIN_NO_OS_INTERRUPTS;
+
+		// HACK: OS resets potgo in vblank int, preventing scanning fire2 on most joysticks.
+		// TODO: make sure this doesn't break anything, e.g. mice
+		// TODO: add setting this value to OS-friendly vblank handler with proper priority
+		// https://eab.abime.net/showthread.php?t=74981
+		g_pCustom->potgo = 0xFF00;
+}
+
+void ciaIcrHandlerAdd(UBYTE ubCia, UBYTE ubIcrBit) {
+	// https://wiki.amigaos.net/wiki/CIA_Resource
+	memset(&s_pOsCiaIcrHandlers[ubCia][ubIcrBit], 0, sizeof(s_pOsCiaIcrHandlers[ubCia][ubIcrBit]));
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Code = (void(*)(void))ciaIcrHandler;
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Data = (void*)&s_pAceCiaInterrupts[ubCia][ubIcrBit];
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Name = "ACE CIA ICR handler";
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Pri = 127;
+	s_pOsCiaIcrHandlers[ubCia][ubIcrBit].is_Node.ln_Type = NT_INTERRUPT;
+	// AddICRVector auto-activates ints, leave it be to mimic what ACE does on no-os side
+	if(AddICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pOsCiaIcrHandlers[ubCia][ubIcrBit])) {
+		logWrite("CIA %c ICR %d add failed", (ubCia == CIA_A) ? 'A' : 'B', ubIcrBit);
+	}
+	// TODO: check if AddICRVector allocated the same timer as desired using
+	// private fields of CIA Resource (beware of changed layout in v36)
+
+	// Set timeout as long as possible, to be reconfigured by int handler registrar
+	if(ubIcrBit == CIAICRB_TIMER_A) {
+		ciaSetTimerA(g_pCia[ubCia], 0xFFFF);
+	}
+	else {
+		ciaSetTimerB(g_pCia[ubCia], 0xFFFF);
+	}
+}
+
+void ciaIcrHandlerRemove(UBYTE ubCia, UBYTE ubIcrBit) {
+	RemICRVector(s_pCiaResource[ubCia], ubIcrBit, &s_pOsCiaIcrHandlers[ubCia][ubIcrBit]);
 }
 
 /**
@@ -536,8 +842,18 @@ void systemCreate(void) {
 		return;
 	}
 
-	// Determine original stack size
 	s_pProcess = (struct Process *)FindTask(NULL);
+#if defined(BARTMAN_GCC)
+	if(!s_pProcess->pr_CLI) {
+		// Called from the workbench - get the message for later reply
+		// Taken from https://github.com/alpine9000/EWGM/blob/master/game/wbstartup.i
+		WaitPort(&s_pProcess->pr_MsgPort); // Wait for the message
+		s_pReturnMsg = GetMsg(&s_pProcess->pr_MsgPort); // Get the message for later reply
+		s_szOldDir = (const char*)CurrentDir(((struct WBStartup*)s_pReturnMsg)->sm_ArgList[0].wa_Lock);
+	}
+#endif
+
+	// Determine original stack size
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
 	ULONG ulStackSize = (char *)s_pProcess->pr_Task.tc_SPUpper - pStackLower;
 	if(s_pProcess->pr_CLI) {
@@ -548,14 +864,30 @@ void systemCreate(void) {
 
 	// Reserve all audio channels - apparantly this allows for int flag polling
 	// From https://gist.github.com/johngirvin/8fb0c4bb83b7c80427e2f439bb074e95
-	audioChannelAlloc(&s_sIoAudio);
+	audioChannelAlloc();
 
 	// prepare disabling/enabling CDTV device as per Alpine9000 code
 	// from https://eab.abime.net/showthread.php?t=89836
 	cdtvPortAlloc();
+	// immediately disable CDTV device, it gets re-enabled
+	// at the end of this function in systemUse()
+	cdtvCdCommand(CMD_STOP);
+
+	inputHandlerAdd();
+
+	s_uwOsInitialIntEna = g_pCustom->intenar;
+	interruptHandlerAdd(INTB_AUD0);
+	interruptHandlerAdd(INTB_AUD1);
+	interruptHandlerAdd(INTB_AUD2);
+	interruptHandlerAdd(INTB_AUD3);
+	interruptHandlerAdd(INTB_VERTB);
 
 	s_pCiaResource[CIA_A] = OpenResource((CONST_STRPTR)CIAANAME);
 	s_pCiaResource[CIA_B] = OpenResource((CONST_STRPTR)CIABNAME);
+
+	// Allocate CIA-B timers for exclusive use
+	ciaIcrHandlerAdd(CIA_B, CIAICRB_TIMER_A);
+	ciaIcrHandlerAdd(CIA_B, CIAICRB_TIMER_B);
 
 	// Disable as much of OS stuff as possible so that it won't trash stuff when
 	// re-enabled periodically.
@@ -590,12 +922,11 @@ void systemCreate(void) {
 	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 
-	// Unuse system so that it gets backed up once and then re-enable
-	// as little as needed
-	s_wSystemUses = 1;
+	// Disable system so that it gets backed up once, skip saving intena from systemUnuse()
+	s_wSystemUses = 0;
 	s_wSystemBlitterUses = 1;
-	systemUnuse();
-	systemUse();
+	systemOsDisable();
+	systemUse(); // Re-enable as little as needed
 
 	systemGetBlitterFromOs();
 }
@@ -622,11 +953,19 @@ void systemDestroy(void) {
 	systemReleaseBlitterToOs();
 	g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwOsInitialDma;
 
-	// Free audio channels
-	audioChannelFree(&s_sIoAudio);
+	ciaIcrHandlerRemove(CIA_B, CIAICRB_TIMER_A);
+	ciaIcrHandlerRemove(CIA_B, CIAICRB_TIMER_B);
 
-	// Free CDTV request port
+	audioChannelFree();
 	cdtvPortFree();
+
+	inputHandlerRemove();
+
+	interruptHandlerRemove(INTB_AUD0);
+	interruptHandlerRemove(INTB_AUD1);
+	interruptHandlerRemove(INTB_AUD2);
+	interruptHandlerRemove(INTB_AUD3);
+	interruptHandlerRemove(INTB_VERTB);
 
 	// restore old view
 	WaitTOF();
@@ -635,10 +974,22 @@ void systemDestroy(void) {
 
 	systemCheckStack();
 
+#if defined(BARTMAN_GCC)
+	if(s_szOldDir) {
+		CurrentDir((BPTR)s_szOldDir);
+	}
+#endif
+
 	logWrite("Closing graphics.library...\n");
 	CloseLibrary((struct Library *) GfxBase);
 	logWrite("Closing dos.library...\n");
 	CloseLibrary((struct Library *) DOSBase);
+
+#if defined(BARTMAN_GCC)
+	if(s_pReturnMsg) {
+		ReplyMsg(s_pReturnMsg);
+	}
+#endif
 }
 
 void systemUnuse(void) {
@@ -659,88 +1010,12 @@ void systemUnuse(void) {
 		}
 
 		// Disable CDTV CD drive if present
-		if (s_pCdtvIOReq) {
-			s_pCdtvIOReq->io_Command = CMD_STOP;
-			s_pCdtvIOReq->io_Offset  = 0;
-			s_pCdtvIOReq->io_Length  = 0;
-			s_pCdtvIOReq->io_Data    = NULL;
-			DoIO((struct IORequest *)s_pCdtvIOReq);
-		}
+		cdtvCdCommand(CMD_STOP);
 
-		// Disable interrupts (this is the actual "kill system/OS" part)
-		g_pCustom->intena = 0x7FFF;
-		g_pCustom->intreq = 0x7FFF;
+		// save the state of the hardware registers (INTENA)
+		s_uwOsIntEna = g_pCustom->intenar;
 
-		// Query CIA ICR bits set by OS for later CIA takeover restore
-		s_pOsCiaIcr[CIA_A] = AbleICR(s_pCiaResource[CIA_A], 0);
-		s_pOsCiaIcr[CIA_B] = AbleICR(s_pCiaResource[CIA_B], 0);
-
-		// Disable CIA interrupts
-		g_pCia[CIA_A]->icr = 0x7F;
-		g_pCia[CIA_B]->icr = 0x7F;
-
-		// Save CRA bits
-		s_pOsCiaCra[CIA_A] = g_pCia[CIA_A]->cra;
-		s_pOsCiaCrb[CIA_A] = g_pCia[CIA_A]->crb;
-		s_pOsCiaCra[CIA_B] = g_pCia[CIA_B]->cra;
-		s_pOsCiaCrb[CIA_B] = g_pCia[CIA_B]->crb;
-
-		// Disable timers and trigger reload of value to read preset val
-		g_pCia[CIA_A]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
-		g_pCia[CIA_A]->crb = CIACRB_LOAD;
-		g_pCia[CIA_B]->cra = CIACRA_LOAD; // CIACRA_START=0, timer is stopped
-		g_pCia[CIA_B]->crb = CIACRB_LOAD;
-
-		// Save OS CIA timer values
-		s_pOsCiaTimerA[CIA_A] = ciaGetTimerA(g_pCia[CIA_A]);
-		s_pOsCiaTimerB[CIA_A] = ciaGetTimerB(g_pCia[CIA_A]);
-		s_pOsCiaTimerA[CIA_B] = ciaGetTimerA(g_pCia[CIA_B]);
-		s_pOsCiaTimerB[CIA_B] = ciaGetTimerB(g_pCia[CIA_B]);
-
-		// set ACE CIA timers
-		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
-		ciaSetTimerB(g_pCia[CIA_A], s_pAceCiaTimerB[CIA_A]);
-		ciaSetTimerA(g_pCia[CIA_B], s_pAceCiaTimerA[CIA_B]);
-		ciaSetTimerB(g_pCia[CIA_B], s_pAceCiaTimerB[CIA_B]);
-
-		// Enable ACE CIA interrupts
-		g_pCia[CIA_A]->icr = (
-			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
-		);
-		g_pCia[CIA_B]->icr = (
-			CIAICRF_SETCLR | CIAICRF_SERIAL | CIAICRF_TIMER_A | CIAICRF_TIMER_B
-		);
-
-		// Restore ACE CIA CRA/CRB state
-		g_pCia[CIA_A]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_A];
-		g_pCia[CIA_A]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_A];
-		g_pCia[CIA_B]->cra = CIACRA_LOAD | s_pAceCiaCra[CIA_B];
-		g_pCia[CIA_B]->crb = CIACRA_LOAD | s_pAceCiaCrb[CIA_B];
-
-		// Game's bitplanes & copperlists are still used so don't disable them
-		// Wait for vbl before disabling sprite DMA
-		while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
-		g_pCustom->dmacon = s_uwOsMinDma;
-
-		// Save OS interrupt vectors and enable ACE's
-		g_pCustom->intreq = 0x7FFF;
-		for(UWORD i = 0; i < SYSTEM_INT_VECTOR_COUNT; ++i) {
-			s_pOsHwInterrupts[i] = s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i];
-			s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + i] = s_pAceHwInterrupts[i];
-		}
-
-		// Enable needed DMA (and interrupt) channels
-		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | s_uwAceDmaCon;
-		// Everything that's supported by ACE to simplify things for now,
-		// but not audio channels since ptplayer relies on polling them, and I'm not
-		// currently being able to debug audio interrupt handler variant.
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN | s_uwAceIntEna;
-
-		// HACK: OS resets potgo in vblank int, preventing scanning fire2 on most joysticks.
-		// TODO: make sure this doesn't break anything, e.g. mice
-		// TODO: add setting this value to OS-friendly vblank handler with proper priority
-		// https://eab.abime.net/showthread.php?t=74981
-		g_pCustom->potgo = 0xFF00;
+		systemOsDisable();
 	}
 #if defined(ACE_DEBUG)
 	if(s_wSystemUses < 0) {
@@ -773,11 +1048,9 @@ void systemUse(void) {
 		g_pCia[CIA_B]->cra = 0;
 		g_pCia[CIA_B]->crb = 0;
 
-		// Restore old CIA timer values
-		ciaSetTimerA(g_pCia[CIA_A], s_pOsCiaTimerA[CIA_A]);
-		ciaSetTimerB(g_pCia[CIA_A], s_pOsCiaTimerB[CIA_A]);
-		ciaSetTimerA(g_pCia[CIA_B], s_pOsCiaTimerA[CIA_B]);
-		ciaSetTimerB(g_pCia[CIA_B], s_pOsCiaTimerB[CIA_B]);
+		// Restore old CIA timer A values
+		ciaSetTimerA(g_pCia[CIA_A], s_ubOsCiaATimerA);
+		ciaSetTimerB(g_pCia[CIA_A], s_ubOsCiaBTimerB);
 
 		// Restore OS's CIA interrupts
 		// According to UAE debugger there's nothing in CIA_A
@@ -793,20 +1066,14 @@ void systemUse(void) {
 		// restore old DMA/INTENA/ADKCON etc. settings
 		// All interrupts but only needed DMA
 		g_pCustom->dmacon = DMAF_SETCLR | DMAF_MASTER | (s_uwOsDmaCon & s_uwOsMinDma);
-		g_pCustom->intena = INTF_SETCLR | INTF_INTEN  | s_uwOsIntEna;
+		g_pCustom->intena = INTF_SETCLR | INTF_INTEN  | s_uwOsIntEna | s_uwAceIntEna | SYSTEM_ACE_MIN_OS_INTERRUPTS;
 
 		// Nasty keyboard hack - if any key gets pressed / released while system is
 		// inactive, we won't be able to catch it.
 		keyReset();
 
 		// Re-enable CDTV CD drive if present
-		if (s_pCdtvIOReq) {
-			s_pCdtvIOReq->io_Command = CMD_START;
-			s_pCdtvIOReq->io_Offset  = 0;
-			s_pCdtvIOReq->io_Length  = 0;
-			s_pCdtvIOReq->io_Data    = NULL;
-			DoIO((struct IORequest *)s_pCdtvIOReq);
-		}
+		cdtvCdCommand(CMD_START);
 	}
 	++s_wSystemUses;
 
@@ -821,13 +1088,15 @@ UBYTE systemIsUsed(void) {
 }
 
 void systemGetBlitterFromOs(void) {
-	--s_wSystemBlitterUses;
-	if(!s_wSystemBlitterUses) {
+	if(s_wSystemBlitterUses == 1) {
 		// Make OS finish its pending operations before it loses blitter!
 		systemFlushIo();
 		OwnBlitter();
 		WaitBlit();
 	}
+	// This must be decremented after OwnBlitter() so that systemBlitterIsUsed()
+	// checked in interrupt won't return 0 during OS blitter op still in progress.
+	--s_wSystemBlitterUses;
 
 #if defined(ACE_DEBUG)
 	if(s_wSystemBlitterUses < 0) {
@@ -839,8 +1108,8 @@ void systemGetBlitterFromOs(void) {
 
 void systemReleaseBlitterToOs(void) {
 	if (!s_wSystemBlitterUses){
-		DisownBlitter();
 		WaitBlit();
+		DisownBlitter();
 	}
 	++s_wSystemBlitterUses;
 }
@@ -849,13 +1118,15 @@ UBYTE systemBlitterIsUsed(void) {
 	return s_wSystemBlitterUses > 0;
 }
 
+void systemSetKeyInputHandler(tKeyInputHandler cbKeyInputHandler) {
+	s_cbKeyInputHandler = cbKeyInputHandler;
+}
+
 void systemSetInt(
 	UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData
 ) {
 	// Disable interrupt during data swap to not get stuck inside ACE's ISR
-	if(!s_wSystemUses) {
-		g_pCustom->intena = BV(ubIntNumber);
-	}
+	g_pCustom->intena = BV(ubIntNumber);
 
 	// Disable handler or re-enable it if 0 was passed
 	if(pHandler == 0) {
@@ -866,9 +1137,7 @@ void systemSetInt(
 		s_pAceInterrupts[ubIntNumber].pHandler = pHandler;
 		s_pAceInterrupts[ubIntNumber].pData = pIntData;
 		s_uwAceIntEna |= BV(ubIntNumber);
-		if(!s_wSystemUses) {
-			g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
-		}
+		g_pCustom->intena = INTF_SETCLR | BV(ubIntNumber);
 	}
 }
 
@@ -886,15 +1155,13 @@ void systemSetCiaInt(
 void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue) {
 	if(isCrB) {
 		s_pAceCiaCrb[ubCia] = ubCrValue;
-		if(!s_wSystemUses) {
-			g_pCia[ubCia]->crb = ubCrValue;
-		}
+		s_pOsCiaCrb[ubCia] = ubCrValue;
+		g_pCia[ubCia]->crb = ubCrValue;
 	}
 	else {
 		s_pAceCiaCra[ubCia] = ubCrValue;
-		if(!s_wSystemUses) {
-			g_pCia[ubCia]->cra = ubCrValue;
-		}
+		s_pOsCiaCra[ubCia] = ubCrValue;
+		g_pCia[ubCia]->cra = ubCrValue;
 	}
 }
 
@@ -930,14 +1197,11 @@ void systemSetTimer(UBYTE ubCia, UBYTE ubTimer, UWORD uwTicks) {
 	UWORD *pTimers = ((ubTimer == 0) ? s_pAceCiaTimerA : s_pAceCiaTimerB);
 	pTimers[ubCia] = uwTicks;
 
-	if(!s_wSystemUses) {
-		// OS is already dead - set CIA timer right now
-		if(!ubTimer) {
-			ciaSetTimerA(g_pCia[ubCia], uwTicks);
-		}
-		else {
-			ciaSetTimerB(g_pCia[ubCia], uwTicks);
-		}
+	if(!ubTimer) {
+		ciaSetTimerA(g_pCia[ubCia], uwTicks);
+	}
+	else {
+		ciaSetTimerB(g_pCia[ubCia], uwTicks);
 	}
 }
 

@@ -23,14 +23,29 @@ typedef struct tSpriteChannel {
 
 static const tView *s_pView;
 static tSpriteChannel s_pChannelsData[HARDWARE_SPRITE_CHANNEL_COUNT];
-static const tHardwareSpriteHeader CHIP s_uBlankSprite;
+static ULONG *s_pBlankSprite;
+static UBYTE s_isOwningBlankSprite;
 static tCopBlock *s_pInitialClearCopBlock;
 
 static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
 	pChannel->ubCopperRegenCount = 2; // for front/back buffers in raw mode
 }
 
-void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
+void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSprite[1]) {
+	if (pBlankSprite) {
+#ifdef ACE_DEBUG
+		if (!(memType(pBlankSprite) & MEMF_CHIP)) {
+			logWrite("ERR: ILLEGAL NON-CHIP memory location for blank sprite!");
+		}
+#endif
+		s_isOwningBlankSprite = 0;
+		s_pBlankSprite = pBlankSprite;
+	} else {
+		s_isOwningBlankSprite = 1;
+		s_pBlankSprite = memAllocChipClear(sizeof(ULONG));
+		// Just to make sure we don't accidentally mismatch the control words size
+		_Static_assert(sizeof(ULONG) == sizeof(tHardwareSpriteHeader), "We expect a Hardware sprite to have a ULONG sized header");
+	}
 	// TODO: add support for non-chained mode (setting sprxdat with copper)?
 	s_pView = pView;
 	for(UBYTE i = HARDWARE_SPRITE_CHANNEL_COUNT; i--;) {
@@ -45,7 +60,8 @@ void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
 		s_pInitialClearCopBlock = spriteDisableInCopBlockMode(
 			s_pView->pCopList,
 			SPRITE_0 | SPRITE_1 | SPRITE_2 | SPRITE_3 |
-			SPRITE_4 | SPRITE_5 | SPRITE_6 | SPRITE_7
+			SPRITE_4 | SPRITE_5 | SPRITE_6 | SPRITE_7,
+			s_pBlankSprite
 		);
 	}
 	else {
@@ -53,7 +69,8 @@ void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos) {
 		spriteDisableInCopRawMode(
 			s_pView->pCopList,
 			SPRITE_0 | SPRITE_1 | SPRITE_2 | SPRITE_3 |
-			SPRITE_4 | SPRITE_5 | SPRITE_6 | SPRITE_7, uwRawCopPos
+			SPRITE_4 | SPRITE_5 | SPRITE_6 | SPRITE_7, uwRawCopPos,
+			s_pBlankSprite
 		);
 	}
 }
@@ -68,6 +85,9 @@ void spriteManagerDestroy(void) {
 	}
 	if(s_pInitialClearCopBlock) {
 		copBlockDestroy(s_pView->pCopList, s_pInitialClearCopBlock);
+	}
+	if (s_isOwningBlankSprite) {
+		memFree(s_pBlankSprite, sizeof(ULONG));
 	}
 	systemUnuse();
 }
@@ -191,7 +211,7 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 		pCopBlock->uwCurrCount = 0;
 		ULONG ulSprAddr = (
 			pSprite->isEnabled ?
-			(ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw
+			(ULONG)(pSprite->pBitmap->Planes[0]) : (ULONG)s_pBlankSprite
 		);
 		copMove(
 			s_pView->pCopList, pCopBlock,
@@ -209,7 +229,7 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 
 		ULONG ulSprAddr = (
 			pSprite && pSprite->isEnabled ?
-			(ULONG)(pSprite->pBitmap->Planes[0]) : s_uBlankSprite.ulRaw
+			(ULONG)(pSprite->pBitmap->Planes[0]) : (ULONG)s_pBlankSprite
 		);
 		copSetMoveVal(&pList[0].sMove, ulSprAddr >> 16);
 		copSetMoveVal(&pList[1].sMove, ulSprAddr & 0xFFFF);
