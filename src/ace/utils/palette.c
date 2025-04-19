@@ -8,7 +8,7 @@
 #include <ace/utils/disk_file.h>
 
 void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UBYTE ubMaxLength) {
-	return paletteLoadFromFd(diskFileOpen(szPath, "rb"), pPalette, ubMaxLength);
+	return paletteLoadFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), pPalette, ubMaxLength);
 }
 
 void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
@@ -102,7 +102,7 @@ void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
 		pPalette, ubColorCnt, szPath
 	);
 
-	tFile *pFile = diskFileOpen(szPath, "wb");
+	tFile *pFile = diskFileOpen(szPath, DISK_FILE_MODE_WRITE, 1);
 	if(!pFile) {
 		logWrite("ERR: Can't write file\n");
 		logBlockEnd("paletteSave()");

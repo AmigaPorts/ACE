@@ -69,8 +69,8 @@ static UWORD s_uwOsDmaCon;
 static UWORD s_uwAceDmaCon = 0;
 static UWORD s_uwOsInitialDma;
 
-static UWORD s_ubOsCiaATimerA;
-static UWORD s_ubOsCiaBTimerB;
+static UWORD s_uwOsCiaATimerA;
+static UWORD s_uwOsCiaBTimerB;
 static UBYTE s_pOsCiaIcr[CIA_COUNT], s_pOsCiaCra[CIA_COUNT], s_pOsCiaCrb[CIA_COUNT];
 static UWORD s_pAceCiaTimerA[CIA_COUNT] = {0xFFFF, 0xFFFF}; // as long as possible
 static UWORD s_pAceCiaTimerB[CIA_COUNT] = {0xFFFF, 0xFFFF};
@@ -122,7 +122,8 @@ static UWORD s_uwOsVectorInts = (
 struct DosLibrary *DOSBase = 0;
 struct ExecBase *SysBase = 0;
 static struct Message *s_pReturnMsg = 0;
-const char *s_szOldDir = 0;
+static BPTR s_bpStartLock = 0;
+static void *s_pOldWindow;
 #endif
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
@@ -688,8 +689,8 @@ static void systemOsDisable(void) {
 		g_pCia[CIA_B]->crb = CIACRB_LOAD;
 
 		// Save OS CIA timer values
-		s_ubOsCiaATimerA = ciaGetTimerA(g_pCia[CIA_A]);
-		s_ubOsCiaBTimerB = ciaGetTimerB(g_pCia[CIA_A]);
+		s_uwOsCiaATimerA = ciaGetTimerA(g_pCia[CIA_A]);
+		s_uwOsCiaBTimerB = ciaGetTimerB(g_pCia[CIA_A]);
 
 		// set ACE CIA timers
 		ciaSetTimerA(g_pCia[CIA_A], s_pAceCiaTimerA[CIA_A]);
@@ -849,9 +850,13 @@ void systemCreate(void) {
 		// Taken from https://github.com/alpine9000/EWGM/blob/master/game/wbstartup.i
 		WaitPort(&s_pProcess->pr_MsgPort); // Wait for the message
 		s_pReturnMsg = GetMsg(&s_pProcess->pr_MsgPort); // Get the message for later reply
-		s_szOldDir = (const char*)CurrentDir(((struct WBStartup*)s_pReturnMsg)->sm_ArgList[0].wa_Lock);
+		s_bpStartLock = CurrentDir(((struct WBStartup*)s_pReturnMsg)->sm_ArgList[0].wa_Lock);
 	}
 #endif
+
+	// Disable system requesters on write protected/drive full etc when trying to create files
+	s_pOldWindow = s_pProcess->pr_WindowPtr;
+	s_pProcess->pr_WindowPtr = (void*)-1;
 
 	// Determine original stack size
 	char *pStackLower = (char *)s_pProcess->pr_Task.tc_SPLower;
@@ -975,10 +980,12 @@ void systemDestroy(void) {
 	systemCheckStack();
 
 #if defined(BARTMAN_GCC)
-	if(s_szOldDir) {
-		CurrentDir((BPTR)s_szOldDir);
+	if(s_bpStartLock) {
+		CurrentDir(s_bpStartLock);
 	}
 #endif
+
+	s_pProcess->pr_WindowPtr = s_pOldWindow;
 
 	logWrite("Closing graphics.library...\n");
 	CloseLibrary((struct Library *) GfxBase);
@@ -1049,8 +1056,8 @@ void systemUse(void) {
 		g_pCia[CIA_B]->crb = 0;
 
 		// Restore old CIA timer A values
-		ciaSetTimerA(g_pCia[CIA_A], s_ubOsCiaATimerA);
-		ciaSetTimerB(g_pCia[CIA_A], s_ubOsCiaBTimerB);
+		ciaSetTimerA(g_pCia[CIA_A], s_uwOsCiaATimerA);
+		ciaSetTimerB(g_pCia[CIA_A], s_uwOsCiaBTimerB);
 
 		// Restore OS's CIA interrupts
 		// According to UAE debugger there's nothing in CIA_A
@@ -1275,4 +1282,20 @@ void systemCheckStack(void) {
 
 UWORD systemGetVersion(void) {
 	return SysBase->LibNode.lib_Version;
+}
+
+UBYTE systemIsStartVolumeWritable(void) {
+	systemUse();
+	systemReleaseBlitterToOs();
+	struct InfoData sInfoData;
+	UBYTE isWritable = 0;
+	if(
+		Info((BPTR)s_bpStartLock, &sInfoData) &&
+		sInfoData.id_DiskState != ID_WRITE_PROTECTED
+	) {
+		isWritable = 1;
+	}
+	systemGetBlitterFromOs();
+	systemUnuse();
+	return isWritable;
 }

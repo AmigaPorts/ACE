@@ -16,6 +16,7 @@ void printUsage(const std::string &szAppName) {
 	print("\tinPath      Path to supported file format\n");
 	print("Extra options:\n");
 	print("\t-o outPath  Specify output file path. If ommited, it will perform default conversion\n");
+	print("\t-c          Enable compression for output file\n");
 	print("\t-d N        Specify amplitude division. Useful for some audio-mixing libraries\n");
 	print("\t-cd N       Check if sound effect fits max amplitude divided by specified factor and raise error otherwise. Useful for some audio-mixing libraries\n");
 	print("\t-strict     Treat warinings as errors (recommended)\n");
@@ -33,12 +34,13 @@ int main(int lArgCount, const char *pArgs[]) {
 
 	std::uint8_t ubMandatoryArgCnt = 2;
 
-	if(lArgCount < ubMandatoryArgCnt) {
+	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
 	}
 
+	bool isCompressed = false;
 	bool isStrict = false;
 	bool isNormalizing = false;
 	std::uint8_t ubDivisor = 1;
@@ -52,6 +54,9 @@ int main(int lArgCount, const char *pArgs[]) {
 		std::string_view Arg = pArgs[ArgIndex];
 		if(Arg == "-o"sv && ArgIndex < lArgCount -1) {
 			szOutput = pArgs[++ArgIndex];
+		}
+		else if(Arg == "-c"sv) {
+			isCompressed = true;
 		}
 		else if(Arg == "-d"sv && ArgIndex < lArgCount -1) {
 			ubDivisor = uint8_t(std::stoul(pArgs[++ArgIndex]));
@@ -171,7 +176,9 @@ int main(int lArgCount, const char *pArgs[]) {
 			auto PartOutPath = fmt::format(FMT_STRING("{}_{}.{}"), BaseOutputPath, ubPart, szOutExt);
 			fmt::print("Writing to {}\n", PartOutPath);
 			if(szOutExt == "sfx") {
-				In.toSfx(PartOutPath);
+				if(!In.toSfx(PartOutPath, isCompressed)) {
+					return EXIT_FAILURE;
+				}
 			}
 			else {
 				nLog::error("Output file type not supported: {}", szInExt);
@@ -186,7 +193,9 @@ int main(int lArgCount, const char *pArgs[]) {
 		// Save to output
 		fmt::print("Writing to {}...\n", szOutput);
 		if(szOutExt == "sfx") {
-			In.toSfx(szOutput);
+			if(!In.toSfx(szOutput, isCompressed)) {
+				return EXIT_FAILURE;
+			}
 		}
 		else {
 			nLog::error("Output file type not supported: {}", szInExt);

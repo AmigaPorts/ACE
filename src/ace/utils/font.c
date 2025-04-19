@@ -20,7 +20,7 @@ UBYTE fontGlyphWidth(const tFont *pFont, char c) {
 }
 
 tFont *fontCreateFromPath(const char *szPath) {
-	return fontCreateFromFd(diskFileOpen(szPath, "rb"));
+	return fontCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1));
 }
 
 tFont *fontCreateFromFd(tFile *pFontFile) {

@@ -121,7 +121,7 @@ fail:
 }
 
 void bitmapLoadFromPath(tBitMap *pBitMap, const char *szPath, UWORD uwStartX, UWORD uwStartY) {
-	return bitmapLoadFromFd(pBitMap, diskFileOpen(szPath, "rb"), uwStartX, uwStartY);
+	return bitmapLoadFromFd(pBitMap, diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), uwStartX, uwStartY);
 }
 
 void bitmapLoadFromFd(
@@ -252,7 +252,7 @@ void bitmapLoadFromFd(
 }
 
 tBitMap *bitmapCreateFromPath(const char *szPath, UBYTE isFast) {
-	return bitmapCreateFromFd(diskFileOpen(szPath, "rb"), isFast);
+	return bitmapCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), isFast);
 }
 
 tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
@@ -370,7 +370,7 @@ void bitmapSave(const tBitMap *pBitMap, const char *szPath) {
 	systemUse();
 	logBlockBegin("bitmapSave(pBitMap: %p, szPath: '%s')", pBitMap, szPath);
 
-	tFile *pFile = diskFileOpen(szPath, "wb");
+	tFile *pFile = diskFileOpen(szPath, DISK_FILE_MODE_WRITE, 1);
 	if(!pFile) {
 		logWrite("ERR: Couldn't save bitmap at '%s'\n", szPath);
 		logBlockEnd("bitmapSave()");
@@ -415,7 +415,7 @@ void bitmapSaveBmp(
 
 	systemUse();
 	UWORD uwWidth = bitmapGetByteWidth(pBitMap) << 3;
-	tFile *pOut = diskFileOpen(szFilePath, "w");
+	tFile *pOut = diskFileOpen(szFilePath, DISK_FILE_MODE_WRITE, 1);
 	if(!pOut) {
 		logWrite("ERR: Couldn't save bmp at '%s'\n", szFilePath);
 		logBlockEnd("bitmapSaveBmp()");

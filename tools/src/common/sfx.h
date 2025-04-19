@@ -7,6 +7,7 @@
 
 #include "wav.h"
 #include <string>
+#include <span>
 
 class tSfx {
 public:
@@ -14,7 +15,7 @@ public:
 
 	tSfx(const tWav &Wav, bool isStrict);
 
-	bool toSfx(const std::string &szPath) const;
+	bool toSfx(const std::string &szPath, bool isCompress) const;
 
 	bool isEmpty(void) const;
 
@@ -33,6 +34,9 @@ public:
 	void padContents(std::uint8_t ubAlignment);
 
 	tSfx splitAfter(std::uint32_t ulSamples);
+
+	static std::vector<uint8_t> compressLosslessDpcm(std::span<const int8_t> Uncompressed);
+	static std::vector<int8_t> decompressLosslessDpcm(const std::vector<uint8_t> &vCompressed, std::uint32_t ulDecompressedSize);
 
 private:
 	std::uint32_t m_ulFreq;

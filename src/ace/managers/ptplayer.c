@@ -37,6 +37,8 @@
 
 //---------------------------------------------------------------------- DEFINES
 
+#define PTPLAYER_SUPPORTED_SAMPLEPACK_VERSION 2
+
 /**
  * @brief Minimum safe CIA timer ticks count after which Paula channel regs can
  * be set for next sample.
@@ -1836,12 +1838,8 @@ void ptplayerLoadMod(
 	// sample data location is given?
 	if(pExternalSamples) {
 		logWrite("Using sample data from: %p\n", pExternalSamples);
-
-		// Save start address of each sample in contiguous sample data
-		ULONG ulOffs = 0;
 		for(UBYTE i = 0; i < PTPLAYER_MOD_SAMPLE_COUNT; ++i) {
-			mt_SampleStarts[i] = &pExternalSamples->pData[ulOffs];
-			ulOffs += s_pCurrentMod->pSampleHeaders[i].uwLength;
+			mt_SampleStarts[i] = pExternalSamples->pSamples[i].pData;
 		};
 	}
 	else {
@@ -2722,8 +2720,61 @@ static const tPreFx prefx_tab[16] = {
  *
  * @return The current clock constant, dependent on PAL/NTSC mode.
  */
-static inline ULONG getClockConstant() {
+static inline ULONG getClockConstant(void) {
 	return s_isPal ? 3546895 : 3579545;
+}
+
+static void ptplayerSfxDecompress(
+	UBYTE *pCompressed, UBYTE *pDecompressed, ULONG ulDecompressedSize
+) {
+	UBYTE *pRead = pCompressed;
+	const UBYTE *pDecompressedEnd = &pDecompressed[ulDecompressedSize];
+	ULONG ulCtl;
+	BYTE bLastSample = 0;
+	while(1) {
+		ulCtl = *(pRead++);
+		ulCtl = (ulCtl << 8) | *(pRead++);
+		ulCtl = (ulCtl << 8) | *(pRead++);
+		ulCtl = (ulCtl << 8) | *(pRead++);
+		for(UBYTE i = 16; i--;) {
+			UBYTE ubCtl = ulCtl & 0b11;
+			if(ubCtl == 0) {
+				*(pDecompressed++) = bLastSample;
+			}
+			else if(ubCtl == 0b11) {
+				bLastSample = *(pRead++);
+				*(pDecompressed++) = bLastSample;
+			}
+			else {
+				UBYTE ubNibbles = *(pRead++);
+
+				if(ubCtl == 0b01) {
+					bLastSample += (ubNibbles & 0xF) + 1;
+				}
+				else {
+					bLastSample -= (ubNibbles & 0xF) + 1;
+				}
+				*(pDecompressed++) = bLastSample;
+
+				ubNibbles >>= 4;
+				ulCtl >>= 2;
+				--i;
+				ubCtl = ulCtl & 0b11;
+				if(ubCtl == 0b01) {
+					bLastSample += ubNibbles + 1;
+				}
+				else {
+					bLastSample -= ubNibbles + 1;
+				}
+				*(pDecompressed++) = bLastSample;
+			}
+
+			if(pDecompressed >= pDecompressedEnd) {
+				return;
+			}
+			ulCtl >>= 2;
+		}
+	}
 }
 
 void ptplayerProcess(void) {
@@ -2775,7 +2826,7 @@ void ptplayerSetSampleVolume(UBYTE ubSampleIndex, UBYTE ubVolume) {
 }
 
 tPtplayerMod *ptplayerModCreateFromPath(const char *szPath) {
-	return ptplayerModCreateFromFd(diskFileOpen(szPath, "rb"));
+	return ptplayerModCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1));
 }
 
 tPtplayerMod *ptplayerModCreateFromFd(tFile *pFileMod) {
@@ -2882,7 +2933,7 @@ void ptplayerModDestroy(tPtplayerMod *pMod) {
 //-------------------------------------------------------------------------- SFX
 
 tPtplayerSfx *ptplayerSfxCreateFromPath(const char *szPath, UBYTE isFast) {
-	return ptplayerSfxCreateFromFd(diskFileOpen(szPath, "rb"), isFast);
+	return ptplayerSfxCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), isFast);
 }
 
 tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
@@ -2901,20 +2952,34 @@ tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
 	}
 	UBYTE ubVersion;
 	fileRead(pFileSfx, &ubVersion, sizeof(ubVersion));
-	if(ubVersion == 1) {
+	if(ubVersion == 2) {
 		fileRead(pFileSfx, &pSfx->uwWordLength, sizeof(pSfx->uwWordLength));
 		ULONG ulByteSize = pSfx->uwWordLength * sizeof(UWORD);
 
 		UWORD uwSampleRateHz;
 		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
 		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
-		logWrite("Length: %lu, sample rate: %hu, period: %hu\n", ulByteSize, uwSampleRateHz, pSfx->uwPeriod);
+		ULONG ulCompressedSize;
+		fileRead(pFileSfx, &ulCompressedSize, sizeof(ulCompressedSize));
+		logWrite(
+			"Length: %lu, compressed: %lu, sample rate: %hu, period: %hu\n",
+			ulByteSize, ulCompressedSize, uwSampleRateHz, pSfx->uwPeriod
+		);
 
 		pSfx->pData = isFast ? memAllocFast(ulByteSize) : memAllocChip(ulByteSize);
 		if(!pSfx->pData) {
 			goto fail;
 		}
-		fileRead(pFileSfx, pSfx->pData, ulByteSize);
+
+		if(ulCompressedSize) {
+			UBYTE *pCompressed = memAllocFast(ulByteSize);
+			fileRead(pFileSfx, pCompressed, ulCompressedSize);
+			ptplayerSfxDecompress(pCompressed, (UBYTE*)pSfx->pData, ulByteSize);
+			memFree(pCompressed, ulByteSize);
+		}
+		else {
+			fileRead(pFileSfx, pSfx->pData, ulByteSize);
+		}
 
 		// Check if pData[0] is zeroed-out - it should be because after sfx playback
 		// ptplayer sets the channel playback to looped first word. This should
@@ -3218,32 +3283,57 @@ UBYTE ptplayerSfxLengthInFrames(const tPtplayerSfx *pSfx) {
 }
 
 tPtplayerSamplePack *ptplayerSampleDataCreateFromPath(const char *szPath) {
-	return ptplayerSampleDataCreateFromFd(diskFileOpen(szPath, "rb"));
+	return ptplayerSampleDataCreateFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1));
 }
 
 tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)
 {
-	// TODO: add some kind of header for the file, read each sample separately
 	logBlockBegin("ptplayerSampleDataCreateFromFd(pFileSamples: %p)", pFileSamples);
 	systemUse();
+
+	UBYTE ubVersion;
 	tPtplayerSamplePack *pSamplePack = 0;
-	LONG lSize = fileGetSize(pFileSamples);
-	if(lSize <= 0) {
-		logWrite("ERR: Invalid file size. File exists?\n");
+	fileRead(pFileSamples, &ubVersion, sizeof(ubVersion));
+	if(ubVersion != PTPLAYER_SUPPORTED_SAMPLEPACK_VERSION) {
+		// ACE only supports most up to date file version to limit its size
+		logWrite(
+			"ERR: Unsupported sample pack format version: %hu, expected %hu",
+			ubVersion, PTPLAYER_SUPPORTED_SAMPLEPACK_VERSION
+		);
 		goto fail;
 	}
 
 	pSamplePack = memAllocFastClear(sizeof(*pSamplePack));
-	logWrite("Addr: %p\n", pSamplePack);
-	pSamplePack->ulSize = lSize;
-	pSamplePack->pData = memAllocChip(pSamplePack->ulSize);
-	if(!pSamplePack->pData) {
+	if(!pSamplePack) {
 		goto fail;
 	}
+	logWrite("Addr: %p\n", pSamplePack);
+	fileRead(pFileSamples, &pSamplePack->ubSampleCount, sizeof(pSamplePack->ubSampleCount));
 
-	fileRead(pFileSamples, pSamplePack->pData, pSamplePack->ulSize);
+	for(UBYTE i = 0; i < pSamplePack->ubSampleCount; ++i) {
+		tPtplayerSfx *pSample = &pSamplePack->pSamples[i];
+		ULONG ulCompressedLength;
+		fileRead(pFileSamples, &pSample->uwWordLength, sizeof(pSample->uwWordLength));
+		fileRead(pFileSamples, &ulCompressedLength, sizeof(ulCompressedLength));
+		pSample->pData = memAllocChip(pSample->uwWordLength * sizeof(UWORD));
+		if(!pSample->pData) {
+			goto fail;
+		}
+		if(ulCompressedLength) {
+			UBYTE *pCompressed = memAllocFast(ulCompressedLength);
+			if(!pCompressed) {
+				goto fail;
+			}
+			fileRead(pFileSamples, pCompressed, ulCompressedLength);
+			ptplayerSfxDecompress(pCompressed, (UBYTE*)pSample->pData, pSample->uwWordLength * sizeof(UWORD));
+			memFree(pCompressed, ulCompressedLength);
+		}
+		else {
+			fileRead(pFileSamples, pSample->pData, pSample->uwWordLength * sizeof(UWORD));
+		}
+	}
+
 	fileClose(pFileSamples);
-
 	systemUnuse();
 	logBlockEnd("ptplayerSampleDataCreateFromFd()");
 	return pSamplePack;
@@ -3252,8 +3342,11 @@ fail:
 		fileClose(pFileSamples);
 	}
 	if(pSamplePack) {
-		if(pSamplePack->pData) {
-			memFree(pSamplePack->pData, pSamplePack->ulSize);
+		for(UBYTE i = 0; i < pSamplePack->ubSampleCount; ++i) {
+			tPtplayerSfx *pSample = &pSamplePack->pSamples[i];
+			if(pSample->pData) {
+				memFree(pSample->pData, pSample->uwWordLength * sizeof(UWORD));
+			}
 		}
 		memFree(pSamplePack, sizeof(*pSamplePack));
 	}
@@ -3265,7 +3358,10 @@ fail:
 
 void ptplayerSamplePackDestroy(tPtplayerSamplePack *pSamplePack) {
 	logBlockBegin("ptplayerSamplePackDestroy(pSamplePack: %p)", pSamplePack);
-	memFree(pSamplePack->pData, pSamplePack->ulSize);
+	for(UBYTE i = 0; i < pSamplePack->ubSampleCount; ++i) {
+		tPtplayerSfx *pSample = &pSamplePack->pSamples[i];
+		memFree(pSample->pData, pSample->uwWordLength * sizeof(UWORD));
+	}
 	memFree(pSamplePack, sizeof(*pSamplePack));
 	logBlockEnd("ptplayerSamplePackDestroy()");
 }
