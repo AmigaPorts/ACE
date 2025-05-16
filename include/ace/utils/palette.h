@@ -27,6 +27,14 @@ extern "C" {
 void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UBYTE ubMaxLength);
 
 /**
+ * @brief Saves given palette into .plt file.
+ * @param pPalette Palette to save.
+ * @param ubColorCnt Number of colors in palette.
+ * @param szPath Destination path.
+ */
+void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
+
+/**
  * @brief Loads palette from supplied .plt file to given address.
  * @param pFile Handle to the palette file. Will be closed on function return.
  * @param pPalette Palette destination pointer.
@@ -66,9 +74,23 @@ void paletteDimAGA(
  * @brief Dims a single input color to given brightness level.
  * @param uwFullColor Full color used as a base to calculate percentage.
  * @param ubLevel Brightness level - 15 for no dim, 0 for total blackness.
+ *
+ * @see paletteColorMix()
  */
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
 ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
+
+/**
+ * @brief Interpolates two colors at given level.
+ * @param uwColorPrimary Primary color in the mix.
+ * @param uwColorSecondary Secondary color in the mix.
+ * @param ubLevel Mix ratio - 15 results in primary color, 0 in secondary.
+ * @return Mixed color between uwColorPrimary and uwColorSecondary.
+ *
+ * @note This function is slower than paletteColorDim().
+ * @see paletteColorDim()
+ */
+UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel);
 
 /**
  * @brief Writes given palette to debug .bmp file.

@@ -25,19 +25,31 @@ static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 
 #define BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
 
-static void tileBufferResetRedrawState(tRedrawState *pState) {
+static void tileBufferResetRedrawState(
+	tRedrawState *pState, WORD wStartX, WORD wEndX, WORD wStartY, WORD wEndY
+) {
 #if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
 	memset(&pState->sMarginL, 0, sizeof(tMarginState));
 	memset(&pState->sMarginR, 0, sizeof(tMarginState));
+	pState->sMarginL.wTilePos = wStartX;
+	pState->sMarginR.wTilePos = wEndX;
 	pState->pMarginX = &pState->sMarginR;
 	pState->pMarginOppositeX = &pState->sMarginL;
+#else
+	(void)wStartX;
+	(void)wEndX;
 #endif
 
 #if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
 	memset(&pState->sMarginU, 0, sizeof(tMarginState));
 	memset(&pState->sMarginD, 0, sizeof(tMarginState));
+	pState->sMarginU.wTilePos = wStartY;
+	pState->sMarginD.wTilePos = wEndY;
 	pState->pMarginY = &pState->sMarginD;
 	pState->pMarginOppositeY = &pState->sMarginU;
+#else
+	(void)wStartY;
+	(void)wEndY;
 #endif
 
 	pState->ubPendingCount = 0;
@@ -246,7 +258,7 @@ void tileBufferReset(
 	if(uwTileX && uwTileY) {
 		pManager->pTileData = memAllocFast(uwTileX * sizeof(pManager->pTileData[0]));
 		for(UWORD uwCol = uwTileX; uwCol--;) {
-			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(pManager->pTileData[uwCol]));
+			pManager->pTileData[uwCol] = memAllocFastClear(uwTileY * sizeof(pManager->pTileData[uwCol][0]));
 		}
 	}
 
@@ -296,9 +308,10 @@ void tileBufferReset(
 		pManager->ubMarginXLength, pManager->ubMarginYLength
 	);
 
-	// Reset margin redraw structs
-	tileBufferResetRedrawState(&pManager->pRedrawStates[0]);
-	tileBufferResetRedrawState(&pManager->pRedrawStates[1]);
+	// Reset margin redraw structs - margin positions will be set correctly
+	// by tileBufferRedrawAll()
+	tileBufferResetRedrawState(&pManager->pRedrawStates[0], 0, 0, 0, 0);
+	tileBufferResetRedrawState(&pManager->pRedrawStates[1], 0, 0, 0, 0);
 
 	logBlockEnd("tileBufferReset()");
 }
@@ -401,16 +414,14 @@ static inline void tileBufferContinueTileDraw(
 FN_HOTSPOT
 void tileBufferProcess(tTileBufferManager *pManager) {
 #if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X) || defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
-	WORD wMarginXPos, wMarginYPos;
-	UWORD uwTileOffsX, uwTileOffsY;
 	tRedrawState *pState = &pManager->pRedrawStates[pManager->ubStateIdx];
-
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
 #endif
 
 #if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
 	// X movement
+	WORD wMarginXPos;
 	WORD wDeltaX = cameraGetDeltaX(pManager->pCamera);
 	if (wDeltaX) {
 		// determine movement direction - right or left
@@ -430,10 +441,10 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wMarginXPos != pState->pMarginX->wTilePos) {
 			// Not finished redrawing all column tiles?
 			if(pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
-				uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+				UWORD uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
 					pState->pMarginX->wTileCurr << ubTileShift, pManager->uwMarginedHeight
 				);
-				uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
+				UWORD uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 				UWORD uwTileCurr = pState->pMarginX->wTileCurr;
@@ -524,6 +535,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 
 #if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
 	// Y movement
+	WORD wMarginYPos;
 	WORD wDeltaY = cameraGetDeltaY(pManager->pCamera);
 	if (wDeltaY) {
 		// determine redraw row - down or up
@@ -543,10 +555,10 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		if (wMarginYPos != pState->pMarginY->wTilePos) {
 			// Not finished redrawing all row tiles?
 			if(pState->pMarginY->wTileCurr < pState->pMarginY->wTileEnd) {
-				uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+				UWORD uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
 					pState->pMarginY->wTilePos << ubTileShift, pManager->uwMarginedHeight
 				);
-				uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
+				UWORD uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 				UWORD uwTileCurr = pState->pMarginY->wTileCurr;
@@ -618,10 +630,6 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
 
-	// Reset margin redraw structs as we're redrawing everything anyway
-	tileBufferResetRedrawState(&pManager->pRedrawStates[0]);
-	tileBufferResetRedrawState(&pManager->pRedrawStates[1]);
-
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
 
@@ -635,6 +643,13 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	UWORD uwEndY = MIN(
 		pManager->uTileBounds.uwY,
 		wStartY + (pManager->uwMarginedHeight >> ubTileShift)
+	);
+	// Reset margin redraw structs as we're redrawing everything anyway
+	tileBufferResetRedrawState(
+		&pManager->pRedrawStates[0], wStartX, uwEndX, wStartY, uwEndY
+	);
+	tileBufferResetRedrawState(
+		&pManager->pRedrawStates[1], wStartX, uwEndX, wStartY, uwEndY
 	);
 
 	UWORD uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(

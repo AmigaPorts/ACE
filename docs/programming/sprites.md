@@ -14,7 +14,8 @@ The sprite data consists of:
 On Amiga hardware, each sprite is 16 pixels wide, can be of arbitrary height and is always 2BPP.
 With header and footer in mind, this means that e.g. 16x32 sprite data can be prepared as 16x34 2BPP interleaved bitmap.
 
-**Note:** Because of metadata present inside sprite data, it can't be realistically shared across different sprites.
+In order to create wider sprites, you need to use multiple 16px-wide sprites and position them next to each other.
+Although AGA chipset supports wider sprites, the support for that feature is still unimplemented.
 
 The final sprite palette is dependent on the channel.
 The sprite 2BPP colors are translated into colors from upper half of the current display palette, even if lower screen BPP is used:
@@ -48,8 +49,8 @@ The manager works in block, as well as raw copperlist mode.
 void myGsCreate(void) {
   // Some stuff goes here...
 
-  spriteManagerCreate(s_pView, 0); // For raw copper mode, pass position on
-                                   // copperlist for sprite initialization.
+  spriteManagerCreate(s_pView, 0, NULL); // For raw copper mode, pass position on
+                                         // copperlist for sprite initialization.
   systemSetDmaBit(DMAB_SPRITE, 1); // Enable sprite DMA.
 
   // Stuff continues...
@@ -91,18 +92,19 @@ Apart from data, adding sprite requires channel index.
 
 ```c
 tSprite *s_pSprite0, *s_pSprite3;
-tBitMap *s_pSprite0Data, s_pSprite3Data;
+tBitMap *s_pSprite0Data, *s_pSprite3Data;
 
 // Somewhere in your gamestate creation:
 spriteManagerCreate(...);
 // Remember about limited width to 16px AND extra line for header and footer
-s_pSprite0Data = bitmapCreate(16, 34, 2, BMF_CLEAR); // 16x32 2BPP
-s_pSprite3Data = bitmapCreate(16, 34, 2, BMF_CLEAR); // 16x32 2BPP
+s_pSprite0Data = bitmapCreate(16, 34, 2, BMF_CLEAR | BMF_INTERLEAVED); // 16x32 2BPP
+s_pSprite3Data = bitmapCreate(16, 34, 2, BMF_CLEAR | BMF_INTERLEAVED); // 16x32 2BPP
 s_pSprite0 = spriteAdd(0, pSprite0Data); // Add sprite to channel 0
 s_pSprite3 = spriteAdd(3, pSprite1Data); // Add second sprite to channel 3
 ```
 
-**Note:** you can't share sprite data across channels because although the display data is the same, the header and footer metadata will differ.
+> [!NOTE]
+> You can't share sprite data bitmaps across channels - although the display data is the same, the header and footer metadata will differ.
 
 Be sure to dispose of them afterwards:
 

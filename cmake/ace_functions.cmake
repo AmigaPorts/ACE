@@ -239,7 +239,7 @@ function(convertAudio)
 	getToolPath(audio_conv TOOL_AUDIO_CONV)
 	cmake_parse_arguments(
 		args
-		"STRICT;PTPLAYER;NORMALIZE;"
+		"STRICT;PTPLAYER;NORMALIZE;COMPRESS;"
 		"TARGET;SOURCE;DESTINATION;PAD_BYTES;DIVIDE_AMPLITUDE;CHECK_DIVIDED_AMPLITUDE"
 		"" ${ARGN}
 	)
@@ -252,6 +252,9 @@ function(convertAudio)
 	endif()
 	if(${args_NORMALIZE})
 		set(argsOptional ${argsOptional} -n)
+	endif()
+	if(${args_COMPRESS})
+		set(argsOptional ${argsOptional} -c)
 	endif()
 	if(${args_PAD_BYTES})
 		set(argsOptional ${argsOptional} -pad ${args_PAD_BYTES})
@@ -270,27 +273,33 @@ function(convertAudio)
 		OUTPUT ${args_DESTINATION}
 		COMMAND ${TOOL_AUDIO_CONV} ${args_SOURCE} -o ${args_DESTINATION} ${argsOptional}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${args_SOURCE}
 	)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
 
 function(mergeMods)
 	getToolPath(mod_tool TOOL_MOD_TOOL)
-	set(oneValArgs SAMPLE_PACK TARGET)
-	set(multiValArgs SOURCES DESTINATIONS)
 	set(cmdParams "")
 	cmake_parse_arguments(
-		args "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
+		args
+		"COMPRESS"
+		"SAMPLE_PACK;TARGET"
+		"SOURCES;DESTINATIONS" ${ARGN}
 	)
 
 	if(NOT ("${args_SAMPLE_PACK} " STREQUAL " "))
 		list(APPEND cmdParams -sp ${args_SAMPLE_PACK})
 	endif()
 
+	if(${args_COMPRESS})
+		list(APPEND cmdParams -c)
+	endif()
+
 	list(LENGTH args_SOURCES srcCount)
 	list(LENGTH args_DESTINATIONS dstCount)
 	if(NOT ${srcCount} EQUAL ${dstCount})
-		message(FATAL_ERROR "[mergeMods] SOURCES count doesn't match DESTINATIONS count")
+		message(FATAL_ERROR "[mergeMods] SOURCES count ${srcCount} doesn't match DESTINATIONS count ${dstCount}")
 	endif()
 
 	MATH(EXPR srcCount "${srcCount}-1")
@@ -317,20 +326,28 @@ endfunction()
 
 function(packDirectory)
 	getToolPath(pak_tool TOOL_PAK_TOOL)
-	set(oneValArgs SOURCE_DIR DEST_FILE TARGET)
-	set(multiValArgs "")
-	set(cmdParams "")
 	cmake_parse_arguments(
-		args "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
+		args
+		"COMPRESS"
+		"SOURCE_DIR;DEST_FILE;TARGET;REORDER_FILE"
+		""
+		${ARGN}
 	)
 
 	toAbsolute(args_SOURCE_DIR)
 	toAbsolute(args_DEST_FILE)
 	FILE(GLOB_RECURSE sourceDirFiles "${args_SOURCE_DIR}/*")
 
+	if(${args_COMPRESS})
+		set(argsOptional ${argsOptional} -c)
+	endif()
+	if(NOT "${args_REORDER_FILE} " STREQUAL " ")
+		set(argsOptional ${argsOptional} -r ${args_REORDER_FILE})
+	endif()
+
 	add_custom_command(
 		OUTPUT ${args_DEST_FILE}
-		COMMAND ${TOOL_PAK_TOOL} ${args_SOURCE_DIR} ${args_DEST_FILE}
+		COMMAND ${TOOL_PAK_TOOL} ${args_SOURCE_DIR} ${args_DEST_FILE} ${argsOptional}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${sourceDirFiles}
 	)

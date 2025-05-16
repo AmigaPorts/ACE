@@ -23,12 +23,17 @@ private:
 
 class tOpRotate: public tOp {
 public:
-	tOpRotate(double dDeg, tRgb Bg);
+	tOpRotate(
+		double dDeg, tRgb Bg,
+		double dCenterX, double dCenterY
+	);
 	virtual tChunkyBitmap execute(const tChunkyBitmap &Src);
 	virtual std::string toString(void);
 private:
 	double m_dDeg;
 	tRgb m_Bg;
+	double m_dCenterX;
+	double m_dCenterY;
 };
 
 class tOpMirror: public tOp {
@@ -50,7 +55,7 @@ void printUsage(const std::string &szAppName)
 	print("Usage:\n\t{} in.png out.png [transforms]\n", szAppName);
 	print("\nAvailable transforms, done in passed order:\n");
 	print("\t-extract x y width height\tExtract rectangle at x,y of size width*height.\n");
-	print("\t-rotate deg bgcolor      \tRotate clockwise by given number of degrees. Can be negative.\n");
+	print("\t-rotate deg bgcolor cx cy\tRotate clockwise by given number of degrees around cx,cy. Values can be floats/negative.\n");
 	print("\t-mirror x|y              \tMirror image along x or y axis.\n");
 	print("\nCurrently only PNG is supported, sorry!\n");
 }
@@ -102,7 +107,7 @@ int main(int lArgCount, char *pArgs[])
 			}
 		}
 		else if(szOp == "-rotate") {
-			if(ArgIndex + 2 >= lArgCount) {
+			if(ArgIndex + 4 >= lArgCount) {
 				nLog::error(
 					"Too few args for {} - first arg at pos {}, arg count: {}",
 					szOp, ArgIndex + 1, lArgCount
@@ -112,10 +117,12 @@ int main(int lArgCount, char *pArgs[])
 			try {
 				auto Deg = std::stod(pArgs[++ArgIndex]);
 				auto Bg = tRgb(pArgs[++ArgIndex]);
-				vOps.push_back(std::make_unique<tOpRotate>(Deg, Bg));
+				auto CenterX = std::stod(pArgs[++ArgIndex]);
+				auto CenterY = std::stod(pArgs[++ArgIndex]);
+				vOps.push_back(std::make_unique<tOpRotate>(Deg, Bg, CenterX, CenterY));
 			}
 			catch(std::exception Ex) {
-				nLog::error("Couldn't parse rotate degrees: '{}'", pArgs[ArgIndex]);
+				nLog::error("Couldn't parse arg: '{}'", pArgs[ArgIndex]);
 				return EXIT_FAILURE;
 			}
 		}
@@ -222,16 +229,17 @@ std::string tOpMirror::toString(void)
 
 //---------------------------------------------------------------------OP ROTATE
 
-tOpRotate::tOpRotate(double dDeg, tRgb Bg):
-	m_dDeg(dDeg), m_Bg(Bg)
+tOpRotate::tOpRotate(
+	double dDeg, tRgb Bg,
+	double dCenterX, double dCenterY
+):
+	m_dDeg(dDeg), m_Bg(Bg), m_dCenterX(dCenterX), m_dCenterY(dCenterY)
 {
 	// Nothing here for now
 }
 
 tChunkyBitmap tOpRotate::execute(const tChunkyBitmap &Source) {
 	tChunkyBitmap Dst(Source.m_uwWidth, Source.m_uwHeight);
-	auto CenterX = (Source.m_uwWidth - 1) / 2.0;
-	auto CenterY = (Source.m_uwHeight - 1) / 2.0;
 
 	auto Rad = (m_dDeg * 2 * M_PI) / 360;
 	auto CalcCos = cos(Rad);
@@ -239,11 +247,11 @@ tChunkyBitmap tOpRotate::execute(const tChunkyBitmap &Source) {
 
 	// For each of new bitmap's pixel sample color from rotated source x,y
 	for(auto Y = 0; Y < Dst.m_uwHeight; ++Y) {
-		auto Dy = Y - CenterY;
+		auto Dy = Y - m_dCenterY;
 		for(auto X = 0; X < Dst.m_uwWidth; ++X) {
-			auto Dx = X - CenterX;
-			auto U = uint16_t(round(CalcCos * Dx + CalcSin * Dy + (CenterX)));
-			auto V = uint16_t(round(-CalcSin * Dx + CalcCos * Dy + (CenterY)));
+			auto Dx = X - m_dCenterX;
+			auto U = uint16_t(round(CalcCos * Dx + CalcSin * Dy + (m_dCenterX)));
+			auto V = uint16_t(round(-CalcSin * Dx + CalcCos * Dy + (m_dCenterY)));
 
 			if(U < 0 || V < 0 || U >= Dst.m_uwWidth || V >= Dst.m_uwHeight) {
 				// fmt::print("can't sample for {:2d},{:2d} from {:.1f},{:.1f}\n", X, Y, U, V);

@@ -22,7 +22,7 @@ extern "C" {
  * bobInit(&sBob1, ...)
  * bobInit(&sBob2, ...)
  * bobInit(&sBobN, ...)
- * bobReallocateBgBuffers()
+ * bobReallocateBuffers()
  *
  * in gamestate loop:
  * bobBegin()
@@ -71,7 +71,12 @@ typedef struct tBob {
 #endif
 	UWORD _uwBlitSize;
 	WORD _wModuloUndrawSave;
-	UBYTE *_pOldDrawOffs[2];
+	UWORD _uwInterleavedHeight;
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	ULONG _pSaveOffsets[2];
+#else
+	UBYTE *_pBufferDrawPtrs[2];
+#endif
 } tBob;
 
 /**
@@ -79,7 +84,7 @@ typedef struct tBob {
  * If you use single buffering, pass same pointer in pFront and pBack.
  *
  * After calling this fn you should call series of bobInit() followed by
- * single bobReallocateBgBuffers().
+ * single bobReallocateBuffers().
  *
  * @param pFront Double buffering's front buffer bitmap.
  * @param pBack Double buffering's back buffer bitmap.
@@ -88,10 +93,16 @@ typedef struct tBob {
  * For scrollBuffer you should use `pScrollBuffer->uwBmAvailHeight`.
  *
  * @see bobInit()
- * @see bobReallocateBgBuffers()
+ * @see bobReallocateBuffers()
  * @see bobManagerDestroy()
  */
-void bobManagerCreate(tBitMap *pFront, tBitMap *pBack, UWORD uwAvailHeight);
+void bobManagerCreate(
+	tBitMap *pFront, tBitMap *pBack,
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	tBitMap *pPristineBuffer,
+#endif
+	UWORD uwAvailHeight
+);
 
 /**
  * @brief Destroys bob manager, releasing all its resources.
@@ -126,7 +137,7 @@ void bobInit(
  *
  * After call to this function, you can't call bobInit() anymore!
  */
-void bobReallocateBgBuffers(void);
+void bobReallocateBuffers(void);
 
 /**
  * @brief Changes bob's animation frame.
@@ -227,6 +238,21 @@ UBYTE bobProcessNext(void);
 void bobPushingDone(void);
 
 /**
+ * @brief Processes all pending bobs so far.
+ * This is only for advanced usage while ensuring that the bobs pushed so far
+ * were already processed, e.g. alter the bitmaps mid-bob (un)draw.
+ */
+void bobProcessAll(void);
+
+/**
+ * @brief Gets the index of currently processed buffer in double buffering.
+ * Used only in advanced scenarios to allow external access to bob struct's
+ * private fields.
+ * @return Index of the buffer - either 0 or 1.
+ */
+UBYTE bobGetCurrentBufferIndex(void);
+
+/**
  * @brief Ends bob processing, enforcing all remaining bobs to be drawn.
  * After making this call all other blitter operations are safe again.
  */
@@ -234,6 +260,15 @@ void bobEnd(void);
 
 void bobDiscardUndraw(void);
 
+/**
+ * @brief Sets the current buffer to given bitmap in case it loses sync.
+ * Usually used in tandem with bobDiscardUndraw() when bob system was disabled
+ * for some time.
+ *
+ * @param pCurrent Current buffer to use. Must be same as one of passed
+ * in bobManagerCreate().
+ */
+void bobSetCurrentBuffer(tBitMap *pCurrent);
 
 #ifdef __cplusplus
 }

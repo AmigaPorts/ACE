@@ -1,10 +1,5 @@
 #ifndef _MINI_STD_STDIO_H_
 #define _MINI_STD_STDIO_H_
-#ifdef __cplusplus
-#define restrict 
-extern "C" {
-	
-#endif
 
 #include <stddef.h>
 #include <stdarg.h>
@@ -46,9 +41,9 @@ static inline int vsprintf(char *restrict buffer, const char *restrict format, v
 	return vsnprintf(buffer, 65535, format, vlist);
 }
 
-#ifdef __cplusplus
-}
-#endif
+int rename(const char *szSource, const char *szDestination);
+
+int remove(const char* szFilePath);
 
 #ifdef __cplusplus
 }

@@ -46,34 +46,35 @@ def buildStep() {
 		stage("Building on \"amigadev/crosstools:m68k-amigaos\" for \"Amiga Classic\"...") {
 			properties([pipelineTriggers([githubPush()])])
 			def commondir = env.WORKSPACE + '/../' + fixed_job_name + '/'
+			docker.withRegistry("https://index.docker.io/v1/", "dockerhub") {
+			    def dockerImageRef = docker.image("amigadev/crosstools:m68k-amigaos");
+			    dockerImageRef.pull();
 
-			def dockerImageRef = docker.image("amigadev/crosstools:m68k-amigaos");
-			dockerImageRef.pull();
+			    checkout scm;
 
-			checkout scm;
+			    dockerImageRef.inside("") {
 
-			dockerImageRef.inside("") {
+				    if (env.CHANGE_ID) {
+					    echo 'Trying to build pull request'
+				    }
 
-				if (env.CHANGE_ID) {
-					echo 'Trying to build pull request'
-				}
+				    sh "mkdir -p lib/"
+				    sh "rm -rfv build-68k/*"
 
-				sh "mkdir -p lib/"
-				sh "rm -rfv build-68k/*"
-
-				stage("Building...") {
-					sh "cmake -S . -B build-68k -DCMAKE_INSTALL_PREFIX=./install -DCMAKE_BUILD_TYPE=Release"
-					sh "cmake --build build-68k --config Release --target install -j 8"
+				    stage("Building...") {
+					    sh "cmake -S . -B build-68k -DCMAKE_INSTALL_PREFIX=./install -DCMAKE_BUILD_TYPE=Release"
+					    sh "cmake --build build-68k --config Release --target install -j 8"
 					
-					sh "cd install && lha -c ../ace.lha ./*"
+					    sh "cd install && lha -c ../ace.lha ./*"
 
-					archiveArtifacts artifacts: '*.zip,*.tar.gz,*.tgz,*.lha'
-				}
+					    archiveArtifacts artifacts: '*.zip,*.tar.gz,*.tgz,*.lha'
+				    }
 
 
-				discordSend description: "Target: Amiga Classic DockerImage: amigadev/crosstools:m68k-amigaos successful!", footer: "", link: env.BUILD_URL, result: currentBuild.currentResult, title: "[${split_job_name[0]}] Build Successful: ${fixed_job_name} #${env.BUILD_NUMBER}", webhookURL: env.AMIGADEV_WEBHOOK
-			}
-		}
+				    discordSend description: "Target: Amiga Classic DockerImage: amigadev/crosstools:m68k-amigaos successful!", footer: "", link: env.BUILD_URL, result: currentBuild.currentResult, title: "[${split_job_name[0]}] Build Successful: ${fixed_job_name} #${env.BUILD_NUMBER}", webhookURL: env.AMIGADEV_WEBHOOK
+			    }
+		    }
+	    }
 	} catch(err) {
 		currentBuild.result = 'FAILURE'
 

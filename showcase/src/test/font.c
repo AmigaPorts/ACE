@@ -42,7 +42,7 @@ void gsTestFontCreate(void) {
 	s_pTestFontVPort->pPalette[4] = 0x111;
 
 	// Load fonts
-	s_pFontUI = fontCreate("data/fonts/silkscreen.fnt");
+	s_pFontUI = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pGlyph = 0;
 	s_pGlyph = fontCreateTextBitMap(96, s_pFontUI->uwHeight);
 	s_pGlyphCode = fontCreateTextBitMap(96, s_pFontUI->uwHeight);

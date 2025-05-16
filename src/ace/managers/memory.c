@@ -101,7 +101,7 @@ static ULONG _memEntryDelete(
 	systemUse();
 	if(ulSize != pCurr->ulSize) {
 		logWrite(
-			"[MEM] WARN: memFree size mismatch at memory %hu@%p: %lu, should be %lu (%s:%u)\n",
+			"[MEM] ERR: memFree size mismatch at memory %hu@%p: %lu, should be %lu (%s:%u)\n",
 			pCurr->uwId, pAddr, ulSize, pCurr->ulSize, szFile, uwLine
 		);
 	}
@@ -282,6 +282,10 @@ UBYTE memType(const void *pMem) {
 #endif // AMIGA
 }
 
-ULONG memGetChipSize(void) {
+ULONG memGetFreeChipSize(void) {
 	return AvailMem(MEMF_CHIP);
+}
+
+ULONG memGetFreeSize(void) {
+	return AvailMem(MEMF_ANY);
 }
