@@ -48,18 +48,22 @@ tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask,
 
 /**
  * @brief Sets the palette Ba nk for AGA Sprites for the Odd Channels
- * 
- * @param ubIndex 
+ *
+ * @param ubIndex
  * @return index of the palette
  */
 void spriteSetOddColourPaletteBank(UBYTE ubIndex);
 
 /**
  * @brief Sets the palette Bank for AGA Sprites for the Even Channels
- * 
- * @param ubIndex 
+ *
+ * @param ubIndex
  * @return index of the palette
  */
 void spriteSetEvenColourPaletteBank(UBYTE ubIndex);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ACE_UTILS_SPRITE_H_
