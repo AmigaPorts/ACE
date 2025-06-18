@@ -171,7 +171,7 @@ void viewUpdateGlobalPalette(const tView *pView) {
 		// for(UBYTE i = 0; i < 32; ++i) {
 		// 	g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 		// }
-		if (pView->uwFlags & VP_FLAG_AGA) {
+		if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
 
 			WORD colourBanks = (1 << pView->pFirstVPort->ubBpp) /32 ;
 			// oh AGA palette, how convoluted you are.
@@ -256,7 +256,7 @@ void viewLoad(tView *pView)
 
 		g_sCopManager.pCopList = pView->pCopList;
 		// Seems strange that everything relies on the first viewport flags, and palette etc
-		if (pView->uwFlags & VP_FLAG_AGA) {
+		if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
 			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9) | BV(4); // BPP + composite output
 			if ( pView->pFirstVPort->ubBpp == 6) {
 			
@@ -385,7 +385,7 @@ tVPort *vPortCreate(void *pTagList, ...)
 	// Palette tag
 
 	// Allocate memory for the palette;
-	if (pView->uwFlags & VP_FLAG_AGA) {
+	if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
 		// AGA uses 24 bit palette entries. 		
 		pVPort->pPalette = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBpp)); 
 		UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
