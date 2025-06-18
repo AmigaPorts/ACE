@@ -58,6 +58,7 @@ UBYTE spriteDisableInCopRawMode(
 	return ubCmdCount;
 }
 
+#ifdef ACE_USE_AGA_FEATURES
 void spriteSetOddColourPaletteBank(UBYTE ubIndex) {
 	
 	UBYTE oddBank = (g_pCustom->bplcon4);
@@ -75,3 +76,4 @@ void spriteSetEvenColourPaletteBank(UBYTE ubIndex) {
 	evenBank = ubIndex & 0x0F;
 	g_pCustom->bplcon4 = (evenBank << 4 | oddBank);
 }
+#endif

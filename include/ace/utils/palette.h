@@ -66,9 +66,11 @@ void paletteDim(
 	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
 );
 
+#ifdef ACE_USE_AGA_FEATURES
 void paletteDimAGA(
     ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel
 );
+#endif
 
 /**
  * @brief Dims a single input color to given brightness level.
@@ -78,7 +80,9 @@ void paletteDimAGA(
  * @see paletteColorMix()
  */
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
+#ifdef ACE_USE_AGA_FEATURES
 ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
+#endif
 
 /**
  * @brief Interpolates two colors at given level.
