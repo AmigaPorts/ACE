@@ -62,13 +62,7 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 				fileRead(pFile, &ubG, sizeof(UBYTE));
 				fileRead(pFile, &ubB, sizeof(UBYTE));
 				
-				#ifdef ACE_USE_AGA_FEATURES
-				// Store as 32-bit AGA color
 				((ULONG*)pPalette)[c] = (ubR << 16) | (ubG << 8) | ubB;
-				#else
-				// Convert to OCS format for non-AGA builds
-				pPalette[c] = ((ubR >> 4) << 8) | ((ubG >> 4) << 4) | (ubB >> 4);
-				#endif
 			}
 		} else {
 			// OCS/ECS format: 2 bytes per color (packed RGB)
@@ -76,13 +70,6 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 		}
 		fileClose(pFile);
 	}
-
-	// UBYTE ubPaletteLength;
-	// fileRead(pFile, &ubPaletteLength, sizeof(UBYTE));
-	// UBYTE ubColorsRead = MIN(ubPaletteLength, ubMaxLength);
-	// logWrite("Color count: %hhu, reading: %hhu\n", ubPaletteLength, ubColorsRead);
-	// fileRead(pFile, pPalette, sizeof(UWORD) * ubColorsRead);
-	// fileClose(pFile);
 
 	logBlockEnd("paletteLoadFromFd()");
 }
