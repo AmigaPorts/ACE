@@ -44,6 +44,12 @@ If no output path is provided, it defaults to converting to `.gpl` format with s
 ACE is primarily designed for the Amiga OCS/ECS hardware, which uses 12-bit color (4 bits per RGB channel).
 When converting to ACE's native `.plt` format, the tool ensures that colors are compatible with OCS limitations, throwing errors when that's not the case.
 
+If you want to skip the OCS check and truncate colors to OCS limitations, pass `-nocs` as an extra option after the input path:
+
+```shell
+palette_conv palette.gpl palette.plt -nocs
+```
+
 When creating artwork for your game, you have to:
 
 - Use colors that work within Amiga's 12-bit color limitations (4 bits per channel), e.g. hex code `#112233` but not `#123456`
