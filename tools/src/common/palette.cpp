@@ -64,15 +64,31 @@ tPalette tPalette::fromPlt(const std::string& szPath)
 
 	std::ifstream Source(szPath, std::ios::in | std::ios::binary);
 
-	std::uint8_t ubPaletteCount;
-	Source.read(reinterpret_cast<char*>(&ubPaletteCount), 1);
+	// Read first byte - could be header or palette count for old format
+	std::uint8_t ubFirstByte;
+	Source.read(reinterpret_cast<char*>(&ubFirstByte), 1);
+	
+	bool isAGA = false;
+	std::uint16_t uwPaletteCount;
+	
+	// Check if this is the new format with header
+	if (ubFirstByte == 0 || ubFirstByte == 1) {
+		// New format: first byte is AGA flag, followed by 2-byte palette count
+		isAGA = (ubFirstByte == 1);
+		// Read actual palette count as 2 bytes
+		Source.read(reinterpret_cast<char*>(&uwPaletteCount), 2);
+		fmt::print("Palette type: {}, color count: {}\n", 
+			isAGA ? "AGA" : "OCS/ECS", uwPaletteCount);
+	} else {
+		// Old format: first byte is palette count
+		uwPaletteCount = ubFirstByte;
+		// Determine format based on palette count (old heuristic)
+		isAGA = (uwPaletteCount > 32);
+		fmt::print("Legacy palette format, color count: {}\n", uwPaletteCount);
+	}
 
-	fmt::print("Palette color count: {}\n", ubPaletteCount);
-
-
-	for (uint16_t i = 0; i <= ubPaletteCount; ++i) {
-		if (ubPaletteCount > 32)
-		{
+	for (uint16_t i = 0; i <= uwPaletteCount; ++i) {
+		if (isAGA) {
 			uint8_t ubA, ubR, ubG, ubB;
 			Source.read(reinterpret_cast<char*>(&ubA), 1);
 			Source.read(reinterpret_cast<char*>(&ubR), 1);
@@ -81,8 +97,7 @@ tPalette tPalette::fromPlt(const std::string& szPath)
 
 			Palette.m_vColors.push_back(tRgb(ubR, ubG, ubB));
 		}
-		else
-		{
+		else {
 			uint8_t ubXR, ubGB;
 			Source.read(reinterpret_cast<char*>(&ubXR), 1);
 			Source.read(reinterpret_cast<char*>(&ubGB), 1);
@@ -91,7 +106,6 @@ tPalette tPalette::fromPlt(const std::string& szPath)
 				((ubXR & 0x0F) << 4) | (ubXR & 0x0F),
 				((ubGB & 0xF0) >> 4) | (ubGB & 0xF0),
 				((ubGB & 0x0F) << 4) | (ubGB & 0x0F)));
-
 		}
 	}
 	return Palette;
@@ -176,29 +190,25 @@ tPalette tPalette::fromFile(const std::string& szPath)
 	return Palette;
 }
 
-bool tPalette::toPlt(const std::string& szPath, bool isForceOcs)
+bool tPalette::toPlt(const std::string& szPath, bool isAGA, bool isForceOCS)
 {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
 	if (!Dest.is_open()) {
 		return false;
 	}
-	auto PaletteSize = m_vColors.size();
-
-	if (PaletteSize == 256)
-	{
-		PaletteSize = 255;
-		Dest.write(reinterpret_cast<char*>(&PaletteSize), 1);
-		PaletteSize = 256;
-	}
-	else
-	{
-		Dest.write(reinterpret_cast<char*>(&PaletteSize), 1);
-	}
-	for (uint16_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
+	
+	// Write header byte: 1 for AGA, 0 for OCS/ECS
+	std::uint8_t ubHeader = isAGA ? 1 : 0;
+	Dest.write(reinterpret_cast<char*>(&ubHeader), 1);
+	
+	// Write palette count as 2 bytes (short) to support up to 65535 colors
+	std::uint16_t uwPaletteSize = static_cast<std::uint16_t>(m_vColors.size());
+	Dest.write(reinterpret_cast<char*>(&uwPaletteSize), 2);
+	for (uint16_t uwColorIdx = 0; uwColorIdx < uwPaletteSize; ++uwColorIdx) {
 		const auto& Color = m_vColors[uwColorIdx];
-		if (isForceOcs) {
+		if (!isAGA) { // OCS/ECS Palette
 			const auto& ColorOcs = Color.to12Bit();
-			if (ColorOcs != Color) {
+			if (ColorOcs != Color && isForceOCS) {
 
 				throw std::runtime_error(fmt::format(
 					FMT_STRING(

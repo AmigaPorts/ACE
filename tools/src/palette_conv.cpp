@@ -9,92 +9,148 @@
 
 void printUsage(const std::string& szAppName) {
 	using fmt::print;
-	fmt::print("Usage:\n\t{} inPath.ext [outPath.ext]\n", szAppName);
-	print("\ninPath\t- path to supported input palette file\n");
-	print("outPath\t- path to output palette file\n");
-	print("ext\t- one of the following:\n");
-	print("\tgpl\tGIMP Palette\n");
-	print("\tact\tAdobe Color Table\n");
-	print("\tpal\tProMotion palette\n");
-	print("\tplt\tACE palette (default)\n");
-	print("\tpng\tPalette preview\n");
+	fmt::print("Usage:\n\t{} -i <input_file> -o <output_file> [-f <format>] [options]\n", szAppName);
+	print("\nRequired arguments:\n");
+	print("  -i, --input <file>    Input palette file\n");
+	print("  -o, --output <file>   Output palette file\n");
+	print("\nOptional arguments:\n");
+	print("  -f, --format <fmt>    Output format (default: plt)\n");
+	print("\nSupported formats:\n");
+	print("  gpl    GIMP Palette\n");
+	print("  act    Adobe Color Table\n");
+	print("  pal    ProMotion palette\n");
+	print("  plt    ACE palette\n");
+	print("  png    Palette preview\n");
+	print("\nOptions:\n");
+	print("  -a, --aga             Use AGA palette mode (default: OCS/ECS)\n");
+	print("  -n, --no-strict       Allow non-OCS colors in OCS mode (default: strict)\n");
+	print("  -h, --help            Show this help message\n");
+	print("\nExamples:\n");
+	print("  {} -i palette.gpl -o palette.plt\n", szAppName);
+	print("  {} -i colors.act -o preview.png -f png --aga\n", szAppName);
+	print("  {} -i palette.gpl -o palette.plt --no-strict\n", szAppName);
 }
 
 int main(int lArgCount, const char* pArgs[])
 {
-	const std::uint8_t ubMandatoryArgCnt = 1;
-	// Mandatory args
-	if (lArgCount - 1 < ubMandatoryArgCnt) {
-		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
+	std::string szPathIn;
+	std::string szPathOut;
+	std::string szFormat;
+	bool isAGA = false;
+	bool isForceOCS = true;
+
+	// Parse command line arguments
+	for (int i = 1; i < lArgCount; ++i) {
+		std::string arg = pArgs[i];
+		
+		if (arg == "-h" || arg == "--help") {
+			printUsage(pArgs[0]);
+			return EXIT_SUCCESS;
+		}
+		else if (arg == "-i" || arg == "--input") {
+			if (i + 1 >= lArgCount) {
+				nLog::error("Missing value for input file argument");
+				printUsage(pArgs[0]);
+				return EXIT_FAILURE;
+			}
+			szPathIn = pArgs[++i];
+		}
+		else if (arg == "-o" || arg == "--output") {
+			if (i + 1 >= lArgCount) {
+				nLog::error("Missing value for output file argument");
+				printUsage(pArgs[0]);
+				return EXIT_FAILURE;
+			}
+			szPathOut = pArgs[++i];
+		}
+		else if (arg == "-f" || arg == "--format") {
+			if (i + 1 >= lArgCount) {
+				nLog::error("Missing value for format argument");
+				printUsage(pArgs[0]);
+				return EXIT_FAILURE;
+			}
+			szFormat = pArgs[++i];
+		}
+		else if (arg == "-a" || arg == "--aga") {
+			isAGA = true;
+		}
+		else if (arg == "-n" || arg == "--no-strict") {
+			isForceOCS = false;
+		}
+		else {
+			nLog::error("Unknown argument: {}", arg);
+			printUsage(pArgs[0]);
+			return EXIT_FAILURE;
+		}
+	}
+
+	// Validate required arguments
+	if (szPathIn.empty()) {
+		nLog::error("Input file is required");
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
 	}
+	if (szPathOut.empty()) {
+		nLog::error("Output file is required");
+		printUsage(pArgs[0]);
+		return EXIT_FAILURE;
+	}
+	if (szFormat.empty()) {
+		szFormat = "plt";  // Default to ACE palette format
+	}
 
-	std::string szPathIn = pArgs[1];
-
-	// Optional args' default values
-	std::string szPathOut = nFs::removeExt(szPathIn) + ".gpl";
-
-	// Search for optional args
-	if (lArgCount - 1 > 1) {
-		szPathOut = pArgs[2];
+	// Validate format
+	if (szFormat != "gpl" && szFormat != "act" && szFormat != "pal" && 
+		szFormat != "plt" && szFormat != "png") {
+		nLog::error("Unsupported format: '{}'. Supported formats: gpl, act, pal, plt, png", szFormat);
+		printUsage(pArgs[0]);
+		return EXIT_FAILURE;
 	}
 
 	// Load input palette
 	auto Palette = tPalette::fromFile(szPathIn);
 	if (Palette.m_vColors.empty()) {
 		nLog::error("Invalid input path or palette is empty: '{}'", szPathIn);
-		return 1;
-	}
-	fmt::print("Loaded palette: '{}'\n", szPathIn);
-
-	// Generate output palette
-	std::string szExtOut = nFs::getExt(szPathOut);
-	bool isOk = false;
-	if (nFs::getExt(szPathIn) == szExtOut) {
-		nLog::error("Input and output extensions are the same");
 		return EXIT_FAILURE;
 	}
+	fmt::print("Loaded palette: '{}' ({})\n", szPathIn, isAGA ? "AGA mode" : "OCS/ECS mode");
 
+	// Generate output palette
+	bool isOk = false;
 	try {
-		if (szExtOut == "gpl") {
+		if (szFormat == "gpl") {
 			isOk = Palette.toGpl(szPathOut);
 		}
-		else if (szExtOut == "act") {
+		else if (szFormat == "act") {
 			isOk = Palette.toAct(szPathOut);
 		}
-		else if (szExtOut == "pal") {
+		else if (szFormat == "pal") {
 			isOk = Palette.toPromotionPal(szPathOut);
 		}
-		else if (szExtOut == "plt") {
-			isOk = Palette.toPlt(szPathOut, false);
+		else if (szFormat == "plt") {
+			isOk = Palette.toPlt(szPathOut, isAGA, isForceOCS);
 		}
-		else if (szExtOut == "png") {
+		else if (szFormat == "png") {
 			auto ColorCount = Palette.m_vColors.size();
 			tChunkyBitmap PltPreview(ColorCount * 32, 16);
 
 			for (uint8_t i = 0; i < ColorCount; ++i) {
 				const auto& Color = Palette.m_vColors[i];
-
 				PltPreview.fillRect(i * 32, 0, 32, 16, Color);
-				isOk = PltPreview.toPng(szPathOut);
 			}
-		}
-		else {
-			nLog::error("unsupported output extension: '{}'", szExtOut);
-			printUsage(pArgs[0]);
-			return EXIT_FAILURE;
+			isOk = PltPreview.toPng(szPathOut);
 		}
 	}
 	catch (const std::exception& Exc) {
 		nLog::error("Writing palette failed: {}", Exc.what());
+		return EXIT_FAILURE;
 	}
 
 	if (!isOk) {
 		nLog::error("Couldn't write to '{}'", szPathOut);
 		return EXIT_FAILURE;
 	}
-	fmt::print("Generated palette: '{}'\n", szPathOut);
+	fmt::print("Generated {} palette: '{}'\n", szFormat.c_str(), szPathOut);
 
 	return EXIT_SUCCESS;
 }
