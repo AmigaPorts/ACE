@@ -68,3 +68,14 @@ convertPalette(
 ```
 
 This will automatically convert the palette during the build process and add the resulting file as a dependency to your target.
+
+If you want to skip the OCS check and truncate colors to OCS limitations, pass `CONVERT_COLORS` as an extra option:
+
+```cmake
+convertPalette(
+  ${TARGET_NAME}          # Your target binary
+  ${RES_DIR}/palette.gpl  # Source palette file
+  ${DATA_DIR}/palette.plt # Destination palette file
+  CONVERT_COLORS          # Truncate colors to OCS precision
+)
+```
