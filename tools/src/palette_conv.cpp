@@ -9,15 +9,17 @@
 
 void printUsage(const std::string &szAppName) {
 	using fmt::print;
-	fmt::print("Usage:\n\t{} inPath.ext [outPath.ext]\n", szAppName);
+	fmt::print("Usage:\n\t{} inPath.ext [outPath.ext] [extraOpts]\n", szAppName);
 	print("\ninPath\t- path to supported input palette file\n");
 	print("outPath\t- path to output palette file\n");
 	print("ext\t- one of the following:\n");
-	print("\tgpl\tGIMP Palette\n");
+	print("\tgpl\tGIMP Palette (default)\n");
 	print("\tact\tAdobe Color Table\n");
 	print("\tpal\tProMotion palette\n");
-	print("\tplt\tACE palette (default)\n");
+	print("\tplt\tACE palette\n");
 	print("\tpng\tPalette preview\n");
+	print("extraOpts:\n");
+	print("\t-nocs\tDon't fail during plt output if colors aren't OCS exact\n");
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -34,10 +36,17 @@ int main(int lArgCount, const char *pArgs[])
 
 	// Optional args' default values
 	std::string szPathOut = nFs::removeExt(szPathIn) + ".gpl";
+	bool isForceOcs = true;
 
 	// Search for optional args
-	if(lArgCount - 1 > 1) {
-		szPathOut = pArgs[2];
+	for(int ArgIndex = 2; ArgIndex < lArgCount; ++ArgIndex) {
+		const char *const pArg = pArgs[ArgIndex];
+		if(pArg == std::string("-nocs")) {
+			isForceOcs = false;
+		}
+		else {
+			szPathOut = pArg;
+		}
 	}
 
 	// Load input palette
@@ -67,7 +76,7 @@ int main(int lArgCount, const char *pArgs[])
 			isOk = Palette.toPromotionPal(szPathOut);
 		}
 		else if(szExtOut == "plt") {
-			isOk = Palette.toPlt(szPathOut, true);
+			isOk = Palette.toPlt(szPathOut, isForceOcs);
 		}
 		else if(szExtOut == "png") {
 			auto ColorCount = Palette.m_vColors.size();
