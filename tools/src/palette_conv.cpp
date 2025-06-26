@@ -19,7 +19,7 @@ void printUsage(const std::string &szAppName) {
 	print("\tplt\tACE palette\n");
 	print("\tpng\tPalette preview\n");
 	print("extraOpts:\n");
-	print("\t-nocs\tDon't fail during plt output if colors aren't OCS exact\n");
+	print("\t-cc\tConvert colors. Truncate non-OCS colors to OCS precision if necessary\n");
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -41,7 +41,7 @@ int main(int lArgCount, const char *pArgs[])
 	// Search for optional args
 	for(int ArgIndex = 2; ArgIndex < lArgCount; ++ArgIndex) {
 		const char *const pArg = pArgs[ArgIndex];
-		if(pArg == std::string("-nocs")) {
+		if(pArg == std::string("-cc")) {
 			isForceOcs = false;
 		}
 		else {
