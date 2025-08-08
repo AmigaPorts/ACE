@@ -9,26 +9,17 @@
 
 void printUsage(const std::string& szAppName) {
 	using fmt::print;
-	fmt::print("Usage:\n\t{} -i <input_file> -o <output_file> [-f <format>] [options]\n", szAppName);
-	print("\nRequired arguments:\n");
-	print("  -i, --input <file>    Input palette file\n");
-	print("  -o, --output <file>   Output palette file\n");
-	print("\nOptional arguments:\n");
-	print("  -f, --format <fmt>    Output format (default: plt)\n");
-	print("\nSupported formats:\n");
-	print("  gpl    GIMP Palette\n");
-	print("  act    Adobe Color Table\n");
-	print("  pal    ProMotion palette\n");
-	print("  plt    ACE palette\n");
-	print("  png    Palette preview\n");
-	print("\nOptions:\n");
-	print("  -a, --aga             Use AGA palette mode (default: OCS/ECS)\n");
-	print("  -n, --no-strict       Allow non-OCS colors in OCS mode (default: strict)\n");
-	print("  -h, --help            Show this help message\n");
-	print("\nExamples:\n");
-	print("  {} -i palette.gpl -o palette.plt\n", szAppName);
-	print("  {} -i colors.act -o preview.png -f png --aga\n", szAppName);
-	print("  {} -i palette.gpl -o palette.plt --no-strict\n", szAppName);
+	fmt::print("Usage:\n\t{} inPath.ext [outPath.ext] [extraOpts]\n", szAppName);
+	print("\ninPath\t- path to supported input palette file\n");
+	print("outPath\t- path to output palette file\n");
+	print("ext\t- one of the following:\n");
+	print("\tgpl\tGIMP Palette (default)\n");
+	print("\tact\tAdobe Color Table\n");
+	print("\tpal\tProMotion palette\n");
+	print("\tplt\tACE palette\n");
+	print("\tpng\tPalette preview\n");
+	print("extraOpts:\n");
+	print("\t-cc\tConvert colors. Truncate non-OCS colors to OCS precision if necessary\n");
 }
 
 int main(int lArgCount, const char* pArgs[])
@@ -95,16 +86,22 @@ int main(int lArgCount, const char* pArgs[])
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
 	}
-	if (szFormat.empty()) {
-		szFormat = "plt";  // Default to ACE palette format
-	}
 
-	// Validate format
-	if (szFormat != "gpl" && szFormat != "act" && szFormat != "pal" && 
-		szFormat != "plt" && szFormat != "png") {
-		nLog::error("Unsupported format: '{}'. Supported formats: gpl, act, pal, plt, png", szFormat);
-		printUsage(pArgs[0]);
-		return EXIT_FAILURE;
+	std::string szPathIn = pArgs[1];
+
+	// Optional args' default values
+	std::string szPathOut = nFs::removeExt(szPathIn) + ".gpl";
+	bool isForceOcs = true;
+
+	// Search for optional args
+	for(int ArgIndex = 2; ArgIndex < lArgCount; ++ArgIndex) {
+		const char *const pArg = pArgs[ArgIndex];
+		if(pArg == std::string("-cc")) {
+			isForceOcs = false;
+		}
+		else {
+			szPathOut = pArg;
+		}
 	}
 
 	// Load input palette
@@ -127,8 +124,8 @@ int main(int lArgCount, const char* pArgs[])
 		else if (szFormat == "pal") {
 			isOk = Palette.toPromotionPal(szPathOut);
 		}
-		else if (szFormat == "plt") {
-			isOk = Palette.toPlt(szPathOut, isAGA, isForceOCS);
+		else if(szExtOut == "plt") {
+			isOk = Palette.toPlt(szPathOut, isForceOcs);
 		}
 		else if (szFormat == "png") {
 			auto ColorCount = Palette.m_vColors.size();

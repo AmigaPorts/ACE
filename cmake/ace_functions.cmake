@@ -32,9 +32,20 @@ endfunction()
 
 function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
 	getToolPath(palette_conv TOOL_PALETTE_CONV)
+	set(options CONVERT_COLORS)
+	set(oneValArgs)
+	set(multiValArgs)
+	cmake_parse_arguments(
+		convertPalette "${options}" "${oneValArgs}" "${multiValArgs}" ${ARGN}
+	)
+
+	if(${convertPalette_CONVERT_COLORS})
+		list(APPEND extraFlags "-cc")
+	endif()
+
 	add_custom_command(
 		OUTPUT ${PALETTE_OUT}
-		COMMAND ${TOOL_PALETTE_CONV} ${PALETTE_IN} ${PALETTE_OUT}
+		COMMAND ${TOOL_PALETTE_CONV} ${PALETTE_IN} ${PALETTE_OUT} ${extraFlags}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${PALETTE_IN}
 	)
