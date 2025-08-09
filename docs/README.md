@@ -23,6 +23,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Using BOBs (Blitter OBjects)](programming/using_bobs.md)
 1. [Working with Fonts](programming/fonts.md)
 1. [Palettes](programming/palette.md)
+1. [Fixed-point math](programming/fixed_point.md)
 1. Optimizing blits
 1. [Working with Audio](programming/audio.md)
 1. Debugging memory leaks
