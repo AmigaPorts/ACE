@@ -143,6 +143,7 @@ static void memEntryCheckTrash(
 
 //---------------------------------------------------------------------- MEM FNS
 
+FN_COLDSPOT
 void _memCheckIntegrity(UWORD uwLine, const char *szFile) {
 	tMemEntry *pEntry = s_pMemTail;
 	while(pEntry) {
@@ -153,6 +154,7 @@ void _memCheckIntegrity(UWORD uwLine, const char *szFile) {
 	systemCheckStack();
 }
 
+FN_COLDSPOT
 void _memCreate(void) {
 	s_pMemTail = 0;
 	s_ulChipUsage = 0;
@@ -162,6 +164,7 @@ void _memCreate(void) {
 	s_uwLastId = 0;
 }
 
+FN_COLDSPOT
 void _memDestroy(void) {
 	systemUse();
 	logWrite("\n=============== MEMORY MANAGER DESTROY ==============\n");
@@ -176,6 +179,7 @@ void _memDestroy(void) {
 	systemUnuse();
 }
 
+FN_COLDSPOT
 void *_memAllocDbg(
 	ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile
 ) {
@@ -208,6 +212,7 @@ void *_memAllocDbg(
 	return pAddr;
 }
 
+FN_COLDSPOT
 void _memFreeDbg(
 	void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile
 ) {
@@ -220,6 +225,7 @@ void _memFreeDbg(
 	systemUnuse();
 }
 
+FN_COLDSPOT
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	systemUse();
 	void *pResult;
@@ -237,6 +243,7 @@ void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	return pResult;
 }
 
+FN_COLDSPOT
 void _memFreeRls(void *pMem, ULONG ulSize) {
 	systemUse();
 	#ifdef AMIGA
@@ -247,6 +254,7 @@ void _memFreeRls(void *pMem, ULONG ulSize) {
 	systemUnuse();
 }
 
+FN_COLDSPOT
 void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile) {
 	// find memory entry
 	tMemEntry *pEntry = s_pMemTail;
@@ -263,6 +271,7 @@ void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile) {
 	memEntryCheckTrash(pEntry, uwLine, szFile);
 }
 
+FN_COLDSPOT
 void _memLogPeak(void) {
 	logWrite(
 		"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
@@ -270,6 +279,7 @@ void _memLogPeak(void) {
 	);
 }
 
+FN_COLDSPOT
 UBYTE memType(const void *pMem) {
 #ifdef AMIGA
 	ULONG ulOsType = TypeOfMem((void *)pMem);
