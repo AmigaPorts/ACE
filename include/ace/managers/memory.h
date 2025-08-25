@@ -48,9 +48,9 @@ void _memCreate(void);
 void _memDestroy(void);
 
 void *_memAllocDbg(ULONG ulSize, ULONG ulFlags, UWORD uwLine, const char *szFile);
-void _memFreeDbg(void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile);
+void _memFreeDbg(void *pMem, UWORD uwLine, const char *szFile);
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) __attribute__((malloc));
-void _memFreeRls(void *pMem, ULONG ulSize);
+void _memFreeRls(void *pMem);
 
 void _memCheckTrashAtAddr(void *pMem, UWORD uwLine, const char *szFile);
 
@@ -64,7 +64,7 @@ void _memLogPeak(void);
 
 #ifdef ACE_DEBUG
 # define memAlloc(ulSize, ulFlags) _memAllocDbg(ulSize, ulFlags, __LINE__, __FILE__)
-# define memFree(pMem, ulSize) _memFreeDbg(pMem, ulSize, __LINE__, __FILE__)
+# define memFree(pMem, ulSize) _memFreeDbg(pMem, __LINE__, __FILE__)
 # define memCreate() _memCreate()
 # define memDestroy() _memDestroy()
 # define memCheckTrashAtAddr(pAddr) _memCheckTrashAtAddr(pAddr, __LINE__, __FILE__)
@@ -72,7 +72,7 @@ void _memLogPeak(void);
 # define memLogPeak() _memLogPeak()
 #else
 # define memAlloc(ulSize, ulFlags) _memAllocRls(ulSize, ulFlags)
-# define memFree(pMem, ulSize) _memFreeRls(pMem, ulSize)
+# define memFree(pMem, ulSize) _memFreeRls(pMem)
 # define memCreate()
 # define memDestroy()
 # define memCheckTrashAtAddr(pAddr, ulSize)

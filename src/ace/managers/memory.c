@@ -14,12 +14,15 @@
 
 //------------------------------------------------------------------------ TYPES
 
-typedef struct _tMemEntry {
+typedef struct tMemEntry {
 	void *pAddr;
-	ULONG ulSize;
+	ULONG ulSize; // Without the canaries nor size field
 	UWORD uwId;
-	struct _tMemEntry *pNext;
+	struct tMemEntry *pNext;
 } tMemEntry;
+
+typedef ULONG tMemCanary;
+typedef ULONG tMemSize;
 
 //----------------------------------------------------------------- PRIVATE VARS
 
@@ -57,13 +60,13 @@ static void _memEntryAdd(
 
 	// Update mem usage counter
 	if(memType(pAddr) & MEMF_CHIP) {
-		s_ulChipUsage += ulSize;
+		s_ulChipUsage += ulSize + sizeof(tMemSize);
 		if(s_ulChipUsage > s_ulChipPeakUsage) {
 			s_ulChipPeakUsage = s_ulChipUsage;
 		}
 	}
 	else {
-		s_ulFastUsage += ulSize;
+		s_ulFastUsage += ulSize + sizeof(tMemSize);
 		if(s_ulFastUsage > s_ulFastPeakUsage) {
 			s_ulFastPeakUsage = s_ulFastUsage;
 		}
@@ -71,8 +74,8 @@ static void _memEntryAdd(
 	systemUnuse();
 }
 
-static ULONG _memEntryDelete(
-	void *pAddr, ULONG ulSize, UWORD uwLine, const char *szFile
+static UBYTE _memEntryDelete(
+	void *pAddr, UWORD uwLine, const char *szFile
 ) {
 	tMemEntry *pPrev = 0;
 	tMemEntry *pCurr = s_pMemTail;
@@ -98,6 +101,7 @@ static ULONG _memEntryDelete(
 	}
 
 	// remove entry
+	ULONG ulSize = *(ULONG*)(pAddr - sizeof(tMemCanary) - sizeof(tMemSize)) - 2 * sizeof(tMemCanary);
 	systemUse();
 	if(ulSize != pCurr->ulSize) {
 		logWrite(
@@ -112,24 +116,24 @@ static ULONG _memEntryDelete(
 
 	// Update mem usage counter
 	if(memType(pAddr) & MEMF_CHIP) {
-		s_ulChipUsage -= ulSize;
+		s_ulChipUsage -= ulSize + sizeof(tMemSize);
 	}
 	else {
-		s_ulFastUsage -= ulSize;
+		s_ulFastUsage -= ulSize + sizeof(tMemSize);
 	}
 
 	systemUnuse();
-	return pCurr->ulSize;
+	return 1;
 }
 
 static void memEntryCheckTrash(
 	const tMemEntry *pEntry, UWORD uwLine, const char *szFile
 ) {
-	UBYTE *pCafe = (UBYTE*)(pEntry->pAddr - 4*sizeof(UBYTE));
+	UBYTE *pCafe = (UBYTE*)(pEntry->pAddr - sizeof(tMemCanary));
 	UBYTE *pDead = (UBYTE*)(pEntry->pAddr + pEntry->ulSize);
 	if(pCafe[0] != 0xCA || pCafe[1] != 0xFE || pCafe[2] != 0xBA || pCafe[3] != 0xBE) {
 		logWrite(
-			"[MEM] ERR: Left mem trashed: %hu@%p (%s:%u)\n",
+			"[MEM] ERR: Left mem trashed: %hu@%p (%s:%u), expect crash on free!\n",
 			pEntry->uwId, pEntry->pAddr, szFile, uwLine
 		);
 	}
@@ -170,7 +174,7 @@ void _memDestroy(void) {
 	logWrite("\n=============== MEMORY MANAGER DESTROY ==============\n");
 	logWrite("If something is deallocated past here, you're a wuss!\n");
 	while(s_pMemTail) {
-		_memFreeDbg(s_pMemTail->pAddr, s_pMemTail->ulSize, 0, "memoryDestroy");
+		_memFreeDbg(s_pMemTail->pAddr, 0, "memoryDestroy");
 	}
 	logWrite(
 		"[MEM] Peak usage: CHIP: %lu, FAST: %lu\n",
@@ -188,7 +192,7 @@ void *_memAllocDbg(
 		return 0;
 	}
 	void *pAddr;
-	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
+	pAddr = _memAllocRls(ulSize + 2 * sizeof(tMemCanary), ulFlags);
 	if(!pAddr) {
 		logWrite(
 			"[MEM] ERR: couldn't allocate %lu bytes! (%s:%u)\n",
@@ -203,8 +207,8 @@ void *_memAllocDbg(
 #endif // AMIGA
 		return 0;
 	}
-	pAddr += sizeof(ULONG);
-	UBYTE *pCafe = (UBYTE*)(pAddr - 4*sizeof(UBYTE));
+	pAddr += sizeof(tMemCanary);
+	UBYTE *pCafe = (UBYTE*)(pAddr - sizeof(tMemCanary));
 	UBYTE *pDead = (UBYTE*)(pAddr + ulSize);
 	pCafe[0] = 0xCA; pCafe[1] = 0xFE; pCafe[2] = 0xBA; pCafe[3] = 0xBE;
 	pDead[0] = 0xDE; pDead[1] = 0xAD; pDead[2] = 0xBE; pDead[3] = 0xEF;
@@ -214,13 +218,12 @@ void *_memAllocDbg(
 
 __attribute__((optimize("Os")))
 void _memFreeDbg(
-	void *pMem, ULONG ulSize, UWORD uwLine, const char *szFile
+	void *pMem, UWORD uwLine, const char *szFile
 ) {
 	systemUse();
 	_memCheckIntegrity(uwLine, szFile);
-	ulSize = _memEntryDelete(pMem, ulSize, uwLine, szFile);
-	if(ulSize) {
-		_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
+	if(_memEntryDelete(pMem, uwLine, szFile)) {
+		_memFreeRls(pMem - sizeof(tMemCanary));
 	}
 	systemUnuse();
 }
@@ -228,26 +231,34 @@ void _memFreeDbg(
 __attribute__((optimize("Os")))
 void *_memAllocRls(ULONG ulSize, ULONG ulFlags) {
 	systemUse();
-	void *pResult;
+	void *pUsableMem;
+
 	#ifdef AMIGA
-	pResult = AllocMem(ulSize, ulFlags);
-	if(!(ulFlags & MEMF_CHIP) && !pResult) {
+	UBYTE *pFullMem = (UBYTE*)AllocMem(sizeof(tMemSize) + ulSize, ulFlags);
+	if(!(ulFlags & MEMF_CHIP) && !pFullMem) {
 		// No FAST available - allocate CHIP instead
 		logWrite("[MEM] WARN: Couldn't allocate FAST mem\r\n");
-		pResult = AllocMem(ulSize, (ulFlags & ~MEMF_FAST) | MEMF_ANY);
+		pFullMem = (UBYTE*)AllocMem(sizeof(tMemSize) + ulSize, (ulFlags & ~MEMF_FAST) | MEMF_ANY);
 	}
+	tMemSize *pSize = (tMemSize*)pFullMem;
+	*pSize = ulSize;
+
+	pUsableMem = pFullMem + sizeof(tMemSize);
 	#else
-	pResult =  malloc(ulSize);
+	pUsableMem =  malloc(ulSize);
 	#endif // AMIGA
+
 	systemUnuse();
-	return pResult;
+	return pUsableMem;
 }
 
 __attribute__((optimize("Os")))
-void _memFreeRls(void *pMem, ULONG ulSize) {
+void _memFreeRls(void *pMem) {
 	systemUse();
 	#ifdef AMIGA
-	FreeMem(pMem, ulSize);
+	UBYTE *pFullMem = (UBYTE*)pMem - sizeof(tMemSize);
+	ULONG ulSize = *((tMemSize*)pFullMem);
+	FreeMem(pFullMem, ulSize);
 	#else
 	free(pMem);
 	#endif // AMIGA
