@@ -45,11 +45,11 @@ UBYTE spriteDisableInCopRawMode(
  */
 tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask, ULONG pBlankSprite[1]);
 
-
+#if defined(ACE_USE_AGA_FEATURES)
 /**
- * @brief Sets the palette Ba nk for AGA Sprites for the Odd Channels
- *
- * @param ubIndex
+ * @brief Sets the palette Bank for AGA Sprites for the Odd Channels
+ * 
+ * @param ubIndex 
  * @return index of the palette
  */
 void spriteSetOddColourPaletteBank(UBYTE ubIndex);
@@ -61,7 +61,7 @@ void spriteSetOddColourPaletteBank(UBYTE ubIndex);
  * @return index of the palette
  */
 void spriteSetEvenColourPaletteBank(UBYTE ubIndex);
-
+#endif
 #ifdef __cplusplus
 }
 #endif

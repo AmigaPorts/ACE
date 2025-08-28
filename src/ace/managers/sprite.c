@@ -180,12 +180,16 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 		);
 		return;
 	}
-
+#if defined(ACE_USE_AGA_FEATURES)
+UBYTE uwMaxSpriteWidth = 8;
+#else
+UBYTE uwMaxSpriteWidth = 2;
+#endif
 	UBYTE ubByteWidth = bitmapGetByteWidth(pBitmap);
-	if(ubByteWidth != 2) {
+	if(ubByteWidth > uwMaxSpriteWidth) {
 		logWrite(
-			"ERR: Unsupported sprite width: %hhu, expected 16\n",
-			ubByteWidth * 8
+			"ERR: Unsupported sprite width: %hhu, expected %hhu\n",
+			ubByteWidth * 8, uwMaxSpriteWidth
 		);
 		return;
 	}
