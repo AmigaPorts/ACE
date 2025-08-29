@@ -88,7 +88,9 @@ typedef enum tViewFlags {
 	VIEW_FLAG_COPLIST_RAW    = BV(1),
 	VIEW_FLAG_GLOBAL_BPP     = BV(2),
 	VIEW_FLAG_GLOBAL_HRES    = BV(3),
+#ifdef ACE_USE_AGA_FEATURES
 	VIEW_FLAG_GLOBAL_AGA     = BV(4),
+#endif
 } tViewFlags;
 
 /**
