@@ -66,9 +66,11 @@ void paletteDim(
 	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
 );
 
+#ifdef ACE_USE_AGA_FEATURES
 void paletteDimAGA(
     ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel
 );
+#endif
 
 /**
  * @brief Dims a single input color to given brightness level.
@@ -78,7 +80,9 @@ void paletteDimAGA(
  * @see paletteColorMix()
  */
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
+#ifdef ACE_USE_AGA_FEATURES
 ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
+#endif
 
 /**
  * @brief Interpolates two colors at given level.
@@ -92,6 +96,20 @@ ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
  */
 UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel);
 
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * @brief Interpolates two AGA colors at given level.
+ * @param ulColorPrimary Primary AGA color in the mix.
+ * @param ulColorSecondary Secondary AGA color in the mix.
+ * @param ubLevel Mix ratio - 255 results in primary color, 0 in secondary.
+ * @return Mixed AGA color between ulColorPrimary and ulColorSecondary.
+ *
+ * @note This function is slower than paletteColorDimAGA().
+ * @see paletteColorDimAGA()
+ */
+ULONG paletteColorMixAGA(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubLevel);
+#endif
+
 /**
  * @brief Writes given palette to debug .bmp file.
  *
@@ -102,6 +120,19 @@ UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLeve
  * @param szPath Destination path for .bmp file.
  */
 void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
+
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * @brief Writes given AGA palette to debug .bmp file.
+ *
+ * This function is horribly slow and should only be used for debug purposes.
+ *
+ * @param pPalette AGA palette to be dumped.
+ * @param uwColorCnt Number of colors in palette.
+ * @param szPath Destination path for .bmp file.
+ */
+void paletteDumpAGA(ULONG *pPalette, UWORD uwColorCnt, char *szPath);
+#endif
 
 #ifdef __cplusplus
 }
