@@ -377,7 +377,7 @@ FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, const tTileBufferTileIndex *pTileDataColumn,
 	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst,
-	UBYTE ubNonInterleavedBlit
+	UBYTE ubBlitWait, UBYTE ubNonInterleavedBlit
 ) {
 	tTileBufferTileIndex TileToDraw = pTileDataColumn[uwTileY];
 
@@ -393,8 +393,16 @@ static inline void tileBufferContinueTileDraw(
 			// folds away
 			pUbBltdpt = pDstPlane + ulDstOffs;
 		}
-
-		blitWait(); // Don't modify registers when other blit is in progress
+#ifndef ACE_DEBUG
+		if (ubBlitWait) {
+#else
+		if (1) {
+#endif
+			// this function should be inlined into the caller, where
+			// ubBlitWait should be a constant argument, so this check
+			// folds away
+			blitWait(); // Don't modify registers when other blit is in progress
+		}
 		g_pCustom->bltapt = pUbBltapt;
 		if (ubSetDst) {
 			g_pCustom->bltdpt = pUbBltdpt;
@@ -406,7 +414,16 @@ static inline void tileBufferContinueTileDraw(
 		for(UBYTE ubPlane = pManager->pTileSet->Depth; ubPlane--;) {
 			UBYTE *pUbBltapt = pManager->pTileSet->Planes[ubPlane] + ulSrcOffs;
 			UBYTE *pUbBltdpt = pManager->pScroll->pBack->Planes[ubPlane] + ulDstOffs;
-			blitWait();  // Don't modify registers when other blit is in progress
+#ifndef ACE_DEBUG
+			if (ubBlitWait) {
+#else
+			if (1) {
+#endif
+				// this function should be inlined into the caller, where
+				// ubBlitWait should be a constant argument, so this check
+				// folds away
+				blitWait(); // Don't modify registers when other blit is in progress
+			}
 			g_pCustom->bltapt = pUbBltapt;
 			g_pCustom->bltdpt = pUbBltdpt;
 			g_pCustom->bltsize = uwBltsize & ~BLIT_WORDS_NON_INTERLEAVED_BIT;
@@ -469,7 +486,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 						pManager, pTileColumn, uwTileCurr,
 						uwBltsize, ulDstOffs, pDstPlane,
 						// do not set bltdpt, it was left at the right place by the previous blit
-						0, uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT
+						0, 1, uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT
 					);
 					++uwTileCurr;
 					uwTileOffsY += ubTileSize;
@@ -574,7 +591,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				while(uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
-						uwBltsize, ulDstOffs, pDstPlane, 1,
+						uwBltsize, ulDstOffs, pDstPlane, 1, 1,
 						uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT
 					);
 					++uwTileCurr;
@@ -676,13 +693,15 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
 	UWORD uwDstOffsStep = ubTileSize / 8;
 	systemSetDmaBit(DMAB_BLITHOG, 1);
+	Disable(); // Disable and clear CPU caches (if any)
+	CacheClearU();
 	for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
 		UWORD uwTileCurr = wStartX;
 		ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + uwTileOffsX / 8;
 		while(uwTileCurr < uwEndX) {
 			tileBufferContinueTileDraw(
 				pManager, pTileData[uwTileCurr], uwTileY,
-				uwBltsize, ulDstOffs, pDstPlane, 1,
+				uwBltsize, ulDstOffs, pDstPlane, 1, 0,
 				ubNonInterleavedBlit
 			);
 			++uwTileCurr;
@@ -692,6 +711,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 			uwTileOffsY + ubTileSize, pManager->uwMarginedHeight
 		);
 	}
+	Enable();
 
 	if (pManager->cbTileDraw) {
 		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(wStartY << ubTileShift, pManager->uwMarginedHeight);
@@ -733,10 +753,22 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	logBlockEnd("tileBufferRedrawAll()");
 }
 
+/*
+ * We forcibly place this function in chipmem and we disable any CPU caches
+ * when we are executing this, so the CPU is actually blocked by the blitter
+ * and we can save the extra instructions for waiting.
+ */
+CHIP
 void tileBufferRedrawAllInterleaved(tTileBufferManager *pManager) {
 	tileBufferRedrawAllInternal(pManager, 0);
 }
 
+/*
+ * We forcibly place this function in chipmem and we disable any CPU caches
+ * when we are executing this, so the CPU is actually blocked by the blitter
+ * and we can save the extra instructions for waiting.
+ */
+CHIP
 void tileBufferRedrawAllNonInterleaved(tTileBufferManager *pManager) {
 	tileBufferRedrawAllInternal(pManager, 1);
 }
