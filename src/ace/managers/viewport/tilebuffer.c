@@ -376,11 +376,15 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 FN_HOTSPOT
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, const tTileBufferTileIndex *pTileDataColumn,
-	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst
+	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst,
+	UBYTE ubNonInterleavedBlit
 ) {
 	tTileBufferTileIndex TileToDraw = pTileDataColumn[uwTileY];
 
-	if (!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)) {
+	if (!ubNonInterleavedBlit) {
+		// this function should be inlined into the caller, where
+		// ubNonInterleavedBlit should be a *constant* argument, so
+		// this check folds away
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[TileToDraw];
 		UBYTE *pUbBltdpt;
 		if (ubSetDst) {
@@ -465,7 +469,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 						pManager, pTileColumn, uwTileCurr,
 						uwBltsize, ulDstOffs, pDstPlane,
 						// do not set bltdpt, it was left at the right place by the previous blit
-						0
+						0, uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT
 					);
 					++uwTileCurr;
 					uwTileOffsY += ubTileSize;
@@ -570,7 +574,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				while(uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
-						uwBltsize, ulDstOffs, pDstPlane, 1
+						uwBltsize, ulDstOffs, pDstPlane, 1,
+						uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT
 					);
 					++uwTileCurr;
 					ulDstOffs += uwDstOffsStep;
@@ -626,7 +631,9 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	pManager->ubStateIdx = !pManager->ubStateIdx;
 }
 
-void tileBufferRedrawAll(tTileBufferManager *pManager) {
+// This is used below with ubNonInterleavedBlit either 0 or 1, so with the inlining this is
+// a poor man's function template specialization...
+static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBYTE ubNonInterleavedBlit) {
 	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
 
 	UBYTE ubTileSize = pManager->ubTileSize;
@@ -658,6 +665,14 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 	tTileBufferTileIndex **pTileData = pManager->pTileData;
 	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
+#if defined ACE_DEBUG
+	if ((uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT) && !ubNonInterleavedBlit) {
+		logWrite("ERR: you called tileBufferRedrawAll%s, but the buffers are %s",
+			ubNonInterleavedBlit ? "NonInterleaved" : "Interleaved",
+			ubNonInterleavedBlit ? "interleaved" : "not interleaved"
+		);
+	}
+#endif
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
 	UWORD uwDstOffsStep = ubTileSize / 8;
 	systemSetDmaBit(DMAB_BLITHOG, 1);
@@ -667,7 +682,8 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		while(uwTileCurr < uwEndX) {
 			tileBufferContinueTileDraw(
 				pManager, pTileData[uwTileCurr], uwTileY,
-				uwBltsize, ulDstOffs, pDstPlane, 1
+				uwBltsize, ulDstOffs, pDstPlane, 1,
+				ubNonInterleavedBlit
 			);
 			++uwTileCurr;
 			ulDstOffs += uwDstOffsStep;
@@ -715,6 +731,14 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	scrollBufferProcess(pManager->pScroll);
 
 	logBlockEnd("tileBufferRedrawAll()");
+}
+
+void tileBufferRedrawAllInterleaved(tTileBufferManager *pManager) {
+	tileBufferRedrawAllInternal(pManager, 0);
+}
+
+void tileBufferRedrawAllNonInterleaved(tTileBufferManager *pManager) {
+	tileBufferRedrawAllInternal(pManager, 1);
 }
 
 void tileBufferDrawTile(

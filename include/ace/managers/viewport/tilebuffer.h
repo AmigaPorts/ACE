@@ -199,7 +199,15 @@ void tileBufferReset(
  * Be sure to have display turned off or palette dimmed since even on double
  * buffering it will redraw both buffers.
  */
-void tileBufferRedrawAll(tTileBufferManager *pManager);
+void tileBufferRedrawAllNonInterleaved(tTileBufferManager *pManager);
+
+/**
+ * Redraws tiles on whole screen.
+ * Use for init or something like that, as it's slooooooooow.
+ * Be sure to have display turned off or palette dimmed since even on double
+ * buffering it will redraw both buffers.
+ */
+void tileBufferRedrawAllInterleaved(tTileBufferManager *pManager);
 
 /**
  * Redraws selected tile, calls custom redraw callback
