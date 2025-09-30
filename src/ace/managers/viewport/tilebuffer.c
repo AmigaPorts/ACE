@@ -691,25 +691,49 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	}
 #endif
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
-	UWORD uwDstOffsStep = ubTileSize / 8;
+	UWORD uwMarginedHeight = pManager->uwMarginedHeight;
+	UWORD uwWrapAroundY = MIN(uwEndY, uwMarginedHeight >> ubTileShift);
+	UWORD uwBfrY = wStartY << ubTileShift;
 	systemSetDmaBit(DMAB_BLITHOG, 1);
 	Disable(); // Disable and clear CPU caches (if any)
 	CacheClearU();
-	for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
-		UWORD uwTileCurr = wStartX;
-		ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + uwTileOffsX / 8;
-		while(uwTileCurr < uwEndX) {
-			tileBufferContinueTileDraw(
-				pManager, pTileData[uwTileCurr], uwTileY,
-				uwBltsize, ulDstOffs, pDstPlane, 1, 0,
-				ubNonInterleavedBlit
-			);
-			++uwTileCurr;
-			ulDstOffs += uwDstOffsStep;
+	for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
+		tTileBufferTileIndex *pTileDataColumn = pTileData[uwTileX];
+		UWORD uwBfrX = (uwTileX << ubTileShift);
+		ULONG ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX / 8);
+		if (!ubNonInterleavedBlit) {
+#ifdef ACE_DEBUG
+			blitWait();
+#endif
+			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
 		}
-		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
-			uwTileOffsY + ubTileSize, pManager->uwMarginedHeight
-		);
+		for (UWORD uwTileY = wStartY; uwTileY < uwWrapAroundY; ++uwTileY) {
+			tileBufferContinueTileDraw(
+				pManager, pTileDataColumn, uwTileY,
+				uwBltsize, ulDstOffs, pDstPlane,
+				0, 0, ubNonInterleavedBlit
+			);
+			if (ubNonInterleavedBlit) {
+				ulDstOffs += uwDstBytesPerRow;
+			}
+		}
+		ulDstOffs = uwBfrX / 8;
+		if (!ubNonInterleavedBlit) {
+#ifdef ACE_DEBUG
+			blitWait();
+#endif
+			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
+		}
+		for (UWORD uwTileY = uwWrapAroundY; uwTileY < uwEndY; ++uwTileY) {
+			tileBufferContinueTileDraw(
+				pManager, pTileDataColumn, uwTileY,
+				uwBltsize, ulDstOffs, pDstPlane,
+				0, 0, ubNonInterleavedBlit
+			);
+			if (ubNonInterleavedBlit) {
+				ulDstOffs += uwDstBytesPerRow;
+			}
+		}
 	}
 	Enable();
 
