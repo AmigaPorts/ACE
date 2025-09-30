@@ -732,18 +732,37 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 		}
 	}
 
-	systemSetDmaBit(DMAB_BLITHOG, 0);
-
 	// Copy from back buffer to front buffer.
-	// Width is always a multiple of 16, so use WORD copy.
-	// TODO: this could be done using blitter.
-	UWORD *pSrc = (UWORD*)pManager->pScroll->pBack->Planes[0];
-	UWORD *pDst = (UWORD*)pManager->pScroll->pFront->Planes[0];
-	ULONG ulWordsToCopy = (
-		pManager->pScroll->pFront->BytesPerRow * pManager->pScroll->pFront->Rows
-	) / sizeof(UWORD);
-	while(ulWordsToCopy--) {
-		*(pDst++) = *(pSrc++);
+	if (ubNonInterleavedBlit) {
+		systemSetDmaBit(DMAB_BLITHOG, 0);
+		// Width is always a multiple of 16, so use WORD copy.
+		// TODO: this could be done using blitter.
+		UWORD *pSrc = (UWORD*)pManager->pScroll->pBack->Planes[0];
+		UWORD *pDst = (UWORD*)pManager->pScroll->pFront->Planes[0];
+		ULONG ulWordsToCopy = (
+			pManager->pScroll->pFront->BytesPerRow * pManager->pScroll->pFront->Rows
+		) / sizeof(UWORD);
+		while(ulWordsToCopy--) {
+			*(pDst++) = *(pSrc++);
+		}
+	} else {
+		blitWait(); // must wait now, we re-enabled CPU caches to run the callbacks
+		g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
+		// bltcon1, afwm and alwm may have been modified in callbacks
+		g_pCustom->bltcon1 = 0;
+		g_pCustom->bltafwm = 0xFFFF;
+		g_pCustom->bltalwm = 0xFFFF;
+		g_pCustom->bltamod = 0;
+		g_pCustom->bltdmod = 0;
+		g_pCustom->bltapt = &pManager->pScroll->pBack->Planes[0];
+		g_pCustom->bltdpt = &pManager->pScroll->pFront->Planes[0];
+#if defined(ACE_USE_ECS_FEATURES)
+		g_pCustom->bltsizv = pManager->pScroll->pFront->Rows;
+		g_pCustom->bltsizh = pManager->pScroll->pFront->BytesPerRow / sizeof(UWORD);
+#else
+		g_pCustom->bltsize = (pManager->pScroll->pFront->Rows << HSIZEBITS) | (bitmapGetByteWidth(pManager->pScroll->pFront) / sizeof(UWORD));
+#endif
+		systemSetDmaBit(DMAB_BLITHOG, 0);
 	}
 
 	// Refresh bitplane pointers in scrollBuffer's copprtlist - 2x for dbl bfr
