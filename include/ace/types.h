@@ -49,6 +49,7 @@ typedef int32_t LONG;
 #define REGARG(arg, reg) arg
 #define CHIP
 #define FAR
+#define ALWAYS_INLINE
 #define FN_HOTSPOT
 #define FN_COLDSPOT
 #define BITFIELD_STRUCT struct __attribute__((packed))
@@ -60,6 +61,7 @@ typedef int32_t LONG;
 #define REGARG(arg, reg) arg
 #define CHIP __attribute__((section(".MEMF_CHIP")))
 #define FAR
+#define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
 #define BITFIELD_STRUCT struct
@@ -79,6 +81,7 @@ typedef int32_t LONG;
 #define REGARG(arg, reg) arg asm(reg)
 #define CHIP __attribute__((chip))
 #define FAR __far
+#define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
 #define BITFIELD_STRUCT struct

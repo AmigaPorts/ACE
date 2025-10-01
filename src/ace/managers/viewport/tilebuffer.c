@@ -373,7 +373,7 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
  * bitmaps, but it works for non-interleaved bitmaps, too, with
  * a slightly larger performance hit.
  */
-FN_HOTSPOT
+ALWAYS_INLINE
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, const tTileBufferTileIndex *pTileDataColumn,
 	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst,
@@ -650,6 +650,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 
 // This is used below with ubNonInterleavedBlit either 0 or 1, so with the inlining this is
 // a poor man's function template specialization...
+ALWAYS_INLINE
 static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBYTE ubNonInterleavedBlit) {
 	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
 
