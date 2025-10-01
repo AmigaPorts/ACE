@@ -11,6 +11,12 @@
 
 #define TILEBUFFER_MAX_TILESET_SIZE (1 << (8 * sizeof(tTileBufferTileIndex)))
 
+#if !defined(ACE_DEBUG)
+#define TILEBUFFER_REDRAW_HOG 1
+#else
+#define TILEBUFFER_REDRAW_HOG 0
+#endif
+
 // Zero the ACE_SCROLLBUFFER_X_MARGIN_SIZE/ACE_SCROLLBUFFER_Y_MARGIN_SIZE to see the undraw
 
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
@@ -377,13 +383,13 @@ ALWAYS_INLINE
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, const tTileBufferTileIndex *pTileDataColumn,
 	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst,
-	UBYTE ubBlitWait, UBYTE ubNonInterleavedBlit
+	UBYTE isWaitForBlit, UBYTE isInterleaved
 ) {
 	tTileBufferTileIndex TileToDraw = pTileDataColumn[uwTileY];
 
-	if (!ubNonInterleavedBlit) {
+	if (isInterleaved) {
 		// this function should be inlined into the caller, where
-		// ubNonInterleavedBlit should be a *constant* argument, so
+		// isInterleaved should be a *constant* argument, so
 		// this check folds away
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[TileToDraw];
 		UBYTE *pUbBltdpt;
@@ -393,11 +399,7 @@ static inline void tileBufferContinueTileDraw(
 			// folds away
 			pUbBltdpt = pDstPlane + ulDstOffs;
 		}
-#ifndef ACE_DEBUG
-		if (ubBlitWait) {
-#else
-		if (1) {
-#endif
+		if (isWaitForBlit || !TILEBUFFER_REDRAW_HOG) {
 			// this function should be inlined into the caller, where
 			// ubBlitWait should be a constant argument, so this check
 			// folds away
@@ -414,11 +416,7 @@ static inline void tileBufferContinueTileDraw(
 		for(UBYTE ubPlane = pManager->pTileSet->Depth; ubPlane--;) {
 			UBYTE *pUbBltapt = pManager->pTileSet->Planes[ubPlane] + ulSrcOffs;
 			UBYTE *pUbBltdpt = pManager->pScroll->pBack->Planes[ubPlane] + ulDstOffs;
-#ifndef ACE_DEBUG
-			if (ubBlitWait) {
-#else
-			if (1) {
-#endif
+			if (isWaitForBlit || !TILEBUFFER_REDRAW_HOG) {
 				// this function should be inlined into the caller, where
 				// ubBlitWait should be a constant argument, so this check
 				// folds away
@@ -648,10 +646,10 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	pManager->ubStateIdx = !pManager->ubStateIdx;
 }
 
-// This is used below with ubNonInterleavedBlit either 0 or 1, so with the inlining this is
+// This is used below with isInterleaved either 0 or 1, so with the inlining this is
 // a poor man's function template specialization...
 ALWAYS_INLINE
-static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBYTE ubNonInterleavedBlit) {
+static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBYTE isInterleaved) {
 	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
 
 	UBYTE ubTileSize = pManager->ubTileSize;
@@ -684,10 +682,10 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	tTileBufferTileIndex **pTileData = pManager->pTileData;
 	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
 #if defined ACE_DEBUG
-	if ((uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT) && !ubNonInterleavedBlit) {
+	if ((uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT) && isInterleaved) {
 		logWrite("ERR: you called tileBufferRedrawAll%s, but the buffers are %s",
-			ubNonInterleavedBlit ? "NonInterleaved" : "Interleaved",
-			ubNonInterleavedBlit ? "interleaved" : "not interleaved"
+			isInterleaved ? "Interleaved" : "NonInterleaved",
+			isInterleaved ? "not interleaved" : "interleaved"
 		);
 	}
 #endif
@@ -702,36 +700,36 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 		tTileBufferTileIndex *pTileDataColumn = pTileData[uwTileX];
 		UWORD uwBfrX = (uwTileX << ubTileShift);
 		ULONG ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX / 8);
-		if (!ubNonInterleavedBlit) {
-#ifdef ACE_DEBUG
-			blitWait();
-#endif
+		if (isInterleaved) {
+			if (!TILEBUFFER_REDRAW_HOG) {
+				blitWait();
+			}
 			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
 		}
 		for (UWORD uwTileY = wStartY; uwTileY < uwWrapAroundY; ++uwTileY) {
 			tileBufferContinueTileDraw(
 				pManager, pTileDataColumn, uwTileY,
 				uwBltsize, ulDstOffs, pDstPlane,
-				0, 0, ubNonInterleavedBlit
+				0, 0, isInterleaved
 			);
-			if (ubNonInterleavedBlit) {
+			if (!isInterleaved) {
 				ulDstOffs += uwDstBytesPerRow;
 			}
 		}
 		ulDstOffs = uwBfrX / 8;
-		if (!ubNonInterleavedBlit) {
-#ifdef ACE_DEBUG
-			blitWait();
-#endif
+		if (isInterleaved) {
+			if (!TILEBUFFER_REDRAW_HOG) {
+				blitWait();
+			}
 			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
 		}
 		for (UWORD uwTileY = uwWrapAroundY; uwTileY < uwEndY; ++uwTileY) {
 			tileBufferContinueTileDraw(
 				pManager, pTileDataColumn, uwTileY,
 				uwBltsize, ulDstOffs, pDstPlane,
-				0, 0, ubNonInterleavedBlit
+				0, 0, isInterleaved
 			);
-			if (ubNonInterleavedBlit) {
+			if (!isInterleaved) {
 				ulDstOffs += uwDstBytesPerRow;
 			}
 		}
@@ -758,7 +756,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	}
 
 	// Copy from back buffer to front buffer.
-	if (ubNonInterleavedBlit) {
+	if (!isInterleaved) {
 		systemSetDmaBit(DMAB_BLITHOG, 0);
 		// Width is always a multiple of 16, so use WORD copy.
 		// TODO: this could be done using blitter.
