@@ -681,25 +681,16 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
 	tTileBufferTileIndex **pTileData = pManager->pTileData;
 	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
-#if defined ACE_DEBUG
-	if ((uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT) && isInterleaved) {
-		logWrite("ERR: you called tileBufferRedrawAll%s, but the buffers are %s",
-			isInterleaved ? "Interleaved" : "NonInterleaved",
-			isInterleaved ? "not interleaved" : "interleaved"
-		);
-	}
-#endif
+
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
 	UWORD uwMarginedHeight = pManager->uwMarginedHeight;
 	UWORD uwWrapAroundY = MIN(uwEndY, uwMarginedHeight >> ubTileShift);
-	UWORD uwBfrY = wStartY << ubTileShift;
 	systemSetDmaBit(DMAB_BLITHOG, 1);
 	Disable(); // Disable and clear CPU caches (if any)
 	CacheClearU();
 	for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
 		tTileBufferTileIndex *pTileDataColumn = pTileData[uwTileX];
-		UWORD uwBfrX = (uwTileX << ubTileShift);
-		ULONG ulDstOffs = uwDstBytesPerRow * uwBfrY + (uwBfrX / 8);
+		ULONG ulDstOffs = ((uwDstBytesPerRow * wStartY) << ubTileShift) + (uwTileX << ubTileShift >> 3);
 		if (isInterleaved) {
 			if (!TILEBUFFER_REDRAW_HOG) {
 				blitWait();
@@ -716,7 +707,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 				ulDstOffs += uwDstBytesPerRow;
 			}
 		}
-		ulDstOffs = uwBfrX / 8;
+		ulDstOffs = (uwTileX << ubTileShift >> 3);
 		if (isInterleaved) {
 			if (!TILEBUFFER_REDRAW_HOG) {
 				blitWait();
@@ -801,18 +792,23 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
  * and we can save the extra instructions for waiting.
  */
 CHIP
-void tileBufferRedrawAllInterleaved(tTileBufferManager *pManager) {
-	tileBufferRedrawAllInternal(pManager, 0);
-}
-
-/*
- * We forcibly place this function in chipmem and we disable any CPU caches
- * when we are executing this, so the CPU is actually blocked by the blitter
- * and we can save the extra instructions for waiting.
- */
-CHIP
-void tileBufferRedrawAllNonInterleaved(tTileBufferManager *pManager) {
-	tileBufferRedrawAllInternal(pManager, 1);
+void tileBufferRedrawAll(tTileBufferManager *pManager) {
+	UBYTE ubSrcInterleaved = bitmapIsInterleaved(pManager->pTileSet);
+	UBYTE ubDstInterleaved = bitmapIsInterleaved(pManager->pScroll->pBack);
+	// This duplicates a bit of code, but when I introduced this gcc de-
+	// duplicated the shared code before the branch on isInterleaved comes
+	// and so the only dupicated part is the common code to run the cbTileDraw
+	// callback, which in my compilation was 142 bytes, and the code to call
+	// the scrollBufferProcess twice, which was 30 bytes for me. Even if this
+	// a bit worse sometime with other GCC versions, I think it's not worth
+	// adding another #define to save ~170 bytes of duplicated code. If
+	// we ever decide to completely omit interleaved or non-interleaved support
+	// in some project, that'll be a bigger refactoring anyway.
+	if (ubSrcInterleaved && ubDstInterleaved) {
+		tileBufferRedrawAllInternal(pManager, 1);
+	} else {
+		tileBufferRedrawAllInternal(pManager, 0);
+	}
 }
 
 void tileBufferDrawTile(
