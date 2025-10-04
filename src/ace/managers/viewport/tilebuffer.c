@@ -686,8 +686,12 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	UWORD uwMarginedHeight = pManager->uwMarginedHeight;
 	UWORD uwWrapAroundY = MIN(uwEndY, uwMarginedHeight >> ubTileShift);
 	systemSetDmaBit(DMAB_BLITHOG, 1);
-	Disable(); // Disable and clear CPU caches (if any)
-	CacheClearU();
+#if defined ACE_DEBUG
+	if (!systemBlitterIsUsed()) {
+		logWrite("ERR: you called tileBufferRedrawAll but the blitter is not owned!");
+	}
+#endif
+	systemDisableCpuCaches();
 	for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
 		tTileBufferTileIndex *pTileDataColumn = pTileData[uwTileX];
 		ULONG ulDstOffs = ((uwDstBytesPerRow * wStartY) << ubTileShift) + (uwTileX << ubTileShift >> 3);
@@ -725,7 +729,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 			}
 		}
 	}
-	Enable();
+	systemRestoreCpuCaches();
 
 	if (pManager->cbTileDraw) {
 		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(wStartY << ubTileShift, pManager->uwMarginedHeight);
