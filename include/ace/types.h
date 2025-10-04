@@ -52,6 +52,8 @@ typedef int32_t LONG;
 #define ALWAYS_INLINE
 #define FN_HOTSPOT
 #define FN_COLDSPOT
+#define LIKELY(x) x
+#define UNLIKELY(x) x
 #define BITFIELD_STRUCT struct __attribute__((packed))
 #elif defined(BARTMAN_GCC)
 #define INTERRUPT
@@ -64,6 +66,8 @@ typedef int32_t LONG;
 #define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define BITFIELD_STRUCT struct
 #elif defined(__GNUC__) // Bebbo
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
@@ -84,6 +88,8 @@ typedef int32_t LONG;
 #define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define BITFIELD_STRUCT struct
 #else
 #error "Compiler not supported!"
