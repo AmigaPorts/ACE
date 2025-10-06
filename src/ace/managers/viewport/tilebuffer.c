@@ -650,8 +650,6 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 // a poor man's function template specialization...
 ALWAYS_INLINE
 static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBYTE isInterleaved) {
-	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
-
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
 
@@ -668,10 +666,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	);
 	// Reset margin redraw structs as we're redrawing everything anyway
 	tileBufferResetRedrawState(
-		&pManager->pRedrawStates[0], wStartX, uwEndX, wStartY, uwEndY
-	);
-	tileBufferResetRedrawState(
-		&pManager->pRedrawStates[1], wStartX, uwEndX, wStartY, uwEndY
+		&pManager->pRedrawStates[pManager->ubStateIdx], wStartX, uwEndX, wStartY, uwEndY
 	);
 
 	UWORD uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
@@ -730,6 +725,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 		}
 	}
 	systemRestoreCpuCaches();
+	systemSetDmaBit(DMAB_BLITHOG, 0);
 
 	if (pManager->cbTileDraw) {
 		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(wStartY << ubTileShift, pManager->uwMarginedHeight);
@@ -750,41 +746,43 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 		}
 	}
 
-	// Copy from back buffer to front buffer.
-	if (!isInterleaved) {
-		systemSetDmaBit(DMAB_BLITHOG, 0);
-		// Width is always a multiple of 16, so use WORD copy.
-		// TODO: this could be done using blitter.
-		UWORD *pSrc = (UWORD*)pManager->pScroll->pBack->Planes[0];
-		UWORD *pDst = (UWORD*)pManager->pScroll->pFront->Planes[0];
-		ULONG ulWordsToCopy = (
-			pManager->pScroll->pFront->BytesPerRow * pManager->pScroll->pFront->Rows
-		) / sizeof(UWORD);
-		while(ulWordsToCopy--) {
-			*(pDst++) = *(pSrc++);
-		}
-	} else {
-		blitWait(); // must wait now, we re-enabled CPU caches to run the callbacks
-		g_pCustom->bltcon0 = USEA|USED|MINTERM_A;
-		// bltcon1, afwm and alwm may have been modified in callbacks
-		g_pCustom->bltcon1 = 0;
-		g_pCustom->bltafwm = 0xFFFF;
-		g_pCustom->bltalwm = 0xFFFF;
-		g_pCustom->bltamod = 0;
-		g_pCustom->bltdmod = 0;
-		g_pCustom->bltapt = &pManager->pScroll->pBack->Planes[0];
-		g_pCustom->bltdpt = &pManager->pScroll->pFront->Planes[0];
-#if defined(ACE_USE_ECS_FEATURES)
-		g_pCustom->bltsizv = pManager->pScroll->pFront->Rows;
-		g_pCustom->bltsizh = pManager->pScroll->pFront->BytesPerRow / sizeof(UWORD);
-#else
-		g_pCustom->bltsize = (pManager->pScroll->pFront->Rows << HSIZEBITS) | (bitmapGetByteWidth(pManager->pScroll->pFront) / sizeof(UWORD));
+	// Refresh bitplane pointers in scrollBuffer's copprtlist
+	scrollBufferProcess(pManager->pScroll);
+}
+
+void tileBufferRedrawAll(tTileBufferManager *pManager) {
+	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
+
+	tileBufferRedrawBack(pManager);
+
+	// Reset margin redraw structs for front buffer, too
+	WORD wStartX = 0, wStartY = 0;
+	UWORD uwEndX = 0, uwEndY = 0;
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
+	wStartX = pManager->pRedrawStates[pManager->ubStateIdx].sMarginL.wTilePos;
+	uwEndX = pManager->pRedrawStates[pManager->ubStateIdx].sMarginR.wTilePos;
 #endif
-		systemSetDmaBit(DMAB_BLITHOG, 0);
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
+	wStartY = pManager->pRedrawStates[pManager->ubStateIdx].sMarginU.wTilePos;
+	uwEndY = pManager->pRedrawStates[pManager->ubStateIdx].sMarginD.wTilePos;
+#endif
+	tileBufferResetRedrawState(
+		&pManager->pRedrawStates[!pManager->ubStateIdx], wStartX, uwEndX, wStartY, uwEndY
+	);
+
+	// Copy from back buffer to front buffer.
+	// Width is always a multiple of 16, so use WORD copy.
+	// TODO: this could be done using blitter.
+	UWORD *pSrc = (UWORD*)pManager->pScroll->pBack->Planes[0];
+	UWORD *pDst = (UWORD*)pManager->pScroll->pFront->Planes[0];
+	ULONG ulWordsToCopy = (
+		pManager->pScroll->pFront->BytesPerRow * pManager->pScroll->pFront->Rows
+	) / sizeof(UWORD);
+	while(ulWordsToCopy--) {
+		*(pDst++) = *(pSrc++);
 	}
 
-	// Refresh bitplane pointers in scrollBuffer's copprtlist - 2x for dbl bfr
-	scrollBufferProcess(pManager->pScroll);
+	// Refresh bitplane pointers in scrollBuffer's copprtlist - 2nd time for dbl bfr
 	scrollBufferProcess(pManager->pScroll);
 
 	logBlockEnd("tileBufferRedrawAll()");
@@ -792,11 +790,11 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 
 /*
  * We forcibly place this function in chipmem and we disable any CPU caches
- * when we are executing this, so the CPU is actually blocked by the blitter
- * and we can save the extra instructions for waiting.
+ * when we are executing tileBufferRedrawAllInternal, so the CPU is actually
+ * blocked by the blitter and we can save the extra instructions for waiting.
  */
 CHIP
-void tileBufferRedrawAll(tTileBufferManager *pManager) {
+void tileBufferRedrawBack(tTileBufferManager *pManager) {
 	UBYTE ubSrcInterleaved = bitmapIsInterleaved(pManager->pTileSet);
 	UBYTE ubDstInterleaved = bitmapIsInterleaved(pManager->pScroll->pBack);
 	// This duplicates a bit of code, but when I introduced this gcc de-
