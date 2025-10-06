@@ -793,7 +793,9 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
  * when we are executing tileBufferRedrawAllInternal, so the CPU is actually
  * blocked by the blitter and we can save the extra instructions for waiting.
  */
-CHIP
+#if !defined(ACE_DEBUG)
+CHIP // stepping into chipmem annotated functions is a bit wonky on bartman's vscode plugin
+#endif
 void tileBufferRedrawBack(tTileBufferManager *pManager) {
 	UBYTE ubSrcInterleaved = bitmapIsInterleaved(pManager->pTileSet);
 	UBYTE ubDstInterleaved = bitmapIsInterleaved(pManager->pScroll->pBack);
