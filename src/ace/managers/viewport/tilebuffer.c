@@ -680,6 +680,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	UWORD uwTileOffsX = (wStartX << ubTileShift);
 	UWORD uwMarginedHeight = pManager->uwMarginedHeight;
 	UWORD uwWrapAroundY = MIN(uwEndY, uwMarginedHeight >> ubTileShift);
+	ULONG ulDstYOffset = ((uwDstBytesPerRow * wStartY) << ubTileShift);
 	systemSetDmaBit(DMAB_BLITHOG, 1);
 #if defined ACE_DEBUG
 	if (!systemBlitterIsUsed()) {
@@ -688,15 +689,17 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 #endif
 	systemDisableCpuCaches();
 	for (UWORD uwTileX = wStartX; uwTileX < uwEndX; ++uwTileX) {
+		UWORD uwDstXOffset = uwTileX << ubTileShift >> 3;
 		tTileBufferTileIndex *pTileDataColumn = pTileData[uwTileX];
-		ULONG ulDstOffs = ((uwDstBytesPerRow * wStartY) << ubTileShift) + (uwTileX << ubTileShift >> 3);
+		ULONG ulDstOffs = ulDstYOffset + uwDstXOffset;
 		if (isInterleaved) {
 			if (!TILEBUFFER_REDRAW_HOG) {
 				blitWait();
 			}
 			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
 		}
-		for (UWORD uwTileY = wStartY; uwTileY < uwWrapAroundY; ++uwTileY) {
+		UWORD uwTileY = wStartY;
+		for (; uwTileY < uwWrapAroundY; ++uwTileY) {
 			tileBufferContinueTileDraw(
 				pManager, pTileDataColumn, uwTileY,
 				uwBltsize, ulDstOffs, pDstPlane,
@@ -706,14 +709,14 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 				ulDstOffs += uwDstBytesPerRow;
 			}
 		}
-		ulDstOffs = (uwTileX << ubTileShift >> 3);
+		ulDstOffs = uwDstXOffset;
 		if (isInterleaved) {
 			if (!TILEBUFFER_REDRAW_HOG) {
 				blitWait();
 			}
 			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
 		}
-		for (UWORD uwTileY = uwWrapAroundY; uwTileY < uwEndY; ++uwTileY) {
+		for (; uwTileY < uwEndY; ++uwTileY) {
 			tileBufferContinueTileDraw(
 				pManager, pTileDataColumn, uwTileY,
 				uwBltsize, ulDstOffs, pDstPlane,
@@ -808,7 +811,7 @@ void tileBufferRedrawBack(tTileBufferManager *pManager) {
 	// adding another #define to save ~170 bytes of duplicated code. If
 	// we ever decide to completely omit interleaved or non-interleaved support
 	// in some project, that'll be a bigger refactoring anyway.
-	if (ubSrcInterleaved && ubDstInterleaved) {
+	if (LIKELY(ubSrcInterleaved && ubDstInterleaved)) {
 		tileBufferRedrawAllInternal(pManager, 1);
 	} else {
 		tileBufferRedrawAllInternal(pManager, 0);
