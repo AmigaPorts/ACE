@@ -714,7 +714,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 				0, 0, isInterleaved
 			);
 			if (!isInterleaved) {
-				ulDstOffs += uwDstBytesPerRow;
+				ulDstOffs += (uwDstBytesPerRow << ubTileShift);
 			}
 		}
 		ulDstOffs = uwDstXOffset;
@@ -731,7 +731,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 				0, 0, isInterleaved
 			);
 			if (!isInterleaved) {
-				ulDstOffs += uwDstBytesPerRow;
+				ulDstOffs += (uwDstBytesPerRow << ubTileShift);
 			}
 		}
 	}
