@@ -1189,7 +1189,7 @@ void systemReleaseBlitterToOs(void) {
 }
 
 UBYTE systemBlitterIsUsed(void) {
-	return s_wSystemBlitterUses > 0;
+	return s_wSystemBlitterUses <= 0;
 }
 
 void systemSetKeyInputHandler(tKeyInputHandler cbKeyInputHandler) {
