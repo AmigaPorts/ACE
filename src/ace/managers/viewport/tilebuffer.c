@@ -755,9 +755,6 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 			);
 		}
 	}
-
-	// Refresh bitplane pointers in scrollBuffer's copprtlist
-	scrollBufferProcess(pManager->pScroll);
 }
 
 void tileBufferRedrawAll(tTileBufferManager *pManager) {
@@ -792,7 +789,8 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 		*(pDst++) = *(pSrc++);
 	}
 
-	// Refresh bitplane pointers in scrollBuffer's copprtlist - 2nd time for dbl bfr
+	// Refresh bitplane pointers in scrollBuffer's copprtlist - 2x for dbl bfr
+	scrollBufferProcess(pManager->pScroll);
 	scrollBufferProcess(pManager->pScroll);
 
 	logBlockEnd("tileBufferRedrawAll()");
