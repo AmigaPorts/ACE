@@ -382,7 +382,7 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
 ALWAYS_INLINE
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, const tTileBufferTileIndex *pTileDataColumn,
-	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst,
+	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE isSetDst,
 	UBYTE isWaitForBlit, UBYTE isInterleaved
 ) {
 	tTileBufferTileIndex TileToDraw = pTileDataColumn[uwTileY];
@@ -393,9 +393,9 @@ static inline void tileBufferContinueTileDraw(
 		// this check folds away
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[TileToDraw];
 		UBYTE *pUbBltdpt;
-		if (ubSetDst) {
+		if (isSetDst) {
 			// this function should be inlined into the caller, where
-			// ubSetDst should be a *constant* argument, so this check
+			// isSetDst should be a *constant* argument, so this check
 			// folds away
 			pUbBltdpt = pDstPlane + ulDstOffs;
 		}
@@ -406,7 +406,7 @@ static inline void tileBufferContinueTileDraw(
 			blitWait(); // Don't modify registers when other blit is in progress
 		}
 		g_pCustom->bltapt = pUbBltapt;
-		if (ubSetDst) {
+		if (isSetDst) {
 			g_pCustom->bltdpt = pUbBltdpt;
 		}
 		g_pCustom->bltsize = uwBltsize;
