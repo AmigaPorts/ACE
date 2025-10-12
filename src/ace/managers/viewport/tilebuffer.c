@@ -484,7 +484,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 						pManager, pTileColumn, uwTileCurr,
 						uwBltsize, ulDstOffs, pDstPlane,
 						// do not set bltdpt, it was left at the right place by the previous blit
-						0, 1, uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT
+						0, 1, !(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)
 					);
 					++uwTileCurr;
 					uwTileOffsY += ubTileSize;
@@ -590,7 +590,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
 						uwBltsize, ulDstOffs, pDstPlane, 1, 1,
-						uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT
+						!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)
 					);
 					++uwTileCurr;
 					ulDstOffs += uwDstOffsStep;
