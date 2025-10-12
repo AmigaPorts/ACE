@@ -465,6 +465,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
+				UBYTE isInterleaved = !(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT);
 				UWORD uwTileCurr = pState->pMarginX->wTileCurr;
 				UWORD uwTileEnd = pState->pMarginX->wTileEnd;
 				UWORD uwMarginedHeight = pManager->uwMarginedHeight;
@@ -484,7 +485,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 						pManager, pTileColumn, uwTileCurr,
 						uwBltsize, ulDstOffs, pDstPlane,
 						// do not set bltdpt, it was left at the right place by the previous blit
-						0, 1, !(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)
+						0, 1, isInterleaved
 					);
 					++uwTileCurr;
 					uwTileOffsY += ubTileSize;
@@ -579,6 +580,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
+				UBYTE isInterleaved = !(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT);
 				UWORD uwTileCurr = pState->pMarginY->wTileCurr;
 				UWORD uwTileEnd = pState->pMarginY->wTileEnd;
 				UWORD uwTilePos = pState->pMarginY->wTilePos;
@@ -590,7 +592,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
 						uwBltsize, ulDstOffs, pDstPlane, 1, 1,
-						!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)
+						isInterleaved
 					);
 					++uwTileCurr;
 					ulDstOffs += uwDstOffsStep;
