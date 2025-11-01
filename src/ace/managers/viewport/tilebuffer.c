@@ -11,6 +11,12 @@
 
 #define TILEBUFFER_MAX_TILESET_SIZE (1 << (8 * sizeof(tTileBufferTileIndex)))
 
+#if !defined(ACE_DEBUG)
+#define TILEBUFFER_REDRAW_HOG 1
+#else
+#define TILEBUFFER_REDRAW_HOG 0
+#endif
+
 // Zero the ACE_SCROLLBUFFER_X_MARGIN_SIZE/ACE_SCROLLBUFFER_Y_MARGIN_SIZE to see the undraw
 
 static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
@@ -373,26 +379,34 @@ static UWORD tileBufferSetupTileDraw(const tTileBufferManager *pManager) {
  * bitmaps, but it works for non-interleaved bitmaps, too, with
  * a slightly larger performance hit.
  */
-FN_HOTSPOT
+ALWAYS_INLINE
 static inline void tileBufferContinueTileDraw(
 	const tTileBufferManager *pManager, const tTileBufferTileIndex *pTileDataColumn,
-	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE ubSetDst
+	UWORD uwTileY, UWORD uwBltsize, ULONG ulDstOffs, PLANEPTR pDstPlane, UBYTE isSetDst,
+	UBYTE isWaitForBlit, UBYTE isInterleaved
 ) {
 	tTileBufferTileIndex TileToDraw = pTileDataColumn[uwTileY];
 
-	if (!(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT)) {
+	if (isInterleaved) {
+		// this function should be inlined into the caller, where
+		// isInterleaved should be a *constant* argument, so
+		// this check folds away
 		UBYTE *pUbBltapt = pManager->pTileSetOffsets[TileToDraw];
 		UBYTE *pUbBltdpt;
-		if (ubSetDst) {
+		if (isSetDst) {
 			// this function should be inlined into the caller, where
-			// ubSetDst should be a *constant* argument, so this check
+			// isSetDst should be a *constant* argument, so this check
 			// folds away
 			pUbBltdpt = pDstPlane + ulDstOffs;
 		}
-
-		blitWait(); // Don't modify registers when other blit is in progress
+		if (isWaitForBlit || !TILEBUFFER_REDRAW_HOG) {
+			// this function should be inlined into the caller, where
+			// ubBlitWait should be a constant argument, so this check
+			// folds away
+			blitWait(); // Don't modify registers when other blit is in progress
+		}
 		g_pCustom->bltapt = pUbBltapt;
-		if (ubSetDst) {
+		if (isSetDst) {
 			g_pCustom->bltdpt = pUbBltdpt;
 		}
 		g_pCustom->bltsize = uwBltsize;
@@ -402,7 +416,12 @@ static inline void tileBufferContinueTileDraw(
 		for(UBYTE ubPlane = pManager->pTileSet->Depth; ubPlane--;) {
 			UBYTE *pUbBltapt = pManager->pTileSet->Planes[ubPlane] + ulSrcOffs;
 			UBYTE *pUbBltdpt = pManager->pScroll->pBack->Planes[ubPlane] + ulDstOffs;
-			blitWait();  // Don't modify registers when other blit is in progress
+			if (isWaitForBlit || !TILEBUFFER_REDRAW_HOG) {
+				// this function should be inlined into the caller, where
+				// ubBlitWait should be a constant argument, so this check
+				// folds away
+				blitWait(); // Don't modify registers when other blit is in progress
+			}
 			g_pCustom->bltapt = pUbBltapt;
 			g_pCustom->bltdpt = pUbBltdpt;
 			g_pCustom->bltsize = uwBltsize & ~BLIT_WORDS_NON_INTERLEAVED_BIT;
@@ -446,6 +465,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileOffsX = (pState->pMarginX->wTilePos << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
+				UBYTE isInterleaved = !(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT);
 				UWORD uwTileCurr = pState->pMarginX->wTileCurr;
 				UWORD uwTileEnd = pState->pMarginX->wTileEnd;
 				UWORD uwMarginedHeight = pManager->uwMarginedHeight;
@@ -465,7 +485,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 						pManager, pTileColumn, uwTileCurr,
 						uwBltsize, ulDstOffs, pDstPlane,
 						// do not set bltdpt, it was left at the right place by the previous blit
-						0
+						0, 1, isInterleaved
 					);
 					++uwTileCurr;
 					uwTileOffsY += ubTileSize;
@@ -560,6 +580,7 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				UWORD uwTileOffsX = (pState->pMarginY->wTileCurr << ubTileShift);
 				// Redraw remaining tiles
 				UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
+				UBYTE isInterleaved = !(uwBltsize & BLIT_WORDS_NON_INTERLEAVED_BIT);
 				UWORD uwTileCurr = pState->pMarginY->wTileCurr;
 				UWORD uwTileEnd = pState->pMarginY->wTileEnd;
 				UWORD uwTilePos = pState->pMarginY->wTilePos;
@@ -570,7 +591,8 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 				while(uwTileCurr < uwTileEnd) {
 					tileBufferContinueTileDraw(
 						pManager, pTileData[uwTileCurr], uwTilePos,
-						uwBltsize, ulDstOffs, pDstPlane, 1
+						uwBltsize, ulDstOffs, pDstPlane, 1, 1,
+						isInterleaved
 					);
 					++uwTileCurr;
 					ulDstOffs += uwDstOffsStep;
@@ -626,77 +648,136 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 	pManager->ubStateIdx = !pManager->ubStateIdx;
 }
 
-void tileBufferRedrawAll(tTileBufferManager *pManager) {
-	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
-
+// This is used below with isInterleaved either 0 or 1, so with the inlining this is
+// a poor man's function template specialization...
+ALWAYS_INLINE
+static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBYTE isInterleaved) {
 	UBYTE ubTileSize = pManager->ubTileSize;
 	UBYTE ubTileShift = pManager->ubTileShift;
+	UWORD uwMarginedHeight = pManager->uwMarginedHeight;
 
-	WORD wStartX = MAX(0, (pManager->pCamera->uPos.uwX >> ubTileShift) - ACE_SCROLLBUFFER_X_MARGIN_SIZE);
-	WORD wStartY = MAX(0, (pManager->pCamera->uPos.uwY >> ubTileShift) - ACE_SCROLLBUFFER_Y_MARGIN_SIZE);
+	// Calculate the range in tile coordinates
+	UWORD uwStartX = MAX(0, (pManager->pCamera->uPos.uwX >> ubTileShift) - ACE_SCROLLBUFFER_X_MARGIN_SIZE);
+	UWORD uwStartY = MAX(0, (pManager->pCamera->uPos.uwY >> ubTileShift) - ACE_SCROLLBUFFER_Y_MARGIN_SIZE);
 	// One of bounds may be smaller than viewport + margin size
 	UWORD uwEndX = MIN(
 		pManager->uTileBounds.uwX,
-		wStartX + (pManager->uwMarginedWidth >> ubTileShift)
+		uwStartX + (pManager->uwMarginedWidth >> ubTileShift)
 	);
 	UWORD uwEndY = MIN(
 		pManager->uTileBounds.uwY,
-		wStartY + (pManager->uwMarginedHeight >> ubTileShift)
+		uwStartY + (uwMarginedHeight >> ubTileShift)
 	);
+
 	// Reset margin redraw structs as we're redrawing everything anyway
 	tileBufferResetRedrawState(
-		&pManager->pRedrawStates[0], wStartX, uwEndX, wStartY, uwEndY
-	);
-	tileBufferResetRedrawState(
-		&pManager->pRedrawStates[1], wStartX, uwEndX, wStartY, uwEndY
+		&pManager->pRedrawStates[pManager->ubStateIdx], uwStartX, uwEndX, uwStartY, uwEndY
 	);
 
-	UWORD uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
-		wStartY << ubTileShift, pManager->uwMarginedHeight
-	);
-	UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
+	// Convert to pixel coordinates. uwBfrOffsX coord may overflow dimensions but that's
+	// since we want to draw offset by N bitplanes for the corkscrew trick as we move right
 	PLANEPTR pDstPlane = pManager->pScroll->pBack->Planes[0];
-	tTileBufferTileIndex **pTileData = pManager->pTileData;
+	UWORD uwDstBytesPerRow = pManager->pScroll->pBack->BytesPerRow;
+	UWORD uwBfrOffsX = (uwStartX << ubTileShift);
+	UWORD uwBfrOffsY = SCROLLBUFFER_HEIGHT_MODULO(uwStartY << ubTileShift, uwMarginedHeight);
+
+	// Now we can calculate at which tile index we will jump from the bottom of the
+	// viewport to the top
+	UWORD uwWrapAroundY = (((uwStartY << ubTileShift) + uwMarginedHeight) - uwBfrOffsY) >> ubTileShift;
+
+	// Now we can calculate the Y contribution to the total offset into the buffer bitmap
+	ULONG ulDstYOffset = uwDstBytesPerRow * uwBfrOffsY;
+
+	// Draw
 	UWORD uwBltsize = tileBufferSetupTileDraw(pManager);
-	UWORD uwTileOffsX = (wStartX << ubTileShift);
-	UWORD uwDstOffsStep = ubTileSize / 8;
+	tTileBufferTileIndex **pTileData = pManager->pTileData;
 	systemSetDmaBit(DMAB_BLITHOG, 1);
-	for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
-		UWORD uwTileCurr = wStartX;
-		ULONG ulDstOffs = uwDstBytesPerRow * uwTileOffsY + uwTileOffsX / 8;
-		while(uwTileCurr < uwEndX) {
-			tileBufferContinueTileDraw(
-				pManager, pTileData[uwTileCurr], uwTileY,
-				uwBltsize, ulDstOffs, pDstPlane, 1
-			);
-			++uwTileCurr;
-			ulDstOffs += uwDstOffsStep;
-		}
-		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
-			uwTileOffsY + ubTileSize, pManager->uwMarginedHeight
-		);
+#if defined ACE_DEBUG
+	if (!systemBlitterIsUsed()) {
+		logWrite("ERR: you called tileBufferRedrawAll but the blitter is not owned!");
 	}
+#endif
+	systemDisableCpuCaches();
+	for (UWORD uwTileX = uwStartX; uwTileX < uwEndX; ++uwTileX) {
+		UWORD uwDstXOffset = uwTileX << ubTileShift >> 3;
+		tTileBufferTileIndex *pTileDataColumn = pTileData[uwTileX];
+		ULONG ulDstOffs = ulDstYOffset + uwDstXOffset;
+		if (isInterleaved) {
+			if (!TILEBUFFER_REDRAW_HOG) {
+				blitWait();
+			}
+			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
+		}
+		UWORD uwTileY = uwStartY;
+		for (; uwTileY < uwWrapAroundY; ++uwTileY) {
+			tileBufferContinueTileDraw(
+				pManager, pTileDataColumn, uwTileY,
+				uwBltsize, ulDstOffs, pDstPlane,
+				0, 0, isInterleaved
+			);
+			if (!isInterleaved) {
+				ulDstOffs += (uwDstBytesPerRow << ubTileShift);
+			}
+		}
+		ulDstOffs = uwDstXOffset;
+		if (isInterleaved) {
+			if (!TILEBUFFER_REDRAW_HOG) {
+				blitWait();
+			}
+			g_pCustom->bltdpt = pDstPlane + ulDstOffs;
+		}
+		for (; uwTileY < uwEndY; ++uwTileY) {
+			tileBufferContinueTileDraw(
+				pManager, pTileDataColumn, uwTileY,
+				uwBltsize, ulDstOffs, pDstPlane,
+				0, 0, isInterleaved
+			);
+			if (!isInterleaved) {
+				ulDstOffs += (uwDstBytesPerRow << ubTileShift);
+			}
+		}
+	}
+	systemRestoreCpuCaches();
+	systemSetDmaBit(DMAB_BLITHOG, 0);
 
 	if (pManager->cbTileDraw) {
-		uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(wStartY << ubTileShift, pManager->uwMarginedHeight);
-		for (UWORD uwTileY = wStartY; uwTileY < uwEndY; ++uwTileY) {
-			uwTileOffsX = (wStartX << ubTileShift);
-			UWORD uwTileCurr = wStartX;
+		for (UWORD uwTileY = uwStartY; uwTileY < uwEndY; ++uwTileY) {
+			uwBfrOffsX = (uwStartX << ubTileShift);
+			UWORD uwTileCurr = uwStartX;
 			while (uwTileCurr < uwEndX) {
 				pManager->cbTileDraw(
 					uwTileCurr, uwTileY, pManager->pScroll->pBack,
-					uwTileOffsX, uwTileOffsY
+					uwBfrOffsX, uwBfrOffsY
 				);
 				++uwTileCurr;
-				uwTileOffsX += ubTileSize;
+				uwBfrOffsX += ubTileSize;
 			}
-			uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
-				uwTileOffsY + ubTileSize, pManager->uwMarginedHeight
+			uwBfrOffsY = SCROLLBUFFER_HEIGHT_MODULO(
+				uwBfrOffsY + ubTileSize, pManager->uwMarginedHeight
 			);
 		}
 	}
+}
 
-	systemSetDmaBit(DMAB_BLITHOG, 0);
+void tileBufferRedrawAll(tTileBufferManager *pManager) {
+	logBlockBegin("tileBufferRedrawAll(pManager: %p)", pManager);
+
+	tileBufferRedrawBack(pManager);
+
+	// Reset margin redraw structs for front buffer, too
+	WORD wStartX = 0, wStartY = 0;
+	UWORD uwEndX = 0, uwEndY = 0;
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
+	wStartX = pManager->pRedrawStates[pManager->ubStateIdx].sMarginL.wTilePos;
+	uwEndX = pManager->pRedrawStates[pManager->ubStateIdx].sMarginR.wTilePos;
+#endif
+#if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y)
+	wStartY = pManager->pRedrawStates[pManager->ubStateIdx].sMarginU.wTilePos;
+	uwEndY = pManager->pRedrawStates[pManager->ubStateIdx].sMarginD.wTilePos;
+#endif
+	tileBufferResetRedrawState(
+		&pManager->pRedrawStates[!pManager->ubStateIdx], wStartX, uwEndX, wStartY, uwEndY
+	);
 
 	// Copy from back buffer to front buffer.
 	// Width is always a multiple of 16, so use WORD copy.
@@ -715,6 +796,33 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
 	scrollBufferProcess(pManager->pScroll);
 
 	logBlockEnd("tileBufferRedrawAll()");
+}
+
+/*
+ * We forcibly place this function in chipmem and we disable any CPU caches
+ * when we are executing tileBufferRedrawAllInternal, so the CPU is actually
+ * blocked by the blitter and we can save the extra instructions for waiting.
+ */
+#if !defined(ACE_DEBUG)
+CHIP // stepping into chipmem annotated functions is a bit wonky on bartman's vscode plugin
+#endif
+void tileBufferRedrawBack(tTileBufferManager *pManager) {
+	UBYTE ubSrcInterleaved = bitmapIsInterleaved(pManager->pTileSet);
+	UBYTE ubDstInterleaved = bitmapIsInterleaved(pManager->pScroll->pBack);
+	// This duplicates a bit of code, but when I introduced this gcc de-
+	// duplicated the shared code before the branch on isInterleaved comes
+	// and so the only dupicated part is the common code to run the cbTileDraw
+	// callback, which in my compilation was 142 bytes, and the code to call
+	// the scrollBufferProcess twice, which was 30 bytes for me. Even if this
+	// a bit worse sometime with other GCC versions, I think it's not worth
+	// adding another #define to save ~170 bytes of duplicated code. If
+	// we ever decide to completely omit interleaved or non-interleaved support
+	// in some project, that'll be a bigger refactoring anyway.
+	if (LIKELY(ubSrcInterleaved && ubDstInterleaved)) {
+		tileBufferRedrawAllInternal(pManager, 1);
+	} else {
+		tileBufferRedrawAllInternal(pManager, 0);
+	}
 }
 
 void tileBufferDrawTile(

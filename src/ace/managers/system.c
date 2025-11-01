@@ -59,8 +59,33 @@ typedef struct _tAceInterrupt {
 
 // Store VBR query code in .text so that it plays nice with instruction cache
 // TODO: move to .s file after vasm support gets merged into cmake
+// Instructions: movec vbr,d0; rte
 __attribute__((section("text")))
 static const UWORD s_pGetVbrCode[] = {0x4e7a, 0x0801, 0x4e73};
+
+// Get cache control register contents (020+).
+// Instructions: movec cacr,d0; rte
+__attribute__((section("text")))
+static const UWORD s_pGetCacr[] = {0x4e7a, 0x0002, 0x4e73};
+
+// Get processor configuration register contents (060+).
+// Instructions: movec pcr,d0; rte
+__attribute__((section("text")))
+static const UWORD s_pGetPcr[] = {0x4e7a, 0x0801, 0x4e73};
+
+// Move d0 into the cache control register
+// movec d0,cacr; rte
+__attribute__((section("text")))
+static const UWORD s_pSetCacr[] = {0x4e7b, 0x0002, 0x4e73};
+
+// Move d0 into the cache control register and flush caches
+// movec d0,cacr; cpusha ic+dc; rte
+__attribute__((section("text")))
+static const UWORD s_pSetCacr040[] = {0x4e7b, 0x0002, 0xf4f8, 0x4e73};
+
+// Move d0 into the processor configuration register
+__attribute__((section("text")))
+static const UWORD s_pSetPcr[] = {0x4e7b, 0x801, 0x4e73};
 
 // Saved regs
 static UWORD s_uwOsIntEna;
@@ -99,6 +124,14 @@ static tKeyInputHandler s_cbKeyInputHandler;
 // Manager logic vars
 static WORD s_wSystemUses;
 static WORD s_wSystemBlitterUses;
+
+typedef struct tCpuCacheFlags {
+    ULONG ulCacr;
+    ULONG ulPcr;
+    WORD wDisabledCount;
+} tCpuCacheFlags;
+
+static tCpuCacheFlags s_sCpuCacheFlags;
 
 struct GfxBase *GfxBase = 0;
 struct View *s_pOsView;
@@ -930,6 +963,30 @@ void systemCreate(void) {
 	// Disable system so that it gets backed up once, skip saving intena from systemUnuse()
 	s_wSystemUses = 0;
 	s_wSystemBlitterUses = 1;
+
+	// Query processor cache settings.
+	if (SysBase->AttnFlags & AFF_68020) {
+		s_sCpuCacheFlags.ulCacr = (ULONG)Supervisor((void *)s_pGetCacr);
+	} else {
+		s_sCpuCacheFlags.ulCacr = 0;
+	}
+	// Query PCR to check if superscalar dispatch is enabled (bit 0). Older Kickstarts may not
+	// support detecting the 68060, but in that case the Kickstart also won't enable it.
+	// If we ever do run into the problem that someone enables superscalar dispatch on KS1.3,
+	// we can adapt https://github.com/keirf/flashfloppy-autoswap/blob/master/shared/disable_caches.S
+	// (which itself is based on code from ross https://eab.abime.net/showpost.php?p=1303326&postcount=3)
+	// and execute the instructions to get the PCR under a trap handler that skips it.
+	if (SysBase->AttnFlags & AFF_68060) {
+		s_sCpuCacheFlags.ulPcr = (ULONG)Supervisor((void *)s_pGetPcr);
+	} else {
+		s_sCpuCacheFlags.ulPcr = 0;
+	}
+	s_sCpuCacheFlags.wDisabledCount = 0;
+	if (!s_sCpuCacheFlags.ulCacr && !s_sCpuCacheFlags.ulPcr) {
+		// no caches enabled, treat as always disabled
+		++s_sCpuCacheFlags.wDisabledCount;
+	}
+
 	systemOsDisable();
 	systemUse(); // Re-enable as little as needed
 
@@ -945,6 +1002,16 @@ void systemDestroy(void) {
 	while (!(g_pCustom->intreqr & INTF_VERTB)) continue;
 	g_pCustom->dmacon = 0x07FF;
 	g_pCustom->intreq = 0x7FFF;
+
+	if(s_sCpuCacheFlags.wDisabledCount != 0) {
+		if(s_sCpuCacheFlags.ulCacr == 0 && s_sCpuCacheFlags.ulPcr == 0) {
+			if(s_sCpuCacheFlags.wDisabledCount != 1) {
+				logWrite("ERR: unclosed/overclosed cpu cache count: %hd\n", s_sCpuCacheFlags.wDisabledCount - 1);
+			}
+		} else {
+			logWrite("ERR: unclosed/overclosed cpu cache count: %hd\n", s_sCpuCacheFlags.wDisabledCount);
+		}
+	}
 
 	// Start waking up OS
 	if(s_wSystemUses != 1) {
@@ -1122,7 +1189,7 @@ void systemReleaseBlitterToOs(void) {
 }
 
 UBYTE systemBlitterIsUsed(void) {
-	return s_wSystemBlitterUses > 0;
+	return s_wSystemBlitterUses <= 0;
 }
 
 void systemSetKeyInputHandler(tKeyInputHandler cbKeyInputHandler) {
@@ -1298,4 +1365,52 @@ UBYTE systemIsStartVolumeWritable(void) {
 	systemGetBlitterFromOs();
 	systemUnuse();
 	return isWritable;
+}
+
+void systemDisableCpuCaches() {
+	++s_sCpuCacheFlags.wDisabledCount;
+	if (s_sCpuCacheFlags.wDisabledCount > 1) {
+		return;
+	}
+
+	register volatile ULONG cacheDisable __asm("d0");
+	if (UNLIKELY(s_sCpuCacheFlags.ulCacr & 0x80008000)) {
+		// on 68040+, bits 31 and 15 control if the caches are enabled,
+		// flushing is done via the CPUSHA instruction
+		cacheDisable = s_sCpuCacheFlags.ulCacr & ~(0x80008000);
+		Supervisor((void *)s_pSetCacr040);
+	} else if (UNLIKELY(s_sCpuCacheFlags.ulCacr & 0x101)) {
+		// on 68020+, bit 1 is the instruction cache, writing bit 3 as 1 flushes it
+		// on 68030+, bit 8 is the data cache, writing bit 11 as 1 flushes it
+		cacheDisable = 0x808;
+		Supervisor((void *)s_pSetCacr);
+	}
+	if (UNLIKELY(s_sCpuCacheFlags.ulPcr & 0x1)) {
+		// clear low bit, the superscalar dispatch bit
+		cacheDisable = s_sCpuCacheFlags.ulPcr & ~0x1;
+		Supervisor((void *)s_pSetPcr);
+	}
+}
+
+void systemRestoreCpuCaches() {
+	--s_sCpuCacheFlags.wDisabledCount;
+	if (s_sCpuCacheFlags.wDisabledCount > 0) {
+		return;
+	}
+#if defined(ACE_DEBUG)
+	if (s_sCpuCacheFlags.wDisabledCount < 0) {
+		logWrite("ERR: systemRestoreCpuCaches called more often than systemDisableCpuCaches\n");
+		s_sCpuCacheFlags.wDisabledCount = 0;
+	}
+#endif
+
+	register volatile ULONG cacheEnable __asm("d0");
+	if (s_sCpuCacheFlags.ulCacr) {
+		cacheEnable = s_sCpuCacheFlags.ulCacr;
+		Supervisor((void *)s_pSetCacr);
+	}
+	if (s_sCpuCacheFlags.ulPcr) {
+		cacheEnable = s_sCpuCacheFlags.ulPcr;
+		Supervisor((void *)s_pSetPcr);
+	}
 }
