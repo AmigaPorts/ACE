@@ -1,6 +1,7 @@
 #include "../common/compress.hpp"
 #include <cmath>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 static constexpr auto s_RleMinLength = 3u;
 static constexpr auto s_RleMaxLength = 18u;
