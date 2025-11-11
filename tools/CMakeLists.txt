@@ -16,9 +16,9 @@ endif()
 CPMAddPackage("gh:fmtlib/fmt#10.0.0")
 CPMAddPackage(
 	NAME freetype
-	VERSION 2.13.0
+	VERSION 2.14.1
 	GITHUB_REPOSITORY freetype/freetype
-	GIT_TAG VER-2-13-0
+	GIT_TAG VER-2-14-1
 	OPTIONS "FT_DISABLE_HARFBUZZ 1" "FT_DISABLE_BROTLI 1"
 )
 #TODO: lodepng
