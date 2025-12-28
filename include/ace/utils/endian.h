@@ -18,17 +18,15 @@ extern "C" {
 
 #include <ace/types.h>
 
-// TODO:
-
 /**
  *  @brief Converts _native_ 16-bit to Little (Intel) Endian.
  *
  *  @param uwIn 16-bit value to be converted
  *  @return Supplied value, byte-swapped if neccessary.
  *
- *  @see endianIntel32()
+ *  @see endianLittle32()
  */
-static inline UWORD endianIntel16(UWORD uwIn) {
+static inline UWORD endianLittle16(UWORD uwIn) {
 #ifdef AMIGA
 	return (uwIn << 8) | (uwIn >> 8);
 #else
@@ -42,9 +40,9 @@ static inline UWORD endianIntel16(UWORD uwIn) {
  *  @param ulIn 32-bit value to be converted
  *  @return Supplied value, byte-swapped if neccessary.
  *
- *  @see endianIntel16()
+ *  @see endianLittle16()
  */
-static inline ULONG endianIntel32(ULONG ulIn) {
+static inline ULONG endianLittle32(ULONG ulIn) {
 #ifdef AMIGA
 	return (ulIn << 24) | ((ulIn&0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
 #else
