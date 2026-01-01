@@ -8,6 +8,7 @@
 #define _ACE_TOOLS_COMMON_FS_H_
 
 #include <string>
+#include <functional>
 
 namespace nFs {
 
@@ -20,6 +21,8 @@ std::string getExt(const std::string &szPath);
 std::string removeExt(const std::string &szPath);
 
 std::string getBaseName(const std::string &szPath);
+
+void iterateDirectory(const std::string &szPath, std::function<void(const std::string &)> onFile);
 
 } // namespace nFs
 

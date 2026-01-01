@@ -1,3 +1,6 @@
+// C++17 deprecation for codecvt still doesn't have substitute
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -7,7 +10,12 @@
 #include <sys/stat.h>
 
 #if defined(_WIN32)
-#    include <direct.h>
+#include <direct.h>
+#include <windows.h>
+#include <locale>
+#include <codecvt>
+#else
+#include <dirent.h>
 #endif
 
 namespace nFs {
@@ -65,6 +73,27 @@ std::string getBaseName(const std::string &szPath)
 		LastBackslash = 0;
 	}
 	return szPath.substr(std::max(LastSlash, LastBackslash));
+}
+
+void iterateDirectory(const std::string &szPath, std::function<void(const std::string &)> onFile) {
+#if defined(_WIN32)
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+	WIN32_FIND_DATAW ffd;
+	HANDLE hFind = FindFirstFileW(converter.from_bytes(szPath + "\\*").c_str(), &ffd);
+	do {
+		onFile(std::string(converter.to_bytes(reinterpret_cast<wchar_t*>(ffd.cFileName))));
+	} while (FindNextFileW(hFind, &ffd) != 0);
+#else
+	DIR *pDir = opendir(szPath.c_str());
+  if (pDir != nullptr) {
+		dirent *pDirent;
+    while ((pDirent = readdir(pDir)) != NULL) {
+			onFile(std::string(pDirent->d_name));
+    }
+    closedir(pDir);
+  }
+#endif
 }
 
 } // namespace nFs
