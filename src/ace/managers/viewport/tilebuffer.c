@@ -803,7 +803,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
  * when we are executing tileBufferRedrawAllInternal, so the CPU is actually
  * blocked by the blitter and we can save the extra instructions for waiting.
  */
-#if !defined(ACE_DEBUG)
+#if !defined(ACE_DEBUG) && defined(BARTMAN_GCC)
 CHIP // stepping into chipmem annotated functions is a bit wonky on bartman's vscode plugin
 #endif
 void tileBufferRedrawBack(tTileBufferManager *pManager) {

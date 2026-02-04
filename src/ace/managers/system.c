@@ -156,8 +156,9 @@ struct DosLibrary *DOSBase = 0;
 struct ExecBase *SysBase = 0;
 static struct Message *s_pReturnMsg = 0;
 static BPTR s_bpStartLock = 0;
-static void *s_pOldWindow;
 #endif
+
+static void *s_pOldWindow;
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
 
@@ -1352,6 +1353,7 @@ UWORD systemGetVersion(void) {
 }
 
 UBYTE systemIsStartVolumeWritable(void) {
+#if defined(BARTMAN_GCC)
 	systemUse();
 	systemReleaseBlitterToOs();
 	struct InfoData sInfoData;
@@ -1364,6 +1366,10 @@ UBYTE systemIsStartVolumeWritable(void) {
 	}
 	systemGetBlitterFromOs();
 	systemUnuse();
+#else
+	// FIXME: somehow get the s_bpStartLock on Bebbo toolchain
+	UBYTE isWritable = 1;
+#endif
 	return isWritable;
 }
 
