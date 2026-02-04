@@ -22,9 +22,9 @@
 #include <proto/dos.h> // Bartman's compiler needs this
 #include <proto/graphics.h> // Bartman's compiler needs this
 #include <proto/cia.h>
+#include <workbench/startup.h>
 #if defined(BARTMAN_GCC)
 #include <bartman/gcc8_c_support.h> // Idle measurement
-#include <workbench/startup.h>
 #endif
 
 // There are hardware interrupt vectors
@@ -155,9 +155,11 @@ static UWORD s_uwOsVectorInts = (
 struct DosLibrary *DOSBase = 0;
 struct ExecBase *SysBase = 0;
 static struct Message *s_pReturnMsg = 0;
-static BPTR s_bpStartLock = 0;
+#else // Bebbo
+extern struct WBStartup *_WBenchMsg;
 #endif
 
+static BPTR s_bpStartLock = 0;
 static void *s_pOldWindow;
 
 //----------------------------------------------------------- INTERRUPT HANDLERS
@@ -886,6 +888,8 @@ void systemCreate(void) {
 		s_pReturnMsg = GetMsg(&s_pProcess->pr_MsgPort); // Get the message for later reply
 		s_bpStartLock = CurrentDir(((struct WBStartup*)s_pReturnMsg)->sm_ArgList[0].wa_Lock);
 	}
+#else // Bebbo
+	s_bpStartLock = CurrentDir(_WBenchMsg->sm_ArgList[0].wa_Lock);
 #endif
 
 	// Disable system requesters on write protected/drive full etc when trying to create files
@@ -1047,11 +1051,9 @@ void systemDestroy(void) {
 
 	systemCheckStack();
 
-#if defined(BARTMAN_GCC)
 	if(s_bpStartLock) {
 		CurrentDir(s_bpStartLock);
 	}
-#endif
 
 	s_pProcess->pr_WindowPtr = s_pOldWindow;
 
@@ -1353,7 +1355,6 @@ UWORD systemGetVersion(void) {
 }
 
 UBYTE systemIsStartVolumeWritable(void) {
-#if defined(BARTMAN_GCC)
 	systemUse();
 	systemReleaseBlitterToOs();
 	struct InfoData sInfoData;
@@ -1366,10 +1367,6 @@ UBYTE systemIsStartVolumeWritable(void) {
 	}
 	systemGetBlitterFromOs();
 	systemUnuse();
-#else
-	// FIXME: somehow get the s_bpStartLock on Bebbo toolchain
-	UBYTE isWritable = 1;
-#endif
 	return isWritable;
 }
 
