@@ -23,6 +23,9 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 {
 	tPalette Palette;
 	std::ifstream Source(szPath, std::ios::in);
+	if(!Source.good()) {
+		return {};
+	}
 
 	// Skip header
 	std::string szLine;
