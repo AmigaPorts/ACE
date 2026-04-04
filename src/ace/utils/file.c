@@ -7,29 +7,6 @@
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
 
-LONG fileGetSize(tFile *pFile) {
-	// One could use std library to seek to end of file and use ftell,
-	// but SEEK_END is not guaranteed to work.
-	// http://www.cplusplus.com/reference/cstdio/fseek/
-	// On the other hand, Lock/UnLock is bugged on KS1.3 and doesn't allow
-	// for doing Open() on same file after using it.
-	// So I ultimately do it using fseek.
-
-	logBlockBegin("fileGetSize(pFile: %p)", pFile);
-	if(!pFile) {
-		logWrite("ERR: Null file handle\n");
-		logBlockEnd("fileGetSize()");
-		return -1;
-	}
-	LONG lOldPos = fileGetPos(pFile);
-	fileSeek(pFile, 0, SEEK_END);
-	LONG lSize = fileGetPos(pFile);
-	fileSeek(pFile, lOldPos, SEEK_SET);
-
-	logBlockEnd("fileGetSize()");
-	return lSize;
-}
-
 void fileWriteStr(tFile *pFile, const char *szLine) {
 	if(!pFile) {
 		logWrite("ERR: Null file handle\n");
@@ -58,6 +35,10 @@ ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode) {
 
 ULONG fileGetPos(tFile *pFile) {
 	return diskFileGetPos(pFile);
+}
+
+ULONG fileGetSize(tFile *pFile) {
+	return diskFileGetSize(pFile);
 }
 
 UBYTE fileIsEof(tFile *pFile) {
@@ -108,6 +89,13 @@ ULONG fileGetPos(tFile *pFile) {
 		logWrite("ERR: Null file handle\n");
 	}
 	return pFile->pCallbacks->cbFileGetPos(pFile->pData);
+}
+
+LONG fileGetSize(tFile *pFile) {
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+	}
+	return pFile->pCallbacks->cbFileGetSize(pFile->pData);
 }
 
 UBYTE fileIsEof(tFile *pFile) {

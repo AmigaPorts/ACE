@@ -49,7 +49,6 @@ tConfig::tConfig(const std::vector<const char*> &vArgs)
 			m_isInterleaved = true;
 		}
 		else if(vArgs[ArgIndex] == std::string("-vh")) {
-			fmt::print("VARIABLE HEIGHT ON\n\n\n\n");
 			m_isVaryingHeight = true;
 		}
 		else if(vArgs[ArgIndex] == std::string("-plt") && ArgIndex < ArgCount - 1) {
@@ -174,8 +173,21 @@ static std::vector<tChunkyBitmap> readTiles(
 		}
 	}
 	else if(nFs::isDir(Config.m_szInPath)) {
+		uint32_t ulMaxTileIndex = 0;
+		nFs::iterateDirectory(Config.m_szInPath, [&ulMaxTileIndex](const std::string &szFileName) {
+			auto BaseName = nFs::removeExt(szFileName);
+			try {
+				// watch out for `.`,  `..` and any other filename that might mess up stoul
+				auto TileIndex = std::stoul(BaseName);
+				if(TileIndex > ulMaxTileIndex) {
+					ulMaxTileIndex = TileIndex;
+				}
+			}
+			catch(...) {}
+		});
+
 		std::int16_t wLastFull = -1;
-		for(std::uint16_t i = 0; i < 256; ++i) {
+		for(std::uint16_t i = 0; i <= ulMaxTileIndex; ++i) {
 			auto Tile = tChunkyBitmap::fromPng(fmt::format("{}/{}.png", Config.m_szInPath, i));
 			if(Tile.m_uwHeight != 0) {
 				wLastFull = i;

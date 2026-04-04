@@ -49,27 +49,12 @@ typedef int32_t LONG;
 #define REGARG(arg, reg) arg
 #define CHIP
 #define FAR
+#define ALWAYS_INLINE
 #define FN_HOTSPOT
 #define FN_COLDSPOT
+#define LIKELY(x) x
+#define UNLIKELY(x) x
 #define BITFIELD_STRUCT struct __attribute__((packed))
-#elif defined(__VBCC__)
-#if defined(CONFIG_SYSTEM_OS_FRIENDLY)
-#define INTERRUPT __amigainterrupt __saveds
-#define INTERRUPT_END do {} while(0)
-#elif defined(CONFIG_SYSTEM_OS_TAKEOVER)
-#define INTERRUPT
-#define INTERRUPT_END do {} while(0)
-#endif
-
-#define HWINTERRUPT __interrupt __saveds
-#define UNUSED_ARG
-#define REGARG(arg, reg) __reg(reg) arg
-#define CHIP __chip
-#define FAR
-#define INTERRUPT_END do {} while(0)
-#define FN_HOTSPOT
-#define FN_COLDSPOT
-#define BITFIELD_STRUCT struct
 #elif defined(BARTMAN_GCC)
 #define INTERRUPT
 #define INTERRUPT_END do {} while(0)
@@ -78,8 +63,11 @@ typedef int32_t LONG;
 #define REGARG(arg, reg) arg
 #define CHIP __attribute__((section(".MEMF_CHIP")))
 #define FAR
+#define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define BITFIELD_STRUCT struct
 #elif defined(__GNUC__) // Bebbo
 #if defined(CONFIG_SYSTEM_OS_FRIENDLY)
@@ -97,8 +85,11 @@ typedef int32_t LONG;
 #define REGARG(arg, reg) arg asm(reg)
 #define CHIP __attribute__((chip))
 #define FAR __far
+#define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
 #define FN_COLDSPOT __attribute__((cold))
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define BITFIELD_STRUCT struct
 #else
 #error "Compiler not supported!"

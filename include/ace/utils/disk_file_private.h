@@ -22,6 +22,7 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize);
 DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize);
 DISKFILE_PRIVATE ULONG diskFileSeek(void *pData, LONG lPos, WORD wMode);
 DISKFILE_PRIVATE ULONG diskFileGetPos(void *pData);
+DISKFILE_PRIVATE ULONG diskFileGetSize(void *pData);
 DISKFILE_PRIVATE UBYTE diskFileIsEof(void *pData);
 DISKFILE_PRIVATE void diskFileFlush(void *pData);
 

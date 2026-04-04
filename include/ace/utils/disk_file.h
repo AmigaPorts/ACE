@@ -11,14 +11,22 @@ extern "C" {
 
 #include "file.h"
 
+typedef enum tDiskFileMode {
+	DISK_FILE_MODE_READ,
+	DISK_FILE_MODE_WRITE,
+} tDiskFileMode;
+
 /**
  * @brief Opens the filesystem file for read/write.
  *
  * @param szPath Path to file to be opened.
- * @param szMode File open mode akin to stdio - "r" for read, "w" for write.
+ * @param eMode File open mode - see tDiskFileMode
+ * @param isUninterrupted Set to 1 if file won't remain opened while
+ * you enable/disable OS or meddle with blitter ownership.
+ * Speeds up the read/write operations.
  * @return File handle on success, zero on failure.
  */
-tFile *diskFileOpen(const char *szPath, const char *szMode);
+tFile *diskFileOpen(const char *szPath, tDiskFileMode eMode, UBYTE isUninterrupted);
 
 /**
  * @brief Check whether file at given path exists and is not a directory.

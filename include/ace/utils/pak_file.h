@@ -16,7 +16,8 @@ extern "C" {
 
 typedef struct tPakFileEntry {
 	ULONG ulOffs;
-	ULONG ulSize;
+	ULONG ulSizeUncompressed;
+	ULONG ulSizeData;
 	ULONG ulPathChecksum; // adler32
 } tPakFileEntry;
 
@@ -27,7 +28,7 @@ typedef struct tPakFile {
 	tPakFileEntry *pEntries;
 } tPakFile;
 
-tPakFile *pakFileOpen(const char *szPath);
+tPakFile *pakFileOpen(const char *szPath, UBYTE isUninterrupted);
 
 void pakFileClose(tPakFile *pPakFile);
 

@@ -21,6 +21,8 @@ typedef void (*tAceIntHandler)(
 	REGARG(volatile tCustom *pCustom, "a0"), REGARG(volatile void *pData, "a1")
 );
 
+typedef void (*tKeyInputHandler)(UBYTE ubRawKeyCode);
+
 //-------------------------------------------------------------------- FUNCTIONS
 
 /**
@@ -54,10 +56,12 @@ UBYTE systemBlitterIsUsed(void);
 
 void systemDump(void);
 
+void systemSetKeyInputHandler(tKeyInputHandler cbKeyInputHandler);
+
 void systemSetInt(UBYTE ubIntNumber, tAceIntHandler pHandler, void *pIntData);
 
 void systemSetCiaInt(
-	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler pHandler, void *pIntData
+	UBYTE ubCia, UBYTE ubIntBit, tAceIntHandler cbHandler, void *pIntData
 );
 
 void systemSetCiaCr(UBYTE ubCia, UBYTE isCrB, UBYTE ubCrValue);
@@ -87,6 +91,25 @@ void systemCheckStack(void);
  * be read.
  */
 UWORD systemGetVersion(void);
+
+UBYTE systemIsStartVolumeWritable(void);
+
+/**
+ * Disable caches on 680x0 CPUs. Previous cache control words
+ * are stored so they can later be restored with
+ * systemRestoreCpuCaches.
+ *
+ * @see systemRestoreCpuCaches
+ */
+void systemDisableCpuCaches();
+
+/**
+ * Restore cache control settings after a previous call to
+ * systemDisableCpuCaches.
+ *
+ * @see systemDisableCpuCaches
+ */
+void systemRestoreCpuCaches();
 
 //---------------------------------------------------------------------- GLOBALS
 

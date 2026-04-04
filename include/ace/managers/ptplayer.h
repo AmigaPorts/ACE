@@ -60,11 +60,12 @@ typedef struct _tPtplayerMod {
 } tPtplayerMod;
 
 typedef struct tPtplayerSamplePack {
-	ULONG ulSize;
-	UWORD *pData;
+	UBYTE ubSampleCount;
+	tPtplayerSfx pSamples[PTPLAYER_MOD_SAMPLE_COUNT];
 } tPtplayerSamplePack;
 
 typedef void (*tPtplayerCbSongEnd)(void);
+typedef void (*tPtplayerCbE8)(UBYTE ubE8);
 
 /**
  * @brief Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
@@ -345,6 +346,14 @@ tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples);
  * @param pSamplePack Sample pack to be destroyed.
  */
 void ptplayerSamplePackDestroy(tPtplayerSamplePack *pSamplePack);
+
+/**
+ * @brief Sets the function to call on parsing the E8 command.
+ *
+ * @param cbOnE8 Function to be called. E8 argument nibble is passed
+ * as argument. Set to zero if not needed.
+ */
+void ptplayerSetE8Callback(tPtplayerCbE8 cbOnE8);
 
 #ifdef __cplusplus
 }

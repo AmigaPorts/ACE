@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include "fs.h"
+#include "stream.h"
 #include <fmt/format.h>
 
 static bool beginsWith(
@@ -22,11 +23,14 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 {
 	tPalette Palette;
 	std::ifstream Source(szPath, std::ios::in);
+	if(!Source.good()) {
+		return {};
+	}
 
 	// Skip header
 	std::string szLine;
 	do {
-	std::getline(Source, szLine);
+		nStream::getAnyLine(Source, szLine);
 	} while(!Source.eof() && (
 		beginsWith(szLine, "GIMP Palette") ||
 		beginsWith(szLine, "Name:") ||
@@ -36,22 +40,23 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 
 	// Read colors
 	bool isEnd = false;
-	bool isNextEnd = false;
 	do {
-		std::stringstream ss(szLine);
-		int r, g, b;
-		ss >> r;
-		ss >> g;
-		ss >> b;
-		tRgb Color(r, g, b);
-		Palette.m_vColors.push_back(Color);
+		if(!szLine.empty() && !beginsWith(szLine, "#")) {
+			std::stringstream ss(szLine);
+			int r, g, b;
+			ss >> r;
+			ss >> g;
+			ss >> b;
+			tRgb Color(r, g, b);
+			Palette.m_vColors.push_back(Color);
+		}
 
-		std::getline(Source, szLine);
-		if(isNextEnd || szLine == "") {
+		if(Source.eof()) {
 			isEnd = true;
 		}
-		if(Source.eof())
-			isNextEnd=true;
+		else {
+			nStream::getAnyLine(Source, szLine);
+		}
 	} while(!isEnd);
 
 	fmt::print("Palette color count: {}\n", Palette.m_vColors.size());
