@@ -804,7 +804,7 @@ void tileBufferRedrawAll(tTileBufferManager *pManager) {
  * blocked by the blitter and we can save the extra instructions for waiting.
  */
 #if !defined(ACE_DEBUG) && defined(BARTMAN_GCC)
-CHIP // stepping into chipmem annotated functions is a bit wonky on bartman's vscode plugin
+CHIP_CODE // stepping into chipmem annotated functions is a bit wonky on bartman's vscode plugin
 #endif
 void tileBufferRedrawBack(tTileBufferManager *pManager) {
 	UBYTE ubSrcInterleaved = bitmapIsInterleaved(pManager->pTileSet);
