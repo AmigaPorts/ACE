@@ -48,6 +48,12 @@ typedef int32_t LONG;
 #define UNUSED_ARG __attribute__((unused))
 #define REGARG(arg, reg) arg
 #define CHIP
+// Data in chip memory. While on Amiga CHIP mem is all one region, GCC needs to tell apart executable from data, from zero-initialized data
+#define CHIP_DATA
+// Code in chip memory. While on Amiga CHIP mem is all one region, GCC needs to tell apart executable from data, from zero-initialized data
+#define CHIP_CODE
+// Zero-initialized data in chip memory. While on Amiga CHIP mem is all one region, GCC needs to tell apart executable from data, from zero-initialized data
+#define CHIP_BSS
 #define FAR
 #define ALWAYS_INLINE
 #define FN_HOTSPOT
@@ -62,6 +68,15 @@ typedef int32_t LONG;
 #define UNUSED_ARG __attribute__((unused))
 #define REGARG(arg, reg) arg
 #define CHIP __attribute__((section(".MEMF_CHIP")))
+// Data in chip memory. While on Amiga CHIP mem is all one region, GCC needs to tell apart executable from data, from zero-initialized data
+// The naming is like this because "ld" absorbs ".data.*" sections, and elf2hunk looks for sections ending in ".MEMF_CHIP" to put in chip memory
+#define CHIP_DATA __attribute__((section(".chipdata.MEMF_CHIP")))
+// Code in chip memory. While on Amiga CHIP mem is all one region, GCC needs to tell apart executable from data, from zero-initialized data
+// The naming is like this because "ld" absorbs ".text.*" sections, and elf2hunk looks for sections ending in ".MEMF_CHIP" to put in chip memory
+#define CHIP_CODE __attribute__((section(".chiptext.MEMF_CHIP")))
+// Zero-initialized data in chip memory. While on Amiga CHIP mem is all one region, GCC needs to tell apart executable from data, from zero-initialized data
+// The naming is like this because "ld" absorbs ".bss.*" sections, and elf2hunk looks for sections ending in ".MEMF_CHIP" to put in chip memory
+#define CHIP_BSS __attribute__((section(".chipbss.MEMF_CHIP")))
 #define FAR
 #define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
@@ -84,6 +99,9 @@ typedef int32_t LONG;
 #define UNUSED_ARG __attribute__((unused))
 #define REGARG(arg, reg) arg asm(reg)
 #define CHIP __attribute__((chip))
+#define CHIP_DATA __attribute__((chip))
+#define CHIP_CODE __attribute__((chip))
+#define CHIP_BSS __attribute__((chip))
 #define FAR __far
 #define ALWAYS_INLINE __attribute__((always_inline))
 #define FN_HOTSPOT __attribute__((hot))
