@@ -37,15 +37,17 @@ static UBYTE s_ubBpp;
 
 // This can't be a decreasing counter such as in toSave/toDraw since after
 // decrease another bob may be pushed, which would trash bg saving
-static UBYTE s_ubBobsPushed;
-static UBYTE s_ubBobsDrawn;
+// Those pointers have replaced counters to decrease cost of fetching bob from array
+static tBob **s_pNextBobToPush;
+static tBob **s_pNextBobToDraw;
+
 static UWORD s_uwAvailHeight;
 static UWORD s_uwDestByteWidth;
 #if defined(ACE_BOB_PRISTINE_BUFFER)
 static tBitMap *s_pPristineBuffer;
 #else
 static UWORD s_uwBgBufferLength;
-static UBYTE s_ubBobsSaved;
+static tBob **s_pNextBobToSave;
 #endif
 
 tBobQueue s_pQueues[2];
@@ -92,7 +94,7 @@ static void bobDeallocBuffers(void) {
 	systemUnuse();
 }
 
-// TODO: replace pDestination->BytesPerRow with hardcode + validaiton on bobCreate()
+// TODO: replace pDestination->BytesPerRow with hardcode + validation on bobCreate()
 static ULONG bobCalculateBitplaneOffset(const tBob *pBob, UWORD uwDestBytesPerRow) {
 	ULONG ulBitplaneOffset = (
 		uwDestBytesPerRow * (
@@ -118,11 +120,11 @@ void bobManagerReset(void) {
 
 #if !defined(ACE_BOB_PRISTINE_BUFFER)
 	s_uwBgBufferLength = 0;
-	s_ubBobsSaved = 0;
+	s_pNextBobToSave = 0;
 #endif
 	s_isPushingDone = 0;
-	s_ubBobsPushed = 0;
-	s_ubBobsDrawn = 0;
+	s_pNextBobToDraw = &s_pQueues[s_ubBufferCurr].pBobs[0];
+	s_pNextBobToPush = &s_pQueues[s_ubBufferCurr].pBobs[0];
 	bobDiscardUndraw();
 }
 
@@ -197,9 +199,8 @@ void bobManagerDestroy(void) {
 }
 
 void bobPush(tBob *pBob) {
-	tBobQueue *pQueue = &s_pQueues[s_ubBufferCurr];
-	pQueue->pBobs[s_ubBobsPushed] = pBob;
-	++s_ubBobsPushed;
+	*s_pNextBobToPush = pBob;
+	++s_pNextBobToPush;
 	if(blitIsIdle()) {
 		bobProcessNext();
 	}
@@ -294,13 +295,14 @@ UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY) {
 
 UBYTE bobProcessNext(void) {
 #if !defined(ACE_BOB_PRISTINE_BUFFER)
-	if(s_ubBobsSaved < s_ubBobsPushed) {
+	if(s_pNextBobToSave < s_pNextBobToPush) {
 		tBobQueue *pQueue = &s_pQueues[s_ubBufferCurr];
-		if(!s_ubBobsSaved) {
+		if(!s_pNextBobToSave) {
 			// Prepare for saving.
 			// Bltcon0/1, bltaxwm could be reset between Begin and ProcessNext.
 			// I tried to change A->D to C->D bug afwm/alwm need to be set
 			// for mask-copying bobs, so there's no perf to be gained.
+			s_pNextBobToSave = &pQueue->pBobs[0]
 			UWORD uwBltCon0 = USEA|USED | MINTERM_A;
 			blitWait();
 			g_pCustom->bltcon0 = uwBltCon0;
@@ -311,8 +313,8 @@ UBYTE bobProcessNext(void) {
 			g_pCustom->bltdmod = 0;
 			g_pCustom->bltdpt = pQueue->pBg->Planes[0];
 		}
-		tBob *pBob = pQueue->pBobs[s_ubBobsSaved];
-		++s_ubBobsSaved;
+		tBob *pBob = *s_pNextBobToSave;
+		++s_pNextBobToSave;
 
 		// TODO: for BOB_WRAP_Y and ACE_DEBUG check if bob blit fits s_uwAvailHeight
 		ULONG ulSrcOffs = bobCalculateBitplaneOffset(pBob, pQueue->pDst->BytesPerRow);
@@ -352,11 +354,11 @@ UBYTE bobProcessNext(void) {
 #endif
 
 	tBobQueue *pQueue = &s_pQueues[s_ubBufferCurr];
-	if(s_ubBobsDrawn < s_ubBobsPushed) {
+	if(s_pNextBobToDraw < s_pNextBobToPush) {
 		// Draw next
-		tBob *pBob = pQueue->pBobs[s_ubBobsDrawn];
+		tBob *pBob = *s_pNextBobToDraw;
 		const tUwCoordYX * pPos = &pBob->sPos;
-		++s_ubBobsDrawn;
+		++s_pNextBobToDraw;
 		UBYTE ubDstOffs = pPos->uwX & 0xF;
 		UWORD uwBlitWidth = (pBob->uwWidth + ubDstOffs + 15) & 0xFFF0;
 		UWORD uwBlitWords = uwBlitWidth / 16;
@@ -537,7 +539,7 @@ void bobBegin(tBitMap *pBuffer) {
 		}
 	}
 
-	s_ubBobsSaved = 0;
+	s_pNextBobToSave = 0;
 #endif
 
 #ifdef GAME_DEBUG
@@ -550,8 +552,8 @@ void bobBegin(tBitMap *pBuffer) {
 	}
 #endif
 
-	s_ubBobsDrawn = 0;
-	s_ubBobsPushed = 0;
+	s_pNextBobToDraw = &s_pQueues[s_ubBufferCurr].pBobs[0];
+	s_pNextBobToPush = &s_pQueues[s_ubBufferCurr].pBobs[0];
 	s_isPushingDone = 0;
 }
 
@@ -572,7 +574,7 @@ UBYTE bobGetCurrentBufferIndex(void) {
 void bobEnd(void) {
 	bobPushingDone();
 	bobProcessAll();
-	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_ubBobsPushed;
+	s_pQueues[s_ubBufferCurr].ubUndrawCount = s_pNextBobToPush - &s_pQueues[s_ubBufferCurr].pBobs[0];
 	s_ubBufferCurr = !s_ubBufferCurr;
 }
 
