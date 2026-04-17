@@ -288,7 +288,18 @@ void fontDrawTextBitMap(
 	for (UBYTE i = 0; i != pDest->Depth; ++i) {
 		// Determine minterm for given bitplane
 		if(isCookie) {
-			ubMinterm = ubColor & 1 ? 0xEA : 0x2A;
+			if(isLazy) {
+				if(ubColor & 1) {
+					ubMinterm = 0xEA;
+				}
+				else {
+					ubColor >>= 1;
+					continue;
+				}
+			}
+			else {
+				ubMinterm = ubColor & 1 ? 0xEA : 0x2A;
+			}
 		}
 		else {
 			if(ubColor & 1) {
