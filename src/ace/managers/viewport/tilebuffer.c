@@ -172,8 +172,8 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	// This alloc could be checked in regard of double buffering
 	// but I want process to be as quick as possible (one 'if' less)
 	// and redraw queue has no mem footprint at all (256 bytes max?)
-	pManager->pRedrawStates[0].pPendingQueue = memAllocFast(pManager->ubQueueSize);
-	pManager->pRedrawStates[1].pPendingQueue = memAllocFast(pManager->ubQueueSize);
+	pManager->pRedrawStates[0].pPendingQueue = memAllocFast(pManager->ubQueueSize * sizeof(pManager->pRedrawStates[0].pPendingQueue[0]));
+	pManager->pRedrawStates[1].pPendingQueue = memAllocFast(pManager->ubQueueSize * sizeof(pManager->pRedrawStates[0].pPendingQueue[0]));
 	if(
 		!pManager->pRedrawStates[0].pPendingQueue ||
 		!pManager->pRedrawStates[1].pPendingQueue
@@ -196,10 +196,10 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 fail:
 	// TODO: proper fail
 	if(pManager->pRedrawStates[0].pPendingQueue) {
-		memFree(pManager->pRedrawStates[0].pPendingQueue, pManager->ubQueueSize);
+		memFree(pManager->pRedrawStates[0].pPendingQueue, pManager->ubQueueSize * sizeof(pManager->pRedrawStates[0].pPendingQueue[0]));
 	}
 	if(pManager->pRedrawStates[1].pPendingQueue) {
-		memFree(pManager->pRedrawStates[1].pPendingQueue, pManager->ubQueueSize);
+		memFree(pManager->pRedrawStates[1].pPendingQueue, pManager->ubQueueSize * sizeof(pManager->pRedrawStates[0].pPendingQueue[0]));
 	}
 	va_end(vaTags);
 	logBlockEnd("tileBufferCreate");
@@ -222,10 +222,10 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 	}
 
 	if(pManager->pRedrawStates[0].pPendingQueue) {
-		memFree(pManager->pRedrawStates[0].pPendingQueue, pManager->ubQueueSize);
+		memFree(pManager->pRedrawStates[0].pPendingQueue, pManager->ubQueueSize * sizeof(pManager->pRedrawStates[0].pPendingQueue[0]));
 	}
 	if(pManager->pRedrawStates[1].pPendingQueue) {
-		memFree(pManager->pRedrawStates[1].pPendingQueue, pManager->ubQueueSize);
+		memFree(pManager->pRedrawStates[1].pPendingQueue, pManager->ubQueueSize * sizeof(pManager->pRedrawStates[0].pPendingQueue[0]));
 	}
 
 	// Free manager
