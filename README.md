@@ -53,6 +53,7 @@ In alphabetical order:
 - [Chaos Arena](https://github.com/Last-Minute-Creations/chaosArena)
 - [Flappy Ace](https://github.com/NZjeux26/FlappyAceWin)
 - [GermZ](https://github.com/Last-Minute-Creations/germz)
+- [GermZ Survivor](https://github.com/Last-Minute-Creations/GermzSurvivor)
 - [Goblin Villages](https://github.com/Last-Minute-Creations/goblin-villages)
 - [Impsbru](https://github.com/approxit/impsbru)
 - [OpenFire](https://github.com/Last-Minute-Creations/openFire)
