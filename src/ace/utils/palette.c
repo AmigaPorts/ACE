@@ -66,11 +66,13 @@ void paletteDim(
 	}
 }
 
+#ifdef ACE_USE_AGA_FEATURES
 void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
 	for(UWORD c = 0; c <= ubColorCount; ++c) {
 		pDest[c] = paletteColorDimAGA(pSource[c],  ubLevel) ;
 	}
 }
+#endif
 
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 	UBYTE r,g,b;
@@ -88,6 +90,7 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 	return (r << 8) | (g << 4) | b;
 }
 
+#ifdef ACE_USE_AGA_FEATURES
 ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel) {
 	UBYTE r,g,b;
 
@@ -103,6 +106,7 @@ ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel) {
 	// Output
 	return (r << 16) | (g << 8) | b;
 }
+#endif
 
 UWORD paletteColorMix(
 	UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel
