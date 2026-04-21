@@ -425,48 +425,48 @@ void bitmapSaveBmp(
 	// BMP header
 	fileWrite(pOut, "BM", 2);
 
-	ULONG ulOut = endianIntel32((pBitMap->BytesPerRow<<3) * pBitMap->Rows + 14+40+256*4);
+	ULONG ulOut = endianLittle32((pBitMap->BytesPerRow<<3) * pBitMap->Rows + 14+40+256*4);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // BMP file size
 
 	ulOut = 0;
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Reserved
 
-	ulOut = endianIntel32(14+40+256*4);
+	ulOut = endianLittle32(14+40+256*4);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Bitmap data starting addr
 
 
 	// Bitmap info header
-	ulOut = endianIntel32(40);
+	ulOut = endianLittle32(40);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Core header size
 
-	ulOut = endianIntel32(uwWidth);
+	ulOut = endianLittle32(uwWidth);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Image width
 
-	ulOut = endianIntel32(pBitMap->Rows);
+	ulOut = endianLittle32(pBitMap->Rows);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Image height
 
-	UWORD uwOut = endianIntel16(1);
+	UWORD uwOut = endianLittle16(1);
 	fileWrite(pOut, &uwOut, sizeof(UWORD)); // Color plane count
 
-	uwOut = endianIntel16(8);
+	uwOut = endianLittle16(8);
 	fileWrite(pOut, &uwOut, sizeof(UWORD)); // Image BPP - 8bit indexed
 
-	ulOut = endianIntel32(0);
+	ulOut = endianLittle32(0);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Compression method - none
 
-	ulOut = endianIntel32(uwWidth * pBitMap->Rows);
+	ulOut = endianLittle32(uwWidth * pBitMap->Rows);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Image size
 
-	ulOut = endianIntel32(100);
+	ulOut = endianLittle32(100);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Horizontal resolution - px/m
 
-	ulOut = endianIntel32(100);
+	ulOut = endianLittle32(100);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Vertical resolution - px/m
 
-	ulOut = endianIntel32(0);
+	ulOut = endianLittle32(0);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Palette length
 
-	ulOut = endianIntel32(0);
+	ulOut = endianLittle32(0);
 	fileWrite(pOut, &ulOut, sizeof(ULONG)); // Number of important colors - all
 
 	// Global palette

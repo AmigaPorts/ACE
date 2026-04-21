@@ -99,8 +99,8 @@ spriteManagerCreate(...);
 // Remember about limited width to 16px AND extra line for header and footer
 s_pSprite0Data = bitmapCreate(16, 34, 2, BMF_CLEAR | BMF_INTERLEAVED); // 16x32 2BPP
 s_pSprite3Data = bitmapCreate(16, 34, 2, BMF_CLEAR | BMF_INTERLEAVED); // 16x32 2BPP
-s_pSprite0 = spriteAdd(0, pSprite0Data); // Add sprite to channel 0
-s_pSprite3 = spriteAdd(3, pSprite1Data); // Add second sprite to channel 3
+s_pSprite0 = spriteAdd(0, s_pSprite0Data); // Add sprite to channel 0
+s_pSprite3 = spriteAdd(3, s_pSprite3Data); // Add second sprite to channel 3
 ```
 
 > [!NOTE]

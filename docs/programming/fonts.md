@@ -20,6 +20,8 @@ First, convert the font from the format of your choice using the [font_conv](../
 Then, Load your font and create the intermediate Text Bitmap for storing texts composed from separate glyphs:
 
 ```c
+#include <ace/utils/font.h>
+
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitmap;
 

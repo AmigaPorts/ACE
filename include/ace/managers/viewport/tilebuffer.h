@@ -195,11 +195,28 @@ void tileBufferReset(
 
 /**
  * Redraws tiles on whole screen.
+ * 
  * Use for init or something like that, as it's slooooooooow.
  * Be sure to have display turned off or palette dimmed since even on double
  * buffering it will redraw both buffers.
+ * 
+ * If you want to only fully redraw the back buffer, use tileBufferRedrawBack.
+ *
+ * @see tileBufferRedrawBack
  */
 void tileBufferRedrawAll(tTileBufferManager *pManager);
+
+/**
+ * Redraws the tiles on the entire backbuffer.
+ * 
+ * This method is slower than redrawing only what's needed, but depending on
+ * how many tiles need to be redrawn every frame, it may be competitive.
+ * When a lot is going on (many BOBs), the code when used with interleaved
+ * tilebuffer and tilemap is pretty optimized, to the point that redraw of half a
+ * 4bpp low-res screen of 16x16 tiles is possible on an A500. That saves then having
+ * to undraw BOBs, and may thus be better und some circumstances.
+ */
+void tileBufferRedrawBack(tTileBufferManager *pManager);
 
 /**
  * Redraws selected tile, calls custom redraw callback

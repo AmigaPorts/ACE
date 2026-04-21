@@ -11,6 +11,7 @@
 #include "common/fs.h"
 #include "common/endian.h"
 #include "common/compress.hpp"
+#include "common/stream.h"
 
 struct tPakEntry {
 	std::string ShortPath;
@@ -181,7 +182,7 @@ int main(int lArgCount, const char *pArgs[])
 			return EXIT_FAILURE;
 		}
 		std::string NextPath;
-		while(std::getline(FileOrder, NextPath)) {
+		while(nStream::getAnyLine(FileOrder, NextPath)) {
 			auto Found = std::find_if(
 				vEntries.begin(), vEntries.end(),
 				[&NextPath](tPakEntry &Entry){ return Entry.ShortPath == NextPath;}
