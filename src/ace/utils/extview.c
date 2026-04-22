@@ -237,7 +237,7 @@ void viewLoad(tView *pView)
 		g_pCustom->bplcon0 = 0; // No output
 #ifdef ACE_USE_AGA_FEATURES
 		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->fmode = pView->pFirstVPort->ubFmode;	// AGA fix
+		g_pCustom->fmode = 0; // Safe default when no view is loaded
 #else
 		g_pCustom->bplcon3 = 0; // AGA fix
 		g_pCustom->fmode =0;	// AGA fix
