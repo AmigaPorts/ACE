@@ -62,14 +62,20 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 	}
 	else {
 		UBYTE ubPaletteLength = ubFirst;
-		UWORD uwColorsRead = MIN((UWORD)ubPaletteLength, ubMaxLength);
-
-		if(uwColorsRead == 255) {
-			uwColorsRead = 256;
+		/* Count in file: 255 in the length byte encodes 256 colours. */
+		UWORD uwCountInFile = ubPaletteLength;
+		if(uwCountInFile == 255) {
+			uwCountInFile = 256;
 		}
-		logWrite("Legacy .plt color count: %hhu, reading: %hu\n", ubPaletteLength, uwColorsRead);
+		UWORD uwColorsRead = MIN(uwCountInFile, ubMaxLength);
 
-		if(uwColorsRead > 32) {
+		logWrite(
+			"Legacy .plt color count: %hhu (file %hu), reading: %hu\n",
+			ubPaletteLength, uwCountInFile, uwColorsRead
+		);
+
+		/* Row width depends on *file* count, not how many we cap to. */
+		if(uwCountInFile > 32) {
 			fileRead(pFile, pPalette, sizeof(ULONG) * uwColorsRead);
 		}
 		else {
