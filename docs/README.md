@@ -42,6 +42,7 @@ TBD, will be doxy-generated or done as wiki pages, idk yet.
 
 ## Conversion tools
 
+- [.plt v2 / palette changes (overview)](palette-plt-v2-changes.md)
 - [Palettes](tools/palette_conv.md)
 - [Bitmaps](tools/bitmap_conv.md)
 - [Fonts](tools/font_conv.md)

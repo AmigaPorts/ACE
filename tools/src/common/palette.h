@@ -22,7 +22,11 @@ public:
 
 	static tPalette fromAct(const std::string &szPath);
 
-	bool toPlt(const std::string &szPath, bool isForceOcs);
+	/**
+	 * @param isForceOcs true = ECS packed 12-bit entries; false = AGA (4 bytes per colour).
+	 * @param isLegacyPlt true = old single-byte count layout; false = v2 (sentinel + BE UWORD count).
+	 */
+	bool toPlt(const std::string &szPath, bool isForceOcs, bool isLegacyPlt = false);
 
 	bool toGpl(const std::string &szPath);
 
