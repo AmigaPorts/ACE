@@ -15,6 +15,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [ACE in a nutshell](programming/ace_in_a_nutshell.md)
 1. [Hello World example](programming/hello_world.md)
 1. [View & viewports explained](programming/view.md)
+1. [AGA support](programming/aga.md)
 1. [Blitter](programming/blit.md)
 1. [Moving blitted objects](programming/moving_blits.md)
 1. [Loading images and displaying background](programming/loading_images.md)
