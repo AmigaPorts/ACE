@@ -25,14 +25,14 @@ static void pltWriteUwordBE(tFile *pFile, UWORD uwValue) {
 	fileWrite(pFile, &ubLo, sizeof(UBYTE));
 }
 
-void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UBYTE ubMaxLength) {
-	return paletteLoadFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), pPalette, ubMaxLength);
+void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UWORD uwMaxLength) {
+	return paletteLoadFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), pPalette, uwMaxLength);
 }
 
-void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
+void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength) {
 	logBlockBegin(
-		"paletteLoadFromFd(pFile: %p, pPalette: %p, ubMaxLength: %hu)",
-		pFile, pPalette, ubMaxLength
+		"paletteLoadFromFd(pFile: %p, pPalette: %p, uwMaxLength: %hu)",
+		pFile, pPalette, uwMaxLength
 	);
 
 	if(!pFile) {
@@ -46,7 +46,7 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 
 	if(ubFirst <= 1) {
 		UWORD uwNumInFile = pltReadUwordBE(pFile);
-		UWORD uwColorsRead = MIN(uwNumInFile, ubMaxLength);
+		UWORD uwColorsRead = MIN(uwNumInFile, uwMaxLength);
 
 		logWrite(
 			".plt v2 mode %hhu, file colors: %hu, reading: %hu\n",
@@ -67,7 +67,7 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength) {
 		if(uwCountInFile == 255) {
 			uwCountInFile = 256;
 		}
-		UWORD uwColorsRead = MIN(uwCountInFile, ubMaxLength);
+		UWORD uwColorsRead = MIN(uwCountInFile, uwMaxLength);
 
 		logWrite(
 			"Legacy .plt color count: %hhu (file %hu), reading: %hu\n",
@@ -181,16 +181,16 @@ void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 #endif
 
 void paletteDim(
-	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
+	UWORD *pSource, volatile UWORD *pDest, UWORD uwColorCount, UBYTE ubLevel
 ) {
-	for(UBYTE c = 0; c != ubColorCount; ++c) {
+	for(UWORD c = 0; c < uwColorCount; ++c) {
 		pDest[c] = paletteColorDim(pSource[c],  ubLevel) ;
 	}
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel) {
-	for(UWORD c = 0; c < ubColorCount; ++c) {
+void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel) {
+	for(UWORD c = 0; c < uwColorCount; ++c) {
 		pDest[c] = paletteColorDimAGA(pSource[c],  ubLevel) ;
 	}
 }
@@ -309,17 +309,17 @@ void paletteDumpAGA(ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 }
 #endif
 
-void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath) {
-	UBYTE ubLastColor = ubColorCnt - 1;
+void paletteDump(UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
+	UWORD uwLastColor = uwColorCnt - 1;
 	UBYTE ubBpp = 0;
-	while(ubLastColor) {
-		ubLastColor >>= 1;
+	while(uwLastColor) {
+		uwLastColor >>= 1;
 		++ubBpp;
 	}
 	tBitMap *pBm = bitmapCreate(
-		CEIL_TO_FACTOR((1+8)*ubColorCnt + 1, 16), 10, ubBpp, BMF_CLEAR
+		CEIL_TO_FACTOR((1+8)*uwColorCnt + 1, 16), 10, ubBpp, BMF_CLEAR
 	);
-	for(UBYTE i = 0; i < ubColorCnt; ++i) {
+	for(UWORD i = 0; i < uwColorCnt; ++i) {
 		blitRect(pBm, 1+(8+1)*i, 1, 8, 8, i);
 	}
 	bitmapSaveBmp(pBm, pPalette, szPath);

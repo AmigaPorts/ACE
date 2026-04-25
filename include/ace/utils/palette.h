@@ -31,11 +31,11 @@ extern "C" {
  *
  * @param szPath Palette source path.
  * @param pPalette Palette destination pointer.
- * @param ubMaxLength Maximum number of colors to read (255 max for this API).
+ * @param uwMaxLength Maximum number of colors to read.
  *
  * @see paletteLoadFromFd()
  */
-void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UBYTE ubMaxLength);
+void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UWORD uwMaxLength);
 
 /**
  * @brief Saves ECS/OCS palette into .plt v2 file (PLT_NEW_ECS + BE count + packed colours).
@@ -60,29 +60,29 @@ void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath);
  * @param pFile Handle to the palette file. Will be closed on function return.
  * @param pPalette Palette destination pointer. For v2 AGA files, this must be
  *        storage suitable for `ULONG` per entry (e.g. AGA viewport palette).
- * @param ubMaxLength Maximum number of colors to read (at most 255).
+ * @param uwMaxLength Maximum number of colors to read.
  *
  * @see paletteLoadFromPath()
  */
-void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength);
+void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength);
 
 /**
  * @brief Dims palette to given brightness level.
  * @param pSource Pointer to source palette.
  * @param pDest Pointer to destination palette. Can be same as pSource.
  * Can also be pointing directly on chipset palette registers.
- * @param ubColorCount Number of colors in palette.
+ * @param uwColorCount Number of colors in palette.
  * @param ubLevel Brightness level - 15 for no dim, 0 for total blackness.
  *
  * @warning DON'T point pSource to chipset palette registers, they are read-only!
  */
 void paletteDim(
-	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
+	UWORD *pSource, volatile UWORD *pDest, UWORD uwColorCount, UBYTE ubLevel
 );
 
 #ifdef ACE_USE_AGA_FEATURES
 void paletteDimAGA(
-    ULONG *pSource, volatile ULONG *pDest, UBYTE ubColorCount, UBYTE ubLevel
+    ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel
 );
 #endif
 
@@ -133,7 +133,7 @@ ULONG paletteColorMixAGA(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubL
  * @param fubColorCnt Number of colors in palette.
  * @param szPath Destination path for .bmp file.
  */
-void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
+void paletteDump(UWORD *pPalette, UWORD uwColorCnt, char *szPath);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
