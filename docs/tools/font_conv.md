@@ -25,7 +25,7 @@ Unless otherwise stated, you are free to convert between any of them.
 Extra options are:
 
 - `-chars` - Specifies characters to include in the font
-- `-charfile` - Use characters from a text file
+- `-charFile` - Use characters from a text file
 - `-size` - Set font size for rasterization (for TTF fonts)
 - `-out` - Specify output path
 - `-fc` - Set first character index (for ProMotion NG fonts)
