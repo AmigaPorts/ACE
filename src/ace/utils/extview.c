@@ -278,7 +278,10 @@ void viewLoad(tView *pView)
 		// Seems strange that everything relies on the first viewport flags, and palette etc
 #ifdef ACE_USE_AGA_FEATURES
 		if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
-			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9) | BV(4); // BPP + composite output
+			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9); // BPP + composite output
+			if (pView->pFirstVPort->ubBpp & 0x08) {
+				g_pCustom->bplcon0 |= BV(4);
+			}
 			if ( pView->pFirstVPort->ubBpp == 6) {
 			
 				g_pCustom->bplcon2 = BV(9);  // Set KillEHB flag, since we have declared out viewport to be aga, and 64 colours.
