@@ -177,7 +177,10 @@ void viewUpdateGlobalPalette(const tView *pView) {
 #ifdef ACE_USE_AGA_FEATURES
 		if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
 
-			WORD colourBanks = (1 << pView->pFirstVPort->ubBpp) /32 ;
+			/* Ceil((1<<bpp)/32): bpp<5 must still run one bank or no colors are written. */
+			UWORD colourBanks = (UWORD)(
+				((ULONG)1u << pView->pFirstVPort->ubBpp) + 31u
+			) / 32u;
 			// oh AGA palette, how convoluted you are.
 			for (UBYTE p = 0; p < colourBanks ; p++)
 			{
@@ -275,9 +278,10 @@ void viewLoad(tView *pView)
 		pView->uwBplCon0 |= BV(9); // composite output
 
 		g_sCopManager.pCopList = pView->pCopList;
-		// BPLCON0: AGA Denise uses BPU3 in bit 4 + bits 14–12 (not bit 15); always program
-		// that layout when ACE_USE_AGA_FEATURES is on. VP_FLAG_HIRES must set bit 15 here
-		// (nothing else in ACE rewrites BPLCON0).
+		// BPLCON0: AGA Denise uses BPU3 in bit 4 + bits 14–12 (not bit 15); program that
+		// layout when ACE_USE_AGA_FEATURES is on. Do not set HIRES (bit 15) here — nothing
+		// in simpleBuffer/scrollBuffer copper rewrites BPLCON0; their DDF/modulo math is
+		// keyed off VP_FLAG_HIRES vs LORES, and forcing bit 15 here desyncs fetch from mode.
 		// BPLCON2: do not merge read/modify (not safely readable). Untagged viewports keep
 		// the historical bplcon2 = 0 path; KillEHB only for TAG_VPORT_USES_AGA + 6 bpp.
 #ifdef ACE_USE_AGA_FEATURES
@@ -287,9 +291,6 @@ void viewLoad(tView *pView)
 			g_pCustom->bplcon0 = ((0x07 & ubBpp) << 12) | BV(9); // BPP + composite output
 			if (ubBpp & 0x08) {
 				g_pCustom->bplcon0 |= BV(4);
-			}
-			if (pV0->eFlags & VP_FLAG_HIRES) {
-				g_pCustom->bplcon0 |= BV(15);
 			}
 			if (pV0->eFlags & VP_FLAG_AGA) {
 				if (ubBpp == 6) {
@@ -303,9 +304,6 @@ void viewLoad(tView *pView)
 		g_pCustom->bplcon3 = 0;      // AGA fix
 #else
 			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-			if (pView->pFirstVPort->eFlags & VP_FLAG_HIRES) {
-				g_pCustom->bplcon0 |= BV(15);
-			}
 			g_pCustom->bplcon2 = 0; // No need to KILLEHB because we are not AGA, so just blank the flag.
 			g_pCustom->fmode = 0;        // AGA fix
 			g_pCustom->bplcon3 = 0;      // AGA fix
