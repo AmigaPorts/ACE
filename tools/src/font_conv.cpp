@@ -48,7 +48,7 @@ void printUsage(const std::string &szAppName) {
 	print("\t\t\t\tUse backslash (\\) to escape quote (\") char inside charset specifier\n");
 	print("\t\t\t\tDefault charset is: \"{}\"\n\n", s_szDefaultCharset);
 	// -charFile
-	print("\t-charfile \"file.txt\"\tInclude chars specified in file.txt.\n");
+	print("\t-charFile \"file.txt\"\tInclude chars specified in file.txt.\n");
 	print("\t\t\t\tNewline chars (\\r, \\n) and repeats are omitted.\n\n");
 	// -size
 	print("\t-size 8\t\t\tRasterize font using size of 8pt. Default: 20.\n\n");
