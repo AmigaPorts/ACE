@@ -275,22 +275,16 @@ void viewLoad(tView *pView)
 		pView->uwBplCon0 |= BV(9); // composite output
 
 		g_sCopManager.pCopList = pView->pCopList;
-		// Seems strange that everything relies on the first viewport flags, and palette etc
+		// BPLCON0 bit layout matches AGA Denise whenever ACE_USE_AGA_FEATURES is on;
+		// VP_FLAG_AGA gates palette APIs only (see viewUpdateGlobalPalette).
 #ifdef ACE_USE_AGA_FEATURES
-		if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
-			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9); // BPP + composite output
-			if (pView->pFirstVPort->ubBpp & 0x08) {
+		{
+			UBYTE ubBpp = pView->pFirstVPort->ubBpp;
+			g_pCustom->bplcon0 = ((0x07 & ubBpp) << 12) | BV(9); // BPP + composite output
+			if (ubBpp & 0x08) {
 				g_pCustom->bplcon0 |= BV(4);
 			}
-			if ( pView->pFirstVPort->ubBpp == 6) {
-			
-				g_pCustom->bplcon2 = BV(9);  // Set KillEHB flag, since we have declared out viewport to be aga, and 64 colours.
-			}
-		}
-		else
-		{
-			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-			g_pCustom->bplcon2 = 0; // No need to KILLEHB because we are not AGA, so just blank the flag.
+			g_pCustom->bplcon2 = (ubBpp == 6) ? BV(9) : 0; /* KillEHB for 64-colour (6 bpp) */
 		}
 		g_pCustom->fmode = pView->pFirstVPort->ubFmode;        // AGA fix
 		g_pCustom->bplcon3 = 0;      // AGA fix
