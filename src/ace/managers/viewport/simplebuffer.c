@@ -114,7 +114,6 @@ static void simpleBufferInitializeCopperList(
 			}
 		}
 	}
-
 	// Update (rewrite) copperlist
 	// TODO this could be unified with copBlock being set with copSetMove too
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
