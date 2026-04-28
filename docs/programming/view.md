@@ -45,8 +45,7 @@ its features:
 
 ## AGA tags
 
-If ACE is built with `ACE_USE_AGA_FEATURES=ON`, you can enable AGA behavior
-when creating a view/viewport:
+If ACE is built with `ACE_USE_AGA_FEATURES=ON`, you can enable AGA behavior when creating a view or viewport.
 
 - `TAG_VIEW_USES_AGA, 1` on `viewCreate()`
 - `TAG_VPORT_USES_AGA, 1` on `vPortCreate()`

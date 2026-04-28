@@ -5,25 +5,11 @@
 #include <ace/utils/palette.h>
 #include <ace/macros.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/disk_file.h>
-
-static UWORD pltReadUwordBE(tFile *pFile) {
-	UBYTE ubHi, ubLo;
-
-	fileRead(pFile, &ubHi, sizeof(UBYTE));
-	fileRead(pFile, &ubLo, sizeof(UBYTE));
-	return (ubHi << 8) | ubLo;
-}
-
-static void pltWriteUwordBE(tFile *pFile, UWORD uwValue) {
-	UBYTE ubHi = uwValue >> 8;
-	UBYTE ubLo = uwValue & 0xFF;
-
-	fileWrite(pFile, &ubHi, sizeof(UBYTE));
-	fileWrite(pFile, &ubLo, sizeof(UBYTE));
-}
+#include <ace/utils/endian.h>
 
 void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UWORD uwMaxLength) {
 	return paletteLoadFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), pPalette, uwMaxLength);
@@ -44,43 +30,34 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength) {
 	UBYTE ubFirst;
 	fileRead(pFile, &ubFirst, sizeof(UBYTE));
 
-	if(ubFirst <= 1) {
-		UWORD uwNumInFile = pltReadUwordBE(pFile);
-		UWORD uwColorsRead = MIN(uwNumInFile, uwMaxLength);
-
+	if(ubFirst > 1) {
+#ifdef ACE_DEBUG
 		logWrite(
-			".plt v2 mode %hhu, file colors: %hu, reading: %hu\n",
-			ubFirst, uwNumInFile, uwColorsRead
+			"ERR: Unsupported legacy .plt (v1); first byte 0x%02x. "
+			"Reconvert the asset with palette_conv.\n",
+			ubFirst
 		);
+#endif
+		fileClose(pFile);
+		logBlockEnd("paletteLoadFromFd()");
+		return;
+	}
 
-		if(ubFirst == PLT_NEW_ECS) {
-			fileRead(pFile, pPalette, sizeof(UWORD) * uwColorsRead);
-		}
-		else {
-			fileRead(pFile, pPalette, sizeof(ULONG) * uwColorsRead);
-		}
+	UWORD uwNumInFile;
+	fileRead(pFile, &uwNumInFile, sizeof(UWORD));
+	uwNumInFile = endianBig16(uwNumInFile);
+	UWORD uwColorsRead = MIN(uwNumInFile, uwMaxLength);
+
+	logWrite(
+		".plt v2 mode %hhu, file colors: %hu, reading: %hu\n",
+		ubFirst, uwNumInFile, uwColorsRead
+	);
+
+	if(ubFirst == PLT_NEW_ECS) {
+		fileRead(pFile, pPalette, sizeof(UWORD) * uwColorsRead);
 	}
 	else {
-		UBYTE ubPaletteLength = ubFirst;
-		/* Count in file: 255 in the length byte encodes 256 colours. */
-		UWORD uwCountInFile = ubPaletteLength;
-		if(uwCountInFile == 255) {
-			uwCountInFile = 256;
-		}
-		UWORD uwColorsRead = MIN(uwCountInFile, uwMaxLength);
-
-		logWrite(
-			"Legacy .plt color count: %hhu (file %hu), reading: %hu\n",
-			ubPaletteLength, uwCountInFile, uwColorsRead
-		);
-
-		/* Row width depends on *file* count, not how many we cap to. */
-		if(uwCountInFile > 32) {
-			fileRead(pFile, pPalette, sizeof(ULONG) * uwColorsRead);
-		}
-		else {
-			fileRead(pFile, pPalette, sizeof(UWORD) * uwColorsRead);
-		}
+		fileRead(pFile, pPalette, sizeof(ULONG) * uwColorsRead);
 	}
 
 	fileClose(pFile);
@@ -104,42 +81,14 @@ void paletteSave(const UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
 	UBYTE ubSentinel = PLT_NEW_ECS;
 
 	fileWrite(pFile, &ubSentinel, sizeof(UBYTE));
-	pltWriteUwordBE(pFile, uwColorCnt);
+	{
+		UWORD uwWire = endianBig16(uwColorCnt);
+		fileWrite(pFile, &uwWire, sizeof(UWORD));
+	}
 	fileWrite(pFile, pPalette, sizeof(UWORD) * uwColorCnt);
 	fileClose(pFile);
 
 	logBlockEnd("paletteSave()");
-}
-
-void paletteSaveLegacy(UWORD *pPalette, UBYTE ubPaletteLength, char *szPath) {
-	logBlockBegin(
-		"paletteSaveLegacy(pPalette: %p, ubPaletteLength: %hhu, szPath: '%s')",
-		pPalette, ubPaletteLength, szPath
-	);
-
-	tFile *pFile = diskFileOpen(szPath, DISK_FILE_MODE_WRITE, 1);
-	if(!pFile) {
-		logWrite("ERR: Can't write file\n");
-		logBlockEnd("paletteSaveLegacy()");
-		return;
-	}
-
-	fileWrite(pFile, &ubPaletteLength, sizeof(UBYTE));
-
-	UWORD uwCnt = ubPaletteLength;
-	if(uwCnt == 255) {
-		uwCnt = 256;
-	}
-
-	if(uwCnt > 32) {
-		fileWrite(pFile, pPalette, sizeof(ULONG) * uwCnt);
-	}
-	else {
-		fileWrite(pFile, pPalette, sizeof(UWORD) * uwCnt);
-	}
-	fileClose(pFile);
-
-	logBlockEnd("paletteSaveLegacy()");
 }
 
 #ifdef ACE_USE_AGA_FEATURES
@@ -159,7 +108,10 @@ void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 	UBYTE ubSentinel = PLT_NEW_AGA;
 
 	fileWrite(pFile, &ubSentinel, sizeof(UBYTE));
-	pltWriteUwordBE(pFile, uwColorCnt);
+	{
+		UWORD uwWire = endianBig16(uwColorCnt);
+		fileWrite(pFile, &uwWire, sizeof(UWORD));
+	}
 
 	for(UWORD i = 0; i < uwColorCnt; ++i) {
 		ULONG ul = pPalette[i];

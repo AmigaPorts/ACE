@@ -12,7 +12,7 @@ This document summarises the palette / `.plt` work: what changed, and why.
 - Next two bytes: **big-endian `UWORD`** `num_colours`.
 - Then the colour payload for that mode.
 
-**Legacy** files (first byte **≥ 2** = old count byte) are still **read** for compatibility; new output should use v2 or `--legacy` when you need the old wire format for an old pipeline.
+**Legacy (v1)** files (first byte **≥ 2**) are **not** loaded or written by current ACE or `palette_conv`; reconvert assets to **v2**.
 
 ## Why the leading `0` in AGA file entries?
 
@@ -20,17 +20,16 @@ The 4-byte AGA record is the same as before: **alpha (0) + R, G, B**. It matches
 
 ## Runtime (Amiga)
 
-- **`paletteLoadFromPath` / `paletteLoadFromFd`**: understand v2 and legacy; AGA v2 still loads into a buffer you use as **`ULONG` per entry** for AGA viewports.
+- **`paletteLoadFromPath` / `paletteLoadFromFd`**: **v2** only (ECS or AGA sentinel); legacy v1 returns without loading (`ACE_DEBUG` logs an error). AGA v2 loads into a buffer you use as **`ULONG` per entry** for AGA viewports.
 - **`paletteSave`**: writes **v2 ECS** (`0` + count + `UWORD` colours).
 - **`paletteSaveAGA`**: writes **v2 AGA** (with `ACE_USE_AGA_FEATURES`).
-- **`paletteSaveLegacy`**: old one-byte count format; when count `> 32`, **ULONG** rows (aligned with the legacy loader).
 - **`paletteDimAGA`**: off-by-one in the loop fixed.
 - **`paletteColorMixAGA`**, **`paletteDumpAGA`**: implemented (were only declared before).
 
 ## Tools
 
-- **`tPalette::toPlt` / `fromPlt`**: v2 read/write; legacy read/write preserved.
-- **`palette_conv` default output** (no flags): **v2 ECS/OCS** so it matches the **OCS/ECS-first** use of ACE and validates 12-bit colours. Use **`--aga`** for **v2 AGA** `.plt`. Use **`--legacy`** for the old single-byte-header file when you need it for an older build or tool.
+- **`tPalette::toPlt` / `fromPlt`**: **v2** read/write only.
+- **`palette_conv` default output** (no flags): **v2 ECS/OCS** so it matches the **OCS/ECS-first** use of ACE and validates 12-bit colours. Use **`--aga`** for **v2 AGA** `.plt`.
 
 ## Docs
 

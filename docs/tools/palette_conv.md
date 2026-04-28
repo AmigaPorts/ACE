@@ -21,7 +21,7 @@ The first byte selects encoding; the next two bytes are a **big-endian** 16-bit 
 | `0` (`PLT_NEW_ECS`) | ECS/OCS packed 12-bit | 2 bytes per colour |
 | `1` (`PLT_NEW_AGA`) | AGA (`0`, R, G, B per entry) | 4 bytes per colour |
 
-Legacy `.plt` files begin with byte **≥ 2** (old single-byte colour count; `count > 32` selects AGA-style rows). `palette_conv` and `paletteLoadFromFd()` read both v2 and legacy files.
+Older **v1** `.plt` files (first byte **≥ 2**) are not supported; reconvert sources with `palette_conv`.
 
 ### Extracting .gpl palette from from Aseprite
 
@@ -54,14 +54,12 @@ When writing `.plt`, optional flags:
 | _(none)_ | **v2 ECS/OCS** — `PLT_NEW_ECS`, big-endian count, packed 12-bit colours (input must already be valid Amiga nibbles) |
 | `--aga` | **v2 AGA** — `PLT_NEW_AGA`, 4 bytes per colour (`0`, R, G, B) |
 | `--ocs` | Same as default (explicit ECS/OCS v2) |
-| `--legacy` | Old single-byte count `.plt` (for older pipelines only) |
 
 Examples:
 
 ```shell
 palette_conv palette.gpl palette.plt
 palette_conv palette.gpl palette_aga.plt --aga
-palette_conv palette.gpl palette_old.plt --legacy
 ```
 
 > [!NOTE]

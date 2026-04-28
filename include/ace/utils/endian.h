@@ -35,6 +35,25 @@ static inline UWORD endianLittle16(UWORD uwIn) {
 }
 
 /**
+ *  @brief Converts big-endian wire format to/from native 16-bit.
+ *
+ *  Use after reading a big-endian `UWORD` from a file, or before writing one.
+ *  On Amiga (big-endian native) this is a no-op.
+ *
+ *  @param uwIn 16-bit value in wire (big-endian) layout as stored by `fileRead()`.
+ *  @return Value in native endian.
+ *
+ *  @see endianLittle16()
+ */
+static inline UWORD endianBig16(UWORD uwIn) {
+#ifdef AMIGA
+	return uwIn;
+#else
+	return (uwIn << 8) | (uwIn >> 8);
+#endif // AMIGA
+}
+
+/**
  *  @brief Converts _native_ 32-bit from/to Little (Intel) Endian.
  *
  *  @param ulIn 32-bit value to be converted
@@ -47,6 +66,25 @@ static inline ULONG endianLittle32(ULONG ulIn) {
 	return (ulIn << 24) | ((ulIn&0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
 #else
 	return ulIn;
+#endif // AMIGA
+}
+
+/**
+ *  @brief Converts big-endian wire format to/from native 32-bit.
+ *
+ *  Use after reading a big-endian `ULONG` from a file, or before writing one.
+ *  On Amiga (big-endian native) this is a no-op.
+ *
+ *  @param ulIn 32-bit value in wire (big-endian) layout as stored by `fileRead()`.
+ *  @return Value in native endian.
+ *
+ *  @see endianLittle32()
+ */
+static inline ULONG endianBig32(ULONG ulIn) {
+#ifdef AMIGA
+	return ulIn;
+#else
+	return (ulIn << 24) | ((ulIn & 0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
 #endif // AMIGA
 }
 

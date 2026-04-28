@@ -24,8 +24,8 @@ extern "C" {
 /**
  * @brief Loads palette from supplied .plt file to given address.
  *
- * Supports v2 (.plt starting with PLT_NEW_ECS or PLT_NEW_AGA + big-endian UWORD count)
- * and legacy format (first byte is colour count 2–255).
+ * Supports **v2** only (.plt starting with PLT_NEW_ECS or PLT_NEW_AGA + big-endian UWORD count).
+ * Legacy **v1** `.plt` (first byte ≥ 2) is rejected (`ACE_DEBUG`: log error; @p pPalette unchanged).
  * For PLT_NEW_AGA, @p pPalette must point at storage suitable for ULONG-sized colours
  * (same layout as an AGA viewport palette).
  *
@@ -41,12 +41,6 @@ void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UWORD uwMaxLength)
  * @brief Saves ECS/OCS palette into .plt v2 file (PLT_NEW_ECS + BE count + packed colours).
  */
 void paletteSave(const UWORD *pPalette, UWORD uwColorCnt, char *szPath);
-
-/**
- * @brief Saves legacy .plt (single-byte count + rows; count &gt; 32 ⇒ AGA-sized rows).
- * Prefer paletteSave() for new assets.
- */
-void paletteSaveLegacy(UWORD *pPalette, UBYTE ubPaletteLength, char *szPath);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**

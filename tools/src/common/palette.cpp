@@ -5,6 +5,7 @@
 #include "palette.h"
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include "fs.h"
 #include "stream.h"
 #include <fmt/format.h>
@@ -125,40 +126,9 @@ tPalette tPalette::fromPlt(const std::string& szPath)
 		return Palette;
 	}
 
-	std::uint8_t ubPaletteCount = ubFirst;
-
-	fmt::print("Palette color count (legacy): {}\n", ubPaletteCount);
-
-	std::uint16_t uwLoopCount = ubPaletteCount;
-	if (uwLoopCount == 255) {
-		uwLoopCount = 256;
-	}
-
-	for (std::uint16_t i = 0; i < uwLoopCount; ++i) {
-		if (ubPaletteCount > 32)
-		{
-			uint8_t ubA, ubR, ubG, ubB;
-			Source.read(reinterpret_cast<char*>(&ubA), 1);
-			Source.read(reinterpret_cast<char*>(&ubR), 1);
-			Source.read(reinterpret_cast<char*>(&ubG), 1);
-			Source.read(reinterpret_cast<char*>(&ubB), 1);
-
-			Palette.m_vColors.push_back(tRgb(ubR, ubG, ubB));
-		}
-		else
-		{
-			uint8_t ubXR, ubGB;
-			Source.read(reinterpret_cast<char*>(&ubXR), 1);
-			Source.read(reinterpret_cast<char*>(&ubGB), 1);
-
-			Palette.m_vColors.push_back(tRgb(
-				((ubXR & 0x0F) << 4) | (ubXR & 0x0F),
-				((ubGB & 0xF0) >> 4) | (ubGB & 0xF0),
-				((ubGB & 0x0F) << 4) | (ubGB & 0x0F)));
-
-		}
-	}
-	return Palette;
+	throw std::runtime_error(
+		"Legacy .plt (v1) is not supported; re-export with palette_conv to v2."
+	);
 }
 
 tPalette tPalette::fromPromotionPal(const std::string& szPath)
@@ -240,7 +210,7 @@ tPalette tPalette::fromFile(const std::string& szPath)
 	return Palette;
 }
 
-bool tPalette::toPlt(const std::string& szPath, bool isForceOcs, bool isLegacyPlt)
+bool tPalette::toPlt(const std::string& szPath, bool isForceOcs)
 {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
 	if (!Dest.is_open()) {
@@ -248,57 +218,12 @@ bool tPalette::toPlt(const std::string& szPath, bool isForceOcs, bool isLegacyPl
 	}
 	auto PaletteSize = m_vColors.size();
 
-	if (!isLegacyPlt) {
-		std::uint8_t ubSentinel = isForceOcs ? PLT_NEW_ECS : PLT_NEW_AGA;
+	std::uint8_t ubSentinel = isForceOcs ? PLT_NEW_ECS : PLT_NEW_AGA;
 
-		Dest.write(reinterpret_cast<const char*>(&ubSentinel), 1);
-		writeUwordBE(Dest, static_cast<std::uint16_t>(PaletteSize));
+	Dest.write(reinterpret_cast<const char*>(&ubSentinel), 1);
+	writeUwordBE(Dest, static_cast<std::uint16_t>(PaletteSize));
 
-		for (std::size_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
-			const auto& Color = m_vColors[uwColorIdx];
-			if (isForceOcs) {
-				const auto& ColorOcs = Color.to12Bit();
-				if (ColorOcs != Color) {
-
-					throw std::runtime_error(fmt::format(
-						FMT_STRING(
-							"Color at index {} ({}) is not suited for OCS. "
-							"Expected 4-bit channels, e.g. {}"
-						),
-						uwColorIdx, Color.toString(), ColorOcs.toString()
-					));
-				}
-
-
-				std::uint8_t ubXR = Color.ubR >> 4;
-				std::uint8_t ubGB = ((Color.ubG >> 4) << 4) | (Color.ubB >> 4);
-				Dest.write(reinterpret_cast<char*>(&ubXR), 1);
-				Dest.write(reinterpret_cast<char*>(&ubGB), 1);
-			}
-			else {
-				std::uint8_t alpha = 0;
-				Dest.write(reinterpret_cast<const char*>(&alpha), 1);
-				Dest.write(reinterpret_cast<const char*>(&Color.ubR), 1);
-				Dest.write(reinterpret_cast<const char*>(&Color.ubG), 1);
-				Dest.write(reinterpret_cast<const char*>(&Color.ubB), 1);
-			}
-
-		}
-		return true;
-	}
-
-	if (PaletteSize == 256)
-	{
-		PaletteSize = 255;
-		Dest.write(reinterpret_cast<char*>(&PaletteSize), 1);
-		PaletteSize = 256;
-	}
-	else
-	{
-		std::uint8_t ubSz = static_cast<std::uint8_t>(PaletteSize);
-		Dest.write(reinterpret_cast<char*>(&ubSz), 1);
-	}
-	for (uint16_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
+	for (std::size_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
 		const auto& Color = m_vColors[uwColorIdx];
 		if (isForceOcs) {
 			const auto& ColorOcs = Color.to12Bit();
@@ -314,13 +239,13 @@ bool tPalette::toPlt(const std::string& szPath, bool isForceOcs, bool isLegacyPl
 			}
 
 
-			uint8_t ubXR = Color.ubR >> 4;
-			uint8_t ubGB = ((Color.ubG >> 4) << 4) | (Color.ubB >> 4);
+			std::uint8_t ubXR = Color.ubR >> 4;
+			std::uint8_t ubGB = ((Color.ubG >> 4) << 4) | (Color.ubB >> 4);
 			Dest.write(reinterpret_cast<char*>(&ubXR), 1);
 			Dest.write(reinterpret_cast<char*>(&ubGB), 1);
 		}
-		else { // AGA Palette
-			uint8_t alpha = 0;
+		else {
+			std::uint8_t alpha = 0;
 			Dest.write(reinterpret_cast<const char*>(&alpha), 1);
 			Dest.write(reinterpret_cast<const char*>(&Color.ubR), 1);
 			Dest.write(reinterpret_cast<const char*>(&Color.ubG), 1);

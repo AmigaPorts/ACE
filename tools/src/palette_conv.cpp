@@ -7,6 +7,7 @@
 #include "common/palette.h"
 #include "common/bitmap.h"
 #include <cstring>
+#include <exception>
 #include <string>
 #include <vector>
 
@@ -16,7 +17,6 @@ void printUsage(const std::string& szAppName) {
 	print("\nOptions:\n");
 	print("\t--ocs\t\tWrite .plt v2 with ECS/OCS packed 12-bit entries (default)\n");
 	print("\t--aga\t\tWrite .plt v2 with AGA colour entries\n");
-	print("\t--legacy\tWrite old single-byte count .plt (not v2)\n");
 	print("\ninPath\t- path to supported input palette file\n");
 	print("outPath\t- path to output palette file\n");
 	print("ext\t- one of the following:\n");
@@ -29,17 +29,13 @@ void printUsage(const std::string& szAppName) {
 
 int main(int lArgCount, const char* pArgs[])
 {
-	bool isLegacyPlt = false;
 	bool isForceOcs = true;
 	bool isExplicitMode = false;
 
 	std::vector<const char*> Positionals;
 
 	for (int i = 1; i < lArgCount; ++i) {
-		if (std::strcmp(pArgs[i], "--legacy") == 0) {
-			isLegacyPlt = true;
-		}
-		else if (std::strcmp(pArgs[i], "--ocs") == 0) {
+		if (std::strcmp(pArgs[i], "--ocs") == 0) {
 			isForceOcs = true;
 			isExplicitMode = true;
 		}
@@ -71,7 +67,14 @@ int main(int lArgCount, const char* pArgs[])
 	}
 
 	// Load input palette
-	auto Palette = tPalette::fromFile(szPathIn);
+	tPalette Palette;
+	try {
+		Palette = tPalette::fromFile(szPathIn);
+	}
+	catch (const std::exception &Exc) {
+		nLog::error("{}", Exc.what());
+		return EXIT_FAILURE;
+	}
 	if (Palette.m_vColors.empty()) {
 		nLog::error("Invalid input path or palette is empty: '{}'", szPathIn);
 		return 1;
@@ -97,7 +100,7 @@ int main(int lArgCount, const char* pArgs[])
 			isOk = Palette.toPromotionPal(szPathOut);
 		}
 		else if (szExtOut == "plt") {
-			isOk = Palette.toPlt(szPathOut, isForceOcs, isLegacyPlt);
+			isOk = Palette.toPlt(szPathOut, isForceOcs);
 		}
 		else if (szExtOut == "png") {
 			auto ColorCount = Palette.m_vColors.size();

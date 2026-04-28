@@ -12,7 +12,9 @@ Build with:
 
 This enables `ACE_USE_AGA_FEATURES` in code.
 
-## Current AGA features
+## AGA support status
+
+Supported:
 
 - Creating AGA-enabled views and viewports via tags in `ace/utils/extview.h`
 - AGA viewport fetch mode selection via `TAG_VPORT_FMODE`
@@ -20,13 +22,12 @@ This enables `ACE_USE_AGA_FEATURES` in code.
 - AGA palette utilities (load/save/dim/mix/dump) when built with `ACE_USE_AGA_FEATURES`
 - AGA sprite palette bank control helpers
 
-## Tools status
+Not done yet:
 
-ACE tools were updated for current palette/AGA work:
+- Wide sprites support is still in progress
+- Sub-pixel scrolling support is still in progress
 
-- `palette_conv` supports writing AGA `.plt` v2 data (use `--aga`)
-- `bitmap_conv` supports up to 8bpp bitmap conversion and works with the updated palette flow
-
+To follow status and testing progress, see [issue #151](https://github.com/AmigaPorts/ACE/issues/151).
 
 ## Creating an AGA screen
 
@@ -52,10 +53,3 @@ Some notes:
 - `TAG_VPORT_FMODE` controls fetch mode for the viewport
 
 For broader view/viewport basics, see [View & viewports explained](view.md).
-
-## What's not done yet
-
-- Wide sprites support is still in progress
-- Sub-pixel scrolling support is still in progress
-
-To follow status and testing progress, see [issue #151](https://github.com/AmigaPorts/ACE/issues/151).
