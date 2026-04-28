@@ -55,15 +55,22 @@ tView *viewCreate(void *pTags, ...) {
 		pView->uwFlags |= VIEW_FLAG_GLOBAL_AGA;
 	}
 	#endif
+#ifdef ACE_USE_AGA_FEATURES
+	logWrite(
+		"Extra flags: %s%s%s%s\n",
+		(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE) ? "GLOBAL_PALETTE " : "",
+		(pView->uwFlags & VIEW_FLAG_GLOBAL_BPP) ? "GLOBAL_BPP " : "",
+		(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) ? "GLOBAL_HRES " : "",
+		(pView->uwFlags & VIEW_FLAG_GLOBAL_AGA) ? "GLOBAL_AGA " : ""
+	);
+#else
 	logWrite(
 		"Extra flags: %s%s%s\n",
 		(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE) ? "GLOBAL_PALETTE " : "",
 		(pView->uwFlags & VIEW_FLAG_GLOBAL_BPP) ? "GLOBAL_BPP " : "",
 		(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) ? "GLOBAL_HRES " : ""
 	);
-	#ifdef ACE_USE_AGA_FEATURES
-	logWrite("Global AGA: %s\n", (pView->uwFlags & VIEW_FLAG_GLOBAL_AGA) ? "YES" : "NO");
-	#endif
+#endif
 
 	// Get the Y pos and height
 	const UWORD uwDefaultHeight = -1;
@@ -373,12 +380,12 @@ tVPort *vPortCreate(void *pTagList, ...)
 	pVPort->ubBpp = tagGet(pTagList, vaTags, TAG_VPORT_BPP, uwDefaultBpp);
 
 #ifdef ACE_USE_AGA_FEATURES
-if(
-	tagGet(pTagList, vaTags, TAG_VPORT_USES_AGA, 0) ||
-	((pView->uwFlags & VIEW_FLAG_GLOBAL_AGA) && pPrevVPort && pPrevVPort->eFlags & VP_FLAG_AGA)
-) {
-	pVPort->eFlags |= VP_FLAG_AGA;
-}
+	if(
+		tagGet(pTagList, vaTags, TAG_VPORT_USES_AGA, 0) ||
+		((pView->uwFlags & VIEW_FLAG_GLOBAL_AGA) && pPrevVPort && pPrevVPort->eFlags & VP_FLAG_AGA)
+	) {
+		pVPort->eFlags |= VP_FLAG_AGA;
+	}
 	const UBYTE ubDefaultFmode = 0;
 	pVPort->ubFmode = tagGet(pTagList, vaTags, TAG_VPORT_FMODE, ubDefaultFmode);
 #endif
@@ -518,7 +525,7 @@ void vPortDestroy(tVPort *pVPort)
 			logBlockEnd("Destroying managers");
 
 #ifdef ACE_USE_AGA_FEATURES
-			if (pView->pFirstVPort->eFlags & VP_FLAG_AGA)
+			if (pVPort->eFlags & VP_FLAG_AGA)
 			{
 				// AGA uses 24 bit palette entries. 
 				memFree(pVPort->pPalette, sizeof(ULONG) * (1 << pVPort->ubBpp));

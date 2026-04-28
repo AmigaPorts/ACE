@@ -49,14 +49,14 @@ void spriteInit(void);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
- * @brief Sets the palette Ba nk for AGA Sprites for the Odd Channels
+ * @brief Sets the palette bank for AGA sprites on odd channels.
  * @param ubIndex The palette bank index (0-15)
  * @see spriteSetEvenColourPaletteBank
  */
 void spriteSetOddColourPaletteBank(UBYTE ubIndex);
 
 /**
- * @brief Sets the palette Bank for AGA Sprites for the Even Channels
+ * @brief Sets the palette bank for AGA sprites on even channels.
  * @param ubIndex The palette bank index (0-15)
  * @see spriteSetOddColourPaletteBank
  */
