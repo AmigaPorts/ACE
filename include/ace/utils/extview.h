@@ -39,6 +39,9 @@ typedef enum tTagView {
 	TAG_VIEW_GLOBAL_BPP        = TAG_USER | 8,
 	// If set to non-zero, view will use first vport's horizontal resolution (hires on/off) setting for whole screen.
 	TAG_VIEW_GLOBAL_HRES       = TAG_USER | 9,
+#ifdef ACE_USE_AGA_FEATURES
+    TAG_VIEW_USES_AGA          = TAG_USER | 10
+#endif
 } tTagView;
 
 // Values for TAG_VIEW_COPLIST_MODE
@@ -67,7 +70,13 @@ typedef enum tTagVport {
 	TAG_VPORT_OFFSET_TOP   = TAG_USER | 7,
 	// Set to 1 to enable hires mode, set to zero for lores
 	TAG_VPORT_HIRES        = TAG_USER | 8,
+#ifdef ACE_USE_AGA_FEATURES
+	TAG_VPORT_USES_AGA		= TAG_USER | 9,
+	TAG_VPORT_FMODE		= TAG_USER | 10,
+#endif
 } tTagVport;
+
+
 
 /* Types */
 
@@ -79,6 +88,9 @@ typedef enum tViewFlags {
 	VIEW_FLAG_COPLIST_RAW    = BV(1),
 	VIEW_FLAG_GLOBAL_BPP     = BV(2),
 	VIEW_FLAG_GLOBAL_HRES    = BV(3),
+#ifdef ACE_USE_AGA_FEATURES
+	VIEW_FLAG_GLOBAL_AGA     = BV(4),
+#endif
 } tViewFlags;
 
 /**
@@ -87,6 +99,9 @@ typedef enum tViewFlags {
 typedef enum tVpFlag {
 	VP_FLAG_HAS_OWN_PALETTE = BV(0),
 	VP_FLAG_HIRES           = BV(1),
+#ifdef ACE_USE_AGA_FEATURES
+	VP_FLAG_AGA			 	= BV(2),
+#endif
 } tVpFlag;
 
 /**
@@ -150,7 +165,13 @@ typedef struct _tVPort {
 
 	// Color info
 	UBYTE ubBpp;        ///< Bitplane count
-	UWORD pPalette[32]; ///< Destination palette
+#ifdef ACE_USE_AGA_FEATURES
+	UBYTE ubFmode;	  ///< FMODE value
+#endif
+	
+	UWORD* pPalette;
+
+	
 } tVPort;
 
 /* Globals */

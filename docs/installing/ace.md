@@ -49,6 +49,7 @@ Some notes:
 - You can pass other `-DM68K_CPU` values. Supported are `68000`, `68010`, `68020`, `68040` and `68060`. See AmigaCMakeCrossToolchains docs or sources for more info.
 - If you're on cygwin, you might need to add `-G "Unix Makefiles"`.
 - If you want to enable debug build (e.g. to have logs and better sanity checks), pass `-DCMAKE_BUILD_TYPE=Debug`.
+- To enable AGA-specific ACE features, pass `-DACE_USE_AGA_FEATURES=ON`.
 - If you really want to depend on standalone-built ACE library, be sure to take note of the commit you've built it from.
   ACE breaks things very often and it's almost certain that after some time you won't be able to build your game with latest ACE version.
 - By default, ACE is built as a bunch of .o files which are then linked to your executable using powers of CMake.

@@ -43,6 +43,16 @@ its features:
   facilitating large scrolls it manages drawing background for you using
   tilemaps. This is what you'll most likely want to use.
 
+## AGA tags
+
+If ACE is built with `ACE_USE_AGA_FEATURES=ON`, you can enable AGA behavior when creating a view or viewport.
+
+- `TAG_VIEW_USES_AGA, 1` on `viewCreate()`
+- `TAG_VPORT_USES_AGA, 1` on `vPortCreate()`
+- `TAG_VPORT_FMODE, <value>` on `vPortCreate()` if you want to set fetch mode
+
+`TAG_VPORT_BPP` still controls color depth (e.g. 8 means 256 colors).
+
 ## Tutorial code
 
 Now let's expand `src/game.c` with basic view & viewport creation. There'll be

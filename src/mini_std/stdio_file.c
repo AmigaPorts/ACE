@@ -92,7 +92,17 @@ long ftell(FILE *pStream) {
 
 int feof(UNUSED_ARG FILE *pStream) {
 	// FIXME: implement
-	while(1) continue;
+
+	LONG lPos = Seek((BPTR)pStream, 0L, OFFSET_CURRENT);
+	Seek((BPTR)pStream, 0L, OFFSET_END);
+
+	LONG lEnd = Seek((BPTR)pStream, 0L, OFFSET_CURRENT);
+	 Seek((BPTR)pStream, lPos, OFFSET_BEGINNING);
+
+	if (lPos == lEnd)
+		return 1;
+
+	return 0;
 }
 
 int rename(const char *szSource, const char *szDestination) {

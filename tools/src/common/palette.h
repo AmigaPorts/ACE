@@ -22,6 +22,9 @@ public:
 
 	static tPalette fromAct(const std::string &szPath);
 
+	/**
+	 * @param isForceOcs true = ECS packed 12-bit entries; false = AGA (4 bytes per colour).
+	 */
 	bool toPlt(const std::string &szPath, bool isForceOcs);
 
 	bool toGpl(const std::string &szPath);

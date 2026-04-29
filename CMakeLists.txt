@@ -85,6 +85,10 @@ endif()
 target_compile_definitions(${TARGET_NAME} PUBLIC ACE_SCROLLBUFFER_X_MARGIN_SIZE=${ACE_SCROLLBUFFER_X_MARGIN_SIZE})
 target_compile_definitions(${TARGET_NAME} PUBLIC ACE_SCROLLBUFFER_Y_MARGIN_SIZE=${ACE_SCROLLBUFFER_Y_MARGIN_SIZE})
 
+if(ACE_USE_AGA_FEATURES)
+	target_compile_definitions(${TARGET_NAME} PUBLIC ACE_USE_ECS_FEATURES ACE_USE_AGA_FEATURES)
+endif()
+
 if(M68K_COMPILER MATCHES "Bartman")
 	include(cmake/CPM.cmake)
 	CPMAddPackage(
@@ -109,3 +113,4 @@ target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 include(cmake/ace_install.cmake)
 include(cmake/ace_functions.cmake)
+

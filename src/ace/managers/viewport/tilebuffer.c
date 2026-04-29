@@ -7,6 +7,7 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 #include <ace/utils/tag.h>
+#include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <proto/exec.h> // Bartman's compiler needs this
 
 #define TILEBUFFER_MAX_TILESET_SIZE (1 << (8 * sizeof(tTileBufferTileIndex)))

@@ -184,7 +184,7 @@ void *_memAllocDbg(
 		return 0;
 	}
 	void *pAddr;
-	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
+	pAddr = _memAllocRls(ulSize + 4 * sizeof(ULONG), ulFlags);
 	if(!pAddr) {
 		logWrite(
 			"[MEM] ERR: couldn't allocate %lu bytes! (%s:%u)\n",
@@ -199,7 +199,8 @@ void *_memAllocDbg(
 #endif // AMIGA
 		return 0;
 	}
-	pAddr += sizeof(ULONG);
+	pAddr += sizeof(ULONG)*2;
+	
 	UBYTE *pCafe = (UBYTE*)(pAddr - 4*sizeof(UBYTE));
 	UBYTE *pDead = (UBYTE*)(pAddr + ulSize);
 	pCafe[0] = 0xCA; pCafe[1] = 0xFE; pCafe[2] = 0xBA; pCafe[3] = 0xBE;

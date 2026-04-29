@@ -19,6 +19,23 @@ static UWORD nearestPowerOf2(UWORD uwVal) {
 	return uwVal;
 }
 
+#ifdef ACE_USE_AGA_FEATURES
+static UWORD scrollBufferGetDDFStep(const tScrollBufferManager *pManager) {
+	UWORD uwWidth = pManager->sCommon.pVPort->pView->uwWidth;
+	UBYTE ubBitplaneFmode = pManager->sCommon.pVPort->ubFmode & 0x03;
+
+	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
+		return ((uwWidth / 32) - 1) * 16;
+	}
+
+	if(ubBitplaneFmode == 3) {
+		return ((uwWidth / 16) - 1) * 6;
+	}
+
+	return ((uwWidth / 16) - 1) * 8;
+}
+#endif
+
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
 
@@ -272,6 +289,11 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		uwShift >>= 1; // Usable scroll values are 0..7, shifts 2 pixels per value
 		ulBplAddX -= 2; // Fetch 4 bytes (2 words) in scrolling instead of 2 (4)
 	}
+#ifdef ACE_USE_AGA_FEATURES
+	else if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
+		ulBplAddX -= 2; // FMODE 1/2 prefetch one extra word
+	}
+#endif
 	uwShift = (uwShift << 4) | uwShift;             // Bitplane shift - PF1 | PF2
 
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
@@ -387,18 +409,36 @@ void scrollBufferReset(
 	else {
 		pManager->pFront = pManager->pBack;
 	}
-	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3) - 2;
+	// Base modulo is row stride minus visible fetch width.
+	// Extra prefetch words are applied per-mode below.
+	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3);
 
 	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
 	pManager->uwDDfStop = pManager->uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
-	pManager->uwDDfStrt -= 8; // for scroll reasons
+#ifdef ACE_USE_AGA_FEATURES
+	pManager->uwDDfStop = pManager->uwDDfStrt + scrollBufferGetDDFStep(pManager);
+#endif
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
+		pManager->uwDDfStrt -= 8; // for scroll reasons
 		// Start/stop one 4-step bitplane fetch pattern later: 3120
 		pManager->uwDDfStrt += 4;
 		pManager->uwDDfStop += 4;
 
 		// One word more for fetch
 		pManager->uwModulo -= 2;
+	}
+	else {
+#ifdef ACE_USE_AGA_FEATURES
+		if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
+			pManager->uwDDfStrt -= 16;
+			pManager->uwModulo -= 4;
+		}
+		else
+#endif
+		{
+			pManager->uwDDfStrt -= 8; // for scroll reasons
+			pManager->uwModulo -= 2;
+		}
 	}
 	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", pManager->uwDDfStrt, pManager->uwDDfStop, pManager->uwModulo);
 

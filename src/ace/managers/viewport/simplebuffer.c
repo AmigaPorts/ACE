@@ -32,6 +32,23 @@ static void updateBitplanePtrs(
 	}
 }
 
+#ifdef ACE_USE_AGA_FEATURES
+static UWORD simpleBufferGetDDFStep(const tSimpleBufferManager *pManager) {
+	UWORD uwWidth = pManager->sCommon.pVPort->pView->uwWidth;
+	UBYTE ubBitplaneFmode = pManager->sCommon.pVPort->ubFmode & 0x03;
+
+	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
+		return ((uwWidth / 32) - 1) * 16;
+	}
+
+	if(ubBitplaneFmode == 3) {
+		return ((uwWidth / 16) - 1) * 6;
+	}
+
+	return ((uwWidth / 16) - 1) * 8;
+}
+#endif
+
 static void simpleBufferInitializeCopperList(
 	tSimpleBufferManager *pManager, UBYTE isScrollX
 ) {
@@ -41,7 +58,12 @@ static void simpleBufferInitializeCopperList(
 
 	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
 	UWORD uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
-	UWORD uwDDfStop = uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
+	
+	UWORD uwDDFStep = ((pManager->sCommon.pVPort->pView->uwWidth / 16)-1)*8;
+#ifdef ACE_USE_AGA_FEATURES
+	uwDDFStep = simpleBufferGetDDFStep(pManager);
+#endif
+	UWORD uwDDfStop = uwDDfStrt + uwDDFStep;
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		uwDDfStrt += 4;
 		uwDDfStop += 4;
@@ -59,8 +81,17 @@ static void simpleBufferInitializeCopperList(
 			uwModulo -= 4;
 		}
 		else {
-			uwDDfStrt -= 8; // one more lores 8-part bitplane fetch pattern: x351x240
-			uwModulo -= 2;
+#ifdef ACE_USE_AGA_FEATURES
+			if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
+				uwDDfStrt -= 16;
+				uwModulo -= 4;
+			}
+			else
+#endif
+			{
+				uwDDfStrt -= 8; // one more lores 8-part bitplane fetch pattern: x351x240
+				uwModulo -= 2;
+			}
 		}
 	}
 	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", uwDDfStrt, uwDDfStop, uwModulo);
@@ -72,10 +103,17 @@ static void simpleBufferInitializeCopperList(
 			ulBplOffs = -4;
 		}
 		else {
-			ulBplOffs = -2;
+#ifdef ACE_USE_AGA_FEATURES
+			if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
+				ulBplOffs = -4;
+			}
+			else
+#endif
+			{
+				ulBplOffs = -2;
+			}
 		}
 	}
-
 	// Update (rewrite) copperlist
 	// TODO this could be unified with copBlock being set with copSetMove too
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
