@@ -409,7 +409,9 @@ void scrollBufferReset(
 	else {
 		pManager->pFront = pManager->pBack;
 	}
-	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3) - 2;
+	// Base modulo is row stride minus visible fetch width.
+	// Extra prefetch words are applied per-mode below.
+	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3);
 
 	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
 	pManager->uwDDfStop = pManager->uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
