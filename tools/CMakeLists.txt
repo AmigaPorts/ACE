@@ -6,7 +6,7 @@ project(ACE_tools)
 # Adhere to GNU filesystem layout conventions
 include(GNUInstallDirs)
 include(../cmake/CPM.cmake)
-set (CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 20)
 
 # MSVC needs a few defines to be GNU compatible
 if(MSVC)
@@ -32,6 +32,7 @@ if(MINGW)
 	target_link_libraries(common PUBLIC -static)
 endif()
 target_link_libraries(common PUBLIC freetype fmt::fmt)
+target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 # App-related
 file(GLOB FONT_CONV_src src/font_conv.cpp)

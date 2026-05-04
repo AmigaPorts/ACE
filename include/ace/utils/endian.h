@@ -63,7 +63,7 @@ static inline UWORD endianBig16(UWORD uwIn) {
  */
 static inline ULONG endianLittle32(ULONG ulIn) {
 #ifdef AMIGA
-	return (ulIn << 24) | ((ulIn&0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
+	return (ulIn << 24) | ((ulIn & 0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
 #else
 	return ulIn;
 #endif // AMIGA

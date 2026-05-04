@@ -14,12 +14,12 @@ At the time of writing, The `palette_conv` tool supports following formats:
 
 ### `.plt` v2 layout (default when writing `.plt`)
 
-The first byte selects encoding; the next two bytes are a **big-endian** 16-bit colour count; then the colour records.
+The first byte selects encoding; the next two bytes are a **big-endian** 16-bit color count; then the color records.
 
 | First byte | Meaning | Record size |
 |------------|---------|-------------|
-| `0` (`PLT_NEW_ECS`) | ECS/OCS packed 12-bit | 2 bytes per colour |
-| `1` (`PLT_NEW_AGA`) | AGA (`0`, R, G, B per entry) | 4 bytes per colour |
+| `0` | ECS/OCS packed 12-bit | 2 bytes per color |
+| `1` | AGA (`0`, R, G, B per entry) | 4 bytes per color |
 
 Older **v1** `.plt` files (first byte **≥ 2**) are not supported; reconvert sources with `palette_conv`.
 
@@ -51,15 +51,17 @@ When writing `.plt`, optional flags:
 
 | Flag | Effect |
 |------|--------|
-| _(none)_ | **v2 ECS/OCS** — `PLT_NEW_ECS`, big-endian count, packed 12-bit colours (input must already be valid Amiga nibbles) |
-| `--aga` | **v2 AGA** — `PLT_NEW_AGA`, 4 bytes per colour (`0`, R, G, B) |
+| _(none)_ | **v2 ECS/OCS** — sentinel `0`, big-endian count, packed 12-bit colors (input must be valid OCS 12-bit unless `-cc`) |
+| `--aga` | **v2 AGA** — sentinel `1`, 4 bytes per color (`0`, R, G, B) |
 | `--ocs` | Same as default (explicit ECS/OCS v2) |
+| `-cc` | With ECS/OCS output only: **truncate** 8-bit RGB inputs to 12-bit OCS precision (optional escape hatch; default is strict validation so bad colors surface here, not in `bitmap_conv`) |
 
 Examples:
 
 ```shell
 palette_conv palette.gpl palette.plt
 palette_conv palette.gpl palette_aga.plt --aga
+palette_conv palette.gpl palette.plt -cc
 ```
 
 > [!NOTE]
@@ -69,9 +71,9 @@ palette_conv palette.gpl palette_aga.plt --aga
 
 ACE is primarily designed for the Amiga OCS/ECS hardware, which uses 12-bit color (4 bits per RGB channel).
 
-When converting to ACE's native `.plt` format by default (**ECS/OCS v2**), the tool validates that colors are compatible with OCS limitations, throwing errors when that's not the case.
+When converting to ACE's native `.plt` format by default (**ECS/OCS v2**), the tool validates that colors are compatible with OCS limitations, throwing errors when that's not the case—unless you pass **`-cc`**, which quantizes channels to 12-bit instead.
 
-Use **`--aga`** for **AGA v2** `.plt` (full 8-bit RGB channels per colour).
+Use **`--aga`** for **AGA v2** `.plt` (full 8-bit RGB channels per color).
 
 When creating artwork for your game, you have to:
 

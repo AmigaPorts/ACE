@@ -16,17 +16,12 @@ extern "C" {
 #include <ace/types.h>
 #include <ace/utils/extview.h>
 
-/** First byte of .plt v2: ECS/OCS packed entries (2 bytes per colour). */
-#define PLT_NEW_ECS 0
-/** First byte of .plt v2: AGA entries (4 bytes per colour, alpha+R+G+B). */
-#define PLT_NEW_AGA 1
-
 /**
  * @brief Loads palette from supplied .plt file to given address.
  *
- * Supports **v2** only (.plt starting with PLT_NEW_ECS or PLT_NEW_AGA + big-endian UWORD count).
+ * Supports **v2** only: first byte **0** (ECS/OCS packed) or **1** (AGA), then big-endian UWORD count.
  * Legacy **v1** `.plt` (first byte ≥ 2) is rejected (`ACE_DEBUG`: log error; @p pPalette unchanged).
- * For PLT_NEW_AGA, @p pPalette must point at storage suitable for ULONG-sized colours
+ * For v2 AGA (first byte **1**), @p pPalette must point at storage suitable for ULONG-sized colors
  * (same layout as an AGA viewport palette).
  *
  * @param szPath Palette source path.
@@ -38,13 +33,13 @@ extern "C" {
 void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UWORD uwMaxLength);
 
 /**
- * @brief Saves ECS/OCS palette into .plt v2 file (PLT_NEW_ECS + BE count + packed colours).
+ * @brief Saves ECS/OCS palette into .plt v2 file (sentinel 0 + BE count + packed colors).
  */
-void paletteSave(const UWORD *pPalette, UWORD uwColorCnt, char *szPath);
+void paletteSaveOcs(const UWORD *pPalette, UWORD uwColorCnt, char *szPath);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
- * @brief Saves AGA palette into .plt v2 file (PLT_NEW_AGA + BE count + 4 bytes per colour).
+ * @brief Saves AGA palette into .plt v2 file (sentinel 1 + BE count + 4 bytes per color).
  */
 void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath);
 #endif
@@ -76,7 +71,7 @@ void paletteDim(
 
 #ifdef ACE_USE_AGA_FEATURES
 void paletteDimAGA(
-    ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel
+	ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel
 );
 #endif
 

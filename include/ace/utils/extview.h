@@ -40,7 +40,7 @@ typedef enum tTagView {
 	// If set to non-zero, view will use first vport's horizontal resolution (hires on/off) setting for whole screen.
 	TAG_VIEW_GLOBAL_HRES       = TAG_USER | 9,
 #ifdef ACE_USE_AGA_FEATURES
-    TAG_VIEW_USES_AGA          = TAG_USER | 10
+	TAG_VIEW_USES_AGA          = TAG_USER | 10,
 #endif
 } tTagView;
 
@@ -71,8 +71,8 @@ typedef enum tTagVport {
 	// Set to 1 to enable hires mode, set to zero for lores
 	TAG_VPORT_HIRES        = TAG_USER | 8,
 #ifdef ACE_USE_AGA_FEATURES
-	TAG_VPORT_USES_AGA		= TAG_USER | 9,
-	TAG_VPORT_FMODE		= TAG_USER | 10,
+	TAG_VPORT_USES_AGA     = TAG_USER | 9,
+	TAG_VPORT_FMODE        = TAG_USER | 10,
 #endif
 } tTagVport;
 
@@ -100,7 +100,7 @@ typedef enum tVpFlag {
 	VP_FLAG_HAS_OWN_PALETTE = BV(0),
 	VP_FLAG_HIRES           = BV(1),
 #ifdef ACE_USE_AGA_FEATURES
-	VP_FLAG_AGA			 	= BV(2),
+	VP_FLAG_AGA            = BV(2),
 #endif
 } tVpFlag;
 
@@ -166,12 +166,9 @@ typedef struct _tVPort {
 	// Color info
 	UBYTE ubBpp;        ///< Bitplane count
 #ifdef ACE_USE_AGA_FEATURES
-	UBYTE ubFmode;	  ///< FMODE value
+	UBYTE ubFmode;      ///< FMODE value
 #endif
-	
-	UWORD* pPalette;
-
-	
+	UWORD *pPalette;
 } tVPort;
 
 /* Globals */
@@ -190,7 +187,7 @@ typedef struct _tVPort {
  *  @see viewDestroy()
  *  @see vPortCreate()
  */
- tView *viewCreate(void *pTags, ...);
+tView *viewCreate(void *pTags, ...);
 
 /**
  *  @brief Destroys given tView along with attached viewports.

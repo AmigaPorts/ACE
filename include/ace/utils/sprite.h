@@ -34,14 +34,14 @@ UBYTE spriteDisableInCopRawMode(
 );
 
 /**
- *  @brief Adds copBlock which disables given sprites.
- *  Resulting copBlock is placed at 0,0 so that it will be executed during VBlank.
+ * @brief Adds copBlock which disables given sprites.
+ * Resulting copBlock is placed at 0,0 so that it will be executed during VBlank.
  *
- *  @param pList Copperlist to be edited.
- *  @param eSpriteMask Determines sprites to be disabled.
- *  @param pBlankSprite 2 words of CHIP memory (the blank sprite control words)
+ * @param pList Copperlist to be edited.
+ * @param eSpriteMask Determines sprites to be disabled.
+ * @param pBlankSprite 2 words of CHIP memory (the blank sprite control words)
  *
- *  @return Pointer to newly created copBlock.
+ * @return Pointer to newly created copBlock.
  */
 tCopBlock *spriteDisableInCopBlockMode(tCopList *pList, tSpriteMask eSpriteMask, ULONG pBlankSprite[1]);
 
@@ -51,16 +51,16 @@ void spriteInit(void);
 /**
  * @brief Sets the palette bank for AGA sprites on odd channels.
  * @param ubIndex The palette bank index (0-15)
- * @see spriteSetEvenColourPaletteBank
+ * @see spriteSetEvenColorPaletteBank
  */
-void spriteSetOddColourPaletteBank(UBYTE ubIndex);
+void spriteSetOddColorPaletteBank(UBYTE ubIndex);
 
 /**
  * @brief Sets the palette bank for AGA sprites on even channels.
  * @param ubIndex The palette bank index (0-15)
- * @see spriteSetOddColourPaletteBank
+ * @see spriteSetOddColorPaletteBank
  */
-void spriteSetEvenColourPaletteBank(UBYTE ubIndex);
+void spriteSetEvenColorPaletteBank(UBYTE ubIndex);
 #endif
 
 #ifdef __cplusplus

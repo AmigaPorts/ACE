@@ -25,18 +25,19 @@ tView *viewCreate(void *pTags, ...) {
 	va_start(vaTags, pTags);
 
 	// Process copperlist raw/block tags
-	if (
-		tagGet(pTags, vaTags, TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_BLOCK) == VIEW_COPLIST_MODE_RAW)
-	{
+	if(
+		tagGet(pTags, vaTags, TAG_VIEW_COPLIST_MODE, VIEW_COPLIST_MODE_BLOCK)
+		== VIEW_COPLIST_MODE_RAW
+	) {
 		ULONG ulCopListSize = tagGet(pTags, vaTags, TAG_VIEW_COPLIST_RAW_COUNT, -1);
 		pView->pCopList = copListCreate(0,
-										TAG_COPPER_LIST_MODE, COPPER_MODE_RAW,
-										TAG_COPPER_RAW_COUNT, ulCopListSize,
-										TAG_DONE);
+			TAG_COPPER_LIST_MODE, COPPER_MODE_RAW,
+			TAG_COPPER_RAW_COUNT, ulCopListSize,
+			TAG_DONE
+		);
 		pView->uwFlags |= VIEW_FLAG_COPLIST_RAW;
 	}
-	else
-	{
+	else {
 		pView->pCopList = copListCreate(0, TAG_DONE);
 	}
 
@@ -50,12 +51,10 @@ tView *viewCreate(void *pTags, ...) {
 	if(tagGet(pTags, vaTags, TAG_VIEW_GLOBAL_BPP, 1)) {
 		pView->uwFlags |= VIEW_FLAG_GLOBAL_BPP;
 	}
-	#ifdef ACE_USE_AGA_FEATURES
+#ifdef ACE_USE_AGA_FEATURES
 	if(tagGet(pTags, vaTags, TAG_VIEW_USES_AGA, 1)) {
 		pView->uwFlags |= VIEW_FLAG_GLOBAL_AGA;
 	}
-	#endif
-#ifdef ACE_USE_AGA_FEATURES
 	logWrite(
 		"Extra flags: %s%s%s%s\n",
 		(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE) ? "GLOBAL_PALETTE " : "",
@@ -121,7 +120,6 @@ tView *viewCreate(void *pTags, ...) {
 		pView->ubPosX, pView->ubPosY, pView->uwWidth, pView->uwHeight
 	);
 
-
 	va_end(vaTags);
 	logBlockEnd("viewCreate()");
 	return pView;
@@ -131,18 +129,15 @@ tView *viewCreate(void *pTags, ...) {
 #endif // AMIGA
 }
 
-void viewDestroy(tView *pView)
-{
+void viewDestroy(tView *pView) {
 	logBlockBegin("viewDestroy(pView: %p)", pView);
 #ifdef AMIGA
-	if (g_sCopManager.pCopList == pView->pCopList)
-	{
+	if(g_sCopManager.pCopList == pView->pCopList) {
 		viewLoad(0);
 	}
 
 	// Free all attached viewports
-	while (pView->pFirstVPort)
-	{
+	while(pView->pFirstVPort) {
 		vPortDestroy(pView->pFirstVPort);
 	}
 
@@ -154,21 +149,17 @@ void viewDestroy(tView *pView)
 	logBlockEnd("viewDestroy()");
 }
 
-void vPortProcessManagers(tVPort *pVPort)
-{
+void vPortProcessManagers(tVPort *pVPort) {
 	tVpManager *pManager = pVPort->pFirstManager;
-	while (pManager)
-	{
+	while(pManager) {
 		pManager->process(pManager);
 		pManager = pManager->pNext;
 	}
 }
 
-void viewProcessManagers(tView *pView)
-{
+void viewProcessManagers(tView *pView) {
 	tVPort *pVPort = pView->pFirstVPort;
-	while (pVPort)
-	{
+	while(pVPort) {
 		vPortProcessManagers(pVPort);
 		pVPort = pVPort->pNext;
 	}
@@ -176,53 +167,34 @@ void viewProcessManagers(tView *pView)
 
 void viewUpdateGlobalPalette(const tView *pView) {
 #ifdef AMIGA
-	if (pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE)
-	{
-		// for(UBYTE i = 0; i < 32; ++i) {
-		// 	g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
-		// }
+	if(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE) {
 #ifdef ACE_USE_AGA_FEATURES
-		if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
-
-			WORD colourBanks = (1 << pView->pFirstVPort->ubBpp) /32 ;
-			// oh AGA palette, how convoluted you are.
-			for (UBYTE p = 0; p < colourBanks ; p++)
-			{
-				//g_pCustom->bplcon3 = p << 13; // Set palette bank.
-				for (UBYTE i = 0; i < 32; ++i)
-				{
-					ULONG* pPaletteAGA = (ULONG*)pView->pFirstVPort->pPalette;
-
-					UBYTE r = pPaletteAGA[(p*32) + i] >> 16;
-					UBYTE g = pPaletteAGA[(p*32) + i] >> 8;
-					UBYTE b = pPaletteAGA[(p*32) + i];
+		if(pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
+			WORD colorBanks = (1 << pView->pFirstVPort->ubBpp) / 32;
+			ULONG *pPaletteAGA = (ULONG *)pView->pFirstVPort->pPalette;
+			for(UBYTE p = 0; p < colorBanks; ++p) {
+				for(UBYTE i = 0; i < 32; ++i) {
+					UBYTE r = pPaletteAGA[(p * 32) + i] >> 16;
+					UBYTE g = pPaletteAGA[(p * 32) + i] >> 8;
+					UBYTE b = pPaletteAGA[(p * 32) + i];
 					g_pCustom->bplcon3 = p << 13; // Set palette bank LOW.
-					g_pCustom->color[i] = (r >>4) << 8 | (g >>4) << 4 | (b >>4) << 0;
+					g_pCustom->color[i] = (r >> 4) << 8 | (g >> 4) << 4 | (b >> 4) << 0;
 					g_pCustom->bplcon3 = p << 13 | BV(9); // Set palette bank High.
-					g_pCustom->color[i] = (0x0F & r) << 8 | (0x0F & g) << 4 | (0x0F &b) << 0;
-					
-					 
+					g_pCustom->color[i] = (0x0F & r) << 8 | (0x0F & g) << 4 | (0x0F & b) << 0;
 				}
 			}
 		}
-		else
-
-		{
-			for (UBYTE i = 0; i < 32; ++i)
-			{
+		else {
+			for(UBYTE i = 0; i < 32; ++i) {
 				g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 			}
 		}
-	
-	#else // ACE_USE_AGA_FEATURES
-	{
-		for (UBYTE i = 0; i < 32; ++i)
-		{
+#else
+		for(UBYTE i = 0; i < 32; ++i) {
 			g_pCustom->color[i] = pView->pFirstVPort->pPalette[i];
 		}
+#endif
 	}
-	#endif // ACE_USE_AGA_FEATURES
-}
 #endif // AMIGA
 }
 
@@ -230,8 +202,7 @@ void viewUpdateGlobalPalette(const tView *pView) {
  *  @todo bplcon0 BPP is set up globally - make it only when all vports
  *        are truly of same BPP.
  */
-void viewLoad(tView *pView)
-{
+void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 
 	s_isPAL = systemIsPal();
@@ -242,17 +213,18 @@ void viewLoad(tView *pView)
 	if(!pView) {
 		g_sCopManager.pCopList = g_sCopManager.pBlankList;
 		g_pCustom->bplcon0 = 0; // No output
+		g_pCustom->fmode = 0;   // AGA fix
+		g_pCustom->bplcon3 = 0; // AGA fix
+		g_pCustom->bplcon4 = 0x0011; // AGA fix
 #ifdef ACE_USE_AGA_FEATURES
-		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->fmode = 0; // Safe default when no view is loaded
-#else
-		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->fmode =0;	// AGA fix
-#endif
-		for (UBYTE i = 0; i < 8; ++i)
-		{
+		for(UBYTE i = 0; i < 8; ++i) {
 			g_pCustom->bplpt[i] = 0;
 		}
+#else
+		for(UBYTE i = 0; i < 6; ++i) {
+			g_pCustom->bplpt[i] = 0;
+		}
+#endif
 		g_pCustom->bpl1mod = 0;
 		g_pCustom->bpl2mod = 0;
 	}
@@ -282,38 +254,33 @@ void viewLoad(tView *pView)
 		pView->uwBplCon0 |= BV(9); // composite output
 
 		g_sCopManager.pCopList = pView->pCopList;
-		// Seems strange that everything relies on the first viewport flags, and palette etc
 #ifdef ACE_USE_AGA_FEATURES
-		if (pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
+		if(pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
 			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9); // BPP + composite output
-			if (pView->pFirstVPort->ubBpp & 0x08) {
+			if(pView->pFirstVPort->ubBpp & 0x08) {
 				g_pCustom->bplcon0 |= BV(4);
 			}
-			if ( pView->pFirstVPort->ubBpp == 6) {
-			
-				g_pCustom->bplcon2 = BV(9);  // Set KillEHB flag, since we have declared out viewport to be aga, and 64 colours.
+			if(pView->pFirstVPort->ubBpp == 6) {
+				g_pCustom->bplcon2 = BV(9); // KILLEHB for 64 colors on AGA
 			}
 		}
-		else
-		{
+		else {
 			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-			g_pCustom->bplcon2 = 0; // No need to KILLEHB because we are not AGA, so just blank the flag.
+			g_pCustom->bplcon2 = 0;
 		}
-		g_pCustom->fmode = pView->pFirstVPort->ubFmode;        // AGA fix
-		g_pCustom->bplcon3 = 0;      // AGA fix
+		g_pCustom->fmode = pView->pFirstVPort->ubFmode;
+		g_pCustom->bplcon3 = 0; // AGA fix
 #else
-			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-			g_pCustom->bplcon2 = 0; // No need to KILLEHB because we are not AGA, so just blank the flag.
-			g_pCustom->fmode = 0;        // AGA fix
-			g_pCustom->bplcon3 = 0;      // AGA fix
-
+		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
+		g_pCustom->bplcon2 = 0;
+		g_pCustom->fmode = 0; // AGA fix
+		g_pCustom->bplcon3 = 0; // AGA fix
 #endif
-		g_pCustom->diwstrt = (pView->ubPosY << 8) | 0x81; // HSTART: 0x81
 		g_pCustom->bplcon4 = 0x0011; // AGA fix
+
 		UWORD uwDiwStartX = pView->ubPosX;
 		UWORD uwDiwStopX = uwDiwStartX + pView->uwWidth - 256;
 		UWORD uwDiwStopY = pView->ubPosY + pView->uwHeight;
-		
 		if(BTST(uwDiwStopY, 8) == BTST(uwDiwStopY, 7)) {
 			logWrite(
 				"ERR: DiwStopY (%hu) bit 8 (%hhu) must be different than bit 7 (%hhu)\n",
@@ -335,8 +302,7 @@ void viewLoad(tView *pView)
 	logBlockEnd("viewLoad()");
 }
 
-tVPort *vPortCreate(void *pTagList, ...)
-{
+tVPort *vPortCreate(void *pTagList, ...) {
 	logBlockBegin("vPortCreate(pTagList: %p)", pTagList);
 	va_list vaTags;
 	va_start(vaTags, pTagList);
@@ -358,8 +324,7 @@ tVPort *vPortCreate(void *pTagList, ...)
 	// Calculate Y offset - beneath previous ViewPort
 	pVPort->uwOffsY = 0;
 	tVPort *pPrevVPort = pView->pFirstVPort;
-	while (pPrevVPort)
-	{
+	while(pPrevVPort) {
 		pVPort->uwOffsY += pPrevVPort->uwHeight;
 		pPrevVPort = pPrevVPort->pNext;
 	}
@@ -389,7 +354,7 @@ tVPort *vPortCreate(void *pTagList, ...)
 	const UBYTE ubDefaultFmode = 0;
 	pVPort->ubFmode = tagGet(pTagList, vaTags, TAG_VPORT_FMODE, ubDefaultFmode);
 #endif
-	
+
 	// Get dimensions
 	// FIXME: this doesn't work correctly due to diwstrt/stop being set globally
 	// in view, but is needed for vport manger bitmap default size calcs.
@@ -413,16 +378,13 @@ tVPort *vPortCreate(void *pTagList, ...)
 
 	// Update view - add to vPort list
 	++pView->ubVpCount;
-	if (!pView->pFirstVPort)
-	{
+	if(!pView->pFirstVPort) {
 		pView->pFirstVPort = pVPort;
 		logWrite("No prev VPorts - added to head\n");
 	}
-	else
-	{
+	else {
 		pPrevVPort = pView->pFirstVPort;
-		while (pPrevVPort->pNext)
-		{
+		while(pPrevVPort->pNext) {
 			pPrevVPort = pPrevVPort->pNext;
 		}
 		pPrevVPort->pNext = pVPort;
@@ -430,54 +392,42 @@ tVPort *vPortCreate(void *pTagList, ...)
 	}
 
 	// Palette tag
-
-	// Allocate memory for the palette;
 #ifdef ACE_USE_AGA_FEATURES
-	if (pVPort->eFlags & VP_FLAG_AGA) {
-		// AGA uses 24 bit palette entries. 		
-		pVPort->pPalette = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBpp)); 
+	if(pVPort->eFlags & VP_FLAG_AGA) {
+		pVPort->pPalette = memAllocFastClear(sizeof(ULONG) * (1 << pVPort->ubBpp));
 		UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
-		if (pSrcPalette)
-		{
+		if(pSrcPalette) {
 			UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
-			if (uwPaletteSize == 0xFFFF)
-			{
+			if(uwPaletteSize == 0xFFFF) {
 				logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
 			}
-			else if (!uwPaletteSize || uwPaletteSize > 256)
-			{
+			else if(!uwPaletteSize || uwPaletteSize > 256) {
 				logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
 			}
-			else
-			{
+			else {
 				memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(ULONG));
 			}
 		}
-	} 
+	}
 	else
 #endif
 	{
-		// 12 bit palette entries for Non-AGA
-		pVPort->pPalette = memAllocFastClear(sizeof(UWORD) * 32); 
-	
+		pVPort->pPalette = memAllocFastClear(sizeof(UWORD) * 32);
 		UWORD *pSrcPalette = (UWORD *)tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_PTR, 0);
-		if (pSrcPalette)
-		{
+		if(pSrcPalette) {
 			UWORD uwPaletteSize = tagGet(pTagList, vaTags, TAG_VPORT_PALETTE_SIZE, 0xFFFF);
-			if (uwPaletteSize == 0xFFFF)
-			{
+			if(uwPaletteSize == 0xFFFF) {
 				logWrite("WARN: you must specify palette size in TAG_VPORT_PALETTE_SIZE\n");
 			}
-			else if (!uwPaletteSize || uwPaletteSize > 32)
-			{
+			else if(!uwPaletteSize || uwPaletteSize > 32) {
 				logWrite("ERR: Wrong palette size: %hu\n", uwPaletteSize);
 			}
-			else
-			{
+			else {
 				memcpy(pVPort->pPalette, pSrcPalette, uwPaletteSize * sizeof(UWORD));
 			}
 		}
 	}
+
 	va_end(vaTags);
 	logBlockEnd("vPortCreate()");
 	return pVPort;
@@ -488,8 +438,7 @@ fail:
 	return 0;
 }
 
-void vPortDestroy(tVPort *pVPort)
-{
+void vPortDestroy(tVPort *pVPort) {
 	logBlockBegin("vPortDestroy(pVPort: %p)", pVPort);
 	tView *pView;
 	tVPort *pPrevVPort, *pCurrVPort;
@@ -498,54 +447,42 @@ void vPortDestroy(tVPort *pVPort)
 	logWrite("Parent view: %p\n", pView);
 	pPrevVPort = 0;
 	pCurrVPort = pView->pFirstVPort;
-	while (pCurrVPort)
-	{
+	while(pCurrVPort) {
 		logWrite("found VP: %p...", pCurrVPort);
-		if (pCurrVPort == pVPort)
-		{
+		if(pCurrVPort == pVPort) {
 			logWrite(" gotcha!\n");
 
 			// Remove from list
-			if (pPrevVPort)
-			{
+			if(pPrevVPort) {
 				pPrevVPort->pNext = pCurrVPort->pNext;
 			}
-			else
-			{
+			else {
 				pView->pFirstVPort = pCurrVPort->pNext;
 			}
 			--pView->ubVpCount;
 
 			// Destroy managers
 			logBlockBegin("Destroying managers");
-			while (pCurrVPort->pFirstManager)
-			{
+			while(pCurrVPort->pFirstManager) {
 				vPortRmManager(pCurrVPort, pCurrVPort->pFirstManager);
 			}
 			logBlockEnd("Destroying managers");
 
 #ifdef ACE_USE_AGA_FEATURES
-			if (pVPort->eFlags & VP_FLAG_AGA)
-			{
-				// AGA uses 24 bit palette entries. 
+			if(pVPort->eFlags & VP_FLAG_AGA) {
 				memFree(pVPort->pPalette, sizeof(ULONG) * (1 << pVPort->ubBpp));
 			}
-			else
-			{
-				// 12 bit palette entries for Non-AGA
-				memFree(pVPort->pPalette, sizeof(UWORD) * (32)); 
+			else {
+				memFree(pVPort->pPalette, sizeof(UWORD) * 32);
 			}
 #else
-			// 12 bit palette entries for Non-AGA
-			memFree(pVPort->pPalette, sizeof(UWORD) * (32)); 
+			memFree(pVPort->pPalette, sizeof(UWORD) * 32);
 #endif
-			
-			// Free stuff
+
 			memFree(pVPort, sizeof(tVPort));
 			break;
 		}
-		else
-		{
+		else {
 			logWrite("\n");
 		}
 		pPrevVPort = pCurrVPort;
@@ -577,8 +514,7 @@ void vPortUpdatePalette(tVPort *pVPort) {
 	}
 }
 
-void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact)
-{
+void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact) {
 #ifdef AMIGA
 	// Determine VPort end position
 	UWORD uwEndPos = pVPort->uwOffsY + uwPosY;
@@ -593,44 +529,35 @@ void vPortWaitForPos(const tVPort *pVPort, UWORD uwPosY, UBYTE isExact)
 
 	if(isExact) {
 		// If current beam pos is on or past end pos, wait for start of next frame
-		while (getRayPos().bfPosY >= uwEndPos)
-		{
-		}
+		while (getRayPos().bfPosY >= uwEndPos) continue;
 	}
 	// If current beam pos is before end pos, wait for it
-	while (getRayPos().bfPosY < uwEndPos)
-	{
-	}
-
+	while (getRayPos().bfPosY < uwEndPos) continue;
 #endif // AMIGA
 }
 
-void vPortWaitUntilEnd(const tVPort *pVPort)
-{
+void vPortWaitUntilEnd(const tVPort *pVPort) {
 	vPortWaitForPos(pVPort, pVPort->uwHeight, 0);
 }
 
-void vPortWaitForEnd(const tVPort *pVPort)
-{
+void vPortWaitForEnd(const tVPort *pVPort) {
 	vPortWaitForPos(pVPort, pVPort->uwHeight, 1);
 }
 
-void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager)
-{
+void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager) {
 	// Check if we have any other manager - if not, attach as head
-	if (!pVPort->pFirstManager)
-	{
+	if(!pVPort->pFirstManager) {
 		pVPort->pFirstManager = pVpManager;
 		logWrite("Manager %p attached to head of VP %p\n", pVpManager, pVPort);
 		return;
 	}
 
 	// Check if current manager has lesser priority number than head
-	if (pVPort->pFirstManager->ubId > pVpManager->ubId)
-	{
+	if(pVPort->pFirstManager->ubId > pVpManager->ubId) {
 		logWrite(
 			"Manager %p attached as head of VP %p before %p\n",
-			pVpManager, pVPort, pVPort->pFirstManager);
+			pVpManager, pVPort, pVPort->pFirstManager
+		);
 		pVpManager->pNext = pVPort->pFirstManager;
 		pVPort->pFirstManager = pVpManager;
 		return;
@@ -638,10 +565,8 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager)
 
 	// Insert before manager of bigger priority number
 	tVpManager *pVpCurr = pVPort->pFirstManager;
-	while (pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId)
-	{
-		if (pVpCurr->ubId <= pVpManager->ubId)
-		{
+	while(pVpCurr->pNext && pVpCurr->pNext->ubId <= pVpManager->ubId) {
+		if(pVpCurr->ubId <= pVpManager->ubId) {
 			pVpCurr = pVpCurr->pNext;
 		}
 	}
@@ -649,7 +574,8 @@ void vPortAddManager(tVPort *pVPort, tVpManager *pVpManager)
 	pVpCurr->pNext = pVpManager;
 	logWrite(
 		"Manager %p attached after manager %p of VP %p\n",
-		pVpManager, pVpCurr, pVPort);
+		pVpManager, pVpCurr, pVPort
+	);
 }
 
 void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
@@ -657,18 +583,15 @@ void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
 		logWrite("ERR: vPort %p has no managers\n", pVPort);
 		return;
 	}
-	if (pVPort->pFirstManager == pVpManager)
-	{
+	if(pVPort->pFirstManager == pVpManager) {
 		logWrite("Destroying manager %u @addr: %p\n", pVpManager->ubId, pVpManager);
 		pVPort->pFirstManager = pVpManager->pNext;
 		pVpManager->destroy(pVpManager);
 		return;
 	}
 	tVpManager *pParent = pVPort->pFirstManager;
-	while (pParent->pNext)
-	{
-		if (pParent->pNext == pVpManager)
-		{
+	while(pParent->pNext) {
+		if(pParent->pNext == pVpManager) {
 			logWrite("Destroying manager %u @addr: %p\n", pVpManager->ubId, pVpManager);
 			pParent->pNext = pVpManager->pNext;
 			pVpManager->destroy(pVpManager);
@@ -678,15 +601,12 @@ void vPortRmManager(tVPort *pVPort, tVpManager *pVpManager) {
 	logWrite("ERR: vPort %p manager %p not found\n", pVPort, pVpManager);
 }
 
-tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId)
-{
+tVpManager *vPortGetManager(tVPort *pVPort, UBYTE ubId) {
 	tVpManager *pManager;
 
 	pManager = pVPort->pFirstManager;
-	while (pManager)
-	{
-		if (pManager->ubId == ubId)
-		{
+	while(pManager) {
+		if(pManager->ubId == ubId) {
 			return pManager;
 		}
 		pManager = pManager->pNext;

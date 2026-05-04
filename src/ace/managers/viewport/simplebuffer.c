@@ -58,7 +58,6 @@ static void simpleBufferInitializeCopperList(
 
 	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
 	UWORD uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
-	
 	UWORD uwDDFStep = ((pManager->sCommon.pVPort->pView->uwWidth / 16)-1)*8;
 #ifdef ACE_USE_AGA_FEATURES
 	uwDDFStep = simpleBufferGetDDFStep(pManager);

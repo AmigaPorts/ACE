@@ -181,9 +181,9 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 		return;
 	}
 #if defined(ACE_USE_AGA_FEATURES)
-UBYTE uwMaxSpriteWidth = 8;
+	UBYTE uwMaxSpriteWidth = 8;
 #else
-UBYTE uwMaxSpriteWidth = 2;
+	UBYTE uwMaxSpriteWidth = 2;
 #endif
 	UBYTE ubByteWidth = bitmapGetByteWidth(pBitmap);
 	if(ubByteWidth > uwMaxSpriteWidth) {

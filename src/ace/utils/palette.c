@@ -11,6 +11,9 @@
 #include <ace/utils/disk_file.h>
 #include <ace/utils/endian.h>
 
+/** .plt v2 first-byte values (wire format; not part of public API). */
+enum { PLT_V2_ECS = 0, PLT_V2_AGA = 1 };
+
 void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UWORD uwMaxLength) {
 	return paletteLoadFromFd(diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), pPalette, uwMaxLength);
 }
@@ -53,7 +56,7 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength) {
 		ubFirst, uwNumInFile, uwColorsRead
 	);
 
-	if(ubFirst == PLT_NEW_ECS) {
+	if(ubFirst == PLT_V2_ECS) {
 		fileRead(pFile, pPalette, sizeof(UWORD) * uwColorsRead);
 	}
 	else {
@@ -65,20 +68,24 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength) {
 	logBlockEnd("paletteLoadFromFd()");
 }
 
-void paletteSave(const UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
+/**
+ * Writes ECS/OCS v2 .plt (e.g. from in-game tooling or external conversion pipelines
+ * such as the Lands of Lore asset converter).
+ */
+void paletteSaveOcs(const UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
 	logBlockBegin(
-		"paletteSave(pPalette: %p, uwColorCnt: %hu, szPath: '%s')",
+		"paletteSaveOcs(pPalette: %p, uwColorCnt: %hu, szPath: '%s')",
 		pPalette, uwColorCnt, szPath
 	);
 
 	tFile *pFile = diskFileOpen(szPath, DISK_FILE_MODE_WRITE, 1);
 	if(!pFile) {
 		logWrite("ERR: Can't write file\n");
-		logBlockEnd("paletteSave()");
+		logBlockEnd("paletteSaveOcs()");
 		return;
 	}
 
-	UBYTE ubSentinel = PLT_NEW_ECS;
+	UBYTE ubSentinel = PLT_V2_ECS;
 
 	fileWrite(pFile, &ubSentinel, sizeof(UBYTE));
 	{
@@ -88,7 +95,7 @@ void paletteSave(const UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
 	fileWrite(pFile, pPalette, sizeof(UWORD) * uwColorCnt);
 	fileClose(pFile);
 
-	logBlockEnd("paletteSave()");
+	logBlockEnd("paletteSaveOcs()");
 }
 
 #ifdef ACE_USE_AGA_FEATURES
@@ -105,7 +112,7 @@ void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 		return;
 	}
 
-	UBYTE ubSentinel = PLT_NEW_AGA;
+	UBYTE ubSentinel = PLT_V2_AGA;
 
 	fileWrite(pFile, &ubSentinel, sizeof(UBYTE));
 	{
@@ -136,20 +143,20 @@ void paletteDim(
 	UWORD *pSource, volatile UWORD *pDest, UWORD uwColorCount, UBYTE ubLevel
 ) {
 	for(UWORD c = 0; c < uwColorCount; ++c) {
-		pDest[c] = paletteColorDim(pSource[c],  ubLevel) ;
+		pDest[c] = paletteColorDim(pSource[c], ubLevel);
 	}
 }
 
 #ifdef ACE_USE_AGA_FEATURES
 void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel) {
 	for(UWORD c = 0; c < uwColorCount; ++c) {
-		pDest[c] = paletteColorDimAGA(pSource[c],  ubLevel) ;
+		pDest[c] = paletteColorDimAGA(pSource[c], ubLevel);
 	}
 }
 #endif
 
 UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
-	UBYTE r,g,b;
+	UBYTE r, g, b;
 
 	r = (uwFullColor >> 8) & 0xF;
 	g = (uwFullColor >> 4) & 0xF;
@@ -166,7 +173,7 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
 
 #ifdef ACE_USE_AGA_FEATURES
 ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel) {
-	UBYTE r,g,b;
+	UBYTE r, g, b;
 
 	r = (ulFullColor >> 16) & 0xFF;
 	g = (ulFullColor >> 8) & 0xFF;
@@ -185,8 +192,8 @@ ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel) {
 UWORD paletteColorMix(
 	UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel
 ) {
-	UBYTE r1,g1,b1;
-	UBYTE r2,g2,b2;
+	UBYTE r1, g1, b1;
+	UBYTE r2, g2, b2;
 
 	r1 = (uwColorPrimary >> 8) & 0xF;
 	g1 = (uwColorPrimary >> 4) & 0xF;

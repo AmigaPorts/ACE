@@ -3,7 +3,7 @@
 ACE uses its custom `.plt` file format, to which you can convert your palettes from multiple common formats.
 See [palette_conv](../tools/palette_conv.md) for details.
 
-By default `palette_conv` writes **v2 ECS/OCS** (`PLT_NEW_ECS`): big-endian **UWORD** colour count, then packed 12-bit colours. Pass **`--aga`** for **v2 AGA** (`PLT_NEW_AGA`, 4 bytes per colour).
+By default `palette_conv` writes **v2 ECS/OCS** (first byte `0`): big-endian **UWORD** color count, then packed 12-bit colors. Pass **`--aga`** for **v2 AGA** (first byte `1`, 4 bytes per color). Use **`-cc`** with ECS output to quantize 8-bit RGB to OCS 12-bit instead of erroring (see [palette_conv](../tools/palette_conv.md)).
 
 ## Loading palette into your game
 
@@ -31,9 +31,9 @@ void gameGsCreate(void) {
 }
 ```
 
-For an **AGA** viewport (`VP_FLAG_AGA`), use a **`ULONG`** palette buffer sized for your bit depth (`1 << bpp`). Pass the same pointer to `paletteLoadFromPath()`; when the file is **PLT_NEW_AGA**, entries are read as in the viewport.
+For an **AGA** viewport (`VP_FLAG_AGA`), use a **`ULONG`** palette buffer sized for your bit depth (`1 << bpp`). Pass the same pointer to `paletteLoadFromPath()`; when the file’s first byte is **1** (AGA v2), entries are read as in the viewport.
 
-Use **`paletteSave()`** for v2 ECS output and **`paletteSaveAGA()`** (with `ACE_USE_AGA_FEATURES`) for v2 AGA output.
+Use **`paletteSaveOcs()`** for v2 ECS output and **`paletteSaveAGA()`** (with `ACE_USE_AGA_FEATURES`) for v2 AGA output.
 
 > [!NOTE]
 > If you don't need any fancy palette effects, you can load your palette to the `s_pVpMain->pPalette` directly.

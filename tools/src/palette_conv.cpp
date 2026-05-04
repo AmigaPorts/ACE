@@ -11,12 +11,14 @@
 #include <string>
 #include <vector>
 
-void printUsage(const std::string& szAppName) {
+void printUsage(const std::string &szAppName) {
 	using fmt::print;
 	fmt::print("Usage:\n\t{} [options] inPath.ext [outPath.ext]\n", szAppName);
 	print("\nOptions:\n");
 	print("\t--ocs\t\tWrite .plt v2 with ECS/OCS packed 12-bit entries (default)\n");
-	print("\t--aga\t\tWrite .plt v2 with AGA colour entries\n");
+	print("\t--aga\t\tWrite .plt v2 with AGA color entries\n");
+	print("extraOpts:\n");
+	print("\t-cc\t\tConvert colors. Truncate non-OCS colors to OCS precision if necessary\n");
 	print("\ninPath\t- path to supported input palette file\n");
 	print("outPath\t- path to output palette file\n");
 	print("ext\t- one of the following:\n");
@@ -27,23 +29,23 @@ void printUsage(const std::string& szAppName) {
 	print("\tpng\tPalette preview\n");
 }
 
-int main(int lArgCount, const char* pArgs[])
-{
+int main(int lArgCount, const char *pArgs[]) {
 	bool isForceOcs = true;
-	bool isExplicitMode = false;
+	bool isClampToOcs = false;
 
-	std::vector<const char*> Positionals;
+	std::vector<const char *> Positionals;
 
-	for (int i = 1; i < lArgCount; ++i) {
-		if (std::strcmp(pArgs[i], "--ocs") == 0) {
+	for(int i = 1; i < lArgCount; ++i) {
+		if(std::strcmp(pArgs[i], "--ocs") == 0) {
 			isForceOcs = true;
-			isExplicitMode = true;
 		}
-		else if (std::strcmp(pArgs[i], "--aga") == 0) {
+		else if(std::strcmp(pArgs[i], "--aga") == 0) {
 			isForceOcs = false;
-			isExplicitMode = true;
 		}
-		else if (pArgs[i][0] == '-') {
+		else if(std::strcmp(pArgs[i], "-cc") == 0) {
+			isClampToOcs = true;
+		}
+		else if(pArgs[i][0] == '-') {
 			nLog::error("Unknown option: '{}'", pArgs[i]);
 			printUsage(pArgs[0]);
 			return EXIT_FAILURE;
@@ -53,7 +55,7 @@ int main(int lArgCount, const char* pArgs[])
 		}
 	}
 
-	if (Positionals.empty()) {
+	if(Positionals.empty()) {
 		nLog::error("Too few arguments, expected input path");
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
@@ -62,7 +64,7 @@ int main(int lArgCount, const char* pArgs[])
 	std::string szPathIn = Positionals[0];
 	std::string szPathOut = nFs::removeExt(szPathIn) + ".gpl";
 
-	if (Positionals.size() > 1) {
+	if(Positionals.size() > 1) {
 		szPathOut = Positionals[1];
 	}
 
@@ -71,11 +73,11 @@ int main(int lArgCount, const char* pArgs[])
 	try {
 		Palette = tPalette::fromFile(szPathIn);
 	}
-	catch (const std::exception &Exc) {
+	catch(const std::exception &Exc) {
 		nLog::error("{}", Exc.what());
 		return EXIT_FAILURE;
 	}
-	if (Palette.m_vColors.empty()) {
+	if(Palette.m_vColors.empty()) {
 		nLog::error("Invalid input path or palette is empty: '{}'", szPathIn);
 		return 1;
 	}
@@ -84,30 +86,30 @@ int main(int lArgCount, const char* pArgs[])
 	// Generate output palette
 	std::string szExtOut = nFs::getExt(szPathOut);
 	bool isOk = false;
-	if (nFs::getExt(szPathIn) == szExtOut) {
+	if(nFs::getExt(szPathIn) == szExtOut) {
 		nLog::error("Input and output extensions are the same");
 		return EXIT_FAILURE;
 	}
 
 	try {
-		if (szExtOut == "gpl") {
+		if(szExtOut == "gpl") {
 			isOk = Palette.toGpl(szPathOut);
 		}
-		else if (szExtOut == "act") {
+		else if(szExtOut == "act") {
 			isOk = Palette.toAct(szPathOut);
 		}
-		else if (szExtOut == "pal") {
+		else if(szExtOut == "pal") {
 			isOk = Palette.toPromotionPal(szPathOut);
 		}
-		else if (szExtOut == "plt") {
-			isOk = Palette.toPlt(szPathOut, isForceOcs);
+		else if(szExtOut == "plt") {
+			isOk = Palette.toPlt(szPathOut, isForceOcs, isClampToOcs);
 		}
-		else if (szExtOut == "png") {
+		else if(szExtOut == "png") {
 			auto ColorCount = Palette.m_vColors.size();
 			tChunkyBitmap PltPreview(ColorCount * 32, 16);
 
-			for (uint8_t i = 0; i < ColorCount; ++i) {
-				const auto& Color = Palette.m_vColors[i];
+			for(uint8_t i = 0; i < ColorCount; ++i) {
+				const auto &Color = Palette.m_vColors[i];
 
 				PltPreview.fillRect(i * 32, 0, 32, 16, Color);
 				isOk = PltPreview.toPng(szPathOut);
@@ -119,11 +121,11 @@ int main(int lArgCount, const char* pArgs[])
 			return EXIT_FAILURE;
 		}
 	}
-	catch (const std::exception& Exc) {
+	catch(const std::exception &Exc) {
 		nLog::error("Writing palette failed: {}", Exc.what());
 	}
 
-	if (!isOk) {
+	if(!isOk) {
 		nLog::error("Couldn't write to '{}'", szPathOut);
 		return EXIT_FAILURE;
 	}
