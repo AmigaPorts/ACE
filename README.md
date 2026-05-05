@@ -7,7 +7,8 @@ Lightweight, flexible and hackable.
 ACE uses Amiga hardware features directly, aiming for as much speed as possible.
 The code is OS-friendly, allowing running from and exiting to Workbench gracefully.
 
-Current feature set is OCS-oriented with, although produced code should work on AGA just fine. AGA features have been added recently and should work, although they weren't thoroughly battle-tested.
+Current feature set is OCS-oriented, although produced code should work on AGA just fine.
+AGA features have been added recently and should work but they weren't thoroughly battle-tested.
 
 For build instructions basic how to and contributing guidelines, refer to [docs](docs/README.md).
 

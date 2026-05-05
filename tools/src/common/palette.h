@@ -23,11 +23,11 @@ public:
 	static tPalette fromAct(const std::string &szPath);
 
 	/**
-	 * @param isForceOcs true = ECS packed 12-bit entries; false = AGA (4 bytes per color).
-	 * @param isClampToOcs if true with ECS, quantize colors with @ref tRgb::to12Bit() instead of erroring.
+	 * @param isUseOcs true = OCS packed 12-bit entries; false = AGA (4 bytes per color).
+	 * @param isClampToOcs if true with OCS, quantize colors with @ref tRgb::to12Bit() instead of erroring.
 	 */
 	bool toPlt(
-		const std::string &szPath, bool isForceOcs, bool isClampToOcs = false
+		const std::string &szPath, bool isUseOcs, bool isClampToOcs = false
 	);
 
 	bool toGpl(const std::string &szPath);

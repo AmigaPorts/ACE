@@ -30,17 +30,17 @@ void printUsage(const std::string &szAppName) {
 }
 
 int main(int lArgCount, const char *pArgs[]) {
-	bool isForceOcs = true;
+	bool isUseOcs = true;
 	bool isClampToOcs = false;
 
 	std::vector<const char *> Positionals;
 
 	for(int i = 1; i < lArgCount; ++i) {
 		if(std::strcmp(pArgs[i], "-ocs") == 0) {
-			isForceOcs = true;
+			isUseOcs = true;
 		}
 		else if(std::strcmp(pArgs[i], "-aga") == 0) {
-			isForceOcs = false;
+			isUseOcs = false;
 		}
 		else if(std::strcmp(pArgs[i], "-cc") == 0) {
 			isClampToOcs = true;
@@ -102,13 +102,13 @@ int main(int lArgCount, const char *pArgs[]) {
 			isOk = Palette.toPromotionPal(szPathOut);
 		}
 		else if(szExtOut == "plt") {
-			isOk = Palette.toPlt(szPathOut, isForceOcs, isClampToOcs);
+			isOk = Palette.toPlt(szPathOut, isUseOcs, isClampToOcs);
 		}
 		else if(szExtOut == "png") {
 			auto ColorCount = Palette.m_vColors.size();
 			tChunkyBitmap PltPreview(ColorCount * 32, 16);
 
-			for(uint8_t i = 0; i < ColorCount; ++i) {
+			for(std::uint8_t i = 0; i < ColorCount; ++i) {
 				const auto &Color = Palette.m_vColors[i];
 
 				PltPreview.fillRect(i * 32, 0, 32, 16, Color);

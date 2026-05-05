@@ -13,7 +13,7 @@
 
 namespace {
 
-constexpr std::uint8_t PLT_NEW_ECS = 0;
+constexpr std::uint8_t PLT_NEW_OCS = 0;
 constexpr std::uint8_t PLT_NEW_AGA = 1;
 
 } // namespace
@@ -86,7 +86,7 @@ tPalette tPalette::fromPlt(const std::string &szPath) {
 		fmt::print("Palette color count (v2): {}\n", uwNumColors);
 
 		for(std::uint16_t i = 0; i < uwNumColors; ++i) {
-			if(ubFirst == PLT_NEW_ECS) {
+			if(ubFirst == PLT_NEW_OCS) {
 				std::uint8_t ubXR, ubGB;
 				Source.read(reinterpret_cast<char*>(&ubXR), 1);
 				Source.read(reinterpret_cast<char*>(&ubGB), 1);
@@ -190,7 +190,7 @@ tPalette tPalette::fromFile(const std::string &szPath) {
 }
 
 bool tPalette::toPlt(
-	const std::string &szPath, bool isForceOcs, bool isClampToOcs
+	const std::string &szPath, bool isUseOcs, bool isClampToOcs
 ) {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
 	if(!Dest.is_open()) {
@@ -198,7 +198,7 @@ bool tPalette::toPlt(
 	}
 	auto PaletteSize = m_vColors.size();
 
-	std::uint8_t ubSentinel = isForceOcs ? PLT_NEW_ECS : PLT_NEW_AGA;
+	std::uint8_t ubSentinel = isUseOcs ? PLT_NEW_OCS : PLT_NEW_AGA;
 
 	Dest.write(reinterpret_cast<const char*>(&ubSentinel), 1);
 	{
@@ -208,7 +208,7 @@ bool tPalette::toPlt(
 
 	for(std::size_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
 		const auto &Color = m_vColors[uwColorIdx];
-		if(isForceOcs) {
+		if(isUseOcs) {
 			tRgb ColorOcs = Color.to12Bit();
 			if(!isClampToOcs && ColorOcs != Color) {
 				throw std::runtime_error(fmt::format(
