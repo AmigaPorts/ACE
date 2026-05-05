@@ -15,8 +15,8 @@ void printUsage(const std::string &szAppName) {
 	using fmt::print;
 	fmt::print("Usage:\n\t{} [options] inPath.ext [outPath.ext]\n", szAppName);
 	print("\nOptions:\n");
-	print("\t--ocs\t\tWrite .plt v2 with ECS/OCS packed 12-bit entries (default)\n");
-	print("\t--aga\t\tWrite .plt v2 with AGA color entries\n");
+	print("\t-ocs\t\tWrite .plt v2 with ECS/OCS packed 12-bit entries (default)\n");
+	print("\t-aga\t\tWrite .plt v2 with AGA color entries\n");
 	print("extraOpts:\n");
 	print("\t-cc\t\tConvert colors. Truncate non-OCS colors to OCS precision if necessary\n");
 	print("\ninPath\t- path to supported input palette file\n");
@@ -36,10 +36,10 @@ int main(int lArgCount, const char *pArgs[]) {
 	std::vector<const char *> Positionals;
 
 	for(int i = 1; i < lArgCount; ++i) {
-		if(std::strcmp(pArgs[i], "--ocs") == 0) {
+		if(std::strcmp(pArgs[i], "-ocs") == 0) {
 			isForceOcs = true;
 		}
-		else if(std::strcmp(pArgs[i], "--aga") == 0) {
+		else if(std::strcmp(pArgs[i], "-aga") == 0) {
 			isForceOcs = false;
 		}
 		else if(std::strcmp(pArgs[i], "-cc") == 0) {
