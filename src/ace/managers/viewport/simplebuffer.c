@@ -33,7 +33,7 @@ static void updateBitplanePtrs(
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-static UWORD simpleBufferGetDDFStep(const tSimpleBufferManager *pManager) {
+static UWORD simpleBufferGetDDfStep(const tSimpleBufferManager *pManager) {
 	UWORD uwWidth = pManager->sCommon.pVPort->pView->uwWidth;
 	UBYTE ubBitplaneFmode = pManager->sCommon.pVPort->ubFmode & 0x03;
 
