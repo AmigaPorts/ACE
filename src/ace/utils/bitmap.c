@@ -12,6 +12,31 @@
 #include <ace/utils/custom.h>
 #include <ace/utils/disk_file.h>
 
+#if defined(ACE_USE_AGA_FEATURES) && defined(ACE_DEBUG)
+static PLANEPTR bitmapAllocChipAlignedAgaDbg(ULONG ulSize) {
+	// In ACE_DEBUG, memAllocChip user pointer is shifted by one ULONG due to
+	// debug guards; shift once more so CHIP bitplane data keeps expected
+	// alignment for AGA FMODE 3 fetch.
+	UBYTE *pMem = (UBYTE *)memAllocChip(ulSize + sizeof(ULONG));
+	if(!pMem) {
+		return 0;
+	}
+	return (PLANEPTR)(pMem + sizeof(ULONG));
+}
+
+static void bitmapFreeChipAlignedAgaDbg(void *pMem, ULONG ulSize) {
+	memFree((UBYTE *)pMem - sizeof(ULONG), ulSize + sizeof(ULONG));
+}
+#else
+static PLANEPTR bitmapAllocChipAlignedAgaDbg(ULONG ulSize) {
+	return (PLANEPTR)memAllocChip(ulSize);
+}
+
+static void bitmapFreeChipAlignedAgaDbg(void *pMem, ULONG ulSize) {
+	memFree(pMem, ulSize);
+}
+#endif
+
 /* Globals */
 
 /* Functions */
@@ -56,10 +81,17 @@ tBitMap *bitmapCreate(
 		uwRealWidth = pBitMap->BytesPerRow;
 		pBitMap->BytesPerRow *= ubDepth;
 
-		pBitMap->Planes[0] = (PLANEPTR) memAlloc(
-			pBitMap->BytesPerRow*uwHeight,
-			(ubFlags & BMF_FASTMEM) ? MEMF_ANY : MEMF_CHIP
-		);
+		if(ubFlags & BMF_FASTMEM) {
+			pBitMap->Planes[0] = (PLANEPTR) memAlloc(
+				pBitMap->BytesPerRow * uwHeight,
+				MEMF_ANY
+			);
+		}
+		else {
+			pBitMap->Planes[0] = bitmapAllocChipAlignedAgaDbg(
+				pBitMap->BytesPerRow * uwHeight
+			);
+		}
 		if(!pBitMap->Planes[0]) {
 			logWrite("ERR: Can't alloc interleaved bitplanes\n");
 			goto fail;
@@ -75,7 +107,9 @@ tBitMap *bitmapCreate(
 	else if(ubFlags & BMF_CONTIGUOUS) {
 		pBitMap->Flags |= BMF_CONTIGUOUS;
 		ULONG ulPlaneSize = pBitMap->BytesPerRow * uwHeight;
-		pBitMap->Planes[0] = (PLANEPTR) memAllocChip(ulPlaneSize * ubDepth);
+		pBitMap->Planes[0] = bitmapAllocChipAlignedAgaDbg(
+			ulPlaneSize * ubDepth
+		);
 		if(!pBitMap->Planes[0]) {
 				logWrite("ERR: Can't alloc contiguous bitplanes\n");
 				goto fail;
@@ -89,11 +123,16 @@ tBitMap *bitmapCreate(
 	}
 	else {
 		for(i = ubDepth; i--;) {
-			pBitMap->Planes[i] = (PLANEPTR) memAllocChip(pBitMap->BytesPerRow * uwHeight);
+			pBitMap->Planes[i] = bitmapAllocChipAlignedAgaDbg(
+				pBitMap->BytesPerRow * uwHeight
+			);
 			if(!pBitMap->Planes[i]) {
 				logWrite("ERR: Can't alloc bitplane %hu/%hu\n", ubDepth - i + 1,ubDepth);
 				while(++i != ubDepth) {
-					memFree(pBitMap->Planes[i], pBitMap->BytesPerRow*uwHeight);
+					bitmapFreeChipAlignedAgaDbg(
+						pBitMap->Planes[i],
+						pBitMap->BytesPerRow * uwHeight
+					);
 				}
 				goto fail;
 			}
@@ -322,14 +361,31 @@ void bitmapDestroy(tBitMap *pBitMap) {
 #endif
 		systemUse();
 		if(bitmapIsInterleaved(pBitMap)) {
-			memFree(pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows);
+			if(bitmapIsChip(pBitMap)) {
+				bitmapFreeChipAlignedAgaDbg(
+					pBitMap->Planes[0],
+					pBitMap->BytesPerRow * pBitMap->Rows
+				);
+			}
+			else {
+				memFree(
+					pBitMap->Planes[0],
+					pBitMap->BytesPerRow * pBitMap->Rows
+				);
+			}
 		}
 		else if(pBitMap->Flags & BMF_CONTIGUOUS) {
-			memFree(pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows * pBitMap->Depth);
+			bitmapFreeChipAlignedAgaDbg(
+				pBitMap->Planes[0],
+				pBitMap->BytesPerRow * pBitMap->Rows * pBitMap->Depth
+			);
 		}
 		else {
 			for(UBYTE i = pBitMap->Depth; i--;) {
-				memFree(pBitMap->Planes[i], pBitMap->BytesPerRow * pBitMap->Rows);
+				bitmapFreeChipAlignedAgaDbg(
+					pBitMap->Planes[i],
+					pBitMap->BytesPerRow * pBitMap->Rows
+				);
 			}
 		}
 		memFree(pBitMap, sizeof(tBitMap));

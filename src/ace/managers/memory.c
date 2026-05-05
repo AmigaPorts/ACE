@@ -184,12 +184,7 @@ void *_memAllocDbg(
 		return 0;
 	}
 	void *pAddr;
-#if defined(ACE_USE_AGA_FEATURES) && defined(ACE_DEBUG)
-	// AGA FMODE 3 fetches are sensitive to alignment; with AGA+DEBUG we keep extra headroom to preserve aligned user pointers.
-	pAddr = _memAllocRls(ulSize + 4 * sizeof(ULONG), ulFlags);
-#else
 	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
-#endif
 	if(!pAddr) {
 		logWrite(
 			"[MEM] ERR: couldn't allocate %lu bytes! (%s:%u)\n",
@@ -204,11 +199,7 @@ void *_memAllocDbg(
 #endif // AMIGA
 		return 0;
 	}
-#if defined(ACE_USE_AGA_FEATURES) && defined(ACE_DEBUG)
-	pAddr += sizeof(ULONG) * 2;
-#else
 	pAddr += sizeof(ULONG);
-#endif
 
 	UBYTE *pCafe = (UBYTE*)(pAddr - 4*sizeof(UBYTE));
 	UBYTE *pDead = (UBYTE*)(pAddr + ulSize);
@@ -225,11 +216,7 @@ void _memFreeDbg(
 	_memCheckIntegrity(uwLine, szFile);
 	ulSize = _memEntryDelete(pMem, ulSize, uwLine, szFile);
 	if(ulSize) {
-#if defined(ACE_USE_AGA_FEATURES) && defined(ACE_DEBUG)
-		_memFreeRls(pMem - sizeof(ULONG) * 2, ulSize + 4 * sizeof(ULONG));
-#else
 		_memFreeRls(pMem - sizeof(ULONG), ulSize + 2 * sizeof(ULONG));
-#endif
 	}
 	systemUnuse();
 }
