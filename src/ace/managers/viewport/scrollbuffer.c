@@ -20,7 +20,7 @@ static UWORD nearestPowerOf2(UWORD uwVal) {
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-static UWORD scrollBufferGetDDFStep(const tScrollBufferManager *pManager) {
+static UWORD scrollBufferGetDDfStep(const tScrollBufferManager *pManager) {
 	UWORD uwWidth = pManager->sCommon.pVPort->pView->uwWidth;
 	UBYTE ubBitplaneFmode = pManager->sCommon.pVPort->ubFmode & 0x03;
 
@@ -416,7 +416,7 @@ void scrollBufferReset(
 	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
 	pManager->uwDDfStop = pManager->uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
 #ifdef ACE_USE_AGA_FEATURES
-	pManager->uwDDfStop = pManager->uwDDfStrt + scrollBufferGetDDFStep(pManager);
+	pManager->uwDDfStop = pManager->uwDDfStrt + scrollBufferGetDDfStep(pManager);
 #endif
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		pManager->uwDDfStrt -= 8; // for scroll reasons

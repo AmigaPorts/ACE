@@ -60,7 +60,7 @@ static void simpleBufferInitializeCopperList(
 	UWORD uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
 	UWORD uwDDFStep = ((pManager->sCommon.pVPort->pView->uwWidth / 16)-1)*8;
 #ifdef ACE_USE_AGA_FEATURES
-	uwDDFStep = simpleBufferGetDDFStep(pManager);
+	uwDDFStep = simpleBufferGetDDfStep(pManager);
 #endif
 	UWORD uwDDfStop = uwDDfStrt + uwDDFStep;
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
