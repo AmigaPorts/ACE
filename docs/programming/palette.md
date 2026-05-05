@@ -33,7 +33,7 @@ void gameGsCreate(void) {
 
 For an **AGA** viewport (`VP_FLAG_AGA`), use a **`ULONG`** palette buffer sized for your bit depth (`1 << bpp`). Pass the same pointer to `paletteLoadFromPath()`; when the file’s first byte is **1** (AGA v2), entries are read as in the viewport.
 
-Use **`paletteSaveOcs()`** for v2 ECS output and **`paletteSaveAGA()`** (with `ACE_USE_AGA_FEATURES`) for v2 AGA output.
+Use **`paletteSaveOcs()`** for v2 ECS output and **`paletteSaveAga()`** (with `ACE_USE_AGA_FEATURES`) for v2 AGA output.
 
 > [!NOTE]
 > If you don't need any fancy palette effects, you can load your palette to the `s_pVpMain->pPalette` directly.

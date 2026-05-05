@@ -148,9 +148,9 @@ void paletteDimOcs(
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel) {
+void paletteDimAga(ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel) {
 	for(UWORD c = 0; c < uwColorCount; ++c) {
-		pDest[c] = paletteColorDimAGA(pSource[c], ubLevel);
+		pDest[c] = paletteColorDimAga(pSource[c], ubLevel);
 	}
 }
 #endif
@@ -172,7 +172,7 @@ UWORD paletteColorDimOcs(UWORD uwFullColor, UBYTE ubLevel) {
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel) {
+ULONG paletteColorDimAga(ULONG ulFullColor, UBYTE ubLevel) {
 	UBYTE r, g, b;
 
 	r = (ulFullColor >> 16) & 0xFF;

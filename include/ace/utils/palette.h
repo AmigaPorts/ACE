@@ -70,7 +70,7 @@ void paletteDimOcs(
 );
 
 #ifdef ACE_USE_AGA_FEATURES
-void paletteDimAGA(
+void paletteDimAga(
 	ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel
 );
 #endif
@@ -84,7 +84,7 @@ void paletteDimAGA(
  */
 UWORD paletteColorDimOcs(UWORD uwFullColor, UBYTE ubLevel);
 #ifdef ACE_USE_AGA_FEATURES
-ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
+ULONG paletteColorDimAga(ULONG ulFullColor, UBYTE ubLevel);
 #endif
 
 /**
@@ -107,8 +107,8 @@ UWORD paletteColorMixOcs(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubL
  * @param ubLevel Mix ratio - 255 results in primary color, 0 in secondary.
  * @return Mixed AGA color between ulColorPrimary and ulColorSecondary.
  *
- * @note This function is slower than paletteColorDimAGA().
- * @see paletteColorDimAGA()
+ * @note This function is slower than paletteColorDimAga().
+ * @see paletteColorDimAga()
  */
 ULONG paletteColorMixAga(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubLevel);
 #endif
