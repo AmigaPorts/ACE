@@ -119,9 +119,9 @@ tPalette tPalette::fromPromotionPal(const std::string &szPath) {
 
 	std::ifstream Source(szPath, std::ios::in | std::ios::binary);
 
-	uint16_t uwLastNonZero = 0;
-	for(uint16_t i = 0; i < 256; ++i) {
-		uint8_t ubR, ubG, ubB;
+	std::uint16_t uwLastNonZero = 0;
+	for(std::uint16_t i = 0; i < 256; ++i) {
+		std::uint8_t ubR, ubG, ubB;
 
 		Source.read(reinterpret_cast<char*>(&ubR), 1);
 		Source.read(reinterpret_cast<char*>(&ubG), 1);
@@ -146,8 +146,8 @@ tPalette tPalette::fromAct(const std::string &szPath) {
 
 	std::ifstream Source(szPath, std::ios::in | std::ios::binary);
 
-	for(uint16_t i = 0; i < 256; ++i) {
-		uint8_t ubR, ubG, ubB;
+	for(std::uint16_t i = 0; i < 256; ++i) {
+		std::uint8_t ubR, ubG, ubB;
 
 		Source.read(reinterpret_cast<char*>(&ubR), 1);
 		Source.read(reinterpret_cast<char*>(&ubG), 1);
@@ -268,7 +268,7 @@ bool tPalette::toPromotionPal(const std::string &szPath) {
 		return false;
 	}
 
-	uint32_t i;
+	std::uint32_t i;
 	for(i = 0; i < m_vColors.size(); ++i) {
 		const auto &Color = m_vColors.at(i);
 		Dest.write(reinterpret_cast<const char*>(&Color.ubR), 1);
@@ -290,7 +290,7 @@ bool tPalette::toAct(const std::string &szPath) {
 		return false;
 	}
 
-	uint32_t i;
+	std::uint32_t i;
 	for(i = 0; i < m_vColors.size(); ++i) {
 		const auto &Color = m_vColors.at(i);
 		Dest.write(reinterpret_cast<const char*>(&Color.ubR), 1);
@@ -302,7 +302,7 @@ bool tPalette::toAct(const std::string &szPath) {
 		Dest.write(pBlank, 3);
 		++i;
 	}
-	std::uint8_t ubSizeHi = uint16_t(m_vColors.size()) >> 8;
+	std::uint8_t ubSizeHi = std::uint16_t(m_vColors.size()) >> 8;
 	std::uint8_t ubSizeLo = m_vColors.size() & 0xFF;
 
 	Dest.write(reinterpret_cast<char*>(&ubSizeHi), 1);
@@ -313,7 +313,7 @@ bool tPalette::toAct(const std::string &szPath) {
 
 
 int16_t tPalette::getColorIdx(const tRgb &Ref) const {
-	uint8_t i = 0;
+	std::uint8_t i = 0;
 	for(const auto &Color : m_vColors) {
 		if(Color == Ref) {
 			return i;
@@ -327,8 +327,8 @@ bool tPalette::isValid(void) const {
 	return m_vColors.size() != 0;
 }
 
-uint8_t tPalette::getBpp(void) const {
-	uint8_t ubBpp = 1;
+std::uint8_t tPalette::getBpp(void) const {
+	std::uint8_t ubBpp = 1;
 	for(size_t i = 2; i < m_vColors.size(); i <<= 1) {
 		++ubBpp;
 	}

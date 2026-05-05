@@ -7,7 +7,8 @@
 #include <stdexcept>
 #include "parse.h"
 
-tRgb::tRgb(const std::string &szCode) {
+tRgb::tRgb(const std::string &szCode)
+{
 	if(szCode[0] == '#') {
 		if(szCode.length() == 3 + 1) {
 			nParse::hexToRange<std::uint8_t>(szCode.substr(1, 1), 0, 15, this->ubR);
@@ -31,7 +32,8 @@ tRgb::tRgb(const std::string &szCode) {
 	}
 }
 
-tRgb tRgb::to12Bit(void) const {
+tRgb tRgb::to12Bit(void) const
+{
 	auto R4 = ((this->ubR + 16) / 17);
 	auto G4 = ((this->ubG + 16) / 17);
 	auto B4 = ((this->ubB + 16) / 17);
@@ -39,7 +41,8 @@ tRgb tRgb::to12Bit(void) const {
 	return Out;
 }
 
-tRgb tRgb::toEhb(void) const {
+tRgb tRgb::toEhb(void) const
+{
 	auto R4 = ((this->ubR + 16) / 17) >> 1;
 	auto G4 = ((this->ubG + 16) / 17) >> 1;
 	auto B4 = ((this->ubB + 16) / 17) >> 1;
@@ -47,6 +50,7 @@ tRgb tRgb::toEhb(void) const {
 	return Out;
 }
 
-std::string tRgb::toString(void) const {
+std::string tRgb::toString(void) const
+{
 	return fmt::format("#{:02X}{:02X}{:02X}", ubR, ubG, ubB);
 }
