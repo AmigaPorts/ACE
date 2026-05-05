@@ -1,4 +1,4 @@
-# ACE - Amiga C Engine - with AGA Enhancements
+# ACE - Amiga C Engine
 
 [![Documentation](https://codedocs.xyz/AmigaPorts/ACE.svg)](https://codedocs.xyz/AmigaPorts/ACE/)
 
@@ -7,11 +7,7 @@ Lightweight, flexible and hackable.
 ACE uses Amiga hardware features directly, aiming for as much speed as possible.
 The code is OS-friendly, allowing running from and exiting to Workbench gracefully.
 
-Current feature set is OCS-oriented, although produced code should work on AGA just fine.
-
-**This has updated the feature set to include the enhancements required to open AGA screens, and use AGA features.
-See [AGA support](docs/programming/aga.md) for setup and current status.
-Look at the Github issue [here](https://github.com/AmigaPorts/ACE/issues/151) to see what has been done, and what is left to do and test**
+Current feature set is OCS-oriented with, although produced code should work on AGA just fine. AGA features have been added recently and should work, although they weren't thoroughly battle-tested.
 
 For build instructions basic how to and contributing guidelines, refer to [docs](docs/README.md).
 
