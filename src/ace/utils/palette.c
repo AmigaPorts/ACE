@@ -99,16 +99,16 @@ void paletteSaveOcs(const UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
+void paletteSaveAga(const ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 	logBlockBegin(
-		"paletteSaveAGA(pPalette: %p, uwColorCnt: %hu, szPath: '%s')",
+		"paletteSaveAga(pPalette: %p, uwColorCnt: %hu, szPath: '%s')",
 		pPalette, uwColorCnt, szPath
 	);
 
 	tFile *pFile = diskFileOpen(szPath, DISK_FILE_MODE_WRITE, 1);
 	if(!pFile) {
 		logWrite("ERR: Can't write file\n");
-		logBlockEnd("paletteSaveAGA()");
+		logBlockEnd("paletteSaveAga()");
 		return;
 	}
 
@@ -135,15 +135,15 @@ void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 
 	fileClose(pFile);
 
-	logBlockEnd("paletteSaveAGA()");
+	logBlockEnd("paletteSaveAga()");
 }
 #endif
 
-void paletteDim(
+void paletteDimOcs(
 	UWORD *pSource, volatile UWORD *pDest, UWORD uwColorCount, UBYTE ubLevel
 ) {
 	for(UWORD c = 0; c < uwColorCount; ++c) {
-		pDest[c] = paletteColorDim(pSource[c], ubLevel);
+		pDest[c] = paletteColorDimOcs(pSource[c], ubLevel);
 	}
 }
 
@@ -155,7 +155,7 @@ void paletteDimAGA(ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UB
 }
 #endif
 
-UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel) {
+UWORD paletteColorDimOcs(UWORD uwFullColor, UBYTE ubLevel) {
 	UBYTE r, g, b;
 
 	r = (uwFullColor >> 8) & 0xF;
@@ -189,7 +189,7 @@ ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel) {
 }
 #endif
 
-UWORD paletteColorMix(
+UWORD paletteColorMixOcs(
 	UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel
 ) {
 	UBYTE r1, g1, b1;
@@ -212,7 +212,7 @@ UWORD paletteColorMix(
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-ULONG paletteColorMixAGA(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubLevel) {
+ULONG paletteColorMixAga(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubLevel) {
 	ULONG r1, g1, b1;
 	ULONG r2, g2, b2;
 
@@ -230,7 +230,7 @@ ULONG paletteColorMixAGA(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubL
 	return (r1 << 16) | (g1 << 8) | b1;
 }
 
-void paletteDumpAGA(ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
+void paletteDumpAga(ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 	UWORD uwLastColor = uwColorCnt - 1;
 	UBYTE ubBpp = 0;
 
@@ -268,7 +268,7 @@ void paletteDumpAGA(ULONG *pPalette, UWORD uwColorCnt, char *szPath) {
 }
 #endif
 
-void paletteDump(UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
+void paletteDumpOcs(UWORD *pPalette, UWORD uwColorCnt, char *szPath) {
 	UWORD uwLastColor = uwColorCnt - 1;
 	UBYTE ubBpp = 0;
 	while(uwLastColor) {

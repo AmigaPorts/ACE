@@ -41,7 +41,7 @@ void paletteSaveOcs(const UWORD *pPalette, UWORD uwColorCnt, char *szPath);
 /**
  * @brief Saves AGA palette into .plt v2 file (sentinel 1 + BE count + 4 bytes per color).
  */
-void paletteSaveAGA(const ULONG *pPalette, UWORD uwColorCnt, char *szPath);
+void paletteSaveAga(const ULONG *pPalette, UWORD uwColorCnt, char *szPath);
 #endif
 
 /**
@@ -65,7 +65,7 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength);
  *
  * @warning DON'T point pSource to chipset palette registers, they are read-only!
  */
-void paletteDim(
+void paletteDimOcs(
 	UWORD *pSource, volatile UWORD *pDest, UWORD uwColorCount, UBYTE ubLevel
 );
 
@@ -80,9 +80,9 @@ void paletteDimAGA(
  * @param uwFullColor Full color used as a base to calculate percentage.
  * @param ubLevel Brightness level - 15 for no dim, 0 for total blackness.
  *
- * @see paletteColorMix()
+ * @see paletteColorMixOcs()
  */
-UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
+UWORD paletteColorDimOcs(UWORD uwFullColor, UBYTE ubLevel);
 #ifdef ACE_USE_AGA_FEATURES
 ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
 #endif
@@ -94,10 +94,10 @@ ULONG paletteColorDimAGA(ULONG ulFullColor, UBYTE ubLevel);
  * @param ubLevel Mix ratio - 15 results in primary color, 0 in secondary.
  * @return Mixed color between uwColorPrimary and uwColorSecondary.
  *
- * @note This function is slower than paletteColorDim().
- * @see paletteColorDim()
+ * @note This function is slower than paletteColorDimOcs().
+ * @see paletteColorDimOcs()
  */
-UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel);
+UWORD paletteColorMixOcs(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
@@ -110,7 +110,7 @@ UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLeve
  * @note This function is slower than paletteColorDimAGA().
  * @see paletteColorDimAGA()
  */
-ULONG paletteColorMixAGA(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubLevel);
+ULONG paletteColorMixAga(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubLevel);
 #endif
 
 /**
@@ -122,7 +122,7 @@ ULONG paletteColorMixAGA(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubL
  * @param fubColorCnt Number of colors in palette.
  * @param szPath Destination path for .bmp file.
  */
-void paletteDump(UWORD *pPalette, UWORD uwColorCnt, char *szPath);
+void paletteDumpOcs(UWORD *pPalette, UWORD uwColorCnt, char *szPath);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
@@ -134,7 +134,7 @@ void paletteDump(UWORD *pPalette, UWORD uwColorCnt, char *szPath);
  * @param uwColorCnt Number of colors in palette.
  * @param szPath Destination path for .bmp file.
  */
-void paletteDumpAGA(ULONG *pPalette, UWORD uwColorCnt, char *szPath);
+void paletteDumpAga(ULONG *pPalette, UWORD uwColorCnt, char *szPath);
 #endif
 
 #ifdef __cplusplus
