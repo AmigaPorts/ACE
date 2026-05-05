@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include "fs.h"
 #include "stream.h"
-#include <ace/utils/endian.h>
+#include "endian.h"
 #include <fmt/format.h>
 
 namespace {
@@ -79,9 +79,9 @@ tPalette tPalette::fromPlt(const std::string &szPath) {
 	Source.read(reinterpret_cast<char*>(&ubFirst), 1);
 
 	if(ubFirst <= 1) {
-		UWORD uwWire = 0;
+		std::uint16_t uwWire = 0;
 		Source.read(reinterpret_cast<char*>(&uwWire), sizeof(uwWire));
-		UWORD uwNumColors = endianBig16(uwWire);
+		std::uint16_t uwNumColors = nEndian::fromBig16(uwWire);
 
 		fmt::print("Palette color count (v2): {}\n", uwNumColors);
 
@@ -202,7 +202,7 @@ bool tPalette::toPlt(
 
 	Dest.write(reinterpret_cast<const char*>(&ubSentinel), 1);
 	{
-		UWORD uwWire = endianBig16(static_cast<UWORD>(PaletteSize));
+		std::uint16_t uwWire = nEndian::toBig16(PaletteSize);
 		Dest.write(reinterpret_cast<const char*>(&uwWire), sizeof(uwWire));
 	}
 
