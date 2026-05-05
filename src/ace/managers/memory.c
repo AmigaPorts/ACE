@@ -185,8 +185,7 @@ void *_memAllocDbg(
 	}
 	void *pAddr;
 #if defined(ACE_USE_AGA_FEATURES) && defined(ACE_DEBUG)
-	// AGA FMODE 3 fetches are sensitive to alignment; with AGA+DEBUG we keep
-	// extra headroom to preserve aligned user pointers.
+	// AGA FMODE 3 fetches are sensitive to alignment; with AGA+DEBUG we keep extra headroom to preserve aligned user pointers.
 	pAddr = _memAllocRls(ulSize + 4 * sizeof(ULONG), ulFlags);
 #else
 	pAddr = _memAllocRls(ulSize + 2 * sizeof(ULONG), ulFlags);
