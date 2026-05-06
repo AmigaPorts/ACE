@@ -52,7 +52,7 @@ void systemGetBlitterFromOs(void);
 
 void systemReleaseBlitterToOs(void);
 
-UBYTE systemBlitterIsUsed(void);
+UBYTE systemBlitterIsReleasedToOs(void);
 
 void systemDump(void);
 

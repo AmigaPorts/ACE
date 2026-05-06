@@ -694,7 +694,7 @@ static inline void tileBufferRedrawAllInternal(tTileBufferManager *pManager, UBY
 	tTileBufferTileIndex **pTileData = pManager->pTileData;
 	systemSetDmaBit(DMAB_BLITHOG, 1);
 #if defined ACE_DEBUG
-	if (!systemBlitterIsUsed()) {
+	if (systemBlitterIsReleasedToOs()) {
 		logWrite("ERR: you called tileBufferRedrawAll but the blitter is not owned!");
 	}
 #endif

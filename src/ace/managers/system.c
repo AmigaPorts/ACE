@@ -1171,7 +1171,7 @@ void systemGetBlitterFromOs(void) {
 		OwnBlitter();
 		WaitBlit();
 	}
-	// This must be decremented after OwnBlitter() so that systemBlitterIsUsed()
+	// This must be decremented after OwnBlitter() so that systemBlitterIsReleasedToOs()
 	// checked in interrupt won't return 0 during OS blitter op still in progress.
 	--s_wSystemBlitterUses;
 
@@ -1191,8 +1191,8 @@ void systemReleaseBlitterToOs(void) {
 	++s_wSystemBlitterUses;
 }
 
-UBYTE systemBlitterIsUsed(void) {
-	return s_wSystemBlitterUses <= 0;
+UBYTE systemBlitterIsReleasedToOs(void) {
+	return s_wSystemBlitterUses > 0;
 }
 
 void systemSetKeyInputHandler(tKeyInputHandler cbKeyInputHandler) {
