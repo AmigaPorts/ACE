@@ -214,7 +214,7 @@ bool tPalette::toPlt(
 				throw std::runtime_error(fmt::format(
 					FMT_STRING(
 						"Color at index {} ({}) is not suited for OCS. "
-						"Expected 4-bit channels, e.g. {} (use -cc to truncate)"
+						"Expected 4-bit channels, e.g. {} (use -cc to auto-truncate)"
 					),
 					uwColorIdx, Color.toString(), ColorOcs.toString()
 				));
