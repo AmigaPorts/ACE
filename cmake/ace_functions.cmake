@@ -32,7 +32,7 @@ endfunction()
 
 function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
 	getToolPath(palette_conv TOOL_PALETTE_CONV)
-	set(options CONVERT_COLORS)
+	set(options CONVERT_COLORS AGA_COLORS)
 	set(oneValArgs)
 	set(multiValArgs)
 	cmake_parse_arguments(
@@ -42,6 +42,9 @@ function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
 	if(${convertPalette_CONVERT_COLORS})
 		list(APPEND extraFlags "-cc")
 	endif()
+	if(${convertPalette_AGA_COLORS})
+		list(APPEND extraFlags "-aga")
+	endif()
 
 	add_custom_command(
 		OUTPUT ${PALETTE_OUT}
@@ -49,7 +52,6 @@ function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${PALETTE_IN}
 	)
-	target_sources(${TARGET} PUBLIC ${PALETTE_OUT})
 endfunction()
 
 function(convertBitmaps)

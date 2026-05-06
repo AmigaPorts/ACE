@@ -5,22 +5,29 @@
 #include "palette.h"
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include "fs.h"
 #include "stream.h"
+#include "endian.h"
 #include <fmt/format.h>
+
+namespace {
+
+constexpr std::uint8_t PLT_NEW_OCS = 0;
+constexpr std::uint8_t PLT_NEW_AGA = 1;
+
+} // namespace
 
 static bool beginsWith(
 	const std::string &szHaystack, const std::string &szNeedle
-)
-{
+) {
 	if(szHaystack.length() < szNeedle.length()) {
 		return false;
 	}
 	return szHaystack.substr(0, szNeedle.length()) == szNeedle;
 }
 
-tPalette tPalette::fromGpl(const std::string &szPath)
-{
+tPalette tPalette::fromGpl(const std::string &szPath) {
 	tPalette Palette;
 	std::ifstream Source(szPath, std::ios::in);
 	if(!Source.good()) {
@@ -36,7 +43,7 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 		beginsWith(szLine, "Name:") ||
 		beginsWith(szLine, "Columns:") ||
 		beginsWith(szLine, "#")
-	));
+		));
 
 	// Read colors
 	bool isEnd = false;
@@ -63,37 +70,59 @@ tPalette tPalette::fromGpl(const std::string &szPath)
 	return Palette;
 }
 
-tPalette tPalette::fromPlt(const std::string &szPath)
-{
+tPalette tPalette::fromPlt(const std::string &szPath) {
 	tPalette Palette;
 
 	std::ifstream Source(szPath, std::ios::in | std::ios::binary);
 
-	std::uint8_t ubPaletteCount;
-	Source.read(reinterpret_cast<char*>(&ubPaletteCount), 1);
-	fmt::print("Palette color count: {}\n", ubPaletteCount);
+	std::uint8_t ubFirst = 0;
+	Source.read(reinterpret_cast<char*>(&ubFirst), 1);
 
-	for(std::uint8_t i = 0; i != ubPaletteCount; ++i) {
-		std::uint8_t ubXR, ubGB;
-		Source.read(reinterpret_cast<char*>(&ubXR), 1);
-		Source.read(reinterpret_cast<char*>(&ubGB), 1);
-		Palette.m_vColors.push_back(tRgb(
-			((ubXR & 0x0F) << 4) | (ubXR & 0x0F),
-			((ubGB & 0xF0) >> 4) | (ubGB & 0xF0),
-			((ubGB & 0x0F) << 4) | (ubGB & 0x0F)
-		));
+	if(ubFirst <= 1) {
+		std::uint16_t uwWire = 0;
+		Source.read(reinterpret_cast<char*>(&uwWire), sizeof(uwWire));
+		std::uint16_t uwNumColors = nEndian::fromBig16(uwWire);
+
+		fmt::print("Palette color count (v2): {}\n", uwNumColors);
+
+		for(std::uint16_t i = 0; i < uwNumColors; ++i) {
+			if(ubFirst == PLT_NEW_OCS) {
+				std::uint8_t ubXR, ubGB;
+				Source.read(reinterpret_cast<char*>(&ubXR), 1);
+				Source.read(reinterpret_cast<char*>(&ubGB), 1);
+
+				Palette.m_vColors.push_back(tRgb(
+					static_cast<std::uint8_t>(((ubXR & 0x0F) << 4) | (ubXR & 0x0F)),
+					static_cast<std::uint8_t>(((ubGB & 0xF0) >> 4) | (ubGB & 0xF0)),
+					static_cast<std::uint8_t>(((ubGB & 0x0F) << 4) | (ubGB & 0x0F))));
+			}
+			else {
+				std::uint8_t ubA, ubR, ubG, ubB;
+				Source.read(reinterpret_cast<char*>(&ubA), 1);
+				Source.read(reinterpret_cast<char*>(&ubR), 1);
+				Source.read(reinterpret_cast<char*>(&ubG), 1);
+				Source.read(reinterpret_cast<char*>(&ubB), 1);
+
+				Palette.m_vColors.push_back(tRgb(ubR, ubG, ubB));
+			}
+		}
+		return Palette;
 	}
-	return Palette;
+
+	throw std::runtime_error(
+		"Legacy .plt (v1) is not supported; re-export with palette_conv to v2."
+	);
 }
 
-tPalette tPalette::fromPromotionPal(const std::string &szPath)
-{
+tPalette tPalette::fromPromotionPal(const std::string &szPath) {
 	tPalette Palette;
 
 	std::ifstream Source(szPath, std::ios::in | std::ios::binary);
+
 	std::uint16_t uwLastNonZero = 0;
 	for(std::uint16_t i = 0; i < 256; ++i) {
 		std::uint8_t ubR, ubG, ubB;
+
 		Source.read(reinterpret_cast<char*>(&ubR), 1);
 		Source.read(reinterpret_cast<char*>(&ubG), 1);
 		Source.read(reinterpret_cast<char*>(&ubB), 1);
@@ -112,13 +141,14 @@ tPalette tPalette::fromPromotionPal(const std::string &szPath)
 	return Palette;
 }
 
-tPalette tPalette::fromAct(const std::string &szPath)
-{
+tPalette tPalette::fromAct(const std::string &szPath) {
 	tPalette Palette;
 
 	std::ifstream Source(szPath, std::ios::in | std::ios::binary);
+
 	for(std::uint16_t i = 0; i < 256; ++i) {
 		std::uint8_t ubR, ubG, ubB;
+
 		Source.read(reinterpret_cast<char*>(&ubR), 1);
 		Source.read(reinterpret_cast<char*>(&ubG), 1);
 		Source.read(reinterpret_cast<char*>(&ubB), 1);
@@ -140,8 +170,7 @@ tPalette tPalette::fromAct(const std::string &szPath)
 	return Palette;
 }
 
-tPalette tPalette::fromFile(const std::string &szPath)
-{
+tPalette tPalette::fromFile(const std::string &szPath) {
 	std::string szExtIn = nFs::getExt(szPath);
 	tPalette Palette;
 	if(szExtIn == "gpl") {
@@ -160,39 +189,56 @@ tPalette tPalette::fromFile(const std::string &szPath)
 	return Palette;
 }
 
-bool tPalette::toPlt(const std::string &szPath, bool isForceOcs)
-{
+bool tPalette::toPlt(
+	const std::string &szPath, bool isUseOcs, bool isClampToOcs
+) {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
 	if(!Dest.is_open()) {
 		return false;
 	}
 	auto PaletteSize = m_vColors.size();
-	Dest.write(reinterpret_cast<char*>(&PaletteSize), 1);
-	for(std::uint16_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
+
+	std::uint8_t ubSentinel = isUseOcs ? PLT_NEW_OCS : PLT_NEW_AGA;
+
+	Dest.write(reinterpret_cast<const char*>(&ubSentinel), 1);
+	{
+		std::uint16_t uwWire = nEndian::toBig16(PaletteSize);
+		Dest.write(reinterpret_cast<const char*>(&uwWire), sizeof(uwWire));
+	}
+
+	for(std::size_t uwColorIdx = 0; uwColorIdx < PaletteSize; ++uwColorIdx) {
 		const auto &Color = m_vColors[uwColorIdx];
-		if(isForceOcs) {
-			const auto &ColorOcs = Color.to12Bit();
-			if(ColorOcs != Color) {
+		if(isUseOcs) {
+			tRgb ColorOcs = Color.to12Bit();
+			if(!isClampToOcs && ColorOcs != Color) {
 				throw std::runtime_error(fmt::format(
 					FMT_STRING(
 						"Color at index {} ({}) is not suited for OCS. "
-						"Expected 4-bit channels, e.g. {}"
+						"Expected 4-bit channels, e.g. {} (use -cc to auto-truncate)"
 					),
 					uwColorIdx, Color.toString(), ColorOcs.toString()
 				));
 			}
+
+			std::uint8_t ubXR = ColorOcs.ubR >> 4;
+			std::uint8_t ubGB =
+				((ColorOcs.ubG >> 4) << 4) | (ColorOcs.ubB >> 4);
+			Dest.write(reinterpret_cast<char*>(&ubXR), 1);
+			Dest.write(reinterpret_cast<char*>(&ubGB), 1);
+		}
+		else {
+			std::uint8_t alpha = 0;
+			Dest.write(reinterpret_cast<const char*>(&alpha), 1);
+			Dest.write(reinterpret_cast<const char*>(&Color.ubR), 1);
+			Dest.write(reinterpret_cast<const char*>(&Color.ubG), 1);
+			Dest.write(reinterpret_cast<const char*>(&Color.ubB), 1);
 		}
 
-		std::uint8_t ubXR = Color.ubR >> 4;
-		std::uint8_t ubGB = ((Color.ubG >> 4) << 4) | (Color.ubB >> 4);
-		Dest.write(reinterpret_cast<char*>(&ubXR), 1);
-		Dest.write(reinterpret_cast<char*>(&ubGB), 1);
 	}
 	return true;
 }
 
-bool tPalette::toGpl(const std::string &szPath)
-{
+bool tPalette::toGpl(const std::string &szPath) {
 	using namespace nFs;
 	std::ofstream Dest(szPath, std::ios::out);
 	if(!Dest.is_open()) {
@@ -216,8 +262,7 @@ bool tPalette::toGpl(const std::string &szPath)
 	return true;
 }
 
-bool tPalette::toPromotionPal(const std::string &szPath)
-{
+bool tPalette::toPromotionPal(const std::string &szPath) {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
 	if(!Dest.is_open()) {
 		return false;
@@ -230,7 +275,7 @@ bool tPalette::toPromotionPal(const std::string &szPath)
 		Dest.write(reinterpret_cast<const char*>(&Color.ubG), 1);
 		Dest.write(reinterpret_cast<const char*>(&Color.ubB), 1);
 	}
-	const char pBlank[3] = {0};
+	const char pBlank[3] = { 0 };
 	while(i < 256) {
 		Dest.write(pBlank, 3);
 		++i;
@@ -239,8 +284,7 @@ bool tPalette::toPromotionPal(const std::string &szPath)
 	return true;
 }
 
-bool tPalette::toAct(const std::string &szPath)
-{
+bool tPalette::toAct(const std::string &szPath) {
 	std::ofstream Dest(szPath, std::ios::out | std::ios::binary);
 	if(!Dest.is_open()) {
 		return false;
@@ -253,12 +297,12 @@ bool tPalette::toAct(const std::string &szPath)
 		Dest.write(reinterpret_cast<const char*>(&Color.ubG), 1);
 		Dest.write(reinterpret_cast<const char*>(&Color.ubB), 1);
 	}
-	const char pBlank[3] = {0};
+	const char pBlank[3] = { 0 };
 	while(i < 256) {
 		Dest.write(pBlank, 3);
 		++i;
 	}
-	std::uint8_t ubSizeHi = uint16_t(m_vColors.size()) >> 8;
+	std::uint8_t ubSizeHi = std::uint16_t(m_vColors.size()) >> 8;
 	std::uint8_t ubSizeLo = m_vColors.size() & 0xFF;
 
 	Dest.write(reinterpret_cast<char*>(&ubSizeHi), 1);
@@ -267,10 +311,10 @@ bool tPalette::toAct(const std::string &szPath)
 	return true;
 }
 
-std::int16_t tPalette::getColorIdx(const tRgb &Ref) const
-{
+
+int16_t tPalette::getColorIdx(const tRgb &Ref) const {
 	std::uint8_t i = 0;
-	for(const auto &Color: m_vColors) {
+	for(const auto &Color : m_vColors) {
 		if(Color == Ref) {
 			return i;
 		}
@@ -285,14 +329,13 @@ bool tPalette::isValid(void) const {
 
 std::uint8_t tPalette::getBpp(void) const {
 	std::uint8_t ubBpp = 1;
-	for(std::size_t i = 2; i < m_vColors.size(); i <<= 1) {
+	for(size_t i = 2; i < m_vColors.size(); i <<= 1) {
 		++ubBpp;
 	}
 	return ubBpp;
 }
 
-bool tPalette::convertToEhb(void)
-{
+bool tPalette::convertToEhb(void) {
 	if(m_vColors.size() > 32) {
 		return false;
 	}

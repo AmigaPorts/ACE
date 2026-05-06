@@ -18,62 +18,74 @@ extern "C" {
 
 /**
  * @brief Loads palette from supplied .plt file to given address.
+ *
+ * Supports **v2** only: first byte **0** (ECS/OCS packed) or **1** (AGA), then big-endian UWORD count.
+ * Legacy **v1** `.plt` (first byte ≥ 2) is rejected (`ACE_DEBUG`: log error; @p pPalette unchanged).
+ * For v2 AGA (first byte **1**), @p pPalette must point at storage suitable for ULONG-sized colors
+ * (same layout as an AGA viewport palette).
+ *
  * @param szPath Palette source path.
  * @param pPalette Palette destination pointer.
- * @param ubMaxLength Maximum number of colors in palette.
+ * @param uwMaxLength Maximum number of colors to read.
  *
  * @see paletteLoadFromFd()
  */
-void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UBYTE ubMaxLength);
+void paletteLoadFromPath(const char *szPath, UWORD *pPalette, UWORD uwMaxLength);
 
 /**
- * @brief Saves given palette into .plt file.
- * @param pPalette Palette to save.
- * @param ubColorCnt Number of colors in palette.
- * @param szPath Destination path.
+ * @brief Saves ECS/OCS palette into .plt v2 file (sentinel 0 + BE count + packed colors).
  */
-void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
+void paletteSaveOcs(const UWORD *pPalette, UWORD uwColorCnt, char *szPath);
+
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * @brief Saves AGA palette into .plt v2 file (sentinel 1 + BE count + 4 bytes per color).
+ */
+void paletteSaveAga(const ULONG *pPalette, UWORD uwColorCnt, char *szPath);
+#endif
 
 /**
  * @brief Loads palette from supplied .plt file to given address.
  * @param pFile Handle to the palette file. Will be closed on function return.
- * @param pPalette Palette destination pointer.
- * @param ubMaxLength Maximum number of colors in palette.
+ * @param pPalette Palette destination pointer. For v2 AGA files, this must be
+ *        storage suitable for `ULONG` per entry (e.g. AGA viewport palette).
+ * @param uwMaxLength Maximum number of colors to read.
  *
  * @see paletteLoadFromPath()
  */
-void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UBYTE ubMaxLength);
-
-/**
- * @brief Saves given palette into .plt file.
- * @param pPalette Palette to save.
- * @param ubColorCnt Number of colors in palette.
- * @param szPath Destination path.
- */
-void paletteSave(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
+void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength);
 
 /**
  * @brief Dims palette to given brightness level.
  * @param pSource Pointer to source palette.
  * @param pDest Pointer to destination palette. Can be same as pSource.
  * Can also be pointing directly on chipset palette registers.
- * @param ubColorCount Number of colors in palette.
+ * @param uwColorCount Number of colors in palette.
  * @param ubLevel Brightness level - 15 for no dim, 0 for total blackness.
  *
  * @warning DON'T point pSource to chipset palette registers, they are read-only!
  */
-void paletteDim(
-	UWORD *pSource, volatile UWORD *pDest, UBYTE ubColorCount, UBYTE ubLevel
+void paletteDimOcs(
+	UWORD *pSource, volatile UWORD *pDest, UWORD uwColorCount, UBYTE ubLevel
 );
+
+#ifdef ACE_USE_AGA_FEATURES
+void paletteDimAga(
+	ULONG *pSource, volatile ULONG *pDest, UWORD uwColorCount, UBYTE ubLevel
+);
+#endif
 
 /**
  * @brief Dims a single input color to given brightness level.
  * @param uwFullColor Full color used as a base to calculate percentage.
  * @param ubLevel Brightness level - 15 for no dim, 0 for total blackness.
  *
- * @see paletteColorMix()
+ * @see paletteColorMixOcs()
  */
-UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
+UWORD paletteColorDimOcs(UWORD uwFullColor, UBYTE ubLevel);
+#ifdef ACE_USE_AGA_FEATURES
+ULONG paletteColorDimAga(ULONG ulFullColor, UBYTE ubLevel);
+#endif
 
 /**
  * @brief Interpolates two colors at given level.
@@ -82,10 +94,24 @@ UWORD paletteColorDim(UWORD uwFullColor, UBYTE ubLevel);
  * @param ubLevel Mix ratio - 15 results in primary color, 0 in secondary.
  * @return Mixed color between uwColorPrimary and uwColorSecondary.
  *
- * @note This function is slower than paletteColorDim().
- * @see paletteColorDim()
+ * @note This function is slower than paletteColorDimOcs().
+ * @see paletteColorDimOcs()
  */
-UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel);
+UWORD paletteColorMixOcs(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLevel);
+
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * @brief Interpolates two AGA colors at given level.
+ * @param ulColorPrimary Primary AGA color in the mix.
+ * @param ulColorSecondary Secondary AGA color in the mix.
+ * @param ubLevel Mix ratio - 255 results in primary color, 0 in secondary.
+ * @return Mixed AGA color between ulColorPrimary and ulColorSecondary.
+ *
+ * @note This function is slower than paletteColorDimAga().
+ * @see paletteColorDimAga()
+ */
+ULONG paletteColorMixAga(ULONG ulColorPrimary, ULONG ulColorSecondary, UBYTE ubLevel);
+#endif
 
 /**
  * @brief Writes given palette to debug .bmp file.
@@ -96,7 +122,20 @@ UWORD paletteColorMix(UWORD uwColorPrimary, UWORD uwColorSecondary, UBYTE ubLeve
  * @param fubColorCnt Number of colors in palette.
  * @param szPath Destination path for .bmp file.
  */
-void paletteDump(UWORD *pPalette, UBYTE ubColorCnt, char *szPath);
+void paletteDumpOcs(UWORD *pPalette, UWORD uwColorCnt, char *szPath);
+
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * @brief Writes given AGA palette to debug .bmp file.
+ *
+ * This function is horribly slow and should only be used for debug purposes.
+ *
+ * @param pPalette AGA palette to be dumped.
+ * @param uwColorCnt Number of colors in palette.
+ * @param szPath Destination path for .bmp file.
+ */
+void paletteDumpAga(ULONG *pPalette, UWORD uwColorCnt, char *szPath);
+#endif
 
 #ifdef __cplusplus
 }

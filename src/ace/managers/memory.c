@@ -200,6 +200,7 @@ void *_memAllocDbg(
 		return 0;
 	}
 	pAddr += sizeof(ULONG);
+
 	UBYTE *pCafe = (UBYTE*)(pAddr - 4*sizeof(UBYTE));
 	UBYTE *pDead = (UBYTE*)(pAddr + ulSize);
 	pCafe[0] = 0xCA; pCafe[1] = 0xFE; pCafe[2] = 0xBA; pCafe[3] = 0xBE;

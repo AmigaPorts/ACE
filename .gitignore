@@ -12,12 +12,8 @@ showcase/*.bmp
 showcase/memory\.log
 showcase/game\.log
 
-# Tools
+# Tools — ignore built tool binaries and generated/test artifacts dropped next to sources
 tools/*/*.exe
-tools/*/*.png
-tools/*/*.bm
-tools/*/*.plt
-
 *.dasm
 
 showcase/NUL

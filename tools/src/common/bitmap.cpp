@@ -85,7 +85,7 @@ tChunkyBitmap tChunkyBitmap::fromPng(const std::string &szPath)
 bool tChunkyBitmap::toPng(const std::string &szPngPath) const
 {
 	auto LodeErr = lodepng_encode_file(
-		szPngPath.c_str(), reinterpret_cast<const uint8_t*>(m_vData.data()),
+		szPngPath.c_str(), reinterpret_cast<const std::uint8_t*>(m_vData.data()),
 		m_uwWidth, m_uwHeight, LCT_RGB, 8
 	);
 

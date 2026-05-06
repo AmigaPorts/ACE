@@ -57,3 +57,23 @@ UBYTE spriteDisableInCopRawMode(
 
 	return ubCmdCount;
 }
+
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * BPLCON4 bits 0-3: odd sprite color bank; bits 4-7: even sprite color bank.
+ * Bits 8-15 are unrelated (color table); preserve them when updating nibbles.
+ */
+void spriteSetOddColorPaletteBank(UBYTE ubIndex) {
+	UWORD uw = g_pCustom->bplcon4;
+	UWORD uwLow = (uw & 0xF0) | (ubIndex & 0x0F);
+
+	g_pCustom->bplcon4 = (uw & 0xFF00) | uwLow;
+}
+
+void spriteSetEvenColorPaletteBank(UBYTE ubIndex) {
+	UWORD uw = g_pCustom->bplcon4;
+	UWORD uwLow = (uw & 0x0F) | (((UWORD)(ubIndex & 0x0F)) << 4);
+
+	g_pCustom->bplcon4 = (uw & 0xFF00) | uwLow;
+}
+#endif
