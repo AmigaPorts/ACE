@@ -52,6 +52,7 @@ function(convertPalette TARGET PALETTE_IN PALETTE_OUT)
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		DEPENDS ${PALETTE_IN}
 	)
+	target_sources(${TARGET} PUBLIC ${PALETTE_OUT})
 endfunction()
 
 function(convertBitmaps)
