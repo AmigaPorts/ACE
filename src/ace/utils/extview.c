@@ -256,10 +256,12 @@ void viewLoad(tView *pView) {
 		g_sCopManager.pCopList = pView->pCopList;
 #ifdef ACE_USE_AGA_FEATURES
 		if(pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
-			g_pCustom->bplcon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9); // BPP + composite output
+			UWORD uwBplCon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9); // BPP + composite output
 			if(pView->pFirstVPort->ubBpp & 0x08) {
-				g_pCustom->bplcon0 |= BV(4);
+				uwBplCon0 |= BV(4);
 			}
+			g_pCustom->bplcon0 = uwBplCon0;
+
 			if(pView->pFirstVPort->ubBpp == 6) {
 				/* KILLEHB + Kickstart-style PF/sprite priority (BV(2)|BV(5) == 0x24) */
 				g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5) | BV(9));
