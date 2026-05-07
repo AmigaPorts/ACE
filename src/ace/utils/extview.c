@@ -261,8 +261,8 @@ void viewLoad(tView *pView) {
 				g_pCustom->bplcon0 |= BV(4);
 			}
 			if(pView->pFirstVPort->ubBpp == 6) {
-				/* KILLEHB: true 64 colors; |= preserves sprite/playfield priority. */
-				g_pCustom->bplcon2 |= BV(9);
+				/* KILLEHB + Kickstart-style PF/sprite priority (BV(2)|BV(5) == 0x24) */
+				g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5) | BV(9));
 			}
 		}
 		else {
