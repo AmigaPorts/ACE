@@ -261,7 +261,8 @@ void viewLoad(tView *pView) {
 				g_pCustom->bplcon0 |= BV(4);
 			}
 			if(pView->pFirstVPort->ubBpp == 6) {
-				g_pCustom->bplcon2 = BV(9); // KILLEHB for 64 colors on AGA
+				/* KILLEHB: true 64 colors; |= preserves sprite/playfield priority. */
+				g_pCustom->bplcon2 |= BV(9);
 			}
 		}
 		else {
