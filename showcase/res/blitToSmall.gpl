@@ -1,0 +1,15 @@
+GIMP Palette
+Name: \blitToSmall
+Columns: 4
+#
+  0   0 255 Index 0
+255   0   0 Index 1
+255 255   0 Index 2
+187 221   0 Index 3
+ 34 136   0 Index 4
+  0 136   0 Index 5
+ 68 153   0 Index 6
+119 187   0 Index 7
+153 204   0 Index 8
+221 238   0 Index 9
+102 170   0 Index 10

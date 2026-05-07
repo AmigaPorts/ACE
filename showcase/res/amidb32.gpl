@@ -1,0 +1,36 @@
+GIMP Palette
+Name: \amidb32
+Columns: 4
+#
+  0   0   0 Index 0
+170 187 187 Index 1
+ 85  85  34 Index 2
+102  68  51 Index 3
+119  68 153 Index 4
+221 136 204 Index 5
+ 51  68  68 Index 6
+ 51 153 119 Index 7
+ 68  51  68 Index 8
+255 204 170 Index 9
+187  51  51 Index 10
+136 136 136 Index 11
+153 119  51 Index 12
+170 238  85 Index 13
+153 153  85 Index 14
+ 85 119  51 Index 15
+153  85  68 Index 16
+119 119 119 Index 17
+221 238 255 Index 18
+238 170 102 Index 19
+ 34  34  51 Index 20
+119 204  51 Index 21
+102 170 255 Index 22
+102  85  85 Index 23
+102 221 238 Index 24
+ 51 102 136 Index 25
+255 255 255 Index 26
+238 119  34 Index 27
+102 119 238 Index 28
+255 255  51 Index 29
+ 68  68 119 Index 30
+238  85 102 Index 31

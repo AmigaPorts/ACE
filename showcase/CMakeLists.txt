@@ -35,21 +35,40 @@ set(TARGET_NAME ${PROJECT_NAME_LOWER})
 
 if(ELF2HUNK)
   # Add elf2hunk step for Bartman compiler
-  set(GAME_LINKED ${TARGET_NAME}.elf) # Intermediate executable
-  set(GAME_EXE ${TARGET_NAME}.exe) # Use this to launch the game
-  add_executable(${GAME_LINKED} ${SOURCES} ${HEADERS})
+  set(GAME_EXECUTABLE ${TARGET_NAME}.elf) # Intermediate executable
+  set(GAME_OUTPUT_EXECUTABLE ${TARGET_NAME}.exe) # Use this to launch the game
+  add_executable(${GAME_EXECUTABLE} ${SOURCES} ${HEADERS})
   add_custom_command(
-    TARGET ${GAME_LINKED} POST_BUILD
-    COMMAND ${ELF2HUNK} ${GAME_LINKED} ${GAME_EXE}
+    TARGET ${GAME_EXECUTABLE} POST_BUILD
+    COMMAND ${ELF2HUNK} ${GAME_EXECUTABLE} ${GAME_OUTPUT_EXECUTABLE}
   )
 else()
   # Just produce the executable with Bebbo compiler
-  SET(GAME_LINKED ${TARGET_NAME})
-  SET(GAME_EXE ${TARGET_NAME})
-  add_executable(${GAME_LINKED} ${SOURCES} ${HEADERS})
+  SET(GAME_EXECUTABLE ${TARGET_NAME})
+  SET(GAME_OUTPUT_EXECUTABLE ${TARGET_NAME})
+  add_executable(${GAME_EXECUTABLE} ${SOURCES} ${HEADERS})
 endif()
 
-target_link_libraries(${GAME_LINKED} ace)
+target_link_libraries(${GAME_EXECUTABLE} ace)
 
-# Copy example maps files as is
-file(COPY "${RES_DIR}/data" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+set(RES_DIR ${CMAKE_CURRENT_LIST_DIR}/res)
+set(DATA_DIR ${CMAKE_CURRENT_BINARY_DIR}/data)
+file(MAKE_DIRECTORY ${DATA_DIR})
+
+set(AMIDB32_PLT_PATH ${DATA_DIR}/amidb32.plt)
+convertPalette(${GAME_EXECUTABLE} ${RES_DIR}/amidb32.gpl ${AMIDB32_PLT_PATH})
+convertPalette(${GAME_EXECUTABLE} ${RES_DIR}/blitToSmall.gpl ${DATA_DIR}/blitToSmall.plt)
+
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${AMIDB32_PLT_PATH}
+	SOURCES ${RES_DIR}/32c_pal.png DESTINATIONS ${DATA_DIR}/32c_pal.bm
+)
+convertBitmaps(
+	TARGET ${GAME_EXECUTABLE} PALETTE ${AMIDB32_PLT_PATH} INTERLEAVED
+	SOURCES ${RES_DIR}/32c_pal_interleaved.png DESTINATIONS ${DATA_DIR}/32c_pal_interleaved.bm
+)
+
+convertFont(
+  TARGET ${GAME_EXECUTABLE}
+	SOURCE ${RES_DIR}/silkscreen DESTINATION ${DATA_DIR}/silkscreen.fnt
+)
