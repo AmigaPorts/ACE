@@ -252,6 +252,8 @@ void viewLoad(tView *pView) {
 			pView->uwBplCon0 |= ((pView->pFirstVPort->eFlags & VP_FLAG_HIRES) != 0) << 15;
 		}
 		pView->uwBplCon0 |= BV(9); // composite output
+		// TODO: set uwBplCon2 in viewCreate, make the playfield/sprite priority
+		// configurable via tags
 
 		g_sCopManager.pCopList = pView->pCopList;
 #ifdef ACE_USE_AGA_FEATURES
@@ -269,13 +271,13 @@ void viewLoad(tView *pView) {
 		}
 		else {
 			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-			g_pCustom->bplcon2 = 0;
+			g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5));
 		}
 		g_pCustom->fmode = pView->pFirstVPort->ubFmode;
 		g_pCustom->bplcon3 = 0; // AGA fix
 #else
 		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-		g_pCustom->bplcon2 = 0;
+		g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5));
 		g_pCustom->fmode = 0; // AGA fix
 		g_pCustom->bplcon3 = 0; // AGA fix
 #endif
