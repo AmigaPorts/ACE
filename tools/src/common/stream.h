@@ -13,4 +13,4 @@ std::istream &getAnyLine(std::istream &Source, std::string &szLine);
 
 }
 
-#endif _ACE_TOOLS_COMMON_STREAM_H_
+#endif // _ACE_TOOLS_COMMON_STREAM_H_
