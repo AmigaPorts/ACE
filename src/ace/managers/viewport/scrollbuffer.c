@@ -399,7 +399,7 @@ void scrollBufferReset(
 		pManager->uwModulo -= 2;
 	}
 	else {
-		fetchModeApplyXScrollCopper(
+		fetchModeApplyScrollBufferXScrollCopper(
 			pManager->sCommon.pVPort, &pManager->uwDDfStrt, &pManager->uwModulo
 		);
 	}

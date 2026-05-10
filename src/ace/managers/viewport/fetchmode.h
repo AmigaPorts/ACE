@@ -32,20 +32,6 @@ static inline UWORD fetchModeGetDDfStep(const tVPort *pVPort) {
 	return ((uwWidth / 16) - 1) * 8;
 }
 
-static inline UWORD fetchModeGetScrollPixels(const tVPort *pVPort) {
-	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
-
-	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
-		return 32;
-	}
-
-	if(ubBitplaneFmode == 3) {
-		return 64;
-	}
-
-	return 16;
-}
-
 static inline UWORD fetchModeGetScrollPrefetchBytes(const tVPort *pVPort) {
 	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
 
@@ -87,6 +73,29 @@ static inline void fetchModeApplyXScrollCopper(
 	*pModulo -= fetchModeGetScrollPrefetchBytes(pVPort);
 }
 
+static inline void fetchModeApplyScrollBufferXScrollCopper(
+	const tVPort *pVPort, UWORD *pDDfStrt, UWORD *pModulo
+) {
+	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
+
+	if(pVPort->eFlags & VP_FLAG_HIRES) {
+		*pDDfStrt -= 8;
+		*pModulo -= 4;
+		return;
+	}
+
+	// Scrollbuffer uses a circular/corkscrew bitmap layout. FMODE 3 still
+	// needs the wider fetch modulo, but starting one extra fetch block earlier
+	// causes a 64 px ghost after the vertical wrap.
+	if(ubBitplaneFmode == 3) {
+		*pDDfStrt -= 16;
+	}
+	else {
+		*pDDfStrt -= fetchModeGetScrollDDfStartAdjust(pVPort);
+	}
+	*pModulo -= fetchModeGetScrollPrefetchBytes(pVPort);
+}
+
 static inline LONG fetchModeGetInitialBplOffset(const tVPort *pVPort) {
 	if(pVPort->eFlags & VP_FLAG_HIRES) {
 		return -4;
@@ -107,12 +116,13 @@ static inline UWORD fetchModeCalcBplShift(const tVPort *pVPort, UWORD uwScrollX)
 
 static inline LONG fetchModeCalcBplOffsetX(const tVPort *pVPort, UWORD uwScrollX) {
 	LONG lBplAddX = (((LONG)uwScrollX - 1) >> 4) << 1;
+	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
 
 	if(pVPort->eFlags & VP_FLAG_HIRES) {
 		return lBplAddX - 2;
 	}
 
-	if(fetchModeGetBitplaneFmode(pVPort) == 1 || fetchModeGetBitplaneFmode(pVPort) == 2) {
+	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
 		return lBplAddX - 2;
 	}
 
