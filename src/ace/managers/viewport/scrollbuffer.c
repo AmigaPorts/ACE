@@ -5,6 +5,7 @@
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/utils/tag.h>
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
+#include "fetchmode.h"
 #include <limits.h>
 
 static UWORD nearestPowerOf2(UWORD uwVal) {
@@ -18,23 +19,6 @@ static UWORD nearestPowerOf2(UWORD uwVal) {
 	++uwVal;
 	return uwVal;
 }
-
-#ifdef ACE_USE_AGA_FEATURES
-static UWORD scrollBufferGetDDfStep(const tScrollBufferManager *pManager) {
-	UWORD uwWidth = pManager->sCommon.pVPort->pView->uwWidth;
-	UBYTE ubBitplaneFmode = pManager->sCommon.pVPort->ubFmode & 0x03;
-
-	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
-		return ((uwWidth / 32) - 1) * 16;
-	}
-
-	if(ubBitplaneFmode == 3) {
-		return ((uwWidth / 16) - 1) * 6;
-	}
-
-	return ((uwWidth / 16) - 1) * 8;
-}
-#endif
 
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
@@ -283,18 +267,8 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 	);
 
 	// preparations for new copperlist
-	UWORD uwShift = (16 - (uwScrollX & 0xF)) & 0xF; // Bitplane shift - single
-	ULONG ulBplAddX = ((uwScrollX - 1) >> 4) << 1;  // must be ULONG!
-	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
-		uwShift >>= 1; // Usable scroll values are 0..7, shifts 2 pixels per value
-		ulBplAddX -= 2; // Fetch 4 bytes (2 words) in scrolling instead of 2 (4)
-	}
-#ifdef ACE_USE_AGA_FEATURES
-	else if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
-		ulBplAddX -= 2; // FMODE 1/2 prefetch one extra word
-	}
-#endif
-	uwShift = (uwShift << 4) | uwShift;             // Bitplane shift - PF1 | PF2
+	UWORD uwShift = fetchModeCalcBplShift(pManager->sCommon.pVPort, uwScrollX);
+	ULONG ulBplAddX = fetchModeCalcBplOffsetX(pManager->sCommon.pVPort, uwScrollX);
 
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
@@ -414,10 +388,7 @@ void scrollBufferReset(
 	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3);
 
 	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
-	pManager->uwDDfStop = pManager->uwDDfStrt + ((pManager->sCommon.pVPort->pView->uwWidth / 16) - 1) * 8;
-#ifdef ACE_USE_AGA_FEATURES
-	pManager->uwDDfStop = pManager->uwDDfStrt + scrollBufferGetDDfStep(pManager);
-#endif
+	pManager->uwDDfStop = pManager->uwDDfStrt + fetchModeGetDDfStep(pManager->sCommon.pVPort);
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		pManager->uwDDfStrt -= 8; // for scroll reasons
 		// Start/stop one 4-step bitplane fetch pattern later: 3120
@@ -428,17 +399,9 @@ void scrollBufferReset(
 		pManager->uwModulo -= 2;
 	}
 	else {
-#ifdef ACE_USE_AGA_FEATURES
-		if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
-			pManager->uwDDfStrt -= 16;
-			pManager->uwModulo -= 4;
-		}
-		else
-#endif
-		{
-			pManager->uwDDfStrt -= 8; // for scroll reasons
-			pManager->uwModulo -= 2;
-		}
+		fetchModeApplyXScrollCopper(
+			pManager->sCommon.pVPort, &pManager->uwDDfStrt, &pManager->uwModulo
+		);
 	}
 	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", pManager->uwDDfStrt, pManager->uwDDfStop, pManager->uwModulo);
 
