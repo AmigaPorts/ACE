@@ -126,6 +126,10 @@ static inline LONG fetchModeCalcBplOffsetX(const tVPort *pVPort, UWORD uwScrollX
 		return lBplAddX - 2;
 	}
 
+	if(ubBitplaneFmode == 3) {
+		lBplAddX += 2;
+	}
+
 	return lBplAddX;
 }
 
