@@ -123,7 +123,7 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 			}
 
 			pDiskFileData->uwBufferFill = fread(
-				pDiskFileData->pBuffer, DISK_FILE_BUFFER_SIZE, 1,
+				pDiskFileData->pBuffer, 1, DISK_FILE_BUFFER_SIZE,
 				pDiskFileData->pFileHandle
 			);
 
