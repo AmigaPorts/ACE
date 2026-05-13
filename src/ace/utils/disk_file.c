@@ -371,9 +371,11 @@ UBYTE diskFileDelete(const char *szFilePath) {
 	return isSuccess;
 }
 
+#if !(__libnix__ && __KICK13__)
 UBYTE diskFileMove(const char *szSource, const char *szDest) {
 	fileAccessEnable();
 	UBYTE isSuccess = rename(szSource, szDest);
 	fileAccessDisable();
 	return isSuccess;
 }
+#endif
