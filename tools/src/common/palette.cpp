@@ -39,11 +39,12 @@ tPalette tPalette::fromGpl(const std::string &szPath) {
 	do {
 		nStream::getAnyLine(Source, szLine);
 	} while(!Source.eof() && (
+		szLine == "" ||
 		beginsWith(szLine, "GIMP Palette") ||
 		beginsWith(szLine, "Name:") ||
 		beginsWith(szLine, "Columns:") ||
 		beginsWith(szLine, "#")
-		));
+	));
 
 	// Read colors
 	bool isEnd = false;
