@@ -880,17 +880,17 @@ void systemCreate(void) {
 	}
 
 	s_pProcess = (struct Process *)FindTask(NULL);
-#if defined(BARTMAN_GCC)
 	if(!s_pProcess->pr_CLI) {
+#if defined(BARTMAN_GCC)
 		// Called from the workbench - get the message for later reply
 		// Taken from https://github.com/alpine9000/EWGM/blob/master/game/wbstartup.i
 		WaitPort(&s_pProcess->pr_MsgPort); // Wait for the message
 		s_pReturnMsg = GetMsg(&s_pProcess->pr_MsgPort); // Get the message for later reply
 		s_bpStartLock = CurrentDir(((struct WBStartup*)s_pReturnMsg)->sm_ArgList[0].wa_Lock);
-	}
 #else // Bebbo
-	s_bpStartLock = CurrentDir(_WBenchMsg->sm_ArgList[0].wa_Lock);
+		s_bpStartLock = CurrentDir(_WBenchMsg->sm_ArgList[0].wa_Lock);
 #endif
+	}
 
 	// Disable system requesters on write protected/drive full etc when trying to create files
 	s_pOldWindow = s_pProcess->pr_WindowPtr;
