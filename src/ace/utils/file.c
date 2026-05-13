@@ -37,7 +37,7 @@ ULONG fileGetPos(tFile *pFile) {
 	return diskFileGetPos(pFile);
 }
 
-ULONG fileGetSize(tFile *pFile) {
+LONG fileGetSize(tFile *pFile) {
 	return diskFileGetSize(pFile);
 }
 
