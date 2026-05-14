@@ -197,7 +197,7 @@ tCopList *copListCreate(void *pTagList, ...) {
 	pCopList->pBackBfr = memAllocFastClear(sizeof(tCopBfr));
 
 	// Handle raw copperlist creation
-	 pCopList->ubMode = tagGet(pTagList, vaTags, TAG_COPPER_LIST_MODE, COPPER_MODE_BLOCK);
+	pCopList->ubMode = tagGet(pTagList, vaTags, TAG_COPPER_LIST_MODE, COPPER_MODE_BLOCK);
 	if(pCopList->ubMode	== COPPER_MODE_RAW) {
 		const ULONG ulInvalidSize = ULONG_MAX;
 		ULONG ulListSize = tagGet(
@@ -214,17 +214,21 @@ tCopList *copListCreate(void *pTagList, ...) {
 			);
 			goto fail;
 		}
-		logWrite("RAW mode, size: %lu + WAIT(0xFFFF)\n", ulListSize);
+		logWrite("RAW mode, size: %lu + 2x WAIT(0xFFFF)\n", ulListSize);
+
 		// Front bfr
-		pCopList->pFrontBfr->uwCmdCount = ulListSize+1;
-		pCopList->pFrontBfr->uwAllocSize = (ulListSize+1)*sizeof(tCopCmd);
+		pCopList->pFrontBfr->uwCmdCount = ulListSize + 2;
+		pCopList->pFrontBfr->uwAllocSize = (ulListSize + 2) * sizeof(tCopCmd);
 		pCopList->pFrontBfr->pList = memAllocChipClear(pCopList->pFrontBfr->uwAllocSize);
 		copSetWait(&pCopList->pFrontBfr->pList[ulListSize].sWait, 0xFF, 0xFF);
+		copSetWait(&pCopList->pFrontBfr->pList[ulListSize + 1].sWait, 0xFF, 0xFF);
+
 		// Back bfr
-		pCopList->pBackBfr->uwCmdCount = ulListSize+1;
-		pCopList->pBackBfr->uwAllocSize = (ulListSize+1)*sizeof(tCopCmd);
+		pCopList->pBackBfr->uwCmdCount = ulListSize + 2;
+		pCopList->pBackBfr->uwAllocSize = (ulListSize + 2) * sizeof(tCopCmd);
 		pCopList->pBackBfr->pList = memAllocChipClear(pCopList->pBackBfr->uwAllocSize);
 		copSetWait(&pCopList->pBackBfr->pList[ulListSize].sWait, 0xFF, 0xFF);
+		copSetWait(&pCopList->pBackBfr->pList[ulListSize + 1].sWait, 0xFF, 0xFF);
 	}
 	else {
 		logWrite("BLOCK mode\n");
@@ -364,12 +368,11 @@ UBYTE copBfrRealloc(void) {
 
 	// Calculate new list size
 	if(pCopList->ubStatus & STATUS_REALLOC_CURR) {
-
 		pBackBfr->uwAllocSize = 0;
 		for(pBlock = pCopList->pFirstBlock; pBlock; pBlock = pBlock->pNext) {
 			pBackBfr->uwAllocSize += 1 + pBlock->uwMaxCmds; // WAIT + MOVEs
 		}
-		pBackBfr->uwAllocSize += 2; // final WAIT + room for double WAIT
+		pBackBfr->uwAllocSize += 2; // room for trailing double WAIT
 		pBackBfr->uwAllocSize *= sizeof(tCopCmd);
 		// Pass realloc to next buffer
 		ubNewStatus = STATUS_REALLOC_PREV;
@@ -491,7 +494,7 @@ UBYTE copUpdateFromBlocks(void) {
 
 		// Update WAIT
 		if(pBlock->uWaitPos.uwY >= 0xFF) {
-			// FIXME: double WAIT only when previous line ended before some pos
+			// TODO: do the double WAIT only when previous line ended before some pos?
 			if(!ubWasLimitY) {
 				copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xDF, 0xFF);
 				++uwListPos;
@@ -520,9 +523,11 @@ UBYTE copUpdateFromBlocks(void) {
 		uwListPos += pBlock->uwCurrCount;
 	}
 
-	// Add 0xFFFF terminator
-	copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos], 0xFF, 0xFF);
-	++uwListPos;
+	// Add 0xFFFF terminators
+	copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos++], 0xFF, 0xFF);
+	if(!ubWasLimitY) {
+		copSetWait((tCopWaitCmd*)&pBackBfr->pList[uwListPos++], 0xFF, 0xFF);
+	}
 
 	pCopList->pBackBfr->uwCmdCount = uwListPos;
 
