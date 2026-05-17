@@ -6,8 +6,8 @@
 #include <proto/exec.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/extview.h>
+#include <ace/utils/fetchmode.h>
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
-#include <ace/managers/viewport/fetchmode.h>
 #ifdef AMIGA
 
 
