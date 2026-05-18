@@ -6,6 +6,7 @@
 #include <proto/exec.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/extview.h>
+#include <ace/utils/fetchmode.h>
 #include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #ifdef AMIGA
 
@@ -32,86 +33,38 @@ static void updateBitplanePtrs(
 	}
 }
 
-#ifdef ACE_USE_AGA_FEATURES
-static UWORD simpleBufferGetDDfStep(const tSimpleBufferManager *pManager) {
-	UWORD uwWidth = pManager->sCommon.pVPort->pView->uwWidth;
-	UBYTE ubBitplaneFmode = pManager->sCommon.pVPort->ubFmode & 0x03;
-
-	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
-		return ((uwWidth / 32) - 1) * 16;
-	}
-
-	if(ubBitplaneFmode == 3) {
-		return ((uwWidth / 16) - 1) * 6;
-	}
-
-	return ((uwWidth / 16) - 1) * 8;
-}
-#endif
-
 static void simpleBufferInitializeCopperList(
 	tSimpleBufferManager *pManager, UBYTE isScrollX
 ) {
+	const tVPort *pVPort = pManager->sCommon.pVPort;
 	pManager->uBfrBounds.uwX = bitmapGetByteWidth(pManager->pFront) << 3;
 	pManager->uBfrBounds.uwY = pManager->pFront->Rows;
-	UWORD uwModulo = pManager->pFront->BytesPerRow - (pManager->sCommon.pVPort->uwWidth >> 3);
+	UWORD uwModulo = pManager->pFront->BytesPerRow - (pVPort->uwWidth >> 3);
 
 	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
-	UWORD uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
-	UWORD uwDDFStep = ((pManager->sCommon.pVPort->pView->uwWidth / 16)-1)*8;
-#ifdef ACE_USE_AGA_FEATURES
-	uwDDFStep = simpleBufferGetDDfStep(pManager);
-#endif
+	UWORD uwDDfStrt = (pVPort->pView->ubPosX + 15) / 2 - 16;
+	UWORD uwDDFStep = fetchModeGetDDfStep(pVPort);
 	UWORD uwDDfStop = uwDDfStrt + uwDDFStep;
-	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
+	if(pVPort->eFlags & VP_FLAG_HIRES) {
 		uwDDfStrt += 4;
 		uwDDfStop += 4;
 	}
 
 	if(
-		!isScrollX || pManager->uBfrBounds.uwX <= pManager->sCommon.pVPort->uwWidth
+		!isScrollX || pManager->uBfrBounds.uwX <= pVPort->uwWidth
 	) {
 		pManager->ubFlags &= ~SIMPLEBUFFER_FLAG_X_SCROLLABLE;
 	}
 	else {
 		pManager->ubFlags |= SIMPLEBUFFER_FLAG_X_SCROLLABLE;
-		if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
-			uwDDfStrt -= 8; // two more hires 4-part bitplane fetch pattern: 3120
-			uwModulo -= 4;
-		}
-		else {
-#ifdef ACE_USE_AGA_FEATURES
-			if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
-				uwDDfStrt -= 16;
-				uwModulo -= 4;
-			}
-			else
-#endif
-			{
-				uwDDfStrt -= 8; // one more lores 8-part bitplane fetch pattern: x351x240
-				uwModulo -= 2;
-			}
-		}
+		fetchModeApplyXScrollCopper(pVPort, &uwDDfStrt, &uwModulo);
 	}
 	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", uwDDfStrt, uwDDfStop, uwModulo);
 
 	// if X scroll is enabled then it needs to start one word early
-	ULONG ulBplOffs = 0;
+	LONG lBplOffs = 0;
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-		if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
-			ulBplOffs = -4;
-		}
-		else {
-#ifdef ACE_USE_AGA_FEATURES
-			if((pManager->sCommon.pVPort->ubFmode & 0x03) == 1 || (pManager->sCommon.pVPort->ubFmode & 0x03) == 2) {
-				ulBplOffs = -4;
-			}
-			else
-#endif
-			{
-				ulBplOffs = -2;
-			}
-		}
+		lBplOffs = fetchModeGetInitialBplOffset(pVPort);
 	}
 	// Update (rewrite) copperlist
 	// TODO this could be unified with copBlock being set with copSetMove too
@@ -141,11 +94,11 @@ static void simpleBufferInitializeCopperList(
 		}
 
 		// Proper back buffer pointers
-		setBitplanePtrs(&pCmdList[6], pManager->pFront, ulBplOffs);
+		setBitplanePtrs(&pCmdList[6], pManager->pFront, lBplOffs);
 
 		// Proper front buffer pointers
 		pCmdList = &pCopList->pFrontBfr->pList[pManager->uwCopperOffset];
-		setBitplanePtrs(&pCmdList[6], pManager->pBack, ulBplOffs);
+		setBitplanePtrs(&pCmdList[6], pManager->pBack, lBplOffs);
 	}
 	else {
 		tCopBlock *pBlock = pManager->pCopBlock;
@@ -156,7 +109,7 @@ static void simpleBufferInitializeCopperList(
 		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, uwModulo);
 		copMove(pCopList, pBlock, &g_pCustom->bplcon1, 0); // Shift: 0
 		for (UBYTE i = 0; i < pManager->sCommon.pVPort->ubBpp; ++i) {
-			ULONG ulPlaneAddr = (ULONG)pManager->pBack->Planes[i] + ulBplOffs;
+			ULONG ulPlaneAddr = (ULONG)pManager->pBack->Planes[i] + lBplOffs;
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwHi, ulPlaneAddr >> 16);
 			copMove(pCopList, pBlock, &g_pBplFetch[i].uwLo, ulPlaneAddr & 0xFFFF);
 		}
@@ -177,13 +130,12 @@ static UWORD simpleBufferCalcBplOffsAndShift(tSimpleBufferManager *pManager, ULO
 	// Calculate X movement: bitplane shift, starting word to fetch
 	UWORD uwShift;
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
-		uwShift = (16 - (pManager->pCamera->uPos.uwX & 0xF)) & 0xF; // Bitplane shift - single
-		*pBplOffs = ((pManager->pCamera->uPos.uwX - 1) >> 4) << 1;  // Must be ULONG!
-		if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
-			uwShift >>= 1; // Usable scroll values are 0..7, shifts 2 pixels per value
-			*pBplOffs -= 2; // Fetch 4 bytes (2 words) in scrolling instead of 2 (4)
-		}
-		uwShift = (uwShift << 4) | uwShift; // Convert to bplcon format - PF1 | PF2
+		uwShift = fetchModeCalcBplShift(
+			pManager->sCommon.pVPort, pManager->pCamera->uPos.uwX
+		);
+		*pBplOffs = fetchModeCalcBplOffsetX(
+			pManager->sCommon.pVPort, pManager->pCamera->uPos.uwX
+		);
 	}
 	else {
 		uwShift = 0;

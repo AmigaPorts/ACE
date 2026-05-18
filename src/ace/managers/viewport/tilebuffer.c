@@ -458,6 +458,10 @@ void tileBufferProcess(tTileBufferManager *pManager) {
 		}
 		// Not redrawing same column on movement side?
 		if (wMarginXPos != pState->pMarginX->wTilePos) {
+			if (wDeltaX < 0) {
+				// Shrink the top/bottom margin draw by one tile to prevent corkscrewing to the left of display
+				--pState->pMarginY->wTileEnd;
+			}
 			// Not finished redrawing all column tiles?
 			if(pState->pMarginX->wTileCurr < pState->pMarginX->wTileEnd) {
 				UWORD uwTileOffsY = SCROLLBUFFER_HEIGHT_MODULO(
