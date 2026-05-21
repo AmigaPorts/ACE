@@ -118,6 +118,9 @@ void scrollBufferProcess(tScrollBufferManager *pManager);
 /**
  * @brief Returns pixel dimensions of scroll buffer bitmap(s) for a VPort setup.
  * Use with bitmapGetBufferSize() to allocate reusable CHIP memory.
+ *
+ * Bitmap height uses @p uwBoundWidth (horizontal-scroll band count), not
+ * @p uwBoundHeight; the latter only limits camera Y (see TAG_SCROLLBUFFER_BOUND_HEIGHT).
  */
 void scrollBufferGetBitmapDimensions(
 	const tVPort *pVPort, UBYTE ubMarginWidth,
