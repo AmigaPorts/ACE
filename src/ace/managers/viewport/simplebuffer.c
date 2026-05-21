@@ -179,6 +179,9 @@ static void simpleBufferDestroyOwnedBitmaps(tSimpleBufferManager *pManager) {
 	pManager->ubFlags &= ~SIMPLEBUFFER_FLAG_OWN_BACK;
 }
 
+static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack);
+static void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront);
+
 void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
 	logBlockBegin(
 		"simpleBufferSetBitmap(pManager: %p, pBitMap: %p)",
@@ -230,7 +233,7 @@ static UWORD simpleBufferCalcBplOffsAndShift(tSimpleBufferManager *pManager, ULO
 	return uwShift;
 }
 
-void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
+static void simpleBufferSetFront(tSimpleBufferManager *pManager, tBitMap *pFront) {
 	logBlockBegin(
 		"simpleBufferSetFront(pManager: %p, pFront: %p)",
 		pManager, pFront
@@ -285,7 +288,10 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
 	pFront = (tBitMap*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_FRONT_BITMAP, 0);
 	if(pFront) {
-		pBack = (tBitMap*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BACK_BITMAP, pFront);
+		pBack = (tBitMap*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BACK_BITMAP, 0);
+		if(!pBack) {
+			pBack = pFront;
+		}
 	}
 	else {
 		pFront = bitmapCreate(

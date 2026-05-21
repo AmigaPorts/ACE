@@ -24,6 +24,22 @@ static tTextBitMap *s_pTextBitMap;
 static tMenuList *s_pMenuList; /// Menu list
 static UBYTE s_ubMenuType;     /// Current menu list - see MENU_* macros
 
+#define MENU_TITLE_LIST_GAP 12
+
+static void menuLayoutVertCenter(
+	tMenuList *pList, UBYTE ubItemCount,
+	UWORD *puwTitleY, UWORD *puwListY
+) {
+	UWORD uwLineStep = menuListGetLineStep(pList);
+	UWORD uwTitleBand = uwLineStep;
+	UWORD uwListH = ubItemCount * uwLineStep;
+	UWORD uwTotal = uwTitleBand + MENU_TITLE_LIST_GAP + uwListH;
+	UWORD uwTop = (s_pMenuBfr->uBfrBounds.uwY - uwTotal) / 2;
+
+	*puwTitleY = uwTop + (uwTitleBand >> 1);
+	*puwListY = uwTop + uwTitleBand + MENU_TITLE_LIST_GAP;
+}
+
 void gsMenuCreate(void) {
 	logBlockBegin("gsMenuCreate");
 	// Prepare view & viewport
@@ -52,7 +68,7 @@ void gsMenuCreate(void) {
 
 	// Prepare menu lists
 	s_pMenuList = menuListCreate(
-		160, 100, 10, 2,
+		160, 100, TEST_STATE_COUNT, 4,
 		s_pMenuFont, FONT_HCENTER|FONT_COOKIE|FONT_SHADOW,
 		1, 2, 3,
 		s_pMenuBfr->pBack
@@ -157,17 +173,20 @@ void menuDrawBg(void) {
 
 void menuShowMain(void) {
 	systemUse();
+	UWORD uwTitleY, uwListY;
+
 	logWrite("menuShowMain\n");
 	// Draw BG
 	menuDrawBg();
+	menuLayoutVertCenter(s_pMenuList, 3, &uwTitleY, &uwListY);
 	fontDrawStr(
-		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
+		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, uwTitleY,
 		"ACE Showcase", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW, s_pTextBitMap
 	);
 
 	// Prepare new list
 	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
-	s_pMenuList->sCoord.uwY = 100;
+	s_pMenuList->sCoord.uwY = uwListY;
 	menuListResetCount(s_pMenuList, 3);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Tests");
 	menuListSetEntry(s_pMenuList, 1, MENULIST_DISABLED, "Examples");
@@ -197,16 +216,18 @@ void menuSelectMain(void) {
 
 void menuShowTests(void) {
 	systemUse();
+	UWORD uwTitleY, uwListY;
+
 	// Draw BG
 	menuDrawBg();
+	menuLayoutVertCenter(s_pMenuList, TEST_STATE_COUNT, &uwTitleY, &uwListY);
 	fontDrawStr(
-		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
+		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, uwTitleY,
 		"Tests", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW, s_pTextBitMap
 	);
 
-	// Prepare new list
 	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
-	s_pMenuList->sCoord.uwY = 100;
+	s_pMenuList->sCoord.uwY = uwListY;
 	menuListResetCount(s_pMenuList, TEST_STATE_COUNT);
 	menuListSetEntry(s_pMenuList, TEST_STATE_MENU, MENULIST_ENABLED, "Back");
 	menuListSetEntry(s_pMenuList, TEST_STATE_BLIT, MENULIST_ENABLED, "Blits");
@@ -239,16 +260,19 @@ void menuSelectTests(void) {
 
 void menuShowExamples(void) {
 	systemUse();
+	UWORD uwTitleY, uwListY;
+
 	// Draw BG
 	menuDrawBg();
+	menuLayoutVertCenter(s_pMenuList, 1, &uwTitleY, &uwListY);
 	fontDrawStr(
-		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, 80,
+		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, uwTitleY,
 		"Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW, s_pTextBitMap
 	);
 
 	// Prepare new list
 	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
-	s_pMenuList->sCoord.uwY = 100;
+	s_pMenuList->sCoord.uwY = uwListY;
 	menuListResetCount(s_pMenuList, 1);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
 	s_ubMenuType = MENU_EXAMPLES;

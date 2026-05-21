@@ -88,8 +88,9 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags,	...);
 /**
  * @brief Replaces buffer bitmap(s) with caller-supplied memory.
  * Destroys previously manager-owned front/back bitmaps. Both front and back
- * are set to @p pBitMap (use simpleBufferSetFront/SetBack for double buffering).
- * Reinitializes copperlist for the new buffer geometry.
+ * are set to @p pBitMap. Reinitializes copperlist for the new buffer geometry.
+ * For separate front/back bitmaps, pass TAG_SIMPLEBUFFER_FRONT_BITMAP and
+ * TAG_SIMPLEBUFFER_BACK_BITMAP at create time instead.
  */
 void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap);
 

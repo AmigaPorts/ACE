@@ -31,7 +31,7 @@
  *
  * Controls:
  *   Fire/Return/Space - switch to phase 2
- *   Joystick          - scroll tilemap (phase 2)
+ *   Joystick / WASD / arrows - scroll tilemap (phase 2)
  *   ESC               - exit to menu
  */
 
@@ -48,7 +48,10 @@
 #include <ace/managers/blit.h>
 #include <ace/managers/system.h>
 #include <ace/managers/log.h>
+#include <ace/managers/copper.h>
 #include <ace/utils/extview.h>
+#include <ace/utils/palette.h>
+#include <ace/utils/custom.h>
 #include <ace/utils/font.h>
 #include <ace/utils/bitmap.h>
 #include <ace/generic/screen.h>
@@ -56,12 +59,14 @@
 /* Tile map size for phase 2 (world size in tiles). */
 #define REUSE_TILE_SHIFT     4
 #define REUSE_TILE_SIZE      (1 << REUSE_TILE_SHIFT)
-#define REUSE_MAP_TILES_X    20
-#define REUSE_MAP_TILES_Y    12
+#define REUSE_MAP_TILES_X    48
+#define REUSE_MAP_TILES_Y    24
 #define REUSE_BOUND_WIDTH    (REUSE_MAP_TILES_X * REUSE_TILE_SIZE)
 #define REUSE_BOUND_HEIGHT   (REUSE_MAP_TILES_Y * REUSE_TILE_SIZE)
 #define REUSE_REDRAW_QUEUE   48
-#define REUSE_TILE_COUNT     4
+#define REUSE_TILE_COUNT     2
+#define REUSE_FADE_STEPS     12
+#define REUSE_SCROLL_SPEED   3
 
 typedef enum tBufferReusePhase {
 	BUFFER_REUSE_PHASE_SIMPLE = 0,
@@ -84,6 +89,7 @@ static tTileBufferManager *s_pTileBfr;
 static tBitMap *s_pSharedBm;
 static void *s_pChip;
 static ULONG s_ulChipSize;
+static ULONG s_ulScrollSize;
 
 /* Tile graphics live in a separate bitmap (not part of the scroll buffer pool). */
 static tBitMap *s_pTileSet;
@@ -91,9 +97,11 @@ static tBitMap *s_pTileSet;
 static tBufferReusePhase s_ePhase;
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBm;
+static UWORD s_pFullPalette[1 << SHOWCASE_BPP];
 
 static void bufferReuseDrawSimpleScreen(void);
 static void bufferReuseStartTilePhase(void);
+static void bufferReuseFadeTransition(void);
 static void bufferReuseOnTileDraw(
 	UWORD uwTileX, UWORD uwTileY,
 	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
@@ -121,7 +129,8 @@ static void bufferReuseOnTileDraw(
 static void bufferReuseFillTileMap(void) {
 	for(UWORD uwX = 0; uwX < REUSE_MAP_TILES_X; ++uwX) {
 		for(UWORD uwY = 0; uwY < REUSE_MAP_TILES_Y; ++uwY) {
-			s_pTileBfr->pTileData[uwX][uwY] = (uwX + uwY) % REUSE_TILE_COUNT;
+			/* Same 16x16 checker as phase 1 — scroll motion stays obvious. */
+			s_pTileBfr->pTileData[uwX][uwY] = (uwX + uwY) & 1;
 		}
 	}
 }
@@ -166,6 +175,43 @@ static void bufferReuseDrawSimpleScreen(void) {
 	logWrite("CHIP pool @ %p, size %lu\n", s_pChip, s_ulChipSize);
 }
 
+static void bufferReuseApplyFade(UBYTE ubLevel) {
+	/* Dim from pristine palette — never use an already-dimmed source. */
+	paletteDimOcs(
+		s_pFullPalette, g_pCustom->color, 1 << SHOWCASE_BPP, ubLevel
+	);
+}
+
+static void bufferReuseFadeFrame(UBYTE ubLevel, tBufferReusePhase ePhase) {
+	bufferReuseApplyFade(ubLevel);
+	viewProcessManagers(s_pView);
+	if(ePhase == BUFFER_REUSE_PHASE_TILE) {
+		tileBufferQueueProcess(s_pTileBfr);
+	}
+	copProcessBlocks();
+	vPortWaitForEnd(s_pVPort);
+}
+
+static void bufferReuseFadeTransition(void) {
+	UBYTE i;
+
+	for(i = 0; i <= REUSE_FADE_STEPS; ++i) {
+		UBYTE ubLevel = (15 * (REUSE_FADE_STEPS - i)) / REUSE_FADE_STEPS;
+		bufferReuseFadeFrame(ubLevel, BUFFER_REUSE_PHASE_SIMPLE);
+	}
+
+	bufferReuseStartTilePhase();
+
+	for(i = 0; i <= REUSE_FADE_STEPS; ++i) {
+		UBYTE ubLevel = (15 * i) / REUSE_FADE_STEPS;
+		bufferReuseFadeFrame(ubLevel, BUFFER_REUSE_PHASE_TILE);
+	}
+
+	paletteDimOcs(
+		s_pFullPalette, s_pVPort->pPalette, 1 << SHOWCASE_BPP, 15
+	);
+}
+
 /**
  * Tear down phase 1 managers/wrappers and start phase 2 on the same s_pChip.
  */
@@ -192,6 +238,9 @@ static void bufferReuseStartTilePhase(void) {
 	bitmapDestroy(s_pSharedBm);
 	s_pSharedBm = 0;
 
+	/* Wipe phase-1 pixels before remapping the pool as a scroll bitmap. */
+	memset(s_pChip, 0, s_ulScrollSize);
+
 	/* Scroll bitmap is taller/wider than the viewport; includes scroll margins. */
 	scrollBufferGetBitmapDimensions(
 		s_pVPort, REUSE_TILE_SIZE,
@@ -204,8 +253,8 @@ static void bufferReuseStartTilePhase(void) {
 	);
 
 	/*
-	 * 3) New wrapper on the same CHIP block. Requires s_ulChipSize >= scroll size
-	 *    (we sized the pool to max(simple, scroll) in Create).
+	 * 3) Single scroll wrapper in s_pChip (no double-buffer — ACE only copies
+	 *    bitplane 0 when syncing front/back, which flashes with 5bpp external pool).
 	 */
 	s_pSharedBm = bitmapCreateFromMem(
 		s_pChip, uwScrollW, uwScrollH, s_pVPort->ubBpp, ubBitmapFlags
@@ -216,8 +265,7 @@ static void bufferReuseStartTilePhase(void) {
 	}
 
 	/*
-	 * 4) tileBuffer creates an internal scrollBuffer and attaches both to the vPort.
-	 *    TAG_TILEBUFFER_FRONT_BITMAP forwards to scroll as external front bitmap.
+	 * 4) tileBuffer creates scrollBuffer with external bitmap in s_pChip.
 	 */
 	s_pTileBfr = tileBufferCreate(0,
 		TAG_TILEBUFFER_VPORT, s_pVPort,
@@ -233,12 +281,18 @@ static void bufferReuseStartTilePhase(void) {
 	);
 	if(!s_pTileBfr) {
 		logWrite("ERR: tileBufferCreate failed\n");
+		bitmapDestroy(s_pSharedBm);
+		s_pSharedBm = 0;
 		return;
 	}
 
 	bufferReuseFillTileMap();
-	cameraSetCoord(s_pTileBfr->pCamera, 0, 0);
+	cameraReset(
+		s_pTileBfr->pCamera, 0, 0,
+		REUSE_BOUND_WIDTH, REUSE_BOUND_HEIGHT, 0
+	);
 	tileBufferRedrawAll(s_pTileBfr);
+	viewLoad(s_pView);
 	s_ePhase = BUFFER_REUSE_PHASE_TILE;
 }
 
@@ -265,8 +319,8 @@ void gsTestBufferReuseCreate(void) {
 
 	/*
 	 * Phase 1 bitmap size = viewport (simpleBuffer default bounds).
-	 * Phase 2 needs scrollBuffer dimensions (larger due to tile margins + wrap).
-	 * Allocate CHIP once for the larger of the two so both phases fit in s_pChip.
+	 * Phase 2 needs one scrollBuffer bitmap in the same pool.
+	 * Allocate CHIP once for max(phase1 simple, scroll).
 	 */
 	uwSimpleW = s_pVPort->uwWidth;
 	uwSimpleH = s_pVPort->uwHeight;
@@ -282,6 +336,7 @@ void gsTestBufferReuseCreate(void) {
 	ulScrollSize = bitmapGetBufferSize(
 		uwScrollW, uwScrollH, s_pVPort->ubBpp, ubBitmapFlags
 	);
+	s_ulScrollSize = ulScrollSize;
 	s_ulChipSize = ulSimpleSize > ulScrollSize ? ulSimpleSize : ulScrollSize;
 	s_pChip = memAllocChip(s_ulChipSize);
 	logWrite(
@@ -314,9 +369,12 @@ void gsTestBufferReuseCreate(void) {
 
 	s_pVPort->pPalette[0] = 0x000;
 	s_pVPort->pPalette[1] = 0xFFF;
-	s_pVPort->pPalette[2] = 0xF00;
-	s_pVPort->pPalette[3] = 0x0F0;
-	s_pVPort->pPalette[4] = 0x00F;
+	/* Muted checker colours — pen 2/3 used in both phases. */
+	s_pVPort->pPalette[2] = 0x766;
+	s_pVPort->pPalette[3] = 0x565;
+	for(UWORD i = 0; i < (1 << SHOWCASE_BPP); ++i) {
+		s_pFullPalette[i] = s_pVPort->pPalette[i];
+	}
 
 	s_pFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pTextBm = fontCreateTextBitMap(320, s_pFont->uwHeight);
@@ -335,29 +393,34 @@ void gsTestBufferReuseLoop(void) {
 
 	if(s_ePhase == BUFFER_REUSE_PHASE_SIMPLE) {
 		if(keyUse(KEY_RETURN) || keyUse(KEY_SPACE) || joyUse(JOY1_FIRE)) {
-			bufferReuseStartTilePhase();
+			bufferReuseFadeTransition();
 		}
 		viewProcessManagers(s_pView);
 		vPortWaitForEnd(s_pVPort);
 		return;
 	}
 
-	/* Phase 2: camera drives scroll; tileBufferQueueProcess redraws dirty tiles. */
-	if(joyUse(JOY1_LEFT)) {
-		cameraMoveBy(s_pTileBfr->pCamera, -REUSE_TILE_SIZE, 0);
+	/* Phase 2: sub-tile camera scroll on the shared scroll bitmap. */
+	WORD wDx = 0, wDy = 0;
+	if(joyCheck(JOY1_LEFT) || keyCheck(KEY_A) || keyCheck(KEY_LEFT)) {
+		wDx = -REUSE_SCROLL_SPEED;
 	}
-	if(joyUse(JOY1_RIGHT)) {
-		cameraMoveBy(s_pTileBfr->pCamera, REUSE_TILE_SIZE, 0);
+	if(joyCheck(JOY1_RIGHT) || keyCheck(KEY_D) || keyCheck(KEY_RIGHT)) {
+		wDx = REUSE_SCROLL_SPEED;
 	}
-	if(joyUse(JOY1_UP)) {
-		cameraMoveBy(s_pTileBfr->pCamera, 0, -REUSE_TILE_SIZE);
+	if(joyCheck(JOY1_UP) || keyCheck(KEY_W) || keyCheck(KEY_UP)) {
+		wDy = -REUSE_SCROLL_SPEED;
 	}
-	if(joyUse(JOY1_DOWN)) {
-		cameraMoveBy(s_pTileBfr->pCamera, 0, REUSE_TILE_SIZE);
+	if(joyCheck(JOY1_DOWN) || keyCheck(KEY_S) || keyCheck(KEY_DOWN)) {
+		wDy = REUSE_SCROLL_SPEED;
+	}
+	if(wDx || wDy) {
+		cameraMoveBy(s_pTileBfr->pCamera, wDx, wDy);
 	}
 
 	viewProcessManagers(s_pView);
 	tileBufferQueueProcess(s_pTileBfr);
+	copProcessBlocks();
 	vPortWaitForEnd(s_pVPort);
 }
 

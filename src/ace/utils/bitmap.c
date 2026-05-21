@@ -117,6 +117,12 @@ tBitMap *bitmapCreateFromMem(
 
 	pBitMap = (tBitMap*)memAllocFastClear(sizeof(tBitMap));
 	bitmapInitFromMem(pBitMap, pMem, uwWidth, uwHeight, ubDepth, ubFlags);
+	if(ubFlags & BMF_CLEAR) {
+		memset(
+			pMem, 0,
+			bitmapGetBufferSize(uwWidth, uwHeight, ubDepth, ubFlags)
+		);
+	}
 
 	logBlockEnd("bitmapCreateFromMem()");
 	systemUnuse();
