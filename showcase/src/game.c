@@ -15,6 +15,7 @@
 #include "test/interleaved.h"
 #include "test/lines.h"
 #include "test/buffer_scroll.h"
+#include "test/buffer_reuse.h"
 #include "test/twister.h"
 
 tStateManager *g_pGameStateManager = 0;
@@ -28,6 +29,7 @@ tState g_pTestStates[TEST_STATE_COUNT] = {
     [TEST_STATE_BLIT_SMALL_DEST] = {.cbCreate = gsTestBlitSmallDestCreate, .cbLoop = gsTestBlitSmallDestLoop, .cbDestroy = gsTestBlitSmallDestDestroy},
     [TEST_STATE_INTERLEAVED] = {.cbCreate = gsTestInterleavedCreate, .cbLoop = gsTestInterleavedLoop, .cbDestroy = gsTestInterleavedDestroy},
     [TEST_STATE_BUFFER_SCROLL] = {.cbCreate = gsTestBufferScrollCreate, .cbLoop = gsTestBufferScrollLoop, .cbDestroy = gsTestBufferScrollDestroy},
+    [TEST_STATE_BUFFER_REUSE] = {.cbCreate = gsTestBufferReuseCreate, .cbLoop = gsTestBufferReuseLoop, .cbDestroy = gsTestBufferReuseDestroy},
     [TEST_STATE_TWISTER] = {.cbCreate = gsTestTwisterCreate, .cbLoop = gsTestTwisterLoop, .cbDestroy = gsTestTwisterDestroy},
 };
 

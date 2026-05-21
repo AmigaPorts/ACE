@@ -163,6 +163,41 @@ static void simpleBufferInitializeCopperList(
 	}
 }
 
+static void simpleBufferDestroyOwnedBitmaps(tSimpleBufferManager *pManager) {
+	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_OWN_FRONT) {
+		if(pManager->pFront) {
+			bitmapDestroy(pManager->pFront);
+		}
+		pManager->ubFlags &= ~SIMPLEBUFFER_FLAG_OWN_FRONT;
+	}
+	if(
+		(pManager->ubFlags & SIMPLEBUFFER_FLAG_OWN_BACK) &&
+		pManager->pBack && pManager->pBack != pManager->pFront
+	) {
+		bitmapDestroy(pManager->pBack);
+	}
+	pManager->ubFlags &= ~SIMPLEBUFFER_FLAG_OWN_BACK;
+}
+
+void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap) {
+	logBlockBegin(
+		"simpleBufferSetBitmap(pManager: %p, pBitMap: %p)",
+		pManager, pBitMap
+	);
+#if defined(ACE_DEBUG)
+	if(!pBitMap) {
+		logWrite("ERR: pBitMap is 0\n");
+		logBlockEnd("simpleBufferSetBitmap()");
+		return;
+	}
+#endif
+	simpleBufferDestroyOwnedBitmaps(pManager);
+	simpleBufferSetFront(pManager, pBitMap);
+	simpleBufferSetBack(pManager, pBitMap);
+	simpleBufferInitializeCopperList(pManager, 1);
+	logBlockEnd("simpleBufferSetBitmap()");
+}
+
 static void simpleBufferSetBack(tSimpleBufferManager *pManager, tBitMap *pBack) {
 #if defined(ACE_DEBUG)
 	if(pManager->pBack && pManager->pBack->Depth != pBack->Depth) {
@@ -248,16 +283,23 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 		pTags, vaTags, TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR
 	);
 	logWrite("Bounds: %ux%u\n", uwBoundWidth, uwBoundHeight);
-	pFront = bitmapCreate(
-		uwBoundWidth, uwBoundHeight, pVPort->ubBpp, ubBitmapFlags
-	);
-	if(!pFront) {
-		logWrite("ERR: Can't alloc buffer bitmap\n");
-		goto fail;
+	pFront = (tBitMap*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_FRONT_BITMAP, 0);
+	if(pFront) {
+		pBack = (tBitMap*)tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_BACK_BITMAP, pFront);
+	}
+	else {
+		pFront = bitmapCreate(
+			uwBoundWidth, uwBoundHeight, pVPort->ubBpp, ubBitmapFlags
+		);
+		if(!pFront) {
+			logWrite("ERR: Can't alloc buffer bitmap\n");
+			goto fail;
+		}
+		pManager->ubFlags |= SIMPLEBUFFER_FLAG_OWN_FRONT;
 	}
 
 	UBYTE isDblBfr = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_IS_DBLBUF, 0);
-	if(isDblBfr) {
+	if(isDblBfr && pBack == pFront) {
 		pBack = bitmapCreate(
 			uwBoundWidth, uwBoundHeight, pVPort->ubBpp, ubBitmapFlags
 		);
@@ -265,6 +307,10 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 			logWrite("ERR: Can't alloc buffer bitmap\n");
 			goto fail;
 		}
+		pManager->ubFlags |= SIMPLEBUFFER_FLAG_OWN_BACK;
+	}
+	else if(isDblBfr && pBack != pFront) {
+		/* Caller supplied distinct back bitmap — not manager-owned. */
 	}
 
 	// Find camera manager, create if not exists
@@ -315,10 +361,13 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	return pManager;
 
 fail:
-	if(pBack && pBack != pFront) {
+	if(
+		(pManager->ubFlags & SIMPLEBUFFER_FLAG_OWN_BACK) &&
+		pBack && pBack != pFront
+	) {
 		bitmapDestroy(pBack);
 	}
-	if(pFront) {
+	if((pManager->ubFlags & SIMPLEBUFFER_FLAG_OWN_FRONT) && pFront) {
 		bitmapDestroy(pFront);
 	}
 	if(pManager) {
@@ -339,10 +388,7 @@ void simpleBufferDestroy(tSimpleBufferManager *pManager) {
 			pManager->sCommon.pVPort->pView->pCopList, pManager->pCopBlock
 		);
 	}
-	if(pManager->pBack != pManager->pFront) {
-		bitmapDestroy(pManager->pBack);
-	}
-	bitmapDestroy(pManager->pFront);
+	simpleBufferDestroyOwnedBitmaps(pManager);
 	memFree(pManager, sizeof(tSimpleBufferManager));
 	logBlockEnd("simpleBufferDestroy()");
 }

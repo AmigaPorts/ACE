@@ -65,9 +65,14 @@ typedef enum tScrollBufferCreateTags {
 	TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK = (TAG_USER|7),
 
 	TAG_SCROLLBUFFER_MARGIN_WIDTH =   (TAG_USER|8),
+
+	TAG_SCROLLBUFFER_FRONT_BITMAP =   (TAG_USER|9),
+	TAG_SCROLLBUFFER_BACK_BITMAP =    (TAG_USER|10),
 } tScrollBufferCreateTags;
 
 #define SCROLLBUFFER_FLAG_COPLIST_RAW 1
+#define SCROLLBUFFER_FLAG_OWN_FRONT   2
+#define SCROLLBUFFER_FLAG_OWN_BACK    4
 
 /* Types */
 
@@ -110,9 +115,20 @@ void scrollBufferDestroy(tScrollBufferManager *pManager);
  */
 void scrollBufferProcess(tScrollBufferManager *pManager);
 
+/**
+ * @brief Returns pixel dimensions of scroll buffer bitmap(s) for a VPort setup.
+ * Use with bitmapGetBufferSize() to allocate reusable CHIP memory.
+ */
+void scrollBufferGetBitmapDimensions(
+	const tVPort *pVPort, UBYTE ubMarginWidth,
+	UWORD uwBoundWidth, UWORD uwBoundHeight,
+	UWORD *puwWidth, UWORD *puwHeight
+);
+
 void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
-	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBfr
+	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBfr,
+	tBitMap *pFront, tBitMap *pBack
 );
 
 /**

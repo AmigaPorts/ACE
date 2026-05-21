@@ -37,7 +37,15 @@ typedef enum tSimpleBufferCreateTags {
 	// instructions, specified in copper instruction count since beginning.
 	TAG_SIMPLEBUFFER_COPLIST_OFFSET = (TAG_USER | 6),
 	TAG_SIMPLEBUFFER_USE_X_SCROLLING = (TAG_USER | 7),
+
+	// Optional pre-allocated bitmaps (e.g. from bitmapCreateFromMem). Manager
+	// will not free them on destroy. If omitted, bitmaps are created internally.
+	TAG_SIMPLEBUFFER_FRONT_BITMAP = (TAG_USER | 8),
+	TAG_SIMPLEBUFFER_BACK_BITMAP =  (TAG_USER | 9),
 } tSimpleBufferCreateTags;
+
+#define SIMPLEBUFFER_FLAG_OWN_FRONT 4
+#define SIMPLEBUFFER_FLAG_OWN_BACK  8
 
 typedef struct _tSimpleBufferManager {
 	tVpManager sCommon;
@@ -76,6 +84,12 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags,	...);
  *  @param pBitMap  New bitmap to be used by manager.
  *
  *  @todo Realloc copper buffer to reflect BPP change.
+ */
+/**
+ * @brief Replaces buffer bitmap(s) with caller-supplied memory.
+ * Destroys previously manager-owned front/back bitmaps. Both front and back
+ * are set to @p pBitMap (use simpleBufferSetFront/SetBack for double buffering).
+ * Reinitializes copperlist for the new buffer geometry.
  */
 void simpleBufferSetBitmap(tSimpleBufferManager *pManager, tBitMap *pBitMap);
 

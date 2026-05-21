@@ -217,6 +217,7 @@ void menuShowTests(void) {
 	menuListSetEntry(s_pMenuList, TEST_STATE_BLIT_SMALL_DEST, MENULIST_ENABLED, "Blits with small dst");
 	menuListSetEntry(s_pMenuList, TEST_STATE_INTERLEAVED, MENULIST_ENABLED, "Interleaved bitmaps");
 	menuListSetEntry(s_pMenuList, TEST_STATE_BUFFER_SCROLL, MENULIST_ENABLED, "Scroll buffer wrap");
+	menuListSetEntry(s_pMenuList, TEST_STATE_BUFFER_REUSE, MENULIST_ENABLED, "Shared buffer reuse");
 	menuListSetEntry(s_pMenuList, TEST_STATE_TWISTER, MENULIST_ENABLED, "Twister");
 	s_ubMenuType = MENU_TESTS;
 

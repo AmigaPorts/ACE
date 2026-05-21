@@ -124,9 +124,11 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 				 pManager->uwCopperOffsetBreak);
 	}
 
+	tBitMap *pFront = (tBitMap*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_FRONT_BITMAP, 0);
+	tBitMap *pBack = (tBitMap*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_BACK_BITMAP, 0);
 	scrollBufferReset(
 		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight,
-		ubBitmapFlags, isDblBuf
+		ubBitmapFlags, isDblBuf, pFront, pBack
 	);
 
 	// Must be before camera? Shouldn't be as there are priorities on manager list
@@ -166,6 +168,22 @@ fail:
 	return 0;
 }
 
+static void scrollBufferDestroyOwnedBitmaps(tScrollBufferManager *pManager) {
+	if(pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_FRONT) {
+		if(pManager->pFront) {
+			bitmapDestroy(pManager->pFront);
+		}
+		pManager->ubFlags &= ~SCROLLBUFFER_FLAG_OWN_FRONT;
+	}
+	if(
+		(pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_BACK) &&
+		pManager->pBack && pManager->pBack != pManager->pFront
+	) {
+		bitmapDestroy(pManager->pBack);
+	}
+	pManager->ubFlags &= ~SCROLLBUFFER_FLAG_OWN_BACK;
+}
+
 void scrollBufferDestroy(tScrollBufferManager *pManager) {
 	logBlockBegin("scrollBufferDestroy(pManager: %p)", pManager);
 
@@ -174,12 +192,7 @@ void scrollBufferDestroy(tScrollBufferManager *pManager) {
 		copBlockDestroy(pManager->sCommon.pVPort->pView->pCopList, pManager->pBreakBlock);
 	}
 
-	if(pManager->pFront && pManager->pFront != pManager->pBack) {
-		bitmapDestroy(pManager->pFront);
-	}
-	if(pManager->pBack) {
-		bitmapDestroy(pManager->pBack);
-	}
+	scrollBufferDestroyOwnedBitmaps(pManager);
 	memFree(pManager, sizeof(tScrollBufferManager));
 
 	logBlockEnd("scrollBufferDestroy()");
@@ -364,9 +377,26 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 	}
 }
 
+void scrollBufferGetBitmapDimensions(
+	const tVPort *pVPort, UBYTE ubMarginWidth,
+	UWORD uwBoundWidth, UWORD uwBoundHeight,
+	UWORD *puwWidth, UWORD *puwHeight
+) {
+	UWORD uwVpWidth = pVPort->uwWidth;
+	UWORD uwVpHeight = pVPort->uwHeight;
+	UWORD uwBmAvailHeight =
+		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
+#if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
+	uwBmAvailHeight = nearestPowerOf2(uwBmAvailHeight);
+#endif
+	*puwWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
+	*puwHeight = uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
+}
+
 void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
-	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBuf
+	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBuf,
+	tBitMap *pFront, tBitMap *pBack
 ) {
 	logBlockBegin(
 		"scrollBufferReset(pManager: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)",
@@ -387,27 +417,50 @@ void scrollBufferReset(
 	pManager->uwBmAvailHeight = nearestPowerOf2(pManager->uwBmAvailHeight);
 #endif
 
-	// Destroy old buffer bitmap
-	if(pManager->pFront && pManager->pFront != pManager->pBack) {
-		bitmapDestroy(pManager->pFront);
-	}
-	if(pManager->pBack) {
-		bitmapDestroy(pManager->pBack);
-	}
+	scrollBufferDestroyOwnedBitmaps(pManager);
 
-	// Create new buffer bitmap
 	UWORD uwCalcWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
 	UWORD uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
-	pManager->pBack = bitmapCreate(
-		uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
-	);
-	if(isDblBuf) {
+
+	if(pBack) {
+		pManager->pBack = pBack;
+	}
+	else if(pFront) {
+		pManager->pBack = pFront;
+	}
+	else {
+		pManager->pBack = bitmapCreate(
+			uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
+		);
+		pManager->ubFlags |= SCROLLBUFFER_FLAG_OWN_BACK;
+	}
+
+	if(pFront) {
+		pManager->pFront = pFront;
+	}
+	else if(isDblBuf) {
 		pManager->pFront = bitmapCreate(
 			uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
 		);
+		pManager->ubFlags |= SCROLLBUFFER_FLAG_OWN_FRONT;
 	}
 	else {
 		pManager->pFront = pManager->pBack;
+	}
+
+	if(isDblBuf && pManager->pFront == pManager->pBack) {
+		if(pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_BACK) {
+			pManager->pFront = bitmapCreate(
+				uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
+			);
+			pManager->ubFlags |= SCROLLBUFFER_FLAG_OWN_FRONT;
+		}
+		else {
+			pManager->pBack = bitmapCreate(
+				uwCalcWidth, uwCalcHeight, pManager->sCommon.pVPort->ubBpp, ubBitmapFlags
+			);
+			pManager->ubFlags |= SCROLLBUFFER_FLAG_OWN_BACK;
+		}
 	}
 	// Base modulo is row stride minus visible fetch width.
 	// Extra prefetch words are applied per-mode below.
