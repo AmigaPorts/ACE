@@ -34,58 +34,9 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength) {
 	fileRead(pFile, &ubFirst, sizeof(UBYTE));
 
 	if(ubFirst > 1) {
-		/*
-		 * Legacy v1 .plt layout:
-		 * - byte 0: color count
-		 * - payload: either OCS UWORD entries (2 bytes each) or
-		 *            AGA entries (4 bytes each: A,R,G,B)
-		 *
-		 * Detect payload format from file size so both variants load correctly.
-		 */
-		LONG lFileSize = fileGetSize(pFile);
-		ULONG ulRemaining = lFileSize > 1 ? (ULONG)(lFileSize - 1) : 0;
-		/*
-		 * Some legacy writers stored "max index" in byte 0 (e.g. 0xFF => 256 colors)
-		 * while others stored a direct count. Resolve by matching payload size.
-		 */
-		UWORD uwCountDirect = ubFirst;
-		UWORD uwCountIndex = (UWORD)ubFirst + 1;
-		UWORD uwNumInFile = uwCountDirect;
-		UBYTE isAga = 0;
-
-		if(ulRemaining == (ULONG)uwCountIndex * sizeof(ULONG)) {
-			uwNumInFile = uwCountIndex;
-			isAga = 1;
-		}
-		else if(ulRemaining == (ULONG)uwCountDirect * sizeof(ULONG)) {
-			uwNumInFile = uwCountDirect;
-			isAga = 1;
-		}
-		else if(ulRemaining == (ULONG)uwCountIndex * sizeof(UWORD)) {
-			uwNumInFile = uwCountIndex;
-			isAga = 0;
-		}
-		else {
-			/* Default to direct-count OCS for malformed/unknown legacy payloads. */
-			uwNumInFile = uwCountDirect;
-			isAga = 0;
-		}
-
-		UWORD uwColorsRead = MIN(uwNumInFile, uwMaxLength);
-		if(isAga) {
-			fileRead(pFile, pPalette, sizeof(ULONG) * uwColorsRead);
-			logWrite(
-				".plt v1 legacy AGA palette detected, file colors: %hu, reading: %hu\n",
-				uwNumInFile, uwColorsRead
-			);
-		}
-		else {
-			fileRead(pFile, pPalette, sizeof(UWORD) * uwColorsRead);
-			logWrite(
-				".plt v1 legacy OCS palette detected, file colors: %hu, reading: %hu\n",
-				uwNumInFile, uwColorsRead
-			);
-		}
+		logWrite(
+			"ERR: Legacy .plt (v1) is not supported; re-export with palette_conv to v2.\n"
+		);
 		fileClose(pFile);
 		logBlockEnd("paletteLoadFromFd()");
 		return;

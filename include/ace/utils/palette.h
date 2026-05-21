@@ -19,9 +19,8 @@ extern "C" {
 /**
  * @brief Loads palette from supplied .plt file to given address.
  *
- * Supports **v2**: first byte **0** (ECS/OCS packed) or **1** (AGA), then big-endian UWORD count.
- * Also supports legacy **v1** `.plt` (first byte ≥ 2); payload is auto-detected
- * as OCS (2 bytes/color) or AGA (4 bytes/color) from file size.
+ * Supports **v2** only: first byte **0** (ECS/OCS packed) or **1** (AGA), then big-endian UWORD count.
+ * Legacy **v1** `.plt` (first byte ≥ 2) is rejected with an error log.
  * For v2 AGA (first byte **1**), @p pPalette must point at storage suitable for ULONG-sized colors
  * (same layout as an AGA viewport palette).
  *

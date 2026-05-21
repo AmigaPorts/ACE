@@ -379,7 +379,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 void scrollBufferGetBitmapDimensions(
 	const tVPort *pVPort, UBYTE ubMarginWidth,
-	UWORD uwBoundWidth, UWORD uwBoundHeight,
+	UWORD uwBoundWidth, UNUSED_ARG UWORD uwBoundHeight,
 	UWORD *puwWidth, UWORD *puwHeight
 ) {
 	UWORD uwVpWidth = pVPort->uwWidth;
