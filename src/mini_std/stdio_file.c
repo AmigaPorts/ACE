@@ -36,19 +36,20 @@ FILE *fopen(const char *restrict szFileName, const char *restrict szMode) {
 
 size_t fread(void *restrict pBuffer, size_t Size, size_t Count, FILE *restrict pStream) {
 	// http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_3._guide/node01A0.html
-	LONG lBytesRead;
 	if(Size == 0 || Count == 0) return 0;
-	lBytesRead = Read((BPTR)pStream, pBuffer, Size * Count);
+	if(Count > SIZE_MAX / Size) return 0;
+	// Read() returns -1 on error (IoErr() has details)
+	LONG lBytesRead = Read((BPTR)pStream, pBuffer, Size * Count);
 	if(lBytesRead <= 0) return 0;
 	return (size_t)lBytesRead / Size;
 }
 
 size_t fwrite(const void *restrict pBuffer, size_t Size, size_t Count, FILE *restrict pStream) {
 	// http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_3._guide/node01D1.html
-	LONG lBytesWritten;
 	if(Size == 0 || Count == 0) return 0;
-	lBytesWritten = Write((BPTR)pStream, pBuffer, Size * Count);
-	if(lBytesWritten <= 0) return 0;
+	if(Count > SIZE_MAX / Size) return 0;
+	LONG lBytesWritten = Write((BPTR)pStream, (void *)pBuffer, Size * Count);
+	if(lBytesWritten < 0) return 0;
 	return (size_t)lBytesWritten / Size;
 }
 
