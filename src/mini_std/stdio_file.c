@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ace/types.h>
 #include <proto/dos.h>
+#include <stdint.h>
 
 // Some things are implemented from scratch, some are based on:
 // https://github.com/deplinenoise/amiga-sdk/blob/master/netinclude/stdio.h
