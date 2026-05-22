@@ -194,7 +194,7 @@ void tileBufferProcess(tTileBufferManager *pManager);
 void tileBufferReset(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
 	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak,
-	tBitMap *pFront, tBitMap *pBack
+	tBitMap *pCustomFront, tBitMap *pCustomBack
 );
 
 /**

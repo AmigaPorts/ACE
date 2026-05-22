@@ -47,12 +47,6 @@ ULONG bitmapGetBufferSize(
 	UWORD uwBytesPerRow = uwWidth / 8;
 	ULONG ulPlaneBytes = (ULONG)uwBytesPerRow * uwHeight;
 
-	if(ubFlags & BMF_INTERLEAVED) {
-		return ulPlaneBytes * ubDepth;
-	}
-	if(ubFlags & BMF_CONTIGUOUS) {
-		return ulPlaneBytes * ubDepth;
-	}
 	return ulPlaneBytes * ubDepth;
 }
 
@@ -77,19 +71,12 @@ static void bitmapInitFromMem(
 			pBitMap->Planes[i] = pBitMap->Planes[i - 1] + uwBytesPerRow;
 		}
 	}
-	else if(ubFlags & BMF_CONTIGUOUS) {
-		ULONG ulPlaneSize;
+	else {
+		ULONG ulPlaneSize = (ULONG)uwBytesPerRow * uwHeight;
 		pBitMap->Flags |= BMF_CONTIGUOUS;
-		ulPlaneSize = (ULONG)uwBytesPerRow * uwHeight;
 		pBitMap->Planes[0] = (PLANEPTR)pMem;
 		for(i = 1; i < ubDepth; ++i) {
 			pBitMap->Planes[i] = &pBitMap->Planes[i - 1][ulPlaneSize];
-		}
-	}
-	else {
-		ULONG ulPlaneSize = (ULONG)uwBytesPerRow * uwHeight;
-		for(i = 0; i != ubDepth; ++i) {
-			pBitMap->Planes[i] = (PLANEPTR)pMem + i * ulPlaneSize;
 		}
 	}
 }

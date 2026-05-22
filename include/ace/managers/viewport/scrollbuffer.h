@@ -125,13 +125,13 @@ void scrollBufferProcess(tScrollBufferManager *pManager);
 void scrollBufferGetBitmapDimensions(
 	const tVPort *pVPort, UBYTE ubMarginWidth,
 	UWORD uwBoundWidth, UWORD uwBoundHeight,
-	UWORD *puwWidth, UWORD *puwHeight
+	UWORD *pWidth, UWORD *pHeight
 );
 
 void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
 	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBfr,
-	tBitMap *pFront, tBitMap *pBack
+	tBitMap *pCustomFront, tBitMap *pCustomBack
 );
 
 /**
