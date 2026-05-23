@@ -34,13 +34,9 @@ void paletteLoadFromFd(tFile *pFile, UWORD *pPalette, UWORD uwMaxLength) {
 	fileRead(pFile, &ubFirst, sizeof(UBYTE));
 
 	if(ubFirst > 1) {
-#ifdef ACE_DEBUG
 		logWrite(
-			"ERR: Unsupported legacy .plt (v1); first byte 0x%02x. "
-			"Reconvert the asset with palette_conv.\n",
-			ubFirst
+			"ERR: Legacy .plt (v1) is not supported; re-export with palette_conv to v2.\n"
 		);
-#endif
 		fileClose(pFile);
 		logBlockEnd("paletteLoadFromFd()");
 		return;

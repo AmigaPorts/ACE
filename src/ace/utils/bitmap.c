@@ -41,6 +41,89 @@ static void bitmapFreeChipAligned(void *pMem, ULONG ulSize) {
 
 /* Functions */
 
+ULONG bitmapGetBufferSize(
+	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
+) {
+	UWORD uwBytesPerRow = uwWidth / 8;
+	ULONG ulPlaneBytes = (ULONG)uwBytesPerRow * uwHeight;
+
+	return ulPlaneBytes * ubDepth;
+}
+
+static void bitmapInitFromMem(
+	tBitMap *pBitMap, void *pMem,
+	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
+) {
+	UBYTE i;
+	UWORD uwBytesPerRow = uwWidth / 8;
+
+	pBitMap->BytesPerRow = uwBytesPerRow;
+	pBitMap->Rows = uwHeight;
+	pBitMap->Depth = ubDepth;
+	pBitMap->Flags = BMF_EXTERNAL;
+	pBitMap->pad = 0;
+
+	if(ubFlags & BMF_INTERLEAVED) {
+		pBitMap->Flags |= BMF_INTERLEAVED;
+		pBitMap->BytesPerRow *= ubDepth;
+		pBitMap->Planes[0] = (PLANEPTR)pMem;
+		for(i = 1; i != ubDepth; ++i) {
+			pBitMap->Planes[i] = pBitMap->Planes[i - 1] + uwBytesPerRow;
+		}
+	}
+	else {
+		ULONG ulPlaneSize = (ULONG)uwBytesPerRow * uwHeight;
+		pBitMap->Flags |= BMF_CONTIGUOUS;
+		pBitMap->Planes[0] = (PLANEPTR)pMem;
+		for(i = 1; i < ubDepth; ++i) {
+			pBitMap->Planes[i] = &pBitMap->Planes[i - 1][ulPlaneSize];
+		}
+	}
+}
+
+tBitMap *bitmapCreateFromMem(
+	void *pMem, UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
+) {
+#ifdef AMIGA
+	tBitMap *pBitMap;
+
+	systemUse();
+	logBlockBegin(
+		"bitmapCreateFromMem(pMem: %p, uwWidth: %hu, uwHeight: %hu, ubDepth: %hhu, ubFlags: %hhu)",
+		pMem, uwWidth, uwHeight, ubDepth, ubFlags
+	);
+
+	if(!pMem) {
+		logWrite("ERR: pMem is 0\n");
+		goto fail;
+	}
+	if(uwWidth == 0 || uwHeight == 0 || (uwWidth & 0xF) != 0) {
+		logWrite("ERR: invalid bitmap dimensions\n");
+		goto fail;
+	}
+
+	pBitMap = (tBitMap*)memAllocFastClear(sizeof(tBitMap));
+	bitmapInitFromMem(pBitMap, pMem, uwWidth, uwHeight, ubDepth, ubFlags);
+	if(ubFlags & BMF_CLEAR) {
+		memset(
+			pMem, 0,
+			bitmapGetBufferSize(uwWidth, uwHeight, ubDepth, ubFlags)
+		);
+	}
+
+	logBlockEnd("bitmapCreateFromMem()");
+	systemUnuse();
+	return pBitMap;
+
+fail:
+	logBlockEnd("bitmapCreateFromMem()");
+	systemUnuse();
+	return 0;
+#else
+	return 0;
+#endif // AMIGA
+}
+
 tBitMap *bitmapCreate(
 	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
 ) {
@@ -358,6 +441,12 @@ void bitmapDestroy(tBitMap *pBitMap) {
 		blitWait();
 #endif
 		systemUse();
+		if(pBitMap->Flags & BMF_EXTERNAL) {
+			memFree(pBitMap, sizeof(tBitMap));
+			systemUnuse();
+			logBlockEnd("bitmapDestroy()");
+			return;
+		}
 		if(bitmapIsInterleaved(pBitMap)) {
 			if(bitmapIsChip(pBitMap)) {
 				bitmapFreeChipAligned(

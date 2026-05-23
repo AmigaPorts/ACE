@@ -68,6 +68,8 @@ void menuListMove(tMenuList *pList, BYTE bMoveDir);
 
 void menuListResetCount(tMenuList *pList, UBYTE ubCount);
 
+UWORD menuListGetLineStep(const tMenuList *pList);
+
 //---------------------------------------------------------------------- INLINES
 
 //----------------------------------------------------------------------- MACROS

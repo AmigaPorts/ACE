@@ -159,7 +159,16 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 	pManager->ulMaxTilesetSize = tagGet(
 		pTags, vaTags, TAG_TILEBUFFER_MAX_TILESET_SIZE, TILEBUFFER_MAX_TILESET_SIZE
 	);
-	tileBufferReset(pManager, uwTileX, uwTileY, ubBitmapFlags, isDblBuf, uwCoplistOffStart, uwCoplistOffBreak);
+	tBitMap *pCustomFront = (tBitMap*)tagGet(
+		pTags, vaTags, TAG_TILEBUFFER_FRONT_BITMAP, 0
+	);
+	tBitMap *pCustomBack = (tBitMap*)tagGet(
+		pTags, vaTags, TAG_TILEBUFFER_BACK_BITMAP, 0
+	);
+	tileBufferReset(
+		pManager, uwTileX, uwTileY, ubBitmapFlags, isDblBuf,
+		uwCoplistOffStart, uwCoplistOffBreak, pCustomFront, pCustomBack
+	);
 
 	pManager->ubQueueSize = tagGet(
 		pTags, vaTags, TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, 0
@@ -237,7 +246,8 @@ void tileBufferDestroy(tTileBufferManager *pManager) {
 
 void tileBufferReset(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
-	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak
+	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak,
+	tBitMap *pCustomFront, tBitMap *pCustomBack
 ) {
 	logBlockBegin(
 		"tileBufferReset(pManager: %p, uwTileX: %hu, uwTileY: %hu, ubBitmapFlags: %hhu, isDblBuf: %hhu)",
@@ -289,12 +299,16 @@ void tileBufferReset(
 			TAG_SCROLLBUFFER_BITMAP_FLAGS, ubBitmapFlags,
 			TAG_SCROLLBUFFER_COPLIST_OFFSET_START, uwCoplistOffStart,
 			TAG_SCROLLBUFFER_COPLIST_OFFSET_BREAK, uwCoplistOffBreak,
-		TAG_DONE);
+			TAG_SCROLLBUFFER_FRONT_BITMAP, pCustomFront,
+			TAG_SCROLLBUFFER_BACK_BITMAP, pCustomBack,
+			TAG_DONE
+		);
 	}
 	else {
 		scrollBufferReset(
 			pManager->pScroll, pManager->ubTileSize,
-			uwTileX << ubTileShift, uwTileY << ubTileShift, ubBitmapFlags, isDblBuf
+			uwTileX << ubTileShift, uwTileY << ubTileShift, ubBitmapFlags, isDblBuf,
+			pCustomFront, pCustomBack
 		);
 	}
 

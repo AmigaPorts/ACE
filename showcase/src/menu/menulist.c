@@ -6,6 +6,18 @@
 #include <ace/managers/log.h>
 #include <ace/utils/font.h>
 
+/* Cookie + shadow fonts need more than uwHeight pixels per line. */
+#define MENU_LIST_MIN_LINE_STEP 10
+
+static UWORD menuListLineStep(const tMenuList *pList) {
+	UWORD uwStep = pList->pFont->uwHeight + pList->ubSpacing;
+	return uwStep < MENU_LIST_MIN_LINE_STEP ? MENU_LIST_MIN_LINE_STEP : uwStep;
+}
+
+UWORD menuListGetLineStep(const tMenuList *pList) {
+	return menuListLineStep(pList);
+}
+
 tMenuList *menuListCreate(
 	UWORD uwX, UWORD uwY, UBYTE ubMaxCount, UBYTE ubSpacing,
 	tFont *pFont, UBYTE ubFontFlags,
@@ -36,7 +48,7 @@ tMenuList *menuListCreate(
 
 	for(UBYTE i = 0; i < ubMaxCount; ++i) {
 		pList->pEntries[i].pBitMap = fontCreateTextBitMap(
-			192, pList->pFont->uwHeight
+			256, pList->pFont->uwHeight + 4
 		);
 	}
 
@@ -71,7 +83,7 @@ void menuListDrawPos(tMenuList *pList, UBYTE ubIdx) {
 	}
 
 	uwX = pList->sCoord.uwX;
-	uwY = pList->sCoord.uwY + ubIdx*(pList->ubSpacing+pList->pFont->uwHeight);
+	uwY = pList->sCoord.uwY + ubIdx * menuListLineStep(pList);
 
 	// Color
 	if(pList->pEntries[ubIdx].ubDisplayMode == MENULIST_DISABLED) {

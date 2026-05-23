@@ -86,6 +86,9 @@ typedef enum tTileBufferCreateTags {
 	 * Optional, limits the tile lookup table size.
 	 */
 	TAG_TILEBUFFER_MAX_TILESET_SIZE = (TAG_USER | 12),
+
+	TAG_TILEBUFFER_FRONT_BITMAP = (TAG_USER | 13),
+	TAG_TILEBUFFER_BACK_BITMAP =  (TAG_USER | 14),
 } tTileBufferCreateTags;
 
 /* types */
@@ -190,7 +193,8 @@ void tileBufferProcess(tTileBufferManager *pManager);
 
 void tileBufferReset(
 	tTileBufferManager *pManager, UWORD uwTileX, UWORD uwTileY,
-	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak
+	UBYTE ubBitmapFlags, UBYTE isDblBuf, UWORD uwCoplistOffStart, UWORD uwCoplistOffBreak,
+	tBitMap *pCustomFront, tBitMap *pCustomBack
 );
 
 /**
