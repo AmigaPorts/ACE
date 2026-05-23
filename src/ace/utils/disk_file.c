@@ -105,7 +105,7 @@ DISKFILE_PRIVATE ULONG diskFileRead(void *pData, void *pDest, ULONG ulSize) {
 		if(!pDiskFileData->isUninterrupted) {
 			fileAccessEnable();
 		}
-		ULONG ulReadPartSize = fread(pDestBytes, ulSize, 1, pDiskFileData->pFileHandle);
+		ULONG ulReadPartSize = fread(pDestBytes, 1, ulSize, pDiskFileData->pFileHandle);
 		pDestBytes += ulReadPartSize;
 		ulReadCount += ulReadPartSize;
 		ulSize -= ulReadPartSize;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ace/types.h>
 #include <proto/dos.h>
+#include <stdint.h>
 
 // Some things are implemented from scratch, some are based on:
 // https://github.com/deplinenoise/amiga-sdk/blob/master/netinclude/stdio.h
@@ -36,25 +37,41 @@ FILE *fopen(const char *restrict szFileName, const char *restrict szMode) {
 
 size_t fread(void *restrict pBuffer, size_t Size, size_t Count, FILE *restrict pStream) {
 	// http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_3._guide/node01A0.html
-	unsigned char *pByteBuffer = (unsigned char *)pBuffer;
-	size_t BytesRead = 0;
-	while(Count--) {
-		// FIXME: handle 0/negative vals
-		BytesRead += Read((BPTR)pStream, pByteBuffer, Size);
-		pByteBuffer += Size;
+	if(Size == 0 || Count == 0) {
+		return 0;
 	}
-	return BytesRead;
+
+	if(Count > SIZE_MAX / Size) {
+		return 0;
+	}
+
+	// Read() returns -1 on error (IoErr() has details)
+	LONG lBytesRead = Read((BPTR)pStream, pBuffer, Size * Count);
+
+	if(lBytesRead <= 0) {
+		return 0;
+	}
+
+	return (size_t)lBytesRead / Size;
 }
 
 size_t fwrite(const void *restrict pBuffer, size_t Size, size_t Count, FILE *restrict pStream) {
 	// http://amigadev.elowar.com/read/ADCD_2.1/Includes_and_Autodocs_3._guide/node01D1.html
-	unsigned char *pByteBuffer = (unsigned char *)pBuffer;
-	size_t BytesWritten = 0;
-	while(Count--) {
-		BytesWritten += Write((BPTR)pStream, pByteBuffer, Size);
-		pByteBuffer += Size;
+	if(Size == 0 || Count == 0) {
+		return 0;
 	}
-	return BytesWritten;
+
+	if(Count > SIZE_MAX / Size) {
+		return 0;
+	}
+
+	LONG lBytesWritten = Write((BPTR)pStream, (void *)pBuffer, Size * Count);
+
+	if(lBytesWritten < 0) {
+		return 0;
+	}
+
+	return (size_t)lBytesWritten / Size;
 }
 
 int fclose(FILE *pStream) {
