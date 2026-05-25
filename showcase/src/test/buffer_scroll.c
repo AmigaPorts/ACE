@@ -239,16 +239,8 @@ void gsTestBufferScrollLoop(void) {
 
 	cameraMoveBy(s_pCamera, wDx, wDy);
 	viewProcessManagers(s_pView);
-	/* copProcessBlocks() swaps buffers — only when copper changed (see copCreate) */
-	if(
-		s_eCurrentMode == MODE_SCROLL_LORES || s_eCurrentMode == MODE_SCROLL_HIRES ||
-		wDx || wDy
-	) {
-		copProcessBlocks();
-	}
-	if(s_pVPort) {
-		vPortWaitForEnd(s_pVPort);
-	}
+	copProcessBlocks();
+	vPortWaitForEnd(s_pVPort);
 }
 
 void gsTestBufferScrollDestroy(void) {

@@ -153,7 +153,8 @@ fail:
 }
 
 static void scrollBufferDestroyOwnedBitmaps(tScrollBufferManager *pManager) {
-	if(pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_FRONT) {
+	UBYTE isOwnFront = pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_FRONT;
+	if(isOwnFront) {
 		if(pManager->pFront) {
 			bitmapDestroy(pManager->pFront);
 		}
@@ -161,7 +162,7 @@ static void scrollBufferDestroyOwnedBitmaps(tScrollBufferManager *pManager) {
 	}
 	if(
 		(pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_BACK) &&
-		pManager->pBack && pManager->pBack != pManager->pFront
+		pManager->pBack && (!isOwnFront || pManager->pBack != pManager->pFront)
 	) {
 		bitmapDestroy(pManager->pBack);
 	}
