@@ -80,16 +80,32 @@ static void fillBfr(tBitMap *pBfr, UWORD uwWidth, UWORD uwHeight) {
 	blitRect(pBfr,       0,        0,       1, uwHeight, 6);
 	blitRect(pBfr, uwWidth,        0,       1, uwHeight, 6);
 
-	drawModeInfo(pBfr, 50, 50);
+	/* Keep menu text clear of the y=100 ruler grid line */
+	drawModeInfo(pBfr, 50, 30);
 	logBlockEnd("fillBfr()");
 }
 
-static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
-	viewLoad(0);
-	systemUse();
-	if(s_pView->pFirstVPort) {
-		vPortDestroy(s_pView->pFirstVPort);
+static void bufferScrollReloadDisplay(void) {
+	/* viewLoad while system is still held — OS must not run between setup and DMA */
+	viewLoad(s_pView);
+	viewProcessManagers(s_pView);
+	/* viewLoad already ran copProcessBlocks once — run again so both cop bfrs match */
+	copProcessBlocks();
+	systemUnuse();
+}
+
+static void bufferScrollDestroyVPort(void) {
+	if(!s_pView->pFirstVPort) {
+		return;
 	}
+	viewLoad(0);
+	vPortDestroy(s_pView->pFirstVPort);
+	s_pVPort = 0;
+}
+
+static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
+	systemUse();
+	bufferScrollDestroyVPort();
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
@@ -107,17 +123,11 @@ static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
 	s_pCamera = s_pBfr->pCamera;
 
 	fillBfr(s_pBfr->pBack, uwWidth, uwHeight);
-
-	viewLoad(s_pView);
-	systemUnuse();
 }
 
 static void initScrollBuffer(UBYTE isHires) {
-	viewLoad(0);
 	systemUse();
-	if(s_pView->pFirstVPort) {
-		vPortDestroy(s_pView->pFirstVPort);
-	}
+	bufferScrollDestroyVPort();
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
@@ -156,10 +166,7 @@ static void initScrollBuffer(UBYTE isHires) {
 
 	blitRect(s_pBfr->pBack, 16, 16, 32, 32, 5);
 
-	drawModeInfo(s_pBfr->pBack, 50, 50);
-
-	viewLoad(s_pView);
-	systemUnuse();
+	drawModeInfo(s_pBfr->pBack, 50, 30);
 }
 
 static void changeMode(tMode eMode) {
@@ -180,20 +187,21 @@ static void changeMode(tMode eMode) {
 		default:
 			break;
 	}
+	bufferScrollReloadDisplay();
 }
 
 void gsTestBufferScrollCreate(void) {
 	logBlockBegin("gsTestBufferScrollCreate()");
 
 	s_pView = viewCreate(0,
+		TAG_VIEW_GLOBAL_HRES, 0,
 	TAG_DONE);
 
-	s_pFont = fontCreateFromPath("data/silkscreen.fnt");
+	s_pFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 	s_eCurrentMode = MODE_SIMPLE_LORES;
 	changeMode(s_eCurrentMode);
 	logBlockEnd("gsTestBufferScrollCreate()");
-	systemUnuse();
 }
 
 void gsTestBufferScrollLoop(void) {
@@ -231,17 +239,29 @@ void gsTestBufferScrollLoop(void) {
 
 	cameraMoveBy(s_pCamera, wDx, wDy);
 	viewProcessManagers(s_pView);
-	copProcessBlocks();
-	vPortWaitForEnd(s_pVPort);
+	/* copProcessBlocks() swaps buffers — only when copper changed (see copCreate) */
+	if(
+		s_eCurrentMode == MODE_SCROLL_LORES || s_eCurrentMode == MODE_SCROLL_HIRES ||
+		wDx || wDy
+	) {
+		copProcessBlocks();
+	}
+	if(s_pVPort) {
+		vPortWaitForEnd(s_pVPort);
+	}
 }
 
 void gsTestBufferScrollDestroy(void) {
 	logBlockBegin("gsTestBufferScrollDestroy()");
 	systemUse();
+	viewLoad(0);
 	viewDestroy(s_pView);
 
 	fontDestroy(s_pFont);
 	fontDestroyTextBitMap(s_pTextBitMap);
 
 	logBlockEnd("gsTestBufferScrollDestroy()");
+	systemUnuse();
 }
+
+ 

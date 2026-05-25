@@ -21,7 +21,24 @@ static tBitMap *s_pRefBitmap;
 static tBitMap *s_pDstBitmap;
 UBYTE ubFrameIdx;
 
+static void blitSmallDestDrawFrame(void) {
+	blitRect(
+		s_pTestBlitBfr->pBack, 0, 0,
+		s_pTestBlitBfr->uBfrBounds.uwX,
+		s_pTestBlitBfr->uBfrBounds.uwY,
+		0
+	);
+	blitCopy(
+		s_pRefBitmap, ubFrameIdx, ubFrameIdx * 32,
+		s_pDstBitmap, 0, 0, 32, 32, 0xCA
+	);
+	blitCopyAligned(
+		s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBack, 16, 16, 32, 32
+	);
+}
+
 void prepareRefBitmap(void) {
+	// s_pRefBitmap = bitmapCreateFromPath("data/blitToSmall.bm");
 	UBYTE ubBlockWidth = 32;
 	UBYTE ubBlockHeight = 32;
 	UBYTE ubImageCount = 16;
@@ -57,6 +74,7 @@ void gsTestBlitSmallDestCreate(void) {
 	s_pDstBitmap = bitmapCreate(32, 32, SHOWCASE_BPP, 0);
 	prepareRefBitmap();
 	ubFrameIdx = 0;
+	blitSmallDestDrawFrame();
 
 	// Display view with its viewports
 	viewLoad(s_pTestBlitView);
@@ -79,14 +97,7 @@ void gsTestBlitSmallDestLoop(void) {
 
 	if(bUpdate && ubFrameIdx + bUpdate > -1 && ubFrameIdx + bUpdate < 16) {
 		ubFrameIdx += bUpdate;
-		blitRect(
-			s_pTestBlitBfr->pBack, 0, 0,
-			s_pTestBlitBfr->uBfrBounds.uwX,
-			s_pTestBlitBfr->uBfrBounds.uwY,
-			0
-		);
-		blitCopy(s_pRefBitmap, ubFrameIdx, ubFrameIdx*32, s_pDstBitmap, 0, 0, 32, 32, 0xCA);
-		blitCopyAligned(s_pDstBitmap, 0, 0, s_pTestBlitBfr->pBack, 16, 16, 32, 32);
+		blitSmallDestDrawFrame();
 	}
 
 	vPortWaitForEnd(s_pTestBlitVPort);

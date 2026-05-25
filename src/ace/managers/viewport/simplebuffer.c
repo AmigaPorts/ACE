@@ -69,6 +69,7 @@ static void simpleBufferInitializeCopperList(
 	// Update (rewrite) copperlist
 	// TODO this could be unified with copBlock being set with copSetMove too
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
+	UBYTE ubHiresCop = (pVPort->eFlags & VP_FLAG_HIRES) ? 1 : 0;
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_COPLIST_RAW) {
 		// Since simpleBufferProcess only updates bitplane ptrs and shift,
 		// copperlist must be shaped here.
@@ -103,6 +104,12 @@ static void simpleBufferInitializeCopperList(
 	else {
 		tCopBlock *pBlock = pManager->pCopBlock;
 		pBlock->uwCurrCount = 0; // Rewind to beginning
+		if(ubHiresCop) {
+			copMove(
+				pCopList, pBlock, &g_pCustom->bplcon0,
+				(pVPort->ubBpp << 12) | BV(9) | BV(15)
+			);
+		}
 		copMove(pCopList, pBlock, &g_pCustom->ddfstop, uwDDfStop); // Data fetch
 		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, uwDDfStrt);
 		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, uwModulo); // Bitplane modulo
@@ -282,10 +289,12 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 
 	pCopList = pVPort->pView->pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
+		UBYTE ubHiresCop = (pVPort->eFlags & VP_FLAG_HIRES) ? 1 : 0;
 		// CopBlock contains: bitplanes + shiftX
 		pManager->pCopBlock = copBlockCreate(
 			// WAIT is already in copBlock so 1 instruction less
-			pCopList, simpleBufferGetRawCopperlistInstructionCount(pVPort->ubBpp) - 1,
+			pCopList,
+			simpleBufferGetRawCopperlistInstructionCount(pVPort->ubBpp) - 1 + ubHiresCop,
 			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
 			s_pCopperWaitXByBitplanes[pVPort->ubBpp],
@@ -378,7 +387,10 @@ void simpleBufferProcess(tSimpleBufferManager *pManager) {
 		// copperlist needs refreshing.
 		ULONG ulBplOffs;
 		UWORD uwShift = simpleBufferCalcBplOffsAndShift(pManager, &ulBplOffs);
-		pManager->pCopBlock->uwCurrCount = 4; // Rewind to shift cmd pos
+		pManager->pCopBlock->uwCurrCount = 4;
+		if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
+			++pManager->pCopBlock->uwCurrCount;
+		}
 		copMove(pCopList, pManager->pCopBlock, &g_pCustom->bplcon1, uwShift);
 		for(UBYTE i = 0; i < pManager->pBack->Depth; ++i) {
 			ULONG ulPlaneAddr = ((ULONG)pManager->pBack->Planes[i]) + ulBplOffs;
