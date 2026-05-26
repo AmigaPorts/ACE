@@ -18,6 +18,23 @@ extern "C" {
 #define REGPTR volatile * const
 #define HARDWARE_SPRITE_CHANNEL_COUNT 8
 
+#define SERDATRB_OVR  15
+#define SERDATRB_RBF  14
+#define SERDATRB_TBE  13
+#define SERDATRB_TSRE 12
+#define SERDATRB_RXD  11
+
+#define SERDATRF_OVR  BV(SERDATRB_OVR)
+#define SERDATRF_RBF  BV(SERDATRB_RBF)
+#define SERDATRF_TBE  BV(SERDATRB_TBE)
+#define SERDATRF_TSRE BV(SERDATRB_TSRE)
+#define SERDATRF_RXD  BV(SERDATRB_RXD)
+
+// Amiga RKM: Recommended baud range is 110-292,000
+#define SERPER_PAL(baud) ((3546895 / baud) - 1)
+#define SERPER_NTSC(baud) ((3579545 / baud) - 1)
+#define SERPER(baud) (systemIsPal() ? SERPER_PAL(baud) : SERPER_NTSC(baud))
+
 typedef struct Custom tCustom;
 
 /**
