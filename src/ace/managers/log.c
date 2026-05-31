@@ -41,7 +41,7 @@ static void printSerial(const char *szMsg) {
 	const char *pChar = szMsg;
 	while(*pChar) {
 		while((g_pCustom->serdatr & SERDATRF_TBE) == 0) continue;
-		g_pCustom->serdat = *(pChar++);
+		g_pCustom->serdat = ((UWORD)1 << 8)|*(pChar++);
 	}
 }
 #else
