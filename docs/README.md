@@ -15,7 +15,6 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [ACE in a nutshell](programming/ace_in_a_nutshell.md)
 1. [Hello World example](programming/hello_world.md)
 1. [View & viewports explained](programming/view.md)
-1. [AGA support](programming/aga.md)
 1. [Blitter](programming/blit.md)
 1. [Moving blitted objects](programming/moving_blits.md)
 1. [Loading images and displaying background](programming/loading_images.md)
@@ -24,6 +23,8 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. [Using BOBs (Blitter OBjects)](programming/using_bobs.md)
 1. [Working with Fonts](programming/fonts.md)
 1. [Palettes](programming/palette.md)
+1. [Logging](programming/logging.md)
+1. [AGA support](programming/aga.md)
 1. [Fixed-point math](programming/fixed_point.md)
 1. Optimizing blits
 1. [Working with Audio](programming/audio.md)
@@ -43,11 +44,11 @@ TBD, will be doxy-generated or done as wiki pages, idk yet.
 
 ## Conversion tools
 
-- [.plt v2 / palette changes (overview)](palette-plt-v2-changes.md)
 - [Palettes](tools/palette_conv.md)
 - [Bitmaps](tools/bitmap_conv.md)
 - [Fonts](tools/font_conv.md)
 - [Audio](tools/audio_conv.md)
+- [.plt v2 / palette changes (overview)](palette-plt-v2-changes.md)
 
 ## Contributing
 

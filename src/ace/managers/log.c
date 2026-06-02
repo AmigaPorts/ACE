@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ace/macros.h>
 #include <ace/managers/system.h>
+#include <ace/managers/misc_resource.h>
 #include <ace/utils/disk_file.h>
 #ifdef ACE_DEBUG
 
@@ -19,20 +20,32 @@ static char s_szMsg[1024];
 
 	#if defined(BARTMAN_GCC)
 long (*bartmanLog)(long mode, const char *string) = (long (*)(long, const char *))0xf0ff60;
-static inline void uaeWrite(const char *szMsg) {
+static inline void printUae(const char *szMsg) {
 	if (*((UWORD *)bartmanLog) == 0x4eb9 || *((UWORD *)bartmanLog) == 0xa00e) {
 		bartmanLog(86, szMsg);
 	}
 }
 	#else
-static inline void uaeWrite(const char *szMsg) {
+static inline void printUae(const char *szMsg) {
 	volatile ULONG * const s_pUaeFmt = (ULONG *)0xBFFF04;
 	*s_pUaeFmt = (ULONG)((UBYTE*)szMsg);
 }
 	#endif
 
 #else
-#define uaeWrite(x)
+#define printUae(x) do {} while(0)
+#endif
+
+#if defined(ACE_DEBUG_SERIAL)
+static void printSerial(const char *szMsg) {
+	const char *pChar = szMsg;
+	while(*pChar) {
+		while((g_pCustom->serdatr & SERDATRF_TBE) == 0) continue;
+		g_pCustom->serdat = ((UWORD)1 << 8)|*(pChar++);
+	}
+}
+#else
+#define printSerial(x) do {} while(0)
 #endif
 
 // Functions
@@ -52,6 +65,12 @@ void _logOpen(const char *szFilePath) {
 	g_sLogManager.wasLastInline = 0;
 	g_sLogManager.isBlockEmpty = 1;
 	g_sLogManager.ubShutUp = 0;
+
+#if defined(ACE_DEBUG_SERIAL)
+	if(miscResourceTryUse(MISC_SUBRESOURCE_SERIAL)) {
+		g_pCustom->serper = SERPER(115200);
+	}
+#endif
 }
 
 void _logPushIndent(void) {
@@ -92,7 +111,13 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 	g_sLogManager.wasLastInline = szFormat[strlen(szFormat) - 1] != '\n';
 
 	vsprintf(&s_szMsg[uwOffs], szFormat, vaArgs);
-	uaeWrite(s_szMsg);
+	printUae(s_szMsg);
+#if defined(ACE_DEBUG_SERIAL)
+	if(miscResourceIsUsed(MISC_SUBRESOURCE_SERIAL)) {
+		printSerial(s_szMsg);
+	}
+#endif
+
 	if(isWritingToFileAllowed()) {
 		systemUse();
 		fileWrite(g_sLogManager.pFile, s_szMsg, strlen(s_szMsg));
@@ -109,6 +134,12 @@ void _logClose(void) {
 		fileClose(g_sLogManager.pFile);
 		g_sLogManager.pFile = 0;
 	}
+
+#if defined(ACE_DEBUG_SERIAL)
+	if(miscResourceIsUsed(MISC_SUBRESOURCE_SERIAL)) {
+		miscResourceUnuse(MISC_SUBRESOURCE_SERIAL);
+	}
+#endif
 }
 
 /**
