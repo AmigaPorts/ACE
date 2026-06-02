@@ -72,3 +72,6 @@ convertFont(
   TARGET ${GAME_EXECUTABLE}
 	SOURCE ${RES_DIR}/silkscreen DESTINATION ${DATA_DIR}/silkscreen.fnt
 )
+
+file(MAKE_DIRECTORY ${DATA_DIR}/fonts)
+file(COPY ${RES_DIR}/quaver.fnt DESTINATION ${DATA_DIR}/fonts)
