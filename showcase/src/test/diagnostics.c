@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include "diagnostics.h"
 #include "test/simple_buffer_bpp.h"
 #include "test/scroll_tile_buffer.h"
