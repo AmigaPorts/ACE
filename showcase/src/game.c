@@ -32,8 +32,8 @@ tState g_pTestStates[TEST_STATE_COUNT] = {
     [TEST_STATE_BUFFER_SCROLL] = {.cbCreate = gsTestBufferScrollCreate, .cbLoop = gsTestBufferScrollLoop, .cbDestroy = gsTestBufferScrollDestroy},
     [TEST_STATE_BUFFER_REUSE] = {.cbCreate = gsTestBufferReuseCreate, .cbLoop = gsTestBufferReuseLoop, .cbDestroy = gsTestBufferReuseDestroy},
     [TEST_STATE_TWISTER] = {.cbCreate = gsTestTwisterCreate, .cbLoop = gsTestTwisterLoop, .cbDestroy = gsTestTwisterDestroy},
-    [TEST_STATE_DIAG_SIMPLEBUFFER] = {.cbCreate = gsTestDiagSimpleBufferCreate, .cbLoop = gsTestDiagSimpleBufferLoop, .cbDestroy = gsTestDiagSimpleBufferDestroy},
-    [TEST_STATE_DIAG_SCROLLTILEBUFFER] = {.cbCreate = gsTestDiagScrollTileBufferCreate, .cbLoop = gsTestDiagScrollTileBufferLoop, .cbDestroy = gsTestDiagScrollTileBufferDestroy},
+    [TEST_STATE_SIMPLEBUFFER_BPP_FMODE] = {.cbCreate = gsTestDiagSimpleBufferCreate, .cbLoop = gsTestDiagSimpleBufferLoop, .cbDestroy = gsTestDiagSimpleBufferDestroy},
+    [TEST_STATE_SCROLLTILEBUFFER_BPP_FMODE] = {.cbCreate = gsTestDiagScrollTileBufferCreate, .cbLoop = gsTestDiagScrollTileBufferLoop, .cbDestroy = gsTestDiagScrollTileBufferDestroy},
 };
 
 #define GENERIC_MAIN_LOOP_CONDITION gameIsRunning() && g_pGameStateManager->pCurrent
