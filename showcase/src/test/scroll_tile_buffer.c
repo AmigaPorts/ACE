@@ -34,6 +34,8 @@ typedef enum tMovePattern {
 	MOVE_UP_PULSE_RIGHT,
 	MOVE_RIGHT_PULSE_DOWN,
 	MOVE_DOWN_PULSE_LEFT,
+	MOVE_SPIN_IN_PLACE_RIGHT,
+	MOVE_SPIN_IN_PLACE_LEFT,
 	MOVE_FAST_SPIN_RIGHT,
 	MOVE_FAST_SPIN_DOWN,
 	MOVE_FAST_SPIN_LEFT,
@@ -47,8 +49,8 @@ typedef enum tMovePattern {
 
 #define SIM_PLAYER_SPEED_FP 512
 #define SIM_PLAYER_FAST_SPEED_FP 768
-#define SIM_AIM_RADIUS 64
-#define SIM_AIM_SPEED 2
+#define SIM_AIM_RADIUS 72
+#define SIM_AIM_SPEED 1
 
 static const WORD s_pSinTable[64] = {
 	0, 25, 50, 74, 98, 120, 142, 162,
@@ -586,7 +588,7 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 	*pDx = 0;
 	*pDy = 0;
 
-	if (ulStep < MOVE_FAST_SPIN_RIGHT) {
+	if (ulStep < MOVE_SPIN_IN_PLACE_RIGHT) {
 		switch((tMovePattern)ulStep) {
 			case MOVE_RIGHT: *pDx = 2; break;
 			case MOVE_DOWN: *pDy = 2; break;
@@ -614,9 +616,17 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 		s_lSimPlayerY = (LONG)s_pTileBuffer->pCamera->uPos.uwY << 8;
 		s_ubSimAimAngle = 0;
 	} else {
-		s_ubSimAimAngle = (s_ubSimAimAngle + SIM_AIM_SPEED) & 63;
+		if (ulStep == MOVE_SPIN_IN_PLACE_LEFT) {
+			s_ubSimAimAngle = (s_ubSimAimAngle - SIM_AIM_SPEED) & 63;
+		} else {
+			s_ubSimAimAngle = (s_ubSimAimAngle + SIM_AIM_SPEED) & 63;
+		}
+		
 		LONG lDx = 0, lDy = 0;
 		switch((tMovePattern)ulStep) {
+			case MOVE_SPIN_IN_PLACE_RIGHT:
+			case MOVE_SPIN_IN_PLACE_LEFT:
+				lDx = 0; lDy = 0; break;
 			case MOVE_FAST_SPIN_RIGHT: lDx = SIM_PLAYER_FAST_SPEED_FP; break;
 			case MOVE_FAST_SPIN_DOWN: lDy = SIM_PLAYER_FAST_SPEED_FP; break;
 			case MOVE_FAST_SPIN_LEFT: lDx = -SIM_PLAYER_FAST_SPEED_FP; break;
