@@ -134,7 +134,7 @@ static void drawHeader(UBYTE ubBpp) {
 	char szTitle[64];
 	char szControls[96];
 	const char *szBppRange;
-	const char *szEhbControl = (ubBpp == 5 || diagnosticsIsCurrentEhb()) ? "T: EHB  " : "";
+	const char *szEhbControl = (ubBpp == 5 || diagnosticsIsCurrentEhb()) ? "T:EHB " : "";
 	UBYTE ubTextColor = diagnosticsIsCurrentEhb() ? 31 : (1 << ubBpp) - 1;
 
 #ifdef ACE_USE_AGA_FEATURES
@@ -146,7 +146,7 @@ static void drawHeader(UBYTE ubBpp) {
 	sprintf(szTitle, "DIAG: %s", diagnosticsGetCurrentName());
 	drawHeaderLine(4, szTitle, ubTextColor);
 	sprintf(
-		szControls, "%s: BPP  %sSPACE: AUTO %s  ESC: menu",
+		szControls, "%s:BPP %sSPACE:AUTO %s ESC:menu",
 		szBppRange, szEhbControl, s_isAutoAdvance ? "ON" : "OFF"
 	);
 	drawHeaderLine(13, szControls, ubTextColor);
@@ -155,13 +155,13 @@ static void drawHeader(UBYTE ubBpp) {
 	if(diagnosticsIsCurrentAga()) {
 		char szMode[96];
 
-		sprintf(szMode, "Z/X/C/V: FMODE 0/1/2/3");
+		sprintf(szMode, "Z/X/C/V:FMODE 0/1/2/3");
 		drawHeaderLine(22, szMode, ubTextColor);
 	}
 	else
 #endif
 	if(diagnosticsIsCurrentEhb()) {
-		drawHeaderLine(22, "EHB: colors 32-63 are half-brite", ubTextColor);
+		drawHeaderLine(22, "EHB:colors 32-63 are half-brite", ubTextColor);
 	}
 }
 

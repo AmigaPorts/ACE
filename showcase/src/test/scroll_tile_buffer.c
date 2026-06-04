@@ -201,16 +201,16 @@ static void drawHeader(void) {
 		s_isDblBuf ? "ON" : "OFF"
 	);
 	drawHeaderLine(4, szLine, ubTextColor);
-	drawHeaderLine(14, "SPACE: scroll auto/manual  WSAD: move  ESC: menu", ubTextColor);
+	drawHeaderLine(14, "SPACE:auto/manual WSAD:move ESC:menu", ubTextColor);
 #ifdef ACE_USE_AGA_FEATURES
 	if(s_ubBpp > 5) {
-		drawHeaderLine(24, "2-8: bpp  Z/X/C/V: fmode 0/1/2/3  B: bobs  D: dblbuf", ubTextColor);
+		drawHeaderLine(24, "2-8:bpp Z/X/C/V:fmode 0/1/2/3 B:bobs D:dblbuf", ubTextColor);
 	}
 	else {
-		drawHeaderLine(24, "2-8: bpp  B: bobs  D: dblbuf", ubTextColor);
+		drawHeaderLine(24, "2-8:bpp B:bobs D:dblbuf", ubTextColor);
 	}
 #else
-	drawHeaderLine(24, "2-5: bpp  B: bobs  D: dblbuf", ubTextColor);
+	drawHeaderLine(24, "2-5:bpp B:bobs D:dblbuf", ubTextColor);
 #endif
 }
 
