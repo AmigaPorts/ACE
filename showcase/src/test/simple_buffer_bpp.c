@@ -37,7 +37,7 @@ static UBYTE getMaxBpp(void) {
 }
 
 static void setBpp(UBYTE ubBpp) {
-	if(ubBpp < 2 || ubBpp > getMaxBpp() || ubBpp == s_ubBpp) {
+	if(ubBpp < 2 || ubBpp > getMaxBpp() || (ubBpp == s_ubBpp && !s_isEhb)) {
 		return;
 	}
 	s_ubBpp = ubBpp;
