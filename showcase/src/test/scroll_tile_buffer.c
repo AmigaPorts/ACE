@@ -192,7 +192,7 @@ static void drawHeader(void) {
 		s_pHudBuffer->uBfrBounds.uwX, s_pHudBuffer->uBfrBounds.uwY, 0
 	);
 	sprintf(
-		szLine, "TILEBUFFER %s BPP %u FMODE %u BOBS %s DBLBUF %s",
+		szLine, "TILEBUFFER %s BPP:%u FMODE:%u BOBS:%s DBLBUF:%s",
 		s_isManualMove ? "MANUAL" : "AUTO",
 		s_ubBpp, s_ubFmode,
 		s_isBobsEnabled ? "ON" : "OFF",

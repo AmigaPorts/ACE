@@ -167,7 +167,7 @@ static void diagnosticsDestroyCurrentTest(void) {
 }
 
 void gsTestDiagSimpleBufferCreate(void) {
-	s_pFont = fontCreateFromPath("data/fonts/quaver.fnt");
+	s_pFont = fontCreateFromPath("data/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(336, s_pFont->uwHeight);
 	s_eMode = DIAGNOSTICS_MODE_SIMPLE_BUFFER;
 	diagnosticsCreateCurrentTest();
@@ -184,7 +184,7 @@ void gsTestDiagSimpleBufferDestroy(void) {
 }
 
 void gsTestDiagScrollTileBufferCreate(void) {
-	s_pFont = fontCreateFromPath("data/fonts/quaver.fnt");
+	s_pFont = fontCreateFromPath("data/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(336, s_pFont->uwHeight);
 	s_eMode = DIAGNOSTICS_MODE_SCROLL_TILE_BUFFER;
 	diagnosticsCreateCurrentTest();
