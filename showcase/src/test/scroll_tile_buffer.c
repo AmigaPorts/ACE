@@ -181,10 +181,19 @@ static void drawHeader(void) {
 
 static void drawTile(UWORD uwTile, UBYTE ubBaseColor) {
 	UWORD uwY = uwTile * TILE_SIZE;
-	UBYTE ubBlueColorCount = ((1 << s_ubBpp) - 1) / 2;
-	UBYTE ubColorA = 1 + (ubBaseColor % ubBlueColorCount);
-	UBYTE ubColorB = 1 + ((ubBaseColor + 2) % ubBlueColorCount);
-	UBYTE ubColorC = 1 + ((ubBaseColor + 4) % ubBlueColorCount);
+	UBYTE ubColorA, ubColorB, ubColorC;
+
+	if(s_ubBpp == 2) {
+		ubColorA = 0;
+		ubColorB = 1;
+		ubColorC = 1;
+	}
+	else {
+		UBYTE ubBlueColorCount = ((1 << s_ubBpp) - 1) / 2;
+		ubColorA = 1 + (ubBaseColor % ubBlueColorCount);
+		ubColorB = 1 + ((ubBaseColor + 2) % ubBlueColorCount);
+		ubColorC = 1 + ((ubBaseColor + 4) % ubBlueColorCount);
+	}
 
 	blitRect(s_pTileset, 0, uwY, TILE_SIZE, TILE_SIZE, ubColorA);
 	blitRect(s_pTileset, 0, uwY, TILE_SIZE, 1, ubColorC);
@@ -224,6 +233,10 @@ static UBYTE getBobColor(UBYTE ubSeed) {
 	UBYTE ubMaxColor = (1 << s_ubBpp) - 1;
 	UBYTE ubFirstBobColor = ubMaxColor / 2 + 1;
 	UBYTE ubBobColorCount = ubMaxColor - ubFirstBobColor;
+
+	if(s_ubBpp == 2) {
+		return ubSeed % 2 ? 3 : 2;
+	}
 
 	if(!ubBobColorCount) {
 		return ubFirstBobColor;
