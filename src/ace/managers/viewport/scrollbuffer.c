@@ -74,7 +74,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 8,
 			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			s_pCopperWaitXByBitplanes[pVPort->ubBpp], pVPort->uwOffsY + pVPort->pView->ubPosY -1
+			fetchModeGetCopWaitX(pVPort), pVPort->uwOffsY + pVPort->pView->ubPosY -1
 		);
 		pManager->pBreakBlock = copBlockCreate(
 			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 2,
@@ -206,7 +206,7 @@ static void resetStartCopperlist(tCopCmd *pCmds, tScrollBufferManager *pManager)
 	);
 	UBYTE ubBpp = pManager->sCommon.pVPort->ubBpp;
 	UBYTE i = 0;
-	copSetWait(&pCmds[i++].sWait, s_pCopperWaitXByBitplanes[ubBpp], uwOffsY);
+	copSetWait(&pCmds[i++].sWait, fetchModeGetCopWaitX(pManager->sCommon.pVPort), uwOffsY);
 	// prepare bitplane ptrs & bplcon commands. will be updated in process
 	copSetMove(&pCmds[i++].sMove, &g_pCustom->bplcon1, 0);
 	for(UBYTE j = 0; j < ubBpp; j++) {
@@ -325,7 +325,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			if(pBlock->ubDisabled) {
 				copBlockEnable(pCopList, pBlock);
 			}
-			copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBpp], (
+			copBlockWait(pCopList, pBlock, fetchModeGetCopWaitX(pManager->sCommon.pVPort), (
 				pManager->sCommon.pVPort->pView->ubPosY +
 				pManager->sCommon.pVPort->uwOffsY +
 				pManager->uwBmAvailHeight - uwScrollY - 1
@@ -440,13 +440,10 @@ void scrollBufferReset(
 	// Extra prefetch words are applied per-mode below.
 	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3);
 
-	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
-	pManager->uwDDfStop = pManager->uwDDfStrt + fetchModeGetDDfStep(pManager->sCommon.pVPort);
+	pManager->uwDDfStrt = fetchModeGetDDfStrt(pManager->sCommon.pVPort);
+	pManager->uwDDfStop = fetchModeGetDDfStop(pManager->sCommon.pVPort);
 	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
 		pManager->uwDDfStrt -= 8; // for scroll reasons
-		// Start/stop one 4-step bitplane fetch pattern later: 3120
-		pManager->uwDDfStrt += 4;
-		pManager->uwDDfStop += 4;
 
 		// One word more for fetch
 		pManager->uwModulo -= 2;
@@ -485,7 +482,7 @@ void scrollBufferReset(
 	else {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		// Set initial WAIT
-		copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBpp], (
+		copBlockWait(pCopList, pBlock, fetchModeGetCopWaitX(pManager->sCommon.pVPort), (
 			pManager->sCommon.pVPort->pView->ubPosY +
 			pManager->sCommon.pVPort->uwOffsY - 1
 		));

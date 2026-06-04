@@ -19,45 +19,65 @@ static inline UBYTE fetchModeGetBitplaneFmode(const tVPort *pVPort) {
 
 static inline UWORD fetchModeGetDDfStep(const tVPort *pVPort) {
 	UWORD uwWidth = pVPort->pView->uwWidth;
-	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
+	switch(fetchModeGetBitplaneFmode(pVPort)) {
+		case 1:
+		case 2:
+			return ((uwWidth / 32) - 1) * 16;
+		case 3:
+			return ((uwWidth / 16) - 1) * 6;
+		case 0:
+		default:
+			return ((uwWidth / 16) - 1) * 8;
+	}
+}
 
-	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
-		return ((uwWidth / 32) - 1) * 16;
+static inline UWORD fetchModeGetDDfStrt(const tVPort *pVPort) {
+	UWORD uwDDfStrt = (pVPort->pView->ubPosX + 15) / 2 - 16;
+	if(pVPort->eFlags & VP_FLAG_HIRES) {
+		uwDDfStrt += 4;
+	}
+	return uwDDfStrt;
+}
+
+static inline UWORD fetchModeGetDDfStop(const tVPort *pVPort) {
+	return fetchModeGetDDfStrt(pVPort) + fetchModeGetDDfStep(pVPort);
+}
+
+static inline UWORD fetchModeGetCopWaitX(const tVPort *pVPort) {
+	if (fetchModeGetBitplaneFmode(pVPort) == 3) {
+		UWORD uwDDfStop = fetchModeGetDDfStop(pVPort);
+		UWORD uwFetchClocks = pVPort->ubBpp;
+		return uwDDfStop + (uwFetchClocks << 1) + 2;
 	}
 
-	if(ubBitplaneFmode == 3) {
-		return ((uwWidth / 16) - 1) * 6;
-	}
-
-	return ((uwWidth / 16) - 1) * 8;
+	static const UWORD pCopperWaitXByBitplanes[9] = {0x00, 0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xD9, 0xC6, 0xA0};
+	return pCopperWaitXByBitplanes[pVPort->ubBpp];
 }
 
 static inline UWORD fetchModeGetScrollPrefetchBytes(const tVPort *pVPort) {
-	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
-
-	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
-		return 4;
+	switch(fetchModeGetBitplaneFmode(pVPort)) {
+		case 1:
+		case 2:
+			return 4;
+		case 3:
+			return 8;
+		case 0:
+		default:
+			return 2;
 	}
-
-	if(ubBitplaneFmode == 3) {
-		return 8;
-	}
-
-	return 2;
 }
 
 static inline UWORD fetchModeGetScrollDDfStartAdjust(const tVPort *pVPort) {
-	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
-
-	if(ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
-		return 16;
+	switch(fetchModeGetBitplaneFmode(pVPort)) {
+		case 1:
+		case 2:
+			return 16;
+		case 3:
+			return 24;
+		case 0:
+		default:
+			return 8;
 	}
-
-	if(ubBitplaneFmode == 3) {
-		return 24;
-	}
-
-	return 8;
 }
 
 static inline void fetchModeApplyXScrollCopper(
@@ -108,17 +128,21 @@ static inline UWORD fetchModeCalcBplShift(const tVPort *pVPort, UWORD uwScrollX)
 
 static inline LONG fetchModeCalcBplOffsetX(const tVPort *pVPort, UWORD uwScrollX) {
 	LONG lBplAddX = (((LONG)uwScrollX - 1) >> 4) << 1;
-	UBYTE ubBitplaneFmode = fetchModeGetBitplaneFmode(pVPort);
 
-	if((pVPort->eFlags & VP_FLAG_HIRES) || ubBitplaneFmode == 1 || ubBitplaneFmode == 2) {
+	if(pVPort->eFlags & VP_FLAG_HIRES) {
 		return lBplAddX - 2;
 	}
 
-	if(ubBitplaneFmode == 3) {
-		return lBplAddX + 2;
+	switch(fetchModeGetBitplaneFmode(pVPort)) {
+		case 1:
+		case 2:
+			return lBplAddX - 2;
+		case 3:
+			return lBplAddX + 2;
+		case 0:
+		default:
+			return lBplAddX;
 	}
-
-	return lBplAddX;
 }
 
 #endif // _ACE_UTILS_FETCHMODE_H_
