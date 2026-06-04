@@ -20,8 +20,8 @@
 #define TILE_SIZE 16
 #define TILE_SHIFT 4
 #define TILE_COUNT 8
-#define MAP_TILES_X 64
-#define MAP_TILES_Y 64
+#define MAP_TILES_X 96
+#define MAP_TILES_Y 96
 #define HUD_HEIGHT 32
 #define BOB_COUNT 5
 
@@ -623,7 +623,7 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 		} else {
 			s_ubSimAimAngle = (s_ubSimAimAngle + SIM_AIM_SPEED) & 63;
 		}
-		
+
 		LONG lDx = 0, lDy = 0;
 		switch((tMovePattern)ulStep) {
 			case MOVE_SPIN_IN_PLACE_RIGHT:
