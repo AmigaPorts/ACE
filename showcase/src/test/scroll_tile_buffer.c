@@ -12,10 +12,10 @@
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/managers/viewport/tilebuffer.h>
 #include <ace/utils/bitmap.h>
+#include <ace/utils/font.h>
 #include <stdio.h>
 
 #include "game.h"
-#include "diagnostics.h"
 
 #define TILE_SIZE 16
 #define TILE_SHIFT 4
@@ -80,6 +80,8 @@ static tVPort *s_pTileVPort;
 static tSimpleBufferManager *s_pHudBuffer;
 static tTileBufferManager *s_pTileBuffer;
 static tBitMap *s_pTileset;
+static tFont *s_pFont;
+static tTextBitMap *s_pTextBitMap;
 static UBYTE s_ubBpp = 5;
 static UBYTE s_ubFmode = 0;
 static UBYTE s_isBobsEnabled = 1;
@@ -180,8 +182,8 @@ static void setupPalette(void) {
 
 static void drawHeaderLine(UWORD uwY, const char *szText, UBYTE ubTextColor) {
 	fontDrawStr(
-		diagnosticsGetFont(), s_pHudBuffer->pBack, 4, uwY,
-		szText, ubTextColor, FONT_LEFT | FONT_TOP, diagnosticsGetTextBitMap()
+		s_pFont, s_pHudBuffer->pBack, 4, uwY,
+		szText, ubTextColor, FONT_LEFT | FONT_TOP, s_pTextBitMap
 	);
 }
 
@@ -680,14 +682,16 @@ static void getManualMove(WORD *pDx, WORD *pDy) {
 	}
 }
 
-void diagScrollTileBufferCreate(void) {
+void gsTestDiagScrollTileBufferCreate(void) {
 	if(s_ubBpp > getMaxBpp()) {
 		s_ubBpp = getMaxBpp();
 	}
+	s_pFont = fontCreateFromPath("data/silkscreen.fnt");
+	s_pTextBitMap = fontCreateTextBitMap(336, s_pFont->uwHeight);
 	createView();
 }
 
-void diagScrollTileBufferLoop(void) {
+void gsTestDiagScrollTileBufferLoop(void) {
 	WORD wDx;
 	WORD wDy;
 
@@ -709,6 +713,8 @@ void diagScrollTileBufferLoop(void) {
 	vPortWaitForEnd(s_pTileVPort);
 }
 
-void diagScrollTileBufferDestroy(void) {
+void gsTestDiagScrollTileBufferDestroy(void) {
 	destroyView();
+	fontDestroyTextBitMap(s_pTextBitMap);
+	fontDestroy(s_pFont);
 }

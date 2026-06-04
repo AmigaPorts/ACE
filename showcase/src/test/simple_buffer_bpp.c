@@ -9,16 +9,109 @@
 #include <ace/managers/system.h>
 #include <ace/managers/timer.h>
 #include <ace/managers/viewport/simplebuffer.h>
+#include <ace/utils/font.h>
 #include <stdio.h>
 
 #include "game.h"
-#include "diagnostics.h"
 
 static tView *s_pView;
 static tVPort *s_pVPort;
 static tSimpleBufferManager *s_pBuffer;
 static ULONG s_ulAutoAdvanceStart;
 static UBYTE s_isAutoAdvance = 0;
+
+static tFont *s_pFont;
+static tTextBitMap *s_pTextBitMap;
+static UBYTE s_ubBpp = 2;
+static UBYTE s_isEhb = 0;
+static UBYTE s_ubFmode = 0;
+
+static void recreateView(void);
+
+static UBYTE getMaxBpp(void) {
+#ifdef ACE_USE_AGA_FEATURES
+	return 8;
+#else
+	return 5;
+#endif
+}
+
+static void setBpp(UBYTE ubBpp) {
+	if(ubBpp < 2 || ubBpp > getMaxBpp() || ubBpp == s_ubBpp) {
+		return;
+	}
+	s_ubBpp = ubBpp;
+	s_isEhb = 0;
+#ifndef ACE_USE_AGA_FEATURES
+	s_ubFmode = 0;
+#endif
+	recreateView();
+}
+
+static void setFmode(UBYTE ubFmode) {
+#ifdef ACE_USE_AGA_FEATURES
+	if(s_ubBpp <= 5 || s_ubFmode == ubFmode) {
+		return;
+	}
+	s_ubFmode = ubFmode;
+	recreateView();
+#else
+	(void)ubFmode;
+#endif
+}
+
+static void toggleEhb(void) {
+	if (s_isEhb) {
+		s_isEhb = 0;
+		s_ubBpp = 5;
+		recreateView();
+	} else if (s_ubBpp == 5) {
+		s_isEhb = 1;
+		s_ubBpp = 6;
+		recreateView();
+	} else {
+		s_isEhb = 1;
+		s_ubBpp = 6;
+		recreateView();
+	}
+}
+
+static void getNextTest(void) {
+	if (s_isEhb) {
+		s_isEhb = 0;
+		s_ubBpp = 6;
+#ifndef ACE_USE_AGA_FEATURES
+		s_ubBpp = 2;
+#endif
+	} else {
+#ifdef ACE_USE_AGA_FEATURES
+		if (s_ubBpp >= 6) {
+			if (s_ubFmode < 3) {
+				s_ubFmode++;
+			} else {
+				s_ubFmode = 0;
+				s_ubBpp++;
+				if (s_ubBpp > 8) {
+					s_ubBpp = 2;
+				}
+			}
+		} else {
+			s_ubBpp++;
+			if (s_ubBpp == 6) {
+				s_ubBpp = 6;
+				s_isEhb = 1;
+			}
+		}
+#else
+		s_ubBpp++;
+		if (s_ubBpp == 6) {
+			s_ubBpp = 6;
+			s_isEhb = 1;
+		}
+#endif
+	}
+	recreateView();
+}
 
 static UWORD makePaletteColor(UWORD uwIndex, UWORD uwColorCount) {
 	UBYTE ubStep = uwColorCount > 1 ? (15 * uwIndex) / (uwColorCount - 1) : 0;
@@ -41,10 +134,10 @@ static ULONG makePaletteColorAga(UWORD uwIndex, UWORD uwColorCount) {
 #endif
 
 static void setupPalette(UBYTE ubBpp) {
-	UWORD uwColorCount = diagnosticsIsCurrentEhb() ? 32 : (1 << ubBpp);
+	UWORD uwColorCount = s_isEhb ? 32 : (1 << ubBpp);
 
 #ifdef ACE_USE_AGA_FEATURES
-	if(diagnosticsIsCurrentAga()) {
+	if(s_ubBpp > 5 && !s_isEhb) {
 		ULONG *pPalette = (ULONG *)s_pVPort->pPalette;
 
 		pPalette[0] = 0x000000;
@@ -69,7 +162,7 @@ static void drawPattern(UBYTE ubBpp) {
 	UWORD uwHeight = s_pBuffer->uBfrBounds.uwY;
 	UWORD uwStripeHeight = 12;
 	UWORD uwBlockSize = 24;
-	UBYTE ubBright = diagnosticsIsCurrentEhb() ? 31 : uwColorCount - 1;
+	UBYTE ubBright = s_isEhb ? 31 : uwColorCount - 1;
 
 	blitRect(s_pBuffer->pBack, 0, 0, uwWidth, uwHeight, 0);
 
@@ -125,8 +218,8 @@ static void drawPaletteSwatches(UBYTE ubBpp) {
 static void drawHeaderLine(UWORD uwY, const char *szText, UBYTE ubTextColor) {
 	blitRect(s_pBuffer->pBack, 0, uwY, s_pBuffer->uBfrBounds.uwX, 9, 0);
 	fontDrawStr(
-		diagnosticsGetFont(), s_pBuffer->pBack, 4, uwY + 1,
-		szText, ubTextColor, FONT_LEFT | FONT_TOP, diagnosticsGetTextBitMap()
+		s_pFont, s_pBuffer->pBack, 4, uwY + 1,
+		szText, ubTextColor, FONT_LEFT | FONT_TOP, s_pTextBitMap
 	);
 }
 
@@ -134,8 +227,8 @@ static void drawHeader(UBYTE ubBpp) {
 	char szTitle[64];
 	char szControls[96];
 	const char *szBppRange;
-	const char *szEhbControl = (ubBpp == 5 || diagnosticsIsCurrentEhb()) ? "T:EHB " : "";
-	UBYTE ubTextColor = diagnosticsIsCurrentEhb() ? 31 : (1 << ubBpp) - 1;
+	const char *szEhbControl = (ubBpp == 6 && s_isEhb) ? "T:EHB " : "";
+	UBYTE ubTextColor = s_isEhb ? 31 : (1 << ubBpp) - 1;
 
 #ifdef ACE_USE_AGA_FEATURES
 	szBppRange = "2-8";
@@ -143,7 +236,19 @@ static void drawHeader(UBYTE ubBpp) {
 	szBppRange = "2-5";
 #endif
 
-	sprintf(szTitle, "DIAG: %s", diagnosticsGetCurrentName());
+	if (s_isEhb) {
+		sprintf(szTitle, "DIAG: SimpleBuffer 5 BPP EHB");
+	} else {
+#ifdef ACE_USE_AGA_FEATURES
+		if (ubBpp > 5) {
+			sprintf(szTitle, "DIAG: SimpleBuffer AGA %d BPP FMODE %d", ubBpp, s_ubFmode);
+		} else {
+			sprintf(szTitle, "DIAG: SimpleBuffer %d BPP", ubBpp);
+		}
+#else
+		sprintf(szTitle, "DIAG: SimpleBuffer %d BPP", ubBpp);
+#endif
+	}
 	drawHeaderLine(4, szTitle, ubTextColor);
 	sprintf(
 		szControls, "%s:BPP %sSPACE:AUTO %s ESC:menu",
@@ -152,7 +257,7 @@ static void drawHeader(UBYTE ubBpp) {
 	drawHeaderLine(13, szControls, ubTextColor);
 
 #ifdef ACE_USE_AGA_FEATURES
-	if(diagnosticsIsCurrentAga()) {
+	if(s_ubBpp > 5 && !s_isEhb) {
 		char szMode[96];
 
 		sprintf(szMode, "Z/X/C/V:FMODE 0/1/2/3");
@@ -160,16 +265,16 @@ static void drawHeader(UBYTE ubBpp) {
 	}
 	else
 #endif
-	if(diagnosticsIsCurrentEhb()) {
+	if(s_isEhb) {
 		drawHeaderLine(22, "EHB:colors 32-63 are half-brite", ubTextColor);
 	}
 }
 
-void diagSimpleBufferBppCreate(void) {
-	UBYTE ubBpp = diagnosticsGetCurrentBpp();
+static void createView(void) {
+	UBYTE ubBpp = s_ubBpp;
 
 #ifdef ACE_USE_AGA_FEATURES
-	if(diagnosticsIsCurrentAga()) {
+	if(s_ubBpp > 5 && !s_isEhb) {
 		s_pView = viewCreate(0,
 			TAG_VIEW_GLOBAL_PALETTE, 1,
 			TAG_VIEW_USES_AGA, 1,
@@ -178,7 +283,7 @@ void diagSimpleBufferBppCreate(void) {
 			TAG_VPORT_VIEW, s_pView,
 			TAG_VPORT_BPP, ubBpp,
 			TAG_VPORT_USES_AGA, 1,
-			TAG_VPORT_FMODE, diagnosticsGetCurrentFmode(),
+			TAG_VPORT_FMODE, s_ubFmode,
 		TAG_END);
 	}
 	else
@@ -208,9 +313,28 @@ void diagSimpleBufferBppCreate(void) {
 	s_ulAutoAdvanceStart = timerGet();
 }
 
-void diagSimpleBufferBppLoop(void) {
+static void destroyView(void) {
+	viewLoad(0);
+	viewDestroy(s_pView);
+	s_pView = 0;
+	s_pVPort = 0;
+	s_pBuffer = 0;
+}
+
+static void recreateView(void) {
+	destroyView();
+	createView();
+}
+
+void gsTestDiagSimpleBufferCreate(void) {
+	s_pFont = fontCreateFromPath("data/silkscreen.fnt");
+	s_pTextBitMap = fontCreateTextBitMap(336, s_pFont->uwHeight);
+	createView();
+}
+
+void gsTestDiagSimpleBufferLoop(void) {
 	if(s_isAutoAdvance && timerGetDelta(s_ulAutoAdvanceStart, timerGet()) >= systemGetVerticalBlankFrequency() * 2) {
-		diagnosticsNextTest();
+		getNextTest();
 		return;
 	}
 
@@ -221,70 +345,70 @@ void diagSimpleBufferBppLoop(void) {
 	if(keyUse(KEY_SPACE)) {
 		s_isAutoAdvance = !s_isAutoAdvance;
 		s_ulAutoAdvanceStart = timerGet();
-		drawPattern(diagnosticsGetCurrentBpp());
-		drawPaletteSwatches(diagnosticsGetCurrentBpp());
-		drawHeader(diagnosticsGetCurrentBpp());
+		drawPattern(s_ubBpp);
+		drawPaletteSwatches(s_ubBpp);
+		drawHeader(s_ubBpp);
 		return;
 	}
 	if(keyUse(KEY_2)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferBpp(2);
+		setBpp(2);
 		return;
 	}
 	if(keyUse(KEY_3)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferBpp(3);
+		setBpp(3);
 		return;
 	}
 	if(keyUse(KEY_4)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferBpp(4);
+		setBpp(4);
 		return;
 	}
 	if(keyUse(KEY_5)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferBpp(5);
+		setBpp(5);
 		return;
 	}
 	if(keyUse(KEY_T)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsToggleSimpleBufferEhb();
+		toggleEhb();
 		return;
 	}
 #ifdef ACE_USE_AGA_FEATURES
 	if(keyUse(KEY_6)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferBpp(6);
+		setBpp(6);
 		return;
 	}
 	if(keyUse(KEY_7)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferBpp(7);
+		setBpp(7);
 		return;
 	}
 	if(keyUse(KEY_8)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferBpp(8);
+		setBpp(8);
 		return;
 	}
 	if(keyUse(KEY_Z)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferFmode(0);
+		setFmode(0);
 		return;
 	}
 	if(keyUse(KEY_X)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferFmode(1);
+		setFmode(1);
 		return;
 	}
 	if(keyUse(KEY_C)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferFmode(2);
+		setFmode(2);
 		return;
 	}
 	if(keyUse(KEY_V)) {
 		s_ulAutoAdvanceStart = timerGet();
-		diagnosticsSelectSimpleBufferFmode(3);
+		setFmode(3);
 		return;
 	}
 #endif
@@ -292,7 +416,8 @@ void diagSimpleBufferBppLoop(void) {
 	vPortWaitForEnd(s_pVPort);
 }
 
-void diagSimpleBufferBppDestroy(void) {
-	viewLoad(0);
-	viewDestroy(s_pView);
+void gsTestDiagSimpleBufferDestroy(void) {
+	destroyView();
+	fontDestroyTextBitMap(s_pTextBitMap);
+	fontDestroy(s_pFont);
 }

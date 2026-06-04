@@ -17,7 +17,8 @@
 #include "test/buffer_scroll.h"
 #include "test/buffer_reuse.h"
 #include "test/twister.h"
-#include "test/diagnostics.h"
+#include "test/simple_buffer_bpp.h"
+#include "test/scroll_tile_buffer.h"
 
 tStateManager *g_pGameStateManager = 0;
 tState g_pTestStates[TEST_STATE_COUNT] = {

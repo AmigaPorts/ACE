@@ -5,8 +5,8 @@
 #ifndef _DIAGNOSTICS_SIMPLE_BUFFER_BPP_H_
 #define _DIAGNOSTICS_SIMPLE_BUFFER_BPP_H_
 
-void diagSimpleBufferBppCreate(void);
-void diagSimpleBufferBppLoop(void);
-void diagSimpleBufferBppDestroy(void);
+void gsTestDiagSimpleBufferCreate(void);
+void gsTestDiagSimpleBufferLoop(void);
+void gsTestDiagSimpleBufferDestroy(void);
 
 #endif // _DIAGNOSTICS_SIMPLE_BUFFER_BPP_H_
