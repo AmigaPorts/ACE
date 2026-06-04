@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "test/scroll_tile_buffer.h"
+#include <stdio.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/bob.h>
 #include <ace/managers/copper.h>
@@ -13,8 +14,6 @@
 #include <ace/managers/viewport/tilebuffer.h>
 #include <ace/utils/bitmap.h>
 #include <ace/utils/font.h>
-#include <stdio.h>
-
 #include "game.h"
 
 #define TILE_SIZE 16
@@ -63,7 +62,7 @@ static const WORD s_pSinTable[64] = {
 	-180, -162, -142, -120, -98, -74, -50, -25
 };
 
-typedef struct tDiagBob {
+typedef struct _tDiagBob {
 	tBob sBob;
 	tBitMap *pFrame;
 	tBitMap *pMask;
@@ -590,12 +589,20 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 	*pDx = 0;
 	*pDy = 0;
 
-	if (ulStep < MOVE_SPIN_IN_PLACE_RIGHT) {
+	if(ulStep < MOVE_SPIN_IN_PLACE_RIGHT) {
 		switch((tMovePattern)ulStep) {
-			case MOVE_RIGHT: *pDx = 2; break;
-			case MOVE_DOWN: *pDy = 2; break;
-			case MOVE_LEFT: *pDx = -2; break;
-			case MOVE_UP: *pDy = -2; break;
+			case MOVE_RIGHT:
+				*pDx = 2;
+				break;
+			case MOVE_DOWN:
+				*pDy = 2;
+				break;
+			case MOVE_LEFT:
+				*pDx = -2;
+				break;
+			case MOVE_UP:
+				*pDy = -2;
+				break;
 			case MOVE_LEFT_PULSE_UP:
 				*pDx = -2;
 				*pDy = isPulseOn ? -2 : 0;
@@ -612,15 +619,18 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 				*pDy = 2;
 				*pDx = isPulseOn ? -2 : 0;
 				break;
-			default: break;
+			default:
+				break;
 		}
 		s_lSimPlayerX = (LONG)s_pTileBuffer->pCamera->uPos.uwX << 8;
 		s_lSimPlayerY = (LONG)s_pTileBuffer->pCamera->uPos.uwY << 8;
 		s_ubSimAimAngle = 0;
-	} else {
-		if (ulStep == MOVE_SPIN_IN_PLACE_LEFT) {
+	}
+	else {
+		if(ulStep == MOVE_SPIN_IN_PLACE_LEFT) {
 			s_ubSimAimAngle = (s_ubSimAimAngle - SIM_AIM_SPEED) & 63;
-		} else {
+		}
+		else {
 			s_ubSimAimAngle = (s_ubSimAimAngle + SIM_AIM_SPEED) & 63;
 		}
 
@@ -628,16 +638,39 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 		switch((tMovePattern)ulStep) {
 			case MOVE_SPIN_IN_PLACE_RIGHT:
 			case MOVE_SPIN_IN_PLACE_LEFT:
-				lDx = 0; lDy = 0; break;
-			case MOVE_FAST_SPIN_RIGHT: lDx = SIM_PLAYER_FAST_SPEED_FP; break;
-			case MOVE_FAST_SPIN_DOWN: lDy = SIM_PLAYER_FAST_SPEED_FP; break;
-			case MOVE_FAST_SPIN_LEFT: lDx = -SIM_PLAYER_FAST_SPEED_FP; break;
-			case MOVE_FAST_SPIN_UP: lDy = -SIM_PLAYER_FAST_SPEED_FP; break;
-			case MOVE_FAST_SPIN_DOWN_RIGHT: lDx = SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = SIM_PLAYER_FAST_SPEED_FP*7/10; break;
-			case MOVE_FAST_SPIN_DOWN_LEFT: lDx = -SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = SIM_PLAYER_FAST_SPEED_FP*7/10; break;
-			case MOVE_FAST_SPIN_UP_LEFT: lDx = -SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = -SIM_PLAYER_FAST_SPEED_FP*7/10; break;
-			case MOVE_FAST_SPIN_UP_RIGHT: lDx = SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = -SIM_PLAYER_FAST_SPEED_FP*7/10; break;
-			default: break;
+				lDx = 0;
+				lDy = 0;
+				break;
+			case MOVE_FAST_SPIN_RIGHT:
+				lDx = SIM_PLAYER_FAST_SPEED_FP;
+				break;
+			case MOVE_FAST_SPIN_DOWN:
+				lDy = SIM_PLAYER_FAST_SPEED_FP;
+				break;
+			case MOVE_FAST_SPIN_LEFT:
+				lDx = -SIM_PLAYER_FAST_SPEED_FP;
+				break;
+			case MOVE_FAST_SPIN_UP:
+				lDy = -SIM_PLAYER_FAST_SPEED_FP;
+				break;
+			case MOVE_FAST_SPIN_DOWN_RIGHT:
+				lDx = SIM_PLAYER_FAST_SPEED_FP*7/10;
+				lDy = SIM_PLAYER_FAST_SPEED_FP*7/10;
+				break;
+			case MOVE_FAST_SPIN_DOWN_LEFT:
+				lDx = -SIM_PLAYER_FAST_SPEED_FP*7/10;
+				lDy = SIM_PLAYER_FAST_SPEED_FP*7/10;
+				break;
+			case MOVE_FAST_SPIN_UP_LEFT:
+				lDx = -SIM_PLAYER_FAST_SPEED_FP*7/10;
+				lDy = -SIM_PLAYER_FAST_SPEED_FP*7/10;
+				break;
+			case MOVE_FAST_SPIN_UP_RIGHT:
+				lDx = SIM_PLAYER_FAST_SPEED_FP*7/10;
+				lDy = -SIM_PLAYER_FAST_SPEED_FP*7/10;
+				break;
+			default:
+				break;
 		}
 		s_lSimPlayerX += lDx;
 		s_lSimPlayerY += lDy;
@@ -654,10 +687,18 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 		WORD wDeltaX = wTargetCamX - wCamX;
 		WORD wDeltaY = wTargetCamY - wCamY;
 
-		if (wDeltaX > 4) wDeltaX = 4;
-		else if (wDeltaX < -4) wDeltaX = -4;
-		if (wDeltaY > 4) wDeltaY = 4;
-		else if (wDeltaY < -4) wDeltaY = -4;
+		if(wDeltaX > 4) {
+			wDeltaX = 4;
+		}
+		else if(wDeltaX < -4) {
+			wDeltaX = -4;
+		}
+		if(wDeltaY > 4) {
+			wDeltaY = 4;
+		}
+		else if(wDeltaY < -4) {
+			wDeltaY = -4;
+		}
 
 		*pDx = wDeltaX;
 		*pDy = wDeltaY;

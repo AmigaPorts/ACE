@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "test/simple_buffer_bpp.h"
+#include <stdio.h>
 #include <ace/managers/blit.h>
 #include <ace/managers/game.h>
 #include <ace/managers/key.h>
@@ -10,8 +11,6 @@
 #include <ace/managers/timer.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/utils/font.h>
-#include <stdio.h>
-
 #include "game.h"
 
 static tView *s_pView;
@@ -61,15 +60,17 @@ static void setFmode(UBYTE ubFmode) {
 }
 
 static void toggleEhb(void) {
-	if (s_isEhb) {
+	if(s_isEhb) {
 		s_isEhb = 0;
 		s_ubBpp = 5;
 		recreateView();
-	} else if (s_ubBpp == 5) {
+	}
+	else if(s_ubBpp == 5) {
 		s_isEhb = 1;
 		s_ubBpp = 6;
 		recreateView();
-	} else {
+	}
+	else {
 		s_isEhb = 1;
 		s_ubBpp = 6;
 		recreateView();
@@ -77,34 +78,37 @@ static void toggleEhb(void) {
 }
 
 static void getNextTest(void) {
-	if (s_isEhb) {
+	if(s_isEhb) {
 		s_isEhb = 0;
 		s_ubBpp = 6;
 #ifndef ACE_USE_AGA_FEATURES
 		s_ubBpp = 2;
 #endif
-	} else {
+	}
+	else {
 #ifdef ACE_USE_AGA_FEATURES
-		if (s_ubBpp >= 6) {
-			if (s_ubFmode < 3) {
+		if(s_ubBpp >= 6) {
+			if(s_ubFmode < 3) {
 				s_ubFmode++;
-			} else {
+			}
+			else {
 				s_ubFmode = 0;
 				s_ubBpp++;
-				if (s_ubBpp > 8) {
+				if(s_ubBpp > 8) {
 					s_ubBpp = 2;
 				}
 			}
-		} else {
+		}
+		else {
 			s_ubBpp++;
-			if (s_ubBpp == 6) {
+			if(s_ubBpp == 6) {
 				s_ubBpp = 6;
 				s_isEhb = 1;
 			}
 		}
 #else
 		s_ubBpp++;
-		if (s_ubBpp == 6) {
+		if(s_ubBpp == 6) {
 			s_ubBpp = 6;
 			s_isEhb = 1;
 		}
@@ -236,13 +240,15 @@ static void drawHeader(UBYTE ubBpp) {
 	szBppRange = "2-5";
 #endif
 
-	if (s_isEhb) {
+	if(s_isEhb) {
 		sprintf(szTitle, "DIAG: SimpleBuffer 5 BPP EHB");
-	} else {
+	}
+	else {
 #ifdef ACE_USE_AGA_FEATURES
-		if (ubBpp > 5) {
+		if(ubBpp > 5) {
 			sprintf(szTitle, "DIAG: SimpleBuffer AGA %d BPP FMODE %d", ubBpp, s_ubFmode);
-		} else {
+		}
+		else {
 			sprintf(szTitle, "DIAG: SimpleBuffer %d BPP", ubBpp);
 		}
 #else
