@@ -227,7 +227,7 @@ static void drawHeader(UBYTE ubBpp) {
 	char szTitle[64];
 	char szControls[96];
 	const char *szBppRange;
-	const char *szEhbControl = (ubBpp == 6 && s_isEhb) ? "T:EHB " : "";
+	const char *szEhbControl = (ubBpp == 5 || s_isEhb) ? "T:EHB " : "";
 	UBYTE ubTextColor = s_isEhb ? 31 : (1 << ubBpp) - 1;
 
 #ifdef ACE_USE_AGA_FEATURES
