@@ -34,8 +34,32 @@ typedef enum tMovePattern {
 	MOVE_UP_PULSE_RIGHT,
 	MOVE_RIGHT_PULSE_DOWN,
 	MOVE_DOWN_PULSE_LEFT,
+	MOVE_FAST_SPIN_RIGHT,
+	MOVE_FAST_SPIN_DOWN,
+	MOVE_FAST_SPIN_LEFT,
+	MOVE_FAST_SPIN_UP,
+	MOVE_FAST_SPIN_DOWN_RIGHT,
+	MOVE_FAST_SPIN_DOWN_LEFT,
+	MOVE_FAST_SPIN_UP_LEFT,
+	MOVE_FAST_SPIN_UP_RIGHT,
 	MOVE_COUNT
 } tMovePattern;
+
+#define SIM_PLAYER_SPEED_FP 512
+#define SIM_PLAYER_FAST_SPEED_FP 768
+#define SIM_AIM_RADIUS 64
+#define SIM_AIM_SPEED 2
+
+static const WORD s_pSinTable[64] = {
+	0, 25, 50, 74, 98, 120, 142, 162,
+	180, 197, 212, 225, 236, 244, 250, 254,
+	256, 254, 250, 244, 236, 225, 212, 197,
+	180, 162, 142, 120, 98, 74, 50, 25,
+	0, -25, -50, -74, -98, -120, -142, -162,
+	-180, -197, -212, -225, -236, -244, -250, -254,
+	-256, -254, -250, -244, -236, -225, -212, -197,
+	-180, -162, -142, -120, -98, -74, -50, -25
+};
 
 typedef struct tDiagBob {
 	tBob sBob;
@@ -60,7 +84,16 @@ static UBYTE s_isBobsEnabled = 1;
 static UBYTE s_isDblBuf = 1;
 static UBYTE s_isManualMove = 0;
 static ULONG s_ulMoveStart;
+static LONG s_lSimPlayerX;
+static LONG s_lSimPlayerY;
+static UBYTE s_ubSimAimAngle;
 static tDiagBob s_pBobs[BOB_COUNT];
+
+static void initAutoMoveState(void) {
+	s_lSimPlayerX = (LONG)s_pTileBuffer->pCamera->uPos.uwX << 8;
+	s_lSimPlayerY = (LONG)s_pTileBuffer->pCamera->uPos.uwY << 8;
+	s_ubSimAimAngle = 0;
+}
 
 static UWORD makePaletteColor(UWORD uwIndex, UWORD uwColorCount) {
 	UWORD uwLastColor = uwColorCount - 1;
@@ -432,6 +465,7 @@ static void createView(void) {
 
 	viewLoad(s_pView);
 	s_ulMoveStart = timerGet();
+	initAutoMoveState();
 }
 
 static void destroyView(void) {
@@ -533,6 +567,7 @@ static void handleConfigKeys(void) {
 	if(keyUse(KEY_SPACE)) {
 		s_isManualMove = !s_isManualMove;
 		s_ulMoveStart = timerGet();
+		initAutoMoveState();
 		drawHeader();
 	}
 }
@@ -551,37 +586,69 @@ static void getAutoMove(WORD *pDx, WORD *pDy) {
 	*pDx = 0;
 	*pDy = 0;
 
-	switch((tMovePattern)ulStep) {
-		case MOVE_RIGHT:
-			*pDx = 2;
-			break;
-		case MOVE_DOWN:
-			*pDy = 2;
-			break;
-		case MOVE_LEFT:
-			*pDx = -2;
-			break;
-		case MOVE_UP:
-			*pDy = -2;
-			break;
-		case MOVE_LEFT_PULSE_UP:
-			*pDx = -2;
-			*pDy = isPulseOn ? -2 : 0;
-			break;
-		case MOVE_UP_PULSE_RIGHT:
-			*pDy = -2;
-			*pDx = isPulseOn ? 2 : 0;
-			break;
-		case MOVE_RIGHT_PULSE_DOWN:
-			*pDx = 2;
-			*pDy = isPulseOn ? 2 : 0;
-			break;
-		case MOVE_DOWN_PULSE_LEFT:
-			*pDy = 2;
-			*pDx = isPulseOn ? -2 : 0;
-			break;
-		default:
-			break;
+	if (ulStep < MOVE_FAST_SPIN_RIGHT) {
+		switch((tMovePattern)ulStep) {
+			case MOVE_RIGHT: *pDx = 2; break;
+			case MOVE_DOWN: *pDy = 2; break;
+			case MOVE_LEFT: *pDx = -2; break;
+			case MOVE_UP: *pDy = -2; break;
+			case MOVE_LEFT_PULSE_UP:
+				*pDx = -2;
+				*pDy = isPulseOn ? -2 : 0;
+				break;
+			case MOVE_UP_PULSE_RIGHT:
+				*pDy = -2;
+				*pDx = isPulseOn ? 2 : 0;
+				break;
+			case MOVE_RIGHT_PULSE_DOWN:
+				*pDx = 2;
+				*pDy = isPulseOn ? 2 : 0;
+				break;
+			case MOVE_DOWN_PULSE_LEFT:
+				*pDy = 2;
+				*pDx = isPulseOn ? -2 : 0;
+				break;
+			default: break;
+		}
+		s_lSimPlayerX = (LONG)s_pTileBuffer->pCamera->uPos.uwX << 8;
+		s_lSimPlayerY = (LONG)s_pTileBuffer->pCamera->uPos.uwY << 8;
+		s_ubSimAimAngle = 0;
+	} else {
+		s_ubSimAimAngle = (s_ubSimAimAngle + SIM_AIM_SPEED) & 63;
+		LONG lDx = 0, lDy = 0;
+		switch((tMovePattern)ulStep) {
+			case MOVE_FAST_SPIN_RIGHT: lDx = SIM_PLAYER_FAST_SPEED_FP; break;
+			case MOVE_FAST_SPIN_DOWN: lDy = SIM_PLAYER_FAST_SPEED_FP; break;
+			case MOVE_FAST_SPIN_LEFT: lDx = -SIM_PLAYER_FAST_SPEED_FP; break;
+			case MOVE_FAST_SPIN_UP: lDy = -SIM_PLAYER_FAST_SPEED_FP; break;
+			case MOVE_FAST_SPIN_DOWN_RIGHT: lDx = SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = SIM_PLAYER_FAST_SPEED_FP*7/10; break;
+			case MOVE_FAST_SPIN_DOWN_LEFT: lDx = -SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = SIM_PLAYER_FAST_SPEED_FP*7/10; break;
+			case MOVE_FAST_SPIN_UP_LEFT: lDx = -SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = -SIM_PLAYER_FAST_SPEED_FP*7/10; break;
+			case MOVE_FAST_SPIN_UP_RIGHT: lDx = SIM_PLAYER_FAST_SPEED_FP*7/10; lDy = -SIM_PLAYER_FAST_SPEED_FP*7/10; break;
+			default: break;
+		}
+		s_lSimPlayerX += lDx;
+		s_lSimPlayerY += lDy;
+
+		WORD wAimX = (s_pSinTable[(s_ubSimAimAngle + 16) & 63] * SIM_AIM_RADIUS) >> 8;
+		WORD wAimY = (s_pSinTable[s_ubSimAimAngle] * SIM_AIM_RADIUS) >> 8;
+
+		WORD wTargetCamX = (s_lSimPlayerX >> 8) + wAimX / 2;
+		WORD wTargetCamY = (s_lSimPlayerY >> 8) + wAimY / 2;
+
+		WORD wCamX = s_pTileBuffer->pCamera->uPos.uwX;
+		WORD wCamY = s_pTileBuffer->pCamera->uPos.uwY;
+
+		WORD wDeltaX = wTargetCamX - wCamX;
+		WORD wDeltaY = wTargetCamY - wCamY;
+
+		if (wDeltaX > 4) wDeltaX = 4;
+		else if (wDeltaX < -4) wDeltaX = -4;
+		if (wDeltaY > 4) wDeltaY = 4;
+		else if (wDeltaY < -4) wDeltaY = -4;
+
+		*pDx = wDeltaX;
+		*pDy = wDeltaY;
 	}
 }
 
