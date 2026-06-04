@@ -240,6 +240,8 @@ void menuShowTests(void) {
 	menuListSetEntry(s_pMenuList, TEST_STATE_BUFFER_SCROLL, MENULIST_ENABLED, "Scroll buffer wrap");
 	menuListSetEntry(s_pMenuList, TEST_STATE_BUFFER_REUSE, MENULIST_ENABLED, "Shared buffer reuse");
 	menuListSetEntry(s_pMenuList, TEST_STATE_TWISTER, MENULIST_ENABLED, "Twister");
+	menuListSetEntry(s_pMenuList, TEST_STATE_SIMPLEBUFFER_BPP_FMODE, MENULIST_ENABLED, "Simple buffer bpp fmode");
+	menuListSetEntry(s_pMenuList, TEST_STATE_SCROLLTILEBUFFER_BPP_FMODE, MENULIST_ENABLED, "Scroll tile buffer bpp fmode");
 	s_ubMenuType = MENU_TESTS;
 
 	// Redraw list
