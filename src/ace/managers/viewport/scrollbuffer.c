@@ -386,7 +386,7 @@ void scrollBufferReset(
 	pManager->uBfrBounds.uwY = uwBoundHeight;
 	// Optimize avail height to power of two so that modulo can be an AND
 	pManager->uwBmAvailHeight =
-	ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
+		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
 #if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
 	pManager->uwBmAvailHeight = nearestPowerOf2(pManager->uwBmAvailHeight);
 #endif
