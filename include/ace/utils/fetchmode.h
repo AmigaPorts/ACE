@@ -6,6 +6,7 @@
 #define _ACE_UTILS_FETCHMODE_H_
 
 #include <ace/types.h>
+#include <ace/generic/screen.h>
 #include <ace/utils/extview.h>
 
 static inline UBYTE fetchModeGetBitplaneFmode(const tVPort *pVPort) {
@@ -50,8 +51,7 @@ static inline UWORD fetchModeGetCopWaitX(const tVPort *pVPort) {
 		return uwDDfStop + (uwFetchClocks << 1) + 2;
 	}
 
-	static const UWORD pCopperWaitXByBitplanes[9] = {0x00, 0xDC, 0xDC, 0xDC, 0xDC, 0xDC, 0xD9, 0xC6, 0xA0};
-	return pCopperWaitXByBitplanes[pVPort->ubBpp];
+	return s_pCopperWaitXByBitplanes[pVPort->ubBpp];
 }
 
 static inline UWORD fetchModeGetScrollPrefetchBytes(const tVPort *pVPort) {

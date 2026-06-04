@@ -5,7 +5,6 @@
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/fetchmode.h>
-#include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <limits.h>
 
 static UWORD nearestPowerOf2(UWORD uwVal) {
