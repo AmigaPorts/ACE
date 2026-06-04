@@ -238,7 +238,7 @@ static void updateStartCopperlist(tCopCmd *pCmds, const tBitMap *pBitmap, const 
 	}
 }
 
-static void resetBreakCopperlist(tCopCmd *pCmds, const UWORD uwOffsY, const UBYTE ubBpp) {
+static void resetBreakCopperlist(tCopCmd *pCmds, const UWORD uwOffsY, const UWORD uwWaitX, const UBYTE ubBpp) {
 	UBYTE i = 0;
 	// copper jump location & strobe to jump past the break block
 	UBYTE offset = scrollBufferGetRawCopperlistInstructionCountBreak(ubBpp);
@@ -250,18 +250,21 @@ static void resetBreakCopperlist(tCopCmd *pCmds, const UWORD uwOffsY, const UBYT
 	copSetMove(&pCmds[i++].sMove, &g_pCustom->copjmp2, 1);
 
 	// wait & bitplane ptrs
-	copSetWait(&pCmds[i++].sWait, 0, uwOffsY);
+	copSetWait(&pCmds[i++].sWait, uwWaitX, uwOffsY);
 	for(UBYTE j = 0; j < ubBpp; j++) {
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwHi, 0);
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwLo, 0);
 	}
 }
 
-static void updateBreakCopperlist(tCopCmd *pCmds, const tBitMap *pBitmap, const UWORD uwSplitPos, const ULONG ulBplAddX) {
+static void updateBreakCopperlist(
+	tCopCmd *pCmds, const tBitMap *pBitmap,
+	const UWORD uwWaitX, const UWORD uwSplitPos, const ULONG ulBplAddX
+) {
 	pCmds[2].sWait.bfIsSkip = 1; // skip the jump so we have this block enabled
 
 	UBYTE i = 4; // the first 4 bytes are cop2lch, cop2lcl, SKIP/WAIT, cop2jmp
-	pCmds[i++].sWait.bfWaitY = uwSplitPos;
+	copSetWait(&pCmds[i++].sWait, uwWaitX, uwSplitPos);
 	for(UBYTE j = 0; j < pBitmap->Depth; j++) {
 		ULONG ulPlaneAddr = (ULONG)(pBitmap->Planes[j]) + ulBplAddX;
 		copSetMoveVal(&pCmds[i++].sMove, ulPlaneAddr >> 16);
@@ -289,6 +292,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 	// preparations for new copperlist
 	UWORD uwShift = fetchModeCalcBplShift(pManager->sCommon.pVPort, uwScrollX);
+	UWORD uwBreakWaitX = fetchModeGetCopFetchDoneWaitX(pManager->sCommon.pVPort);
 	ULONG ulBplAddX = fetchModeCalcBplOffsetX(pManager->sCommon.pVPort, uwScrollX);
 
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
@@ -301,6 +305,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		if(pManager->uwBmAvailHeight - uwScrollY < uwVpHeight) {
 			updateBreakCopperlist(
 				pCmdListBreak, pManager->pBack,
+				uwBreakWaitX,
 				pManager->sCommon.pVPort->pView->ubPosY +
 				pManager->sCommon.pVPort->uwOffsY +
 				pManager->uwBmAvailHeight - uwScrollY - 1,
@@ -333,7 +338,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			if(pBlock->ubDisabled) {
 				copBlockEnable(pCopList, pBlock);
 			}
-			copBlockWait(pCopList, pBlock, fetchModeGetCopWaitX(pManager->sCommon.pVPort), (
+			copBlockWait(pCopList, pBlock, uwBreakWaitX, (
 				pManager->sCommon.pVPort->pView->ubPosY +
 				pManager->sCommon.pVPort->uwOffsY +
 				pManager->uwBmAvailHeight - uwScrollY - 1
@@ -472,6 +477,7 @@ void scrollBufferReset(
 	// Constant stuff in copperlist
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 	if(pManager->ubFlags & SCROLLBUFFER_FLAG_COPLIST_RAW) {
+		UWORD uwBreakWaitX = fetchModeGetCopFetchDoneWaitX(pManager->sCommon.pVPort);
 		resetStartCopperlist(
 			&pCopList->pBackBfr->pList[pManager->uwCopperOffsetStart],
 			pManager
@@ -480,6 +486,7 @@ void scrollBufferReset(
 			&pCopList->pBackBfr->pList[pManager->uwCopperOffsetBreak],
 			pManager->sCommon.pVPort->pView->ubPosY +
 			pManager->sCommon.pVPort->uwOffsY - 1,
+			uwBreakWaitX,
 			pManager->sCommon.pVPort->ubBpp);
 		// again for double bufferred
 		resetStartCopperlist(
@@ -490,6 +497,7 @@ void scrollBufferReset(
 			&pCopList->pFrontBfr->pList[pManager->uwCopperOffsetBreak],
 			pManager->sCommon.pVPort->pView->ubPosY +
 			pManager->sCommon.pVPort->uwOffsY - 1,
+			uwBreakWaitX,
 			pManager->sCommon.pVPort->ubBpp
 		);
 	}
