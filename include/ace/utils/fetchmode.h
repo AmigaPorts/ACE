@@ -24,7 +24,7 @@ static inline UWORD fetchModeGetDDfStep(const tVPort *pVPort) {
 		case 2:
 			return ((uwWidth / 32) - 1) * 16;
 		case 3:
-			return ((uwWidth / 16) - 1) * 6;
+			return ((uwWidth / 64) - 1) * 32;
 		case 0:
 		default:
 			return ((uwWidth / 16) - 1) * 8;
