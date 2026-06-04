@@ -20,6 +20,15 @@ static UWORD nearestPowerOf2(UWORD uwVal) {
 	return uwVal;
 }
 
+static UWORD scrollBufferAlignWidth(const tVPort *pVPort, UWORD uwWidth) {
+	// AGA wide fetch requires each bitplane row (hence BytesPerRow) to be a
+	// multiple of the fetch width. Otherwise Planes[i] + BytesPerRow * scrollY
+	// drifts out of fetch alignment and the bitplanes skew vertically (most
+	// visible in FMODE 3). Rounding up only enlarges the offscreen margin.
+	UWORD uwBlockPx = fetchModeGetScrollPrefetchBytes(pVPort) << 3; // 16 / 32 / 64
+	return ((uwWidth + uwBlockPx - 1) / uwBlockPx) * uwBlockPx;
+}
+
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	logBlockBegin("scrollBufferCreate(pTags: %p, ...)", pTags);
 
@@ -363,7 +372,10 @@ void scrollBufferGetBitmapDimensions(
 #if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
 	uwBmAvailHeight = nearestPowerOf2(uwBmAvailHeight);
 #endif
-	*pWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
+	*pWidth = scrollBufferAlignWidth(
+		pVPort,
+		uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE)
+	);
 	*pHeight = uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 }
 
@@ -393,7 +405,10 @@ void scrollBufferReset(
 
 	scrollBufferDestroyOwnedBitmaps(pManager);
 
-	UWORD uwCalcWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
+	UWORD uwCalcWidth = scrollBufferAlignWidth(
+		pManager->sCommon.pVPort,
+		uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE)
+	);
 	UWORD uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 
 	if(pCustomBack) {
@@ -449,7 +464,7 @@ void scrollBufferReset(
 		pManager->uwModulo -= 2;
 	}
 	else {
-		fetchModeApplyScrollBufferXScrollCopper(
+		fetchModeApplyXScrollCopper(
 			pManager->sCommon.pVPort, &pManager->uwDDfStrt, &pManager->uwModulo
 		);
 	}

@@ -13,7 +13,7 @@ set(ACE_TILEBUFFER_TILE_TYPE UBYTE CACHE STRING "Tilebuffer: Specify type used f
 set(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT ON CACHE BOOL "Scroll/tilebuffer: Round up the frame buffer height to power of two. More memory usage but faster calculations.")
 set(ACE_SCROLLBUFFER_ENABLE_SCROLL_X ON CACHE BOOL "Scroll/tilebuffer: Enables scroll in X direction.")
 set(ACE_SCROLLBUFFER_ENABLE_SCROLL_Y ON CACHE BOOL "Scroll/tilebuffer: Enables scroll in Y direction.")
-set(ACE_SCROLLBUFFER_X_MARGIN_SIZE 1 CACHE STRING "Scroll/tilebuffer: Number of tiles comprising into offscreen margins in X direction. Bigger allows drawing in bigger objects than tile size.")
+set(ACE_SCROLLBUFFER_X_MARGIN_SIZE 4 CACHE STRING "Scroll/tilebuffer: Number of tiles comprising into offscreen margins in X direction. Bigger allows drawing in bigger objects than tile size.")
 set(ACE_SCROLLBUFFER_Y_MARGIN_SIZE 1 CACHE STRING "Scroll/tilebuffer: Number of tiles comprising into offscreen margins in X direction. Bigger allows drawing in bigger objects than tile size.")
 set(ACE_FILE_USE_ONLY_DISK OFF CACHE BOOL "If enabled, only diskFile functions will be available for file access.")
 
