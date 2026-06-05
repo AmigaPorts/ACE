@@ -456,17 +456,9 @@ void scrollBufferReset(
 
 	pManager->uwDDfStrt = fetchModeGetDDfStrt(pManager->sCommon.pVPort);
 	pManager->uwDDfStop = fetchModeGetDDfStop(pManager->sCommon.pVPort);
-	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
-		pManager->uwDDfStrt -= 8; // for scroll reasons
-
-		// One word more for fetch
-		pManager->uwModulo -= 2;
-	}
-	else {
-		fetchModeApplyXScrollCopper(
-			pManager->sCommon.pVPort, &pManager->uwDDfStrt, &pManager->uwModulo
-		);
-	}
+	fetchModeApplyXScrollCopper(
+		pManager->sCommon.pVPort, &pManager->uwDDfStrt, &pManager->uwModulo
+	);
 	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", pManager->uwDDfStrt, pManager->uwDDfStop, pManager->uwModulo);
 
 	// Constant stuff in copperlist
