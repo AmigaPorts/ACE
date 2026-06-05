@@ -259,6 +259,12 @@ void viewLoad(tView *pView) {
 #ifdef ACE_USE_AGA_FEATURES
 		if(pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
 			UWORD uwBplCon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9); // BPP + composite output
+			if(
+				(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) &&
+				(pView->pFirstVPort->eFlags & VP_FLAG_HIRES)
+			) {
+				uwBplCon0 |= BV(15);
+			}
 			if(pView->pFirstVPort->ubBpp & 0x08) {
 				uwBplCon0 |= BV(4);
 			}
@@ -270,13 +276,27 @@ void viewLoad(tView *pView) {
 			}
 		}
 		else {
-			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
+			UWORD uwBplCon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
+			if(
+				(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) &&
+				(pView->pFirstVPort->eFlags & VP_FLAG_HIRES)
+			) {
+				uwBplCon0 |= BV(15);
+			}
+			g_pCustom->bplcon0 = uwBplCon0;
 			g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5));
 		}
 		g_pCustom->fmode = pView->pFirstVPort->ubFmode;
 		g_pCustom->bplcon3 = 0; // AGA fix
 #else
-		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
+		UWORD uwBplCon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
+		if(
+			(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) &&
+			(pView->pFirstVPort->eFlags & VP_FLAG_HIRES)
+		) {
+			uwBplCon0 |= BV(15);
+		}
+		g_pCustom->bplcon0 = uwBplCon0;
 		g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5));
 		g_pCustom->fmode = 0; // AGA fix
 		g_pCustom->bplcon3 = 0; // AGA fix
