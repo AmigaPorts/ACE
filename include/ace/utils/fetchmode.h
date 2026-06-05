@@ -45,12 +45,8 @@ static inline UWORD fetchModeGetDDfStop(const tVPort *pVPort) {
 	return fetchModeGetDDfStrt(pVPort) + fetchModeGetDDfStep(pVPort);
 }
 
-static inline UWORD fetchModeGetCopFetchDoneWaitX(const tVPort *pVPort) {
-	return fetchModeGetDDfStop(pVPort) + (pVPort->ubBpp << 1) + 2;
-}
-
 static inline UWORD fetchModeGetCopWaitX(const tVPort *pVPort) {
-	UWORD uwWaitAfterFetch = fetchModeGetCopFetchDoneWaitX(pVPort);
+	UWORD uwWaitAfterFetch = fetchModeGetDDfStop(pVPort) + (pVPort->ubBpp << 1) + 2;
 	UWORD uwLatestSafeWait = s_pCopperWaitXByBitplanes[pVPort->ubBpp];
 	return MIN(uwWaitAfterFetch, uwLatestSafeWait);
 }
