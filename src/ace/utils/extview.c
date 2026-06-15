@@ -198,10 +198,41 @@ void viewUpdateGlobalPalette(const tView *pView) {
 #endif // AMIGA
 }
 
-/**
- *  @todo bplcon0 BPP is set up globally - make it only when all vports
- *        are truly of same BPP.
- */
+static UWORD viewBuildBplCon0(const tView *pView) {
+	const tVPort *pVPort = pView->pFirstVPort;
+	UWORD uwBplCon0 = BV(9); // composite output
+
+#ifdef ACE_USE_AGA_FEATURES
+	if(pVPort->eFlags & VP_FLAG_AGA) {
+		uwBplCon0 |= (0x07 & pVPort->ubBpp) << 12;
+		if(pVPort->ubBpp & 0x08) {
+			uwBplCon0 |= BV(4);
+		}
+	}
+	else
+#endif
+	{
+		uwBplCon0 |= pVPort->ubBpp << 12;
+	}
+
+	if((pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) && (pVPort->eFlags & VP_FLAG_HIRES)) {
+		uwBplCon0 |= BV(15);
+	}
+
+	return uwBplCon0;
+}
+
+static UWORD viewBuildBplCon2(UNUSED_ARG const tView *pView) {
+#ifdef ACE_USE_AGA_FEATURES
+	const tVPort *pVPort = pView->pFirstVPort;
+	if((pVPort->eFlags & VP_FLAG_AGA) && pVPort->ubBpp == 6) {
+		/* KILLEHB + Kickstart-style PF/sprite priority (BV(2)|BV(5) == 0x24) */
+		return (UWORD)(BV(2) | BV(5) | BV(9));
+	}
+#endif
+	return (UWORD)(BV(2) | BV(5));
+}
+
 void viewLoad(tView *pView) {
 	logBlockBegin("viewLoad(pView: %p)", pView);
 
@@ -244,44 +275,19 @@ void viewLoad(tView *pView) {
 			}
 		}
 #endif
-		pView->uwBplCon0 = 0;
-		if(pView->uwFlags & VIEW_FLAG_GLOBAL_BPP) {
-			pView->uwBplCon0 |= pView->pFirstVPort->ubBpp << 12;
-		}
-		if(pView->uwFlags & VIEW_FLAG_GLOBAL_HRES) {
-			pView->uwBplCon0 |= ((pView->pFirstVPort->eFlags & VP_FLAG_HIRES) != 0) << 15;
-		}
-		pView->uwBplCon0 |= BV(9); // composite output
 		// TODO: set uwBplCon2 in viewCreate, make the playfield/sprite priority
 		// configurable via tags
 
 		g_sCopManager.pCopList = pView->pCopList;
-#ifdef ACE_USE_AGA_FEATURES
-		if(pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
-			UWORD uwBplCon0 = ((0x07 & pView->pFirstVPort->ubBpp) << 12) | BV(9); // BPP + composite output
-			if(pView->pFirstVPort->ubBpp & 0x08) {
-				uwBplCon0 |= BV(4);
-			}
-			g_pCustom->bplcon0 = uwBplCon0;
-
-			if(pView->pFirstVPort->ubBpp == 6) {
-				/* KILLEHB + Kickstart-style PF/sprite priority (BV(2)|BV(5) == 0x24) */
-				g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5) | BV(9));
-			}
-		}
-		else {
-			g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-			g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5));
-		}
-		g_pCustom->fmode = pView->pFirstVPort->ubFmode;
+		g_pCustom->bplcon0 = viewBuildBplCon0(pView);
+		g_pCustom->bplcon2 = viewBuildBplCon2(pView);
 		g_pCustom->bplcon3 = 0; // AGA fix
-#else
-		g_pCustom->bplcon0 = (pView->pFirstVPort->ubBpp << 12) | BV(9); // BPP + composite output
-		g_pCustom->bplcon2 = (UWORD)(BV(2) | BV(5));
-		g_pCustom->fmode = 0; // AGA fix
-		g_pCustom->bplcon3 = 0; // AGA fix
-#endif
 		g_pCustom->bplcon4 = 0x0011; // AGA fix
+#ifdef ACE_USE_AGA_FEATURES
+		g_pCustom->fmode = pView->pFirstVPort->ubFmode;
+#else
+		g_pCustom->fmode = 0; // AGA fix
+#endif
 
 		UWORD uwDiwStartX = pView->ubPosX;
 		UWORD uwDiwStopX = uwDiwStartX + pView->uwWidth - 256;

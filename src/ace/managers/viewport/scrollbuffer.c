@@ -5,7 +5,6 @@
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/utils/tag.h>
 #include <ace/utils/fetchmode.h>
-#include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #include <limits.h>
 
 static UWORD nearestPowerOf2(UWORD uwVal) {
@@ -18,6 +17,15 @@ static UWORD nearestPowerOf2(UWORD uwVal) {
 	uwVal |= uwVal >> 8;
 	++uwVal;
 	return uwVal;
+}
+
+static UWORD scrollBufferAlignWidth(const tVPort *pVPort, UWORD uwWidth) {
+	// AGA wide fetch requires each bitplane row (hence BytesPerRow) to be a
+	// multiple of the fetch width. Otherwise Planes[i] + BytesPerRow * scrollY
+	// drifts out of fetch alignment and the bitplanes skew vertically (most
+	// visible in FMODE 3). Rounding up only enlarges the offscreen margin.
+	UWORD uwBlockPx = fetchModeGetScrollPrefetchBytes(pVPort) << 3; // 16 / 32 / 64
+	return ((uwWidth + uwBlockPx - 1) / uwBlockPx) * uwBlockPx;
 }
 
 tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
@@ -74,7 +82,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 8,
 			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			s_pCopperWaitXByBitplanes[pVPort->ubBpp], pVPort->uwOffsY + pVPort->pView->ubPosY -1
+			fetchModeGetCopWaitX(pVPort), pVPort->uwOffsY + pVPort->pView->ubPosY -1
 		);
 		pManager->pBreakBlock = copBlockCreate(
 			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 2,
@@ -206,7 +214,7 @@ static void resetStartCopperlist(tCopCmd *pCmds, tScrollBufferManager *pManager)
 	);
 	UBYTE ubBpp = pManager->sCommon.pVPort->ubBpp;
 	UBYTE i = 0;
-	copSetWait(&pCmds[i++].sWait, s_pCopperWaitXByBitplanes[ubBpp], uwOffsY);
+	copSetWait(&pCmds[i++].sWait, fetchModeGetCopWaitX(pManager->sCommon.pVPort), uwOffsY);
 	// prepare bitplane ptrs & bplcon commands. will be updated in process
 	copSetMove(&pCmds[i++].sMove, &g_pCustom->bplcon1, 0);
 	for(UBYTE j = 0; j < ubBpp; j++) {
@@ -325,7 +333,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 			if(pBlock->ubDisabled) {
 				copBlockEnable(pCopList, pBlock);
 			}
-			copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBpp], (
+			copBlockWait(pCopList, pBlock, fetchModeGetCopWaitX(pManager->sCommon.pVPort), (
 				pManager->sCommon.pVPort->pView->ubPosY +
 				pManager->sCommon.pVPort->uwOffsY +
 				pManager->uwBmAvailHeight - uwScrollY - 1
@@ -363,7 +371,10 @@ void scrollBufferGetBitmapDimensions(
 #if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
 	uwBmAvailHeight = nearestPowerOf2(uwBmAvailHeight);
 #endif
-	*pWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
+	*pWidth = scrollBufferAlignWidth(
+		pVPort,
+		uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE)
+	);
 	*pHeight = uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 }
 
@@ -393,7 +404,10 @@ void scrollBufferReset(
 
 	scrollBufferDestroyOwnedBitmaps(pManager);
 
-	UWORD uwCalcWidth = uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE);
+	UWORD uwCalcWidth = scrollBufferAlignWidth(
+		pManager->sCommon.pVPort,
+		uwVpWidth + ubMarginWidth * 2 * (ACE_SCROLLBUFFER_X_MARGIN_SIZE + SCROLLBUFFER_X_DRAW_MARGIN_SIZE)
+	);
 	UWORD uwCalcHeight = pManager->uwBmAvailHeight + blockCountCeil(uwBoundWidth, uwVpWidth) - 1;
 
 	if(pCustomBack) {
@@ -440,22 +454,11 @@ void scrollBufferReset(
 	// Extra prefetch words are applied per-mode below.
 	pManager->uwModulo = pManager->pBack->BytesPerRow - (uwVpWidth >> 3);
 
-	pManager->uwDDfStrt = (pManager->sCommon.pVPort->pView->ubPosX + 15) / 2 - 16;
-	pManager->uwDDfStop = pManager->uwDDfStrt + fetchModeGetDDfStep(pManager->sCommon.pVPort);
-	if(pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) {
-		pManager->uwDDfStrt -= 8; // for scroll reasons
-		// Start/stop one 4-step bitplane fetch pattern later: 3120
-		pManager->uwDDfStrt += 4;
-		pManager->uwDDfStop += 4;
-
-		// One word more for fetch
-		pManager->uwModulo -= 2;
-	}
-	else {
-		fetchModeApplyScrollBufferXScrollCopper(
-			pManager->sCommon.pVPort, &pManager->uwDDfStrt, &pManager->uwModulo
-		);
-	}
+	pManager->uwDDfStrt = fetchModeGetDDfStrt(pManager->sCommon.pVPort);
+	pManager->uwDDfStop = fetchModeGetDDfStop(pManager->sCommon.pVPort);
+	fetchModeApplyXScrollCopper(
+		pManager->sCommon.pVPort, &pManager->uwDDfStrt, &pManager->uwModulo
+	);
 	logWrite("DDFSTRT: %04X, DDFSTOP: %04X, Modulo: %u\n", pManager->uwDDfStrt, pManager->uwDDfStop, pManager->uwModulo);
 
 	// Constant stuff in copperlist
@@ -485,7 +488,7 @@ void scrollBufferReset(
 	else {
 		tCopBlock *pBlock = pManager->pStartBlock;
 		// Set initial WAIT
-		copBlockWait(pCopList, pBlock, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBpp], (
+		copBlockWait(pCopList, pBlock, fetchModeGetCopWaitX(pManager->sCommon.pVPort), (
 			pManager->sCommon.pVPort->pView->ubPosY +
 			pManager->sCommon.pVPort->uwOffsY - 1
 		));

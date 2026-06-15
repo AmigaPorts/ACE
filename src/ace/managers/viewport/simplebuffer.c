@@ -7,7 +7,6 @@
 #include <ace/utils/tag.h>
 #include <ace/utils/extview.h>
 #include <ace/utils/fetchmode.h>
-#include <ace/generic/screen.h> // Has the look up table for the COPPER_X_WAIT values.
 #ifdef AMIGA
 
 
@@ -41,14 +40,8 @@ static void simpleBufferInitializeCopperList(
 	pManager->uBfrBounds.uwY = pManager->pFront->Rows;
 	UWORD uwModulo = pManager->pFront->BytesPerRow - (pVPort->uwWidth >> 3);
 
-	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
-	UWORD uwDDfStrt = (pVPort->pView->ubPosX + 15) / 2 - 16;
-	UWORD uwDDFStep = fetchModeGetDDfStep(pVPort);
-	UWORD uwDDfStop = uwDDfStrt + uwDDFStep;
-	if(pVPort->eFlags & VP_FLAG_HIRES) {
-		uwDDfStrt += 4;
-		uwDDfStop += 4;
-	}
+	UWORD uwDDfStrt = fetchModeGetDDfStrt(pVPort);
+	UWORD uwDDfStop = fetchModeGetDDfStop(pVPort);
 
 	if(
 		!isScrollX || pManager->uBfrBounds.uwX <= pVPort->uwWidth
@@ -78,7 +71,7 @@ static void simpleBufferInitializeCopperList(
 			"Setting copperlist %p at offs %u\n",
 			pCopList->pBackBfr, pManager->uwCopperOffset
 		);
-		copSetWait(&pCmdList[0].sWait, s_pCopperWaitXByBitplanes[pManager->sCommon.pVPort->ubBpp], (
+		copSetWait(&pCmdList[0].sWait, fetchModeGetCopWaitX(pManager->sCommon.pVPort), (
 			pManager->sCommon.pVPort->uwOffsY +
 			pManager->sCommon.pVPort->pView->ubPosY -1
 		));
@@ -288,7 +281,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 			pCopList, simpleBufferGetRawCopperlistInstructionCount(pVPort->ubBpp) - 1,
 			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
-			s_pCopperWaitXByBitplanes[pVPort->ubBpp],
+			fetchModeGetCopWaitX(pVPort),
 			 pVPort->uwOffsY + pVPort->pView->ubPosY - 1
 		);
 	}
