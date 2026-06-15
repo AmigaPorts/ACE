@@ -34,6 +34,7 @@ static inline UWORD fetchModeGetDDfStep(const tVPort *pVPort) {
 }
 
 static inline UWORD fetchModeGetDDfStrt(const tVPort *pVPort) {
+	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
 	UWORD uwDDfStrt = (pVPort->pView->ubPosX + 15) / 2 - 16;
 	if(pVPort->eFlags & VP_FLAG_HIRES) {
 		uwDDfStrt += 4;
@@ -42,6 +43,7 @@ static inline UWORD fetchModeGetDDfStrt(const tVPort *pVPort) {
 }
 
 static inline UWORD fetchModeGetDDfStop(const tVPort *pVPort) {
+	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
 	return fetchModeGetDDfStrt(pVPort) + fetchModeGetDDfStep(pVPort);
 }
 

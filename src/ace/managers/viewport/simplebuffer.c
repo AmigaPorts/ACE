@@ -40,7 +40,6 @@ static void simpleBufferInitializeCopperList(
 	pManager->uBfrBounds.uwY = pManager->pFront->Rows;
 	UWORD uwModulo = pManager->pFront->BytesPerRow - (pVPort->uwWidth >> 3);
 
-	// http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0085.html
 	UWORD uwDDfStrt = fetchModeGetDDfStrt(pVPort);
 	UWORD uwDDfStop = fetchModeGetDDfStop(pVPort);
 
