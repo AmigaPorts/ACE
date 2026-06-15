@@ -71,7 +71,7 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	pCopList = pVPort->pView->pCopList;
 	if(pCopList->ubMode == COPPER_MODE_BLOCK) {
 		pManager->pStartBlock = copBlockCreate(
-			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 8,
+			pVPort->pView->pCopList, 2 * pVPort->ubBpp + 9,
 			// Vertically addition from DiWStrt, horizontally just so that 6bpp can be set up.
 			// First to set are ddf, modulos & shift so they are changed during fetch.
 			s_pCopperWaitXByBitplanes[pVPort->ubBpp], pVPort->uwOffsY + pVPort->pView->ubPosY -1
@@ -153,7 +153,8 @@ fail:
 }
 
 static void scrollBufferDestroyOwnedBitmaps(tScrollBufferManager *pManager) {
-	if(pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_FRONT) {
+	UBYTE isOwnFront = pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_FRONT;
+	if(isOwnFront) {
 		if(pManager->pFront) {
 			bitmapDestroy(pManager->pFront);
 		}
@@ -161,7 +162,7 @@ static void scrollBufferDestroyOwnedBitmaps(tScrollBufferManager *pManager) {
 	}
 	if(
 		(pManager->ubFlags & SCROLLBUFFER_FLAG_OWN_BACK) &&
-		pManager->pBack && pManager->pBack != pManager->pFront
+		pManager->pBack && (!isOwnFront || pManager->pBack != pManager->pFront)
 	) {
 		bitmapDestroy(pManager->pBack);
 	}
@@ -187,8 +188,9 @@ void scrollBufferDestroy(tScrollBufferManager *pManager) {
 UBYTE scrollBufferGetRawCopperlistInstructionCountStart(UBYTE ubBpp) {
 	return (
 		1 + // initial WAIT
-	 	1 + 2 * ubBpp + // bitplane ptrs & bplcon commands
-		4 // After bitplane ptrs & bplcon
+	 	1 + 2 * ubBpp + // bitplane ptrs & bplcon1
+		1 + // BPLCON0 (BPP + HIRES)
+		4 // DDF & modulo
 	);
 }
 
@@ -213,7 +215,11 @@ static void resetStartCopperlist(tCopCmd *pCmds, tScrollBufferManager *pManager)
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwHi, 0);
 		copSetMove(&pCmds[i++].sMove, &g_pBplFetch[j].uwLo, 0);
 	}
-	// After bitplane ptrs & bplcon
+	copSetMove(
+		&pCmds[i++].sMove, &g_pCustom->bplcon0,
+		(pManager->sCommon.pVPort->ubBpp << 12) | BV(9) |
+			((pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) ? BV(15) : 0)
+	);
 	copSetMove(&pCmds[i++].sMove, &g_pCustom->ddfstrt, pManager->uwDDfStrt); // Fetch start
 	copSetMove(&pCmds[i++].sMove, &g_pCustom->bpl1mod, pManager->uwModulo); // Odd planes modulo
 	copSetMove(&pCmds[i++].sMove, &g_pCustom->bpl2mod, pManager->uwModulo); // Even planes modulo
@@ -315,7 +321,7 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 		}
 		// NOTE trying to set colors before and after copper instructions made vport
 		// move one line lower on 4bpp - there will be problem on 5 & 6bpp
-		pBlock->uwCurrCount += 4; // Add constant part
+		pBlock->uwCurrCount += 5; // Add constant part (bplcon0 + DDF + modulo)
 
 		// Copper block after Y-break
 		pBlock = pManager->pBreakBlock;
@@ -448,8 +454,8 @@ void scrollBufferReset(
 		pManager->uwDDfStrt += 4;
 		pManager->uwDDfStop += 4;
 
-		// One word more for fetch
-		pManager->uwModulo -= 2;
+		// Two words more for fetch (hires 4-part bitplane pattern)
+		pManager->uwModulo -= 4;
 	}
 	else {
 		fetchModeApplyScrollBufferXScrollCopper(
@@ -489,8 +495,13 @@ void scrollBufferReset(
 			pManager->sCommon.pVPort->pView->ubPosY +
 			pManager->sCommon.pVPort->uwOffsY - 1
 		));
-		// After bitplane ptrs & bplcon
+		// After bitplane ptrs & bplcon1 (filled by scrollBufferProcess)
 		pBlock->uwCurrCount = 2 * pManager->sCommon.pVPort->ubBpp + 1;
+		copMove(
+			pCopList, pBlock, &g_pCustom->bplcon0,
+			(pManager->sCommon.pVPort->ubBpp << 12) | BV(9) |
+				((pManager->sCommon.pVPort->eFlags & VP_FLAG_HIRES) ? BV(15) : 0)
+		);
 		copMove(pCopList, pBlock, &g_pCustom->ddfstrt, pManager->uwDDfStrt); // Fetch start
 		copMove(pCopList, pBlock, &g_pCustom->bpl1mod, pManager->uwModulo);  // Odd planes modulo
 		copMove(pCopList, pBlock, &g_pCustom->bpl2mod, pManager->uwModulo);  // Even planes modulo

@@ -82,10 +82,10 @@ static tSimpleBufferManager *s_pSimpleBfr;
 static tTileBufferManager *s_pTileBfr;
 
 /*
- * Shared display memory:
- *   s_pChip     - CHIP pool (you own this)
- *   s_pSharedBm - tBitMap wrapper recreated when geometry changes
- */
+* Shared display memory:
+*   s_pChip     - CHIP pool (you own this)
+*   s_pSharedBm - tBitMap wrapper recreated when geometry changes
+*/
 static tBitMap *s_pSharedBm;
 static void *s_pChip;
 static ULONG s_ulChipSize;
@@ -100,31 +100,10 @@ static tTextBitMap *s_pTextBm;
 static UWORD s_pFullPalette[1 << SHOWCASE_BPP];
 
 static void bufferReuseDrawSimpleScreen(void);
-static void bufferReuseStartTilePhase(void);
+static UBYTE bufferReuseRestoreSimplePhase(void);
+static UBYTE bufferReuseStartTilePhase(void);
 static void bufferReuseFadeTransition(void);
-static void bufferReuseOnTileDraw(
-	UWORD uwTileX, UWORD uwTileY,
-	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
-);
 static void bufferReuseFillTileMap(void);
-
-/**
- * TileBuffer redraw callback: blit one column-strip tile from s_pTileSet into the
- * scroll buffer bitmap at the pixel position the manager calculated.
- */
-static void bufferReuseOnTileDraw(
-	UWORD uwTileX, UWORD uwTileY,
-	tBitMap *pBitMap, UWORD uwBitMapX, UWORD uwBitMapY
-) {
-	tTileBufferTileIndex tile = s_pTileBfr->pTileData[uwTileX][uwTileY];
-	UWORD uwSrcY = (UWORD)tile * REUSE_TILE_SIZE;
-	blitCopy(
-		s_pTileSet, 0, uwSrcY,
-		pBitMap, uwBitMapX, uwBitMapY,
-		REUSE_TILE_SIZE, REUSE_TILE_SIZE,
-		MINTERM_COOKIE
-	);
-}
 
 static void bufferReuseFillTileMap(void) {
 	for(UWORD uwX = 0; uwX < REUSE_MAP_TILES_X; ++uwX) {
@@ -185,7 +164,7 @@ static void bufferReuseApplyFade(UBYTE ubLevel) {
 static void bufferReuseFadeFrame(UBYTE ubLevel, tBufferReusePhase ePhase) {
 	bufferReuseApplyFade(ubLevel);
 	viewProcessManagers(s_pView);
-	if(ePhase == BUFFER_REUSE_PHASE_TILE) {
+	if(ePhase == BUFFER_REUSE_PHASE_TILE && s_pTileBfr) {
 		tileBufferQueueProcess(s_pTileBfr);
 	}
 	copProcessBlocks();
@@ -200,7 +179,10 @@ static void bufferReuseFadeTransition(void) {
 		bufferReuseFadeFrame(ubLevel, BUFFER_REUSE_PHASE_SIMPLE);
 	}
 
-	bufferReuseStartTilePhase();
+	if(!bufferReuseStartTilePhase()) {
+		logWrite("ERR: tile phase failed; staying on simple buffer\n");
+		return;
+	}
 
 	for(i = 0; i <= REUSE_FADE_STEPS; ++i) {
 		UBYTE ubLevel = (15 * i) / REUSE_FADE_STEPS;
@@ -212,29 +194,72 @@ static void bufferReuseFadeTransition(void) {
 	);
 }
 
+/** Recreate phase 1 after a failed transition (simple manager was already removed). */
+static UBYTE bufferReuseRestoreSimplePhase(void) {
+	UBYTE ubBitmapFlags = BMF_CLEAR;
+	UWORD uwSimpleW = s_pVPort->uwWidth;
+	UWORD uwSimpleH = s_pVPort->uwHeight;
+
+	if(!s_pChip) {
+		logWrite("ERR: no CHIP pool to restore simple phase\n");
+		return 0;
+	}
+
+	s_pSharedBm = bitmapCreateFromMem(
+		s_pChip, uwSimpleW, uwSimpleH, s_pVPort->ubBpp, ubBitmapFlags
+	);
+	if(!s_pSharedBm) {
+		logWrite("ERR: bitmapCreateFromMem failed restoring simple phase\n");
+		return 0;
+	}
+
+	s_pSimpleBfr = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
+		TAG_SIMPLEBUFFER_FRONT_BITMAP, s_pSharedBm,
+		TAG_DONE
+	);
+	if(!s_pSimpleBfr) {
+		logWrite("ERR: simpleBufferCreate failed restoring simple phase\n");
+		bitmapDestroy(s_pSharedBm);
+		s_pSharedBm = 0;
+		return 0;
+	}
+
+	s_ePhase = BUFFER_REUSE_PHASE_SIMPLE;
+	bufferReuseDrawSimpleScreen();
+	viewLoad(s_pView);
+	return 0;
+}
+
 /**
  * Tear down phase 1 managers/wrappers and start phase 2 on the same s_pChip.
+ * @return 1 on success, 0 on failure (simple phase restored when possible).
  */
-static void bufferReuseStartTilePhase(void) {
+static UBYTE bufferReuseStartTilePhase(void) {
 	UWORD uwScrollW, uwScrollH;
 	UBYTE ubBitmapFlags = BMF_CLEAR;
 
 	logWrite("Switching to tile buffer, same CHIP @ %p\n", s_pChip);
 
+	if(!s_pChip) {
+		logWrite("ERR: CHIP pool is null\n");
+		return 0;
+	}
+
 	/*
-	 * 1) Remove simpleBuffer from the viewport. Its destroy callback runs but
-	 *    does NOT free s_pSharedBm (we passed TAG_SIMPLEBUFFER_FRONT_BITMAP).
-	 *    Camera manager is left on the vPort; tileBuffer will reuse it.
-	 */
+	* 1) Remove simpleBuffer from the viewport. Its destroy callback runs but
+	*    does NOT free s_pSharedBm (we passed TAG_SIMPLEBUFFER_FRONT_BITMAP).
+	*    Camera manager is left on the vPort; tileBuffer will reuse it.
+	*/
 	vPortRmManager(s_pVPort, (tVpManager*)s_pSimpleBfr);
 	s_pSimpleBfr = 0;
 
 	/*
-	 * 2) Destroy the tBitMap *header* only (BMF_EXTERNAL).
-	 *    s_pChip is unchanged — compare log address before/after this call.
-	 *    We must drop the old header because simple and scroll bitmaps use
-	 *    different widths/heights (BytesPerRow, Rows, plane layout).
-	 */
+	* 2) Destroy the tBitMap *header* only (BMF_EXTERNAL).
+	*    s_pChip is unchanged — compare log address before/after this call.
+	*    We must drop the old header because simple and scroll bitmaps use
+	*    different widths/heights (BytesPerRow, Rows, plane layout).
+	*/
 	bitmapDestroy(s_pSharedBm);
 	s_pSharedBm = 0;
 
@@ -253,27 +278,26 @@ static void bufferReuseStartTilePhase(void) {
 	);
 
 	/*
-	 * 3) Single scroll wrapper in s_pChip (no double-buffer — ACE only copies
-	 *    bitplane 0 when syncing front/back, which flashes with 5bpp external pool).
-	 */
+	* 3) Single scroll wrapper in s_pChip (no double-buffer — ACE only copies
+	*    bitplane 0 when syncing front/back, which flashes with 5bpp external pool).
+	*/
 	s_pSharedBm = bitmapCreateFromMem(
 		s_pChip, uwScrollW, uwScrollH, s_pVPort->ubBpp, ubBitmapFlags
 	);
 	if(!s_pSharedBm) {
 		logWrite("ERR: bitmapCreateFromMem failed for scroll size\n");
-		return;
+		return bufferReuseRestoreSimplePhase();
 	}
 
 	/*
-	 * 4) tileBuffer creates scrollBuffer with external bitmap in s_pChip.
-	 */
+	* 4) tileBuffer creates scrollBuffer with external bitmap in s_pChip.
+	*/
 	s_pTileBfr = tileBufferCreate(0,
 		TAG_TILEBUFFER_VPORT, s_pVPort,
 		TAG_TILEBUFFER_TILE_SHIFT, REUSE_TILE_SHIFT,
 		TAG_TILEBUFFER_BOUND_TILE_X, REUSE_MAP_TILES_X,
 		TAG_TILEBUFFER_BOUND_TILE_Y, REUSE_MAP_TILES_Y,
 		TAG_TILEBUFFER_TILESET, s_pTileSet,
-		TAG_TILEBUFFER_CALLBACK_TILE_DRAW, bufferReuseOnTileDraw,
 		TAG_TILEBUFFER_REDRAW_QUEUE_LENGTH, REUSE_REDRAW_QUEUE,
 		TAG_TILEBUFFER_BITMAP_FLAGS, ubBitmapFlags,
 		TAG_TILEBUFFER_FRONT_BITMAP, s_pSharedBm,
@@ -283,7 +307,7 @@ static void bufferReuseStartTilePhase(void) {
 		logWrite("ERR: tileBufferCreate failed\n");
 		bitmapDestroy(s_pSharedBm);
 		s_pSharedBm = 0;
-		return;
+		return bufferReuseRestoreSimplePhase();
 	}
 
 	bufferReuseFillTileMap();
@@ -294,6 +318,7 @@ static void bufferReuseStartTilePhase(void) {
 	tileBufferRedrawAll(s_pTileBfr);
 	viewLoad(s_pView);
 	s_ePhase = BUFFER_REUSE_PHASE_TILE;
+	return 1;
 }
 
 void gsTestBufferReuseCreate(void) {
@@ -318,10 +343,10 @@ void gsTestBufferReuseCreate(void) {
 	);
 
 	/*
-	 * Phase 1 bitmap size = viewport (simpleBuffer default bounds).
-	 * Phase 2 needs one scrollBuffer bitmap in the same pool.
-	 * Allocate CHIP once for max(phase1 simple, scroll).
-	 */
+	* Phase 1 bitmap size = viewport (simpleBuffer default bounds).
+	* Phase 2 needs one scrollBuffer bitmap in the same pool.
+	* Allocate CHIP once for max(phase1 simple, scroll).
+	*/
 	uwSimpleW = s_pVPort->uwWidth;
 	uwSimpleH = s_pVPort->uwHeight;
 
@@ -343,16 +368,28 @@ void gsTestBufferReuseCreate(void) {
 		"CHIP pool %lu bytes (simple %lu, scroll %lu) @ %p\n",
 		s_ulChipSize, ulSimpleSize, ulScrollSize, s_pChip
 	);
+	if(!s_pChip) {
+		logWrite("ERR: memAllocChip failed (%lu bytes)\n", s_ulChipSize);
+		goto fail;
+	}
 
 	/* Wrap CHIP for phase 1 geometry; manager will not allocate or free planes. */
 	s_pSharedBm = bitmapCreateFromMem(
 		s_pChip, uwSimpleW, uwSimpleH, s_pVPort->ubBpp, ubBitmapFlags
 	);
+	if(!s_pSharedBm) {
+		logWrite("ERR: bitmapCreateFromMem failed for simple size\n");
+		goto fail;
+	}
 	s_pSimpleBfr = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
 		TAG_SIMPLEBUFFER_FRONT_BITMAP, s_pSharedBm,
 		TAG_DONE
 	);
+	if(!s_pSimpleBfr) {
+		logWrite("ERR: simpleBufferCreate failed\n");
+		goto fail;
+	}
 
 	/* Tileset is independent CHIP (small); not reused as the scroll buffer. */
 	s_pTileSet = bitmapCreate(
@@ -383,9 +420,42 @@ void gsTestBufferReuseCreate(void) {
 	viewLoad(s_pView);
 	logBlockEnd("gsTestBufferReuseCreate");
 	systemUnuse();
+	return;
+
+fail:
+	if(s_pSharedBm) {
+		bitmapDestroy(s_pSharedBm);
+		s_pSharedBm = 0;
+	}
+	if(s_pChip) {
+		memFree(s_pChip, s_ulChipSize);
+		s_pChip = 0;
+	}
+	if(s_pSimpleBfr) {
+		vPortRmManager(s_pVPort, (tVpManager*)s_pSimpleBfr);
+		s_pSimpleBfr = 0;
+	}
+	if(s_pTileSet) {
+		bitmapDestroy(s_pTileSet);
+		s_pTileSet = 0;
+	}
+	fontDestroyTextBitMap(s_pTextBm);
+	s_pTextBm = 0;
+	fontDestroy(s_pFont);
+	s_pFont = 0;
+	viewDestroy(s_pView);
+	s_pView = 0;
+	s_pVPort = 0;
+	logBlockEnd("gsTestBufferReuseCreate");
+	systemUnuse();
+	stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 }
 
 void gsTestBufferReuseLoop(void) {
+	if(!s_pView) {
+		return;
+	}
+
 	if(keyUse(KEY_ESCAPE)) {
 		stateChange(g_pGameStateManager, &g_pTestStates[TEST_STATE_MENU]);
 		return;
@@ -414,6 +484,10 @@ void gsTestBufferReuseLoop(void) {
 	if(joyCheck(JOY1_DOWN) || keyCheck(KEY_S) || keyCheck(KEY_DOWN)) {
 		wDy = REUSE_SCROLL_SPEED;
 	}
+	if(!s_pTileBfr) {
+		return;
+	}
+
 	if(wDx || wDy) {
 		cameraMoveBy(s_pTileBfr->pCamera, wDx, wDy);
 	}
@@ -429,9 +503,9 @@ void gsTestBufferReuseDestroy(void) {
 	systemUse();
 
 	/*
-	 * tileBufferDestroy() does not remove the internal scrollBuffer from the vPort,
-	 * so detach tile then scroll explicitly when leaving phase 2.
-	 */
+	* tileBufferDestroy() does not remove the internal scrollBuffer from the vPort,
+	* so detach tile then scroll explicitly when leaving phase 2.
+	*/
 	if(s_pTileBfr) {
 		vPortRmManager(s_pVPort, (tVpManager*)s_pTileBfr);
 		s_pTileBfr = 0;

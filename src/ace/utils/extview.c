@@ -281,6 +281,9 @@ void viewLoad(tView *pView) {
 		g_pCustom->fmode = 0; // AGA fix
 		g_pCustom->bplcon3 = 0; // AGA fix
 #endif
+		if(pView->pFirstVPort->eFlags & VP_FLAG_HIRES) {
+			g_pCustom->bplcon0 |= BV(15);
+		}
 		g_pCustom->bplcon4 = 0x0011; // AGA fix
 
 		UWORD uwDiwStartX = pView->ubPosX;
