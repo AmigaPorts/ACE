@@ -257,7 +257,7 @@ tSimpleBufferManager *simpleBufferCreate(void *pTags, ...) {
 	}
 
 	UBYTE isDblBfr = tagGet(pTags, vaTags, TAG_SIMPLEBUFFER_IS_DBLBUF, 0);
-	if(isDblBfr && pBack == pFront) {
+	if(isDblBfr && (!pBack || pBack == pFront)) {
 		pBack = bitmapCreate(
 			uwBoundWidth, uwBoundHeight, pVPort->ubBpp, ubBitmapFlags
 		);
