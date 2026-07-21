@@ -438,10 +438,10 @@ void pakFileClose(tPakFile *pPakFile) {
 	logBlockEnd("pakFileClose()");
 }
 
-tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
-	logBlockBegin("pakFileGetFile(pPakFile: %p, szInternalPath: '%s')", pPakFile, szInternalPath);
+tFile *pakFileGetFileByPath(tPakFile *pPakFile, const char *szInternalPath) {
+	logBlockBegin("pakFileGetFileByPath(pPakFile: %p, szInternalPath: '%s')", pPakFile, szInternalPath);
 	tFile *pFile = pakFileGetFileByHash(pPakFile, pakFileGetPathHash(szInternalPath));
-	logBlockEnd("pakFileGetFile()");
+	logBlockEnd("pakFileGetFileByPath()");
 	return pFile;
 }
 
