@@ -32,7 +32,7 @@ tPakFile *pakFileOpen(const char *szPath, UBYTE isUninterrupted);
 
 void pakFileClose(tPakFile *pPakFile);
 
-tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath);
+tFile *pakFileGetFileByPath(tPakFile *pPakFile, const char *szInternalPath);
 
 tFile *pakFileGetFileByHash(tPakFile *pPakFile, ULONG ulPathHash);
 
