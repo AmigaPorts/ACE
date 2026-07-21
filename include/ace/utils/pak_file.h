@@ -34,6 +34,10 @@ void pakFileClose(tPakFile *pPakFile);
 
 tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath);
 
+tFile *pakFileGetFileByHash(tPakFile *pPakFile, ULONG ulPathHash);
+
+ULONG pakFileGetPathHash(const char *szPath);
+
 #endif
 
 #ifdef __cplusplus

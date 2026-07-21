@@ -394,8 +394,7 @@ static void pakCompressedFlush(UNUSED_ARG void *pData) {
 	// no-op
 }
 
-static UWORD pakFileGetFileIndex(const tPakFile *pPakFile, const char *szPath) {
-	ULONG ulPathHash = adler32Buffer((UBYTE*)szPath, strlen(szPath)); // TODO: Calculate path hash
+static UWORD pakFileGetFileIndexByHash(const tPakFile *pPakFile, ULONG ulPathHash) {
 	for(UWORD i = 0; i < pPakFile->uwFileCount; ++i) {
 		if(pPakFile->pEntries[i].ulPathChecksum == ulPathHash) {
 			return i;
@@ -441,10 +440,17 @@ void pakFileClose(tPakFile *pPakFile) {
 
 tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 	logBlockBegin("pakFileGetFile(pPakFile: %p, szInternalPath: '%s')", pPakFile, szInternalPath);
-	UWORD uwFileIndex = pakFileGetFileIndex(pPakFile, szInternalPath);
+	tFile *pFile = pakFileGetFileByHash(pPakFile, pakFileGetPathHash(szInternalPath));
+	logBlockEnd("pakFileGetFile()");
+	return pFile;
+}
+
+tFile *pakFileGetFileByHash(tPakFile *pPakFile, ULONG ulPathHash) {
+	logBlockBegin("pakFileGetFileByHash(pPakFile: %p, ulPathHash: 0x%08lX)", pPakFile, ulPathHash);
+	UWORD uwFileIndex = pakFileGetFileIndexByHash(pPakFile, ulPathHash);
 	if(uwFileIndex == UWORD_MAX) {
 		logWrite("ERR: Can't find subfile in pakfile\n");
-		logBlockEnd("pakFileGetFile()");
+		logBlockEnd("pakFileGetFileByHash()");
 		return 0;
 	}
 	UBYTE isCompressed = pPakFile->pEntries[uwFileIndex].ulSizeUncompressed != pPakFile->pEntries[uwFileIndex].ulSizeData;
@@ -484,8 +490,12 @@ tFile *pakFileGetFile(tPakFile *pPakFile, const char *szInternalPath) {
 		pFile = pCompressedFile;
 	}
 
-	logBlockEnd("pakFileGetFile()");
+	logBlockEnd("pakFileGetFileByHash()");
 	return pFile;
+}
+
+ULONG pakFileGetPathHash(const char *szPath) {
+	return adler32Buffer((UBYTE*)szPath, strlen(szPath)); // TODO: Calculate path hash
 }
 
 #endif
