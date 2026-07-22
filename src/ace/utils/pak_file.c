@@ -447,10 +447,22 @@ tFile *pakFileGetFileByPath(tPakFile *pPakFile, const char *szInternalPath) {
 
 tFile *pakFileGetFileByHash(tPakFile *pPakFile, ULONG ulPathHash) {
 	logBlockBegin("pakFileGetFileByHash(pPakFile: %p, ulPathHash: 0x%08lX)", pPakFile, ulPathHash);
-	UWORD uwFileIndex = pakFileGetFileIndexByHash(pPakFile, ulPathHash);
+	tFile *pFile = pakFileGetFileByIndex(pPakFile, pakFileGetFileIndexByHash(pPakFile, ulPathHash));
+	logBlockEnd("pakFileGetFileByHash()");
+	return pFile;
+}
+
+tFile *pakFileGetFileByIndex(tPakFile *pPakFile, UWORD uwFileIndex) {
+	logBlockBegin("pakFileGetFileByIndex(pPakFile: %p, uwFileIndex: %hu)", pPakFile, uwFileIndex);
+	if(uwFileIndex >= pPakFile->uwFileCount) {
+		logWrite("ERR: File index %hu out of range %hu\n", uwFileIndex, pPakFile->uwFileCount);
+		logBlockEnd("pakFileGetFileByIndex()");
+		return 0;
+	}
+
 	if(uwFileIndex == UWORD_MAX) {
 		logWrite("ERR: Can't find subfile in pakfile\n");
-		logBlockEnd("pakFileGetFileByHash()");
+		logBlockEnd("pakFileGetFileByIndex()");
 		return 0;
 	}
 	UBYTE isCompressed = pPakFile->pEntries[uwFileIndex].ulSizeUncompressed != pPakFile->pEntries[uwFileIndex].ulSizeData;
@@ -490,7 +502,7 @@ tFile *pakFileGetFileByHash(tPakFile *pPakFile, ULONG ulPathHash) {
 		pFile = pCompressedFile;
 	}
 
-	logBlockEnd("pakFileGetFileByHash()");
+	logBlockEnd("pakFileGetFileByIndex()");
 	return pFile;
 }
 

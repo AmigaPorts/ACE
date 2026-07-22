@@ -36,6 +36,8 @@ tFile *pakFileGetFileByPath(tPakFile *pPakFile, const char *szInternalPath);
 
 tFile *pakFileGetFileByHash(tPakFile *pPakFile, ULONG ulPathHash);
 
+tFile *pakFileGetFileByIndex(tPakFile *pPakFile, UWORD uwIndex);
+
 ULONG pakFileGetPathHash(const char *szPath);
 
 #endif
