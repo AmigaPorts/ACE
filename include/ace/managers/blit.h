@@ -73,7 +73,8 @@ void blitManagerDestroy(void);
 /**
  * @brief Checks if blitter is idle.
  *
- * Polls 2 times, taking A1000 Agnus bug workaround into account.
+ * On OCS, polls twice to work around the A1000 Agnus blitter-done bug.
+ * On ECS/AGA builds the dummy read is omitted.
  *
  * @return 1 if blitter is idle, otherwise 0.
  *
@@ -84,7 +85,8 @@ UBYTE blitIsIdle(void);
 /**
  * @brief Waits until blitter finishes its work.
  *
- * Polls at least 2 times, taking A1000 Agnus bug workaround into account.
+ * On OCS, polls at least twice to work around the A1000 Agnus blitter-done bug.
+ * On ECS/AGA builds the dummy read is omitted.
  *
  * @todo Investigate if autosetting BLITHOG inside it is beneficial.
  *
