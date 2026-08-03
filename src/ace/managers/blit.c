@@ -469,7 +469,7 @@ UBYTE blitUnsafeCopyMask(
 #endif
 		while(ubPlane--) {
 			blitWait();
-			// Reload: blit advances bltapt even though start offset is unchanged.
+			// This hell of a casting must stay here or else large offsets get bugged!
 			g_pCustom->bltapt = (APTR)&pMsk[ulSrcOffs];
 			g_pCustom->bltbpt = &pSrc->Planes[ubPlane][ulSrcOffs];
 			g_pCustom->bltcpt = &pDst->Planes[ubPlane][ulDstOffs];
