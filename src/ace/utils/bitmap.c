@@ -415,10 +415,24 @@ tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
 		pBitMap = bitmapCreate(
 			uwWidth, uwHeight, ubPlaneCount, ubBitmapFlags | BMF_INTERLEAVED
 		);
+		if(!pBitMap) {
+			logWrite("ERR: bitmap alloc failed (%hux%hu)\n", uwWidth, uwHeight);
+			fileClose(pFile);
+			logBlockEnd("bitmapCreateFromFd()");
+			systemUnuse();
+			return 0;
+		}
 		fileRead(pFile, pBitMap->Planes[0], (uwWidth >> 3) * uwHeight * ubPlaneCount);
 	}
 	else {
 		pBitMap = bitmapCreate(uwWidth, uwHeight, ubPlaneCount, ubBitmapFlags);
+		if(!pBitMap) {
+			logWrite("ERR: bitmap alloc failed (%hux%hu)\n", uwWidth, uwHeight);
+			fileClose(pFile);
+			logBlockEnd("bitmapCreateFromFd()");
+			systemUnuse();
+			return 0;
+		}
 		for (i = 0; i != ubPlaneCount; ++i) {
 			fileRead(pFile, pBitMap->Planes[i], (uwWidth >> 3) * uwHeight);
 		}
