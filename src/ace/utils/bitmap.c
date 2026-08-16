@@ -41,9 +41,7 @@ static void bitmapFreeChipAligned(void *pMem, ULONG ulSize) {
 
 /* Functions */
 
-ULONG bitmapGetBufferSize(
-	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
-) {
+ULONG bitmapGetBufferSize(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth) {
 	UWORD uwBytesPerRow = uwWidth / 8;
 	ULONG ulPlaneBytes = (ULONG)uwBytesPerRow * uwHeight;
 
@@ -105,10 +103,7 @@ tBitMap *bitmapCreateFromMem(
 	pBitMap = (tBitMap*)memAllocFastClear(sizeof(tBitMap));
 	bitmapInitFromMem(pBitMap, pMem, uwWidth, uwHeight, ubDepth, ubFlags);
 	if(ubFlags & BMF_CLEAR) {
-		memset(
-			pMem, 0,
-			bitmapGetBufferSize(uwWidth, uwHeight, ubDepth, ubFlags)
-		);
+		memset(pMem, 0, bitmapGetBufferSize(uwWidth, uwHeight, ubDepth));
 	}
 
 	logBlockEnd("bitmapCreateFromMem()");

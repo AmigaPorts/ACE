@@ -330,12 +330,8 @@ void gsTestBufferReuseCreate(void) {
 		REUSE_BOUND_WIDTH, REUSE_BOUND_HEIGHT,
 		&uwScrollW, &uwScrollH
 	);
-	ulSimpleSize = bitmapGetBufferSize(
-		uwSimpleW, uwSimpleH, s_pVPort->ubBpp, ubBitmapFlags
-	);
-	ulScrollSize = bitmapGetBufferSize(
-		uwScrollW, uwScrollH, s_pVPort->ubBpp, ubBitmapFlags
-	);
+	ulSimpleSize = bitmapGetBufferSize(uwSimpleW, uwSimpleH, s_pVPort->ubBpp);
+	ulScrollSize = bitmapGetBufferSize(uwScrollW, uwScrollH, s_pVPort->ubBpp);
 	s_ulScrollSize = ulScrollSize;
 	s_ulChipSize = ulSimpleSize > ulScrollSize ? ulSimpleSize : ulScrollSize;
 	s_pChip = memAllocChip(s_ulChipSize);
