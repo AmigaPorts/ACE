@@ -41,21 +41,21 @@ tFont *fontCreateFromFd(tFile *pFontFile) {
 		return 0;
 	}
 
-	fileRead(pFontFile, &pFont->uwWidth, sizeof(UWORD));
-	fileRead(pFontFile, &pFont->uwHeight, sizeof(UWORD));
-	fileRead(pFontFile, &pFont->ubChars, sizeof(UBYTE));
+	fileReadWords(pFontFile, &pFont->uwWidth, 1);
+	fileReadWords(pFontFile, &pFont->uwHeight, 1);
+	fileReadBytes(pFontFile, &pFont->ubChars, 1);
 	logWrite(
 		"Addr: %p, data width: %upx, chars: %u, font height: %upx\n",
 		pFont, pFont->uwWidth, pFont->ubChars, pFont->uwHeight
 	);
 
 	pFont->pCharOffsets = memAllocFast(sizeof(UWORD) * pFont->ubChars);
-	fileRead(pFontFile, pFont->pCharOffsets, sizeof(UWORD) * pFont->ubChars);
+	fileReadWords(pFontFile, pFont->pCharOffsets, pFont->ubChars);
 
 	pFont->pRawData = bitmapCreate(pFont->uwWidth, pFont->uwHeight, 1, 0);
 #ifdef AMIGA
 	UWORD uwPlaneByteSize = ((pFont->uwWidth+15)/16) * 2 * pFont->uwHeight;
-	fileRead(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
+	fileReadBytes(pFontFile, pFont->pRawData->Planes[0], uwPlaneByteSize);
 #else
 	logWrite("ERR: Unimplemented\n");
 	memFree(pFont, sizeof(tFont));

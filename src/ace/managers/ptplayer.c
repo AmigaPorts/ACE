@@ -2845,13 +2845,19 @@ tPtplayerMod *ptplayerModCreateFromFd(tFile *pFileMod) {
 	}
 
 	// Read header
-	fileRead(pFileMod, pMod->szSongName, sizeof(pMod->szSongName));
-	// TODO: read samples data field by field for portability
-	fileRead(pFileMod, pMod->pSampleHeaders, sizeof(pMod->pSampleHeaders));
-	fileRead(pFileMod, &pMod->ubArrangementLength, sizeof(pMod->ubArrangementLength));
-	fileRead(pFileMod, &pMod->ubSongEndPos, sizeof(pMod->ubSongEndPos));
-	fileRead(pFileMod, pMod->pArrangement, sizeof(pMod->pArrangement));
-	fileRead(pFileMod, pMod->pFileFormatTag, sizeof(pMod->pFileFormatTag));
+	fileReadBytes(pFileMod, (UBYTE*)pMod->szSongName, sizeof(pMod->szSongName));
+	for(UBYTE i = 0; i < PTPLAYER_MOD_SAMPLE_COUNT; ++i) {
+		fileReadBytes(pFileMod, (UBYTE*)&pMod->pSampleHeaders[i].szName, sizeof(pMod->pSampleHeaders[i].szName));
+		fileReadWords(pFileMod, &pMod->pSampleHeaders[i].uwLength, 1);
+		fileReadBytes(pFileMod, &pMod->pSampleHeaders[i].ubFineTune, 1);
+		fileReadBytes(pFileMod, &pMod->pSampleHeaders[i].ubVolume, 1);
+		fileReadWords(pFileMod, &pMod->pSampleHeaders[i].uwRepeatOffs, 1);
+		fileReadWords(pFileMod, &pMod->pSampleHeaders[i].uwRepeatLength, 1);
+	}
+	fileReadBytes(pFileMod, &pMod->ubArrangementLength, 1);
+	fileReadBytes(pFileMod, &pMod->ubSongEndPos, 1);
+	fileReadBytes(pFileMod, pMod->pArrangement, sizeof(pMod->pArrangement));
+	fileReadBytes(pFileMod, (UBYTE*)pMod->pFileFormatTag, sizeof(pMod->pFileFormatTag));
 
 	// Get number of highest pattern
 	UBYTE ubLastPattern = 0;
@@ -2867,20 +2873,21 @@ tPtplayerMod *ptplayerModCreateFromFd(tFile *pFileMod) {
 	pMod->ulPatternsSize = (ubPatternCount * MOD_PATTERN_BYTE_SIZE);
 	pMod->pPatterns = memAllocFast(pMod->ulPatternsSize);
 	if(!pMod->pPatterns) {
-		logWrite("ERR: Couldn't allocate memory for pattern data");
+		logWrite("ERR: Couldn't allocate memory for pattern data\n");
 		goto fail;
 	}
-	fileRead(pFileMod, pMod->pPatterns, pMod->ulPatternsSize);
+	fileReadLongs(pFileMod, (ULONG*)pMod->pPatterns, pMod->ulPatternsSize / MOD_BYTES_PER_NOTE);
 
 	// Read sample data
 	ULONG ulSampleStartPos = fileGetPos(pFileMod);
 	ULONG ulSamplesSize = lSize - ulSampleStartPos;
 	if(ulSamplesSize) {
+		logWrite("Reading internal MOD samples...\n");
 		for(UBYTE ubSampleIndex = 0; ubSampleIndex < PTPLAYER_MOD_SAMPLE_COUNT; ++ubSampleIndex) {
-			ULONG ulSampleDataLength = pMod->pSampleHeaders[ubSampleIndex].uwLength * sizeof(UWORD);
-			if(ulSampleDataLength) {
-				pMod->pSampleStarts[ubSampleIndex] = memAllocChip(ulSampleDataLength);
-				fileRead(pFileMod, pMod->pSampleStarts[ubSampleIndex], ulSampleDataLength);
+			UWORD uwWordLength = pMod->pSampleHeaders[ubSampleIndex].uwLength;
+			if(uwWordLength) {
+				pMod->pSampleStarts[ubSampleIndex] = memAllocChip(uwWordLength * sizeof(UWORD));
+				fileReadWords(pFileMod, pMod->pSampleStarts[ubSampleIndex], uwWordLength);
 			}
 		}
 		pMod->isOwningSamples = 1;
@@ -2951,16 +2958,16 @@ tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
 		goto fail;
 	}
 	UBYTE ubVersion;
-	fileRead(pFileSfx, &ubVersion, sizeof(ubVersion));
+	fileReadBytes(pFileSfx, &ubVersion, 1);
 	if(ubVersion == 2) {
-		fileRead(pFileSfx, &pSfx->uwWordLength, sizeof(pSfx->uwWordLength));
+		fileReadWords(pFileSfx, &pSfx->uwWordLength, 1);
 		ULONG ulByteSize = pSfx->uwWordLength * sizeof(UWORD);
 
 		UWORD uwSampleRateHz;
-		fileRead(pFileSfx, &uwSampleRateHz, sizeof(uwSampleRateHz));
+		fileReadWords(pFileSfx, &uwSampleRateHz, 1);
 		pSfx->uwPeriod = (getClockConstant() + uwSampleRateHz/2) / uwSampleRateHz;
 		ULONG ulCompressedSize;
-		fileRead(pFileSfx, &ulCompressedSize, sizeof(ulCompressedSize));
+		fileReadLongs(pFileSfx, &ulCompressedSize, 1);
 		logWrite(
 			"Length: %lu, compressed: %lu, sample rate: %hu, period: %hu\n",
 			ulByteSize, ulCompressedSize, uwSampleRateHz, pSfx->uwPeriod
@@ -2973,12 +2980,12 @@ tPtplayerSfx *ptplayerSfxCreateFromFd(tFile *pFileSfx, UBYTE isFast)
 
 		if(ulCompressedSize) {
 			UBYTE *pCompressed = memAllocFast(ulByteSize);
-			fileRead(pFileSfx, pCompressed, ulCompressedSize);
+			fileReadBytes(pFileSfx, pCompressed, ulCompressedSize);
 			ptplayerSfxDecompress(pCompressed, (UBYTE*)pSfx->pData, ulByteSize);
 			memFree(pCompressed, ulByteSize);
 		}
 		else {
-			fileRead(pFileSfx, pSfx->pData, ulByteSize);
+			fileReadBytes(pFileSfx, (UBYTE*)pSfx->pData, ulByteSize);
 		}
 
 		// Check if pData[0] is zeroed-out - it should be because after sfx playback
@@ -3259,7 +3266,7 @@ void ptplayerWaitForSfx(void) {
 		for(UBYTE i = 0; i < 4; ++i) {
 			// Wait only for sfx to end - mod is looping ad infinitum anyway.
 			if(mt_chan[i].ubSfxPriority) {
-				logWrite("sfx ptplayerWaitForSfx\n");
+				// logWrite("sfx ptplayerWaitForSfx\n");
 				// channel is busy by sfx
 				isAnyChannelBusy = 1;
 				// logWrite("channel busy %hhu", i);
@@ -3293,7 +3300,7 @@ tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)
 
 	UBYTE ubVersion;
 	tPtplayerSamplePack *pSamplePack = 0;
-	fileRead(pFileSamples, &ubVersion, sizeof(ubVersion));
+	fileReadBytes(pFileSamples, &ubVersion, 1);
 	if(ubVersion != PTPLAYER_SUPPORTED_SAMPLEPACK_VERSION) {
 		// ACE only supports most up to date file version to limit its size
 		logWrite(
@@ -3308,13 +3315,13 @@ tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)
 		goto fail;
 	}
 	logWrite("Addr: %p\n", pSamplePack);
-	fileRead(pFileSamples, &pSamplePack->ubSampleCount, sizeof(pSamplePack->ubSampleCount));
+	fileReadBytes(pFileSamples, &pSamplePack->ubSampleCount, 1);
 
 	for(UBYTE i = 0; i < pSamplePack->ubSampleCount; ++i) {
 		tPtplayerSfx *pSample = &pSamplePack->pSamples[i];
 		ULONG ulCompressedLength;
-		fileRead(pFileSamples, &pSample->uwWordLength, sizeof(pSample->uwWordLength));
-		fileRead(pFileSamples, &ulCompressedLength, sizeof(ulCompressedLength));
+		fileReadWords(pFileSamples, &pSample->uwWordLength, 1);
+		fileReadLongs(pFileSamples, &ulCompressedLength, 1);
 		pSample->pData = memAllocChip(pSample->uwWordLength * sizeof(UWORD));
 		if(!pSample->pData) {
 			goto fail;
@@ -3324,12 +3331,12 @@ tPtplayerSamplePack *ptplayerSampleDataCreateFromFd(tFile *pFileSamples)
 			if(!pCompressed) {
 				goto fail;
 			}
-			fileRead(pFileSamples, pCompressed, ulCompressedLength);
+			fileReadBytes(pFileSamples, pCompressed, ulCompressedLength);
 			ptplayerSfxDecompress(pCompressed, (UBYTE*)pSample->pData, pSample->uwWordLength * sizeof(UWORD));
 			memFree(pCompressed, ulCompressedLength);
 		}
 		else {
-			fileRead(pFileSamples, pSample->pData, pSample->uwWordLength * sizeof(UWORD));
+			fileReadBytes(pFileSamples, (UBYTE*)pSample->pData, pSample->uwWordLength * sizeof(UWORD));
 		}
 	}
 

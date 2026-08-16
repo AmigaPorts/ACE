@@ -12,80 +12,62 @@ extern "C" {
 /**
  *  Endian conversion functions.
  *  Allows convenient converting between Little and Big Endian.
- *  @todo Distinguish platform's endian and avoid conversion if endian
- *        is matching.
  */
 
 #include <ace/types.h>
 
+#if defined(AMIGA)
+#define ENDIAN_NATIVE_BIG
+#else
+#define ENDIAN_NATIVE_LITTLE
+#endif
+
+#if defined(ENDIAN_NATIVE_BIG)
+#define endianBigToNative16(x) (x)
+#define endianBigToNative32(x) (x)
+#define endianLittleToNative16(x) endianSwap16(x)
+#define endianLittleToNative32(x) endianSwap32(x)
+#define endianNativeToBig16(x) (x)
+#define endianNativeToBig32(x) (x)
+#define endianNativeToLittle16(x) endianSwap16(x)
+#define endianNativeToLittle32(x) endianSwap32(x)
+#elif defined(ENDIAN_NATIVE_LITTLE)
+#define endianBigToNative16(x) endianSwap16(x)
+#define endianBigToNative32(x) endianSwap32(x)
+#define endianLittleToNative16(x) (x)
+#define endianLittleToNative32(x) (x)
+#define endianNativeToBig16(x) endianSwap16(x)
+#define endianNativeToBig32(x) endianSwap32(x)
+#define endianNativeToLittle16(x) (x)
+#define endianNativeToLittle32(x) (x)
+#else
+#error "Unknown platform endianness!"
+#endif
+
 /**
- *  @brief Converts _native_ 16-bit from/to Little (Intel) Endian.
+ *  @brief Converts _native_ 16-bit to Little (Intel) Endian.
  *
  *  @param uwIn 16-bit value to be converted
  *  @return Supplied value, byte-swapped if neccessary.
  *
  *  @see endianLittle32()
  */
-static inline UWORD endianLittle16(UWORD uwIn) {
-#ifdef AMIGA
-	return (uwIn << 8) | (uwIn >> 8);
-#else
-	return uwIn;
-#endif // AMIGA
+static inline UWORD endianSwap16(UWORD uwIn) {
+	// TODO: _byteswap_ushort() on msvc
+	return __builtin_bswap16(uwIn);
 }
 
 /**
- *  @brief Converts big-endian wire format to/from native 16-bit.
- *
- *  Use after reading a big-endian `UWORD` from a file, or before writing one.
- *  On Amiga (big-endian native) this is a no-op.
- *
- *  @param uwIn 16-bit value in wire (big-endian) layout as stored by `fileRead()`.
- *  @return Value in native endian.
- *
- *  @see endianLittle16()
- */
-static inline UWORD endianBig16(UWORD uwIn) {
-#ifdef AMIGA
-	return uwIn;
-#else
-	return (uwIn << 8) | (uwIn >> 8);
-#endif // AMIGA
-}
-
-/**
- *  @brief Converts _native_ 32-bit from/to Little (Intel) Endian.
+ *  @brief Converts 32-bit endian value.
  *
  *  @param ulIn 32-bit value to be converted
- *  @return Supplied value, byte-swapped if neccessary.
+ *  @return Supplied value.
  *
  *  @see endianLittle16()
  */
-static inline ULONG endianLittle32(ULONG ulIn) {
-#ifdef AMIGA
-	return (ulIn << 24) | ((ulIn & 0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
-#else
-	return ulIn;
-#endif // AMIGA
-}
-
-/**
- *  @brief Converts big-endian wire format to/from native 32-bit.
- *
- *  Use after reading a big-endian `ULONG` from a file, or before writing one.
- *  On Amiga (big-endian native) this is a no-op.
- *
- *  @param ulIn 32-bit value in wire (big-endian) layout as stored by `fileRead()`.
- *  @return Value in native endian.
- *
- *  @see endianLittle32()
- */
-static inline ULONG endianBig32(ULONG ulIn) {
-#ifdef AMIGA
-	return ulIn;
-#else
-	return (ulIn << 24) | ((ulIn & 0xFF00) << 8) | ((ulIn & 0xFF0000) >> 8) | (ulIn >> 24);
-#endif // AMIGA
+static inline ULONG endianSwap32(ULONG ulIn) {
+	// TODO: _byteswap_ulong() on msvc
+	return __builtin_bswap32(ulIn);
 }
 
 #ifdef __cplusplus

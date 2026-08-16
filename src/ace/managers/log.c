@@ -120,7 +120,7 @@ void _logWriteVa(char *szFormat, va_list vaArgs) {
 
 	if(isWritingToFileAllowed()) {
 		systemUse();
-		fileWrite(g_sLogManager.pFile, s_szMsg, strlen(s_szMsg));
+		fileWriteStr(g_sLogManager.pFile, s_szMsg);
 		fileFlush(g_sLogManager.pFile);
 		systemUnuse();
 	}
