@@ -175,6 +175,28 @@ function(transformBitmap)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
 
+# Split 16-color attached-sprite PNG into two 4-color (2BPP) plane PNGs.
+# Outputs use match.plt colors 0..3 — pass the same first-four as convertBitmaps PALETTE.
+function(splitAttachedSprite)
+	getToolPath(sprite_split_16to4 TOOL_SPRITE_SPLIT_16TO4)
+	cmake_parse_arguments(
+		args "" "TARGET;SOURCE;MATCH_PALETTE;LO;HI" "" ${ARGN}
+	)
+	toAbsolute(args_SOURCE)
+	toAbsolute(args_MATCH_PALETTE)
+	toAbsolute(args_LO)
+	toAbsolute(args_HI)
+	add_custom_command(
+		OUTPUT ${args_LO} ${args_HI}
+		COMMAND ${TOOL_SPRITE_SPLIT_16TO4}
+			${args_MATCH_PALETTE} ${args_SOURCE}
+			-o ${args_LO} ${args_HI}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		DEPENDS ${args_SOURCE} ${args_MATCH_PALETTE}
+	)
+	target_sources(${args_TARGET} PUBLIC ${args_LO} ${args_HI})
+endfunction()
+
 function(extractBitmaps)
 	cmake_parse_arguments(args "" "TARGET;SOURCE;GENERATED_FILE_LIST" "DESTINATIONS" ${ARGN})
 	list(LENGTH args_DESTINATIONS destArgCount)

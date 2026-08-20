@@ -152,29 +152,10 @@ static void fillSpriteBank12(UWORD uwBase, const UWORD *pRgb, UBYTE ubCount) {
 	}
 }
 
-static void pokeEvenLowColors(void) {
-	const UWORD *pSrc;
-	UBYTE i;
-
-	if(s_ubEvenBank == 2) {
-		pSrc = s_pBankIce;
-	}
-	else if(s_ubEvenBank == 3) {
-		pSrc = s_pBankGold;
-	}
-	else {
-		pSrc = &s_pPal[20];
-	}
-	/* CH0 → 1–3, CH2 → 4–7, CH4 → 8–11 when Denise uses the 0–15 map. */
-	for(i = 0; i < 15; ++i) {
-		pokeAgaColor12((UWORD)(1 + i), pSrc[i % 15]);
-	}
-}
-
 static void applySpriteBanks(void) {
+	/* Only BPLCON4 ESPRM/OSPRM — do not touch playfield COLOR0–15. */
 	spriteSetEvenColorPaletteBank(s_ubEvenBank);
 	spriteSetOddColorPaletteBank(s_ubOddBank);
-	pokeEvenLowColors();
 }
 #else
 static void setPal12(UWORD uwIdx, UWORD uwRgb12) {
@@ -252,10 +233,10 @@ void gsTestSpritesCreate(void) {
 		setPal12(i, s_pPal[i]);
 	}
 #ifdef ACE_USE_AGA_FEATURES
-	/* Mirror sprite colors 17-31 into 1-15 so even 4-color sprites show. */
-	for(i = 1; i < 16; ++i) {
-		setPal12(i, s_pPal[i + 16]);
-	}
+	/* Playfield HUD colors — leave bank 0 alone when swapping sprite banks. */
+	setPal12(COLOR_BG, 0x024);
+	setPal12(COLOR_TEXT, 0xFFF);
+	setPal12(COLOR_DIM, 0x888);
 	loadPakPalette("ice.plt", s_pBankIce, 15);
 	loadPakPalette("gold.plt", s_pBankGold, 15);
 #endif
@@ -339,9 +320,10 @@ void gsTestSpritesCreate(void) {
 	g_pCustom->bplcon2 = 0x20;
 
 #ifdef ACE_USE_AGA_FEATURES
-	/* Banks 1/2/3 hold default / ice / gold; index 0 is unused (transparent). */
-	fillSpriteBank12(32 + 1, s_pBankIce, 15);
-	fillSpriteBank12(48 + 1, s_pBankGold, 15);
+	/* Sprite COLOR17–31 in banks 1/2/3 (default / ice / gold). ESPRM/OSPRM select. */
+	fillSpriteBank12(32 + 17, &s_pPal[17], 15);
+	fillSpriteBank12(64 + 17, s_pBankIce, 15);
+	fillSpriteBank12(96 + 17, s_pBankGold, 15);
 	s_ubEvenBank = 1;
 	s_ubOddBank = 2;
 	s_ubBankTimer = 0;

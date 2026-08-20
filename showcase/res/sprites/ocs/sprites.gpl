@@ -1,0 +1,36 @@
+GIMP Palette
+Name: sprites
+Columns: 4
+#
+  0  17  51 Index 0
+255 255 255 Index 1
+136 136 170 Index 2
+  0   0   0 Index 3
+255 204   0 Index 4
+255 255   0 Index 5
+136 255   0 Index 6
+  0 255   0 Index 7
+  0 255 136 Index 8
+  0 255 255 Index 9
+  0 136 255 Index 10
+  0   0 255 Index 11
+136   0 255 Index 12
+255   0 255 Index 13
+255   0 136 Index 14
+255 255 255 Index 15
+  0   0   0 Index 16
+255   0   0 Index 17
+255  68   0 Index 18
+255 136   0 Index 19
+255 204   0 Index 20
+255 255   0 Index 21
+136 255   0 Index 22
+  0 255   0 Index 23
+  0 255 136 Index 24
+  0 255 255 Index 25
+  0 136 255 Index 26
+  0   0 255 Index 27
+136   0 255 Index 28
+255   0 255 Index 29
+255   0 136 Index 30
+255 255 255 Index 31
