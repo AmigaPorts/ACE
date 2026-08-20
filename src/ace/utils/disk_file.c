@@ -167,15 +167,15 @@ DISKFILE_PRIVATE ULONG diskFileWrite(void *pData, const void *pSrc, ULONG ulSize
 		}
 
 		// NOTE: Don't take previously buffered data into account in return value.
-		// TODO: Make sure that all was written here?
+		// TODO: Make sure that all was written to disk?
 		fwrite(
 			pDiskFileData->pBuffer, pDiskFileData->uwBufferFill, 1,
 			pDiskFileData->pFileHandle
 		);
 		pDiskFileData->uwBufferFill = 0;
 
-		// Only allow small read here so that big write will go to the file directly
-		if(ulSize < 100) {
+		// Only allow small write here so that big write will go to the file directly
+		if(ulSize < DISK_FILE_BUFFER_SIZE) {
 			memcpy(&pDiskFileData->pBuffer[pDiskFileData->uwBufferFill], pSrc, ulSize);
 			pDiskFileData->uwBufferFill = ulSize;
 			ulWritten = ulSize;

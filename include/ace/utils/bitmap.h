@@ -99,13 +99,9 @@ tBitMap* bitmapCreate(
 );
 
 /**
- * @brief Returns CHIP/FAST memory size required for a bitmap's bitplanes.
- * Layout matches bitmapCreate() / bitmapCreateFromMem() for the same flags
- * (BMF_INTERLEAVED, BMF_CONTIGUOUS; BMF_CLEAR and BMF_FASTMEM are ignored).
+ * @brief Returns CHIP/FAST memory size required for all bitmap's bitplanes.
  */
-ULONG bitmapGetBufferSize(
-	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
-);
+ULONG bitmapGetBufferSize(UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth);
 
 /**
  * @brief Creates a tBitMap header pointing at existing plane memory.
