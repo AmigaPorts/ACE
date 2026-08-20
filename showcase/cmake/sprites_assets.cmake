@@ -9,17 +9,25 @@ function(convertShowcaseSprites TARGET RES_DIR DATA_DIR)
 	file(MAKE_DIRECTORY ${_SPR_GEN})
 	file(MAKE_DIRECTORY ${_SPR_STAGING})
 
-	convertPalette(${TARGET} ${_SPR_MOUSE_RES}/mouse.gpl ${_SPR_GEN}/mouse.plt)
+	if(ACE_USE_AGA_FEATURES)
+		set(_SPR_AGA AGA)
+	else()
+		set(_SPR_AGA)
+	endif()
+
 	extractBitmaps(
 		TARGET ${TARGET} SOURCE ${_SPR_MOUSE_RES}/mouse.png
 		DESTINATIONS
 			${_SPR_GEN}/arrow.png 0 0 16 26
 			${_SPR_GEN}/pencil.png 16 0 16 26
 	)
-	convertBitmaps(
-		TARGET ${TARGET} PALETTE ${_SPR_GEN}/mouse.plt INTERLEAVED
-		SOURCES ${_SPR_GEN}/arrow.png ${_SPR_GEN}/pencil.png
-		DESTINATIONS ${_SPR_GEN}/arrow.bm ${_SPR_GEN}/pencil.bm
+	convertSprite(
+		TARGET ${TARGET} PALETTE ${_SPR_MOUSE_RES}/mouse.gpl
+		SOURCE ${_SPR_GEN}/arrow.png DESTINATION ${_SPR_GEN}/arrow.bm
+	)
+	convertSprite(
+		TARGET ${TARGET} PALETTE ${_SPR_MOUSE_RES}/mouse.gpl
+		SOURCE ${_SPR_GEN}/pencil.png DESTINATION ${_SPR_GEN}/pencil.bm
 	)
 
 	if(ACE_USE_AGA_FEATURES)
@@ -39,12 +47,19 @@ function(convertShowcaseSprites TARGET RES_DIR DATA_DIR)
 		)
 		convertPalette(${TARGET} ${_SPR_RES}/ice.gpl ${_SPR_GEN}/ice.plt AGA_COLORS)
 		convertPalette(${TARGET} ${_SPR_RES}/gold.gpl ${_SPR_GEN}/gold.plt AGA_COLORS)
-		convertPalette(${TARGET} ${_SPR_RES}/stripe_4.gpl ${_SPR_GEN}/stripe_4.plt AGA_COLORS)
-		convertPalette(${TARGET} ${_SPR_RES}/orb_4.gpl ${_SPR_GEN}/orb_4.plt AGA_COLORS)
-		convertPalette(${TARGET} ${_SPR_RES}/checker_4.gpl ${_SPR_GEN}/checker_4.plt AGA_COLORS)
 		convertPalette(${TARGET} ${_SPR_RES}/sprites.gpl ${_SPR_GEN}/sprites.plt AGA_COLORS)
-		convertPalette(${TARGET} ${_SPR_RES}/attached_16.gpl ${_SPR_GEN}/attached_16.plt AGA_COLORS)
-		convertPalette(${TARGET} ${_SPR_RES}/sprites_4.gpl ${_SPR_GEN}/sprites_4.plt AGA_COLORS)
+		convertSprite(
+			TARGET ${TARGET} PALETTE ${_SPR_RES}/sprites.gpl ${_SPR_AGA}
+			SOURCE ${_SPR_GEN}/stripe.png DESTINATION ${_SPR_GEN}/stripe.bm
+		)
+		convertSprite(
+			TARGET ${TARGET} PALETTE ${_SPR_RES}/sprites.gpl ${_SPR_AGA}
+			SOURCE ${_SPR_GEN}/orb.png DESTINATION ${_SPR_GEN}/orb.bm
+		)
+		convertSprite(
+			TARGET ${TARGET} PALETTE ${_SPR_RES}/sprites.gpl ${_SPR_AGA}
+			SOURCE ${_SPR_GEN}/checker.png DESTINATION ${_SPR_GEN}/checker.bm
+		)
 	else()
 		set(_SPR_RES ${RES_DIR}/sprites/ocs)
 		extractBitmaps(
@@ -61,59 +76,32 @@ function(convertShowcaseSprites TARGET RES_DIR DATA_DIR)
 			sprites.plt
 			rainbow_lo.bm rainbow_hi.bm stripe_l.bm stripe_r.bm orb.bm checker.bm
 		)
-		convertPalette(${TARGET} ${_SPR_RES}/stripe_l_4.gpl ${_SPR_GEN}/stripe_l_4.plt)
-		convertPalette(${TARGET} ${_SPR_RES}/stripe_r_4.gpl ${_SPR_GEN}/stripe_r_4.plt)
-		convertPalette(${TARGET} ${_SPR_RES}/orb_4.gpl ${_SPR_GEN}/orb_4.plt)
-		convertPalette(${TARGET} ${_SPR_RES}/checker_4.gpl ${_SPR_GEN}/checker_4.plt)
 		convertPalette(${TARGET} ${_SPR_RES}/sprites.gpl ${_SPR_GEN}/sprites.plt)
-		convertPalette(${TARGET} ${_SPR_RES}/attached_16.gpl ${_SPR_GEN}/attached_16.plt)
-		convertPalette(${TARGET} ${_SPR_RES}/sprites_4.gpl ${_SPR_GEN}/sprites_4.plt)
+		convertSprite(
+			TARGET ${TARGET} PALETTE ${_SPR_RES}/sprites.gpl
+			SOURCE ${_SPR_GEN}/stripe_l.png DESTINATION ${_SPR_GEN}/stripe_l.bm
+		)
+		convertSprite(
+			TARGET ${TARGET} PALETTE ${_SPR_RES}/sprites.gpl
+			SOURCE ${_SPR_GEN}/stripe_r.png DESTINATION ${_SPR_GEN}/stripe_r.bm
+		)
+		convertSprite(
+			TARGET ${TARGET} PALETTE ${_SPR_RES}/sprites.gpl
+			SOURCE ${_SPR_GEN}/orb.png DESTINATION ${_SPR_GEN}/orb.bm
+		)
+		convertSprite(
+			TARGET ${TARGET} PALETTE ${_SPR_RES}/sprites.gpl
+			SOURCE ${_SPR_GEN}/checker.png DESTINATION ${_SPR_GEN}/checker.bm
+		)
 	endif()
 
-	splitAttachedSprite(
-		TARGET ${TARGET}
+	convertSprite(
+		TARGET ${TARGET} PALETTE ${_SPR_RES}/attached_16.gpl ${_SPR_AGA}
 		SOURCE ${_SPR_GEN}/rainbow.png
-		MATCH_PALETTE ${_SPR_GEN}/attached_16.plt
-		LO ${_SPR_GEN}/rainbow_lo.png
-		HI ${_SPR_GEN}/rainbow_hi.png
+		ATTACHED
+		LO ${_SPR_GEN}/rainbow_lo.bm
+		HI ${_SPR_GEN}/rainbow_hi.bm
 	)
-	convertBitmaps(
-		TARGET ${TARGET} PALETTE ${_SPR_GEN}/sprites_4.plt INTERLEAVED
-		SOURCES ${_SPR_GEN}/rainbow_lo.png ${_SPR_GEN}/rainbow_hi.png
-		DESTINATIONS ${_SPR_GEN}/rainbow_lo.bm ${_SPR_GEN}/rainbow_hi.bm
-	)
-
-	if(ACE_USE_AGA_FEATURES)
-		convertBitmaps(
-			TARGET ${TARGET} PALETTE ${_SPR_GEN}/stripe_4.plt INTERLEAVED
-			SOURCES ${_SPR_GEN}/stripe.png DESTINATIONS ${_SPR_GEN}/stripe.bm
-		)
-		convertBitmaps(
-			TARGET ${TARGET} PALETTE ${_SPR_GEN}/orb_4.plt INTERLEAVED
-			SOURCES ${_SPR_GEN}/orb.png DESTINATIONS ${_SPR_GEN}/orb.bm
-		)
-		convertBitmaps(
-			TARGET ${TARGET} PALETTE ${_SPR_GEN}/checker_4.plt INTERLEAVED
-			SOURCES ${_SPR_GEN}/checker.png DESTINATIONS ${_SPR_GEN}/checker.bm
-		)
-	else()
-		convertBitmaps(
-			TARGET ${TARGET} PALETTE ${_SPR_GEN}/stripe_l_4.plt INTERLEAVED
-			SOURCES ${_SPR_GEN}/stripe_l.png DESTINATIONS ${_SPR_GEN}/stripe_l.bm
-		)
-		convertBitmaps(
-			TARGET ${TARGET} PALETTE ${_SPR_GEN}/stripe_r_4.plt INTERLEAVED
-			SOURCES ${_SPR_GEN}/stripe_r.png DESTINATIONS ${_SPR_GEN}/stripe_r.bm
-		)
-		convertBitmaps(
-			TARGET ${TARGET} PALETTE ${_SPR_GEN}/orb_4.plt INTERLEAVED
-			SOURCES ${_SPR_GEN}/orb.png DESTINATIONS ${_SPR_GEN}/orb.bm
-		)
-		convertBitmaps(
-			TARGET ${TARGET} PALETTE ${_SPR_GEN}/checker_4.plt INTERLEAVED
-			SOURCES ${_SPR_GEN}/checker.png DESTINATIONS ${_SPR_GEN}/checker.bm
-		)
-	endif()
 
 	set(_SPR_PAK_SRCS)
 	foreach(_name ${_SPR_PAK_ORDER})

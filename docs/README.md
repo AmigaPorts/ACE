@@ -46,6 +46,7 @@ TBD, will be doxy-generated or done as wiki pages, idk yet.
 
 - [Palettes](tools/palette_conv.md)
 - [Bitmaps](tools/bitmap_conv.md)
+- [Sprites](tools/sprite_conv.md)
 - [Fonts](tools/font_conv.md)
 - [Audio](tools/audio_conv.md)
 - [.plt v2 / palette changes (overview)](palette-plt-v2-changes.md)

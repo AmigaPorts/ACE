@@ -175,26 +175,58 @@ function(transformBitmap)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
 
-# Split 16-color attached-sprite PNG into two 4-color (2BPP) plane PNGs.
-# Outputs use match.plt colors 0..3 — pass the same first-four as convertBitmaps PALETTE.
-function(splitAttachedSprite)
-	getToolPath(sprite_split_16to4 TOOL_SPRITE_SPLIT_16TO4)
+# Convert a PNG to an interleaved 2BPP sprite .bm (and optional .plt).
+# ATTACHED splits a 16-color image into lo/hi bitmaps.
+function(convertSprite)
+	getToolPath(sprite_conv TOOL_SPRITE_CONV)
 	cmake_parse_arguments(
-		args "" "TARGET;SOURCE;MATCH_PALETTE;LO;HI" "" ${ARGN}
+		args "ATTACHED;AGA" "TARGET;PALETTE;SOURCE;DESTINATION;LO;HI;PLT" "" ${ARGN}
 	)
+	toAbsolute(args_PALETTE)
 	toAbsolute(args_SOURCE)
-	toAbsolute(args_MATCH_PALETTE)
-	toAbsolute(args_LO)
-	toAbsolute(args_HI)
-	add_custom_command(
-		OUTPUT ${args_LO} ${args_HI}
-		COMMAND ${TOOL_SPRITE_SPLIT_16TO4}
-			${args_MATCH_PALETTE} ${args_SOURCE}
-			-o ${args_LO} ${args_HI}
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		DEPENDS ${args_SOURCE} ${args_MATCH_PALETTE}
-	)
-	target_sources(${args_TARGET} PUBLIC ${args_LO} ${args_HI})
+
+	set(_sprFlags)
+	if(args_AGA)
+		list(APPEND _sprFlags -aga)
+	endif()
+
+	if(args_ATTACHED)
+		toAbsolute(args_LO)
+		toAbsolute(args_HI)
+		set(_sprOuts ${args_LO} ${args_HI})
+		if(NOT args_PLT)
+			set(args_PLT ${args_LO})
+			string(REGEX REPLACE "\\.[^.]+$" ".plt" args_PLT "${args_PLT}")
+		else()
+			toAbsolute(args_PLT)
+		endif()
+		list(APPEND _sprOuts ${args_PLT})
+		add_custom_command(
+			OUTPUT ${_sprOuts}
+			COMMAND ${TOOL_SPRITE_CONV} ${args_PALETTE} ${args_SOURCE}
+				-attached -o ${args_LO} ${args_HI} -p ${args_PLT} ${_sprFlags}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			DEPENDS ${args_PALETTE} ${args_SOURCE}
+		)
+	else()
+		toAbsolute(args_DESTINATION)
+		set(_sprOuts ${args_DESTINATION})
+		if(NOT args_PLT)
+			set(args_PLT ${args_DESTINATION})
+			string(REGEX REPLACE "\\.[^.]+$" ".plt" args_PLT "${args_PLT}")
+		else()
+			toAbsolute(args_PLT)
+		endif()
+		list(APPEND _sprOuts ${args_PLT})
+		add_custom_command(
+			OUTPUT ${_sprOuts}
+			COMMAND ${TOOL_SPRITE_CONV} ${args_PALETTE} ${args_SOURCE}
+				-o ${args_DESTINATION} -p ${args_PLT} ${_sprFlags}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			DEPENDS ${args_PALETTE} ${args_SOURCE}
+		)
+	endif()
+	target_sources(${args_TARGET} PUBLIC ${_sprOuts})
 endfunction()
 
 function(extractBitmaps)
