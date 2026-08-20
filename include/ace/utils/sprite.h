@@ -49,14 +49,16 @@ void spriteInit(void);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
- * @brief Sets the palette bank for AGA sprites on odd channels.
+ * @brief Sets the palette bank for AGA sprites on odd channels (BPLCON4 OSPRM).
+ * Patches the CPU BPLCON4 copy then writes the whole register — see customSetBplCon4().
  * @param ubIndex The palette bank index (0-15)
  * @see spriteSetEvenColorPaletteBank
  */
 void spriteSetOddColorPaletteBank(UBYTE ubIndex);
 
 /**
- * @brief Sets the palette bank for AGA sprites on even channels.
+ * @brief Sets the palette bank for AGA sprites on even channels (BPLCON4 ESPRM).
+ * Patches the CPU BPLCON4 copy then writes the whole register — see customSetBplCon4().
  * @param ubIndex The palette bank index (0-15)
  * @see spriteSetOddColorPaletteBank
  */

@@ -215,6 +215,29 @@ tRayPos getRayPos(void);
 extern tCustom FAR REGPTR g_pCustom;
 
 /**
+ * AGA BPLCON4 reset: BPLAM=0, even sprite bank 1, odd sprite bank 1.
+ * Matches OCS sprite colors 16–31. Write via customSetBplCon4() — the register
+ * is write-only.
+ */
+#define BPLCON4_AGA_RESET 0x0011
+
+/**
+ * @brief Writes BPLCON4 (full 16-bit MOVE) and keeps a CPU copy.
+ *
+ * Custom registers are write-only: a read returns bus noise. RMW of the
+ * sprite-bank nibbles would copy that noise into BPLAM (playfield XOR,
+ * bits 15-8). Bank helpers patch this copy, then write the whole word.
+ *
+ * @param uwBplCon4 Full value. viewLoad() uses BPLCON4_AGA_RESET.
+ */
+void customSetBplCon4(UWORD uwBplCon4);
+
+/**
+ * @brief Returns the CPU copy of BPLCON4 last written by customSetBplCon4().
+ */
+UWORD customGetBplCon4(void);
+
+/**
  * Bitplane display regs with 16-bit access.
  * For use with Copper. Other stuff should use g_pCustom->bplpt
  */
