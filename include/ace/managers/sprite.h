@@ -33,17 +33,6 @@ typedef struct tSprite {
 	UBYTE isEnabled;
 	UBYTE isHeaderToBeUpdated;
 	UBYTE isAttached; // Odd Sprites Only.
-#ifdef ACE_USE_AGA_FEATURES
-	/**
-	 * CHIP DMA stream used only when the bitmap is narrower than the FMODE
-	 * fetch (e.g. 16px art under 32-bit sprites). NULL when the interleaved
-	 * bitmap line already matches the fetch — then Planes[0] is the list
-	 * (FMODE-wide POS/CTL line, data, FMODE-wide terminator). Do not write these.
-	 */
-	UBYTE *pHwAlloc;
-	UBYTE *pHwData;
-	ULONG ulHwAllocSize;
-#endif
 } tSprite;
 
 /**
@@ -116,12 +105,9 @@ void spriteRemove(tSprite *pSprite);
  * @param pBitmap Bitmap to be used for display/control data. The bitmap must be
  * in 2BPP interleaved format as well as start and end with an empty line,
  * which will not be displayed but used for storing control data.
- * Width is 16px on OCS/ECS. With ACE_USE_AGA_FEATURES, 32px and 64px bitmaps
- * are native AGA lists: each DMA slot is FMODE-wide and POS/CTL sit in the
- * first word of slot 0 and slot 1 (32px: POS at +0, CTL at +4). Set
- * TAG_VPORT_FMODE sprite-fetch bits to match, or the manager will raise them.
- * After changing pixels on a padded (narrower-than-fetch) sprite, call
- * spriteRequestDataUpdate().
+ * Width is 16px on OCS/ECS. With ACE_USE_AGA_FEATURES, 32px and 64px are also
+ * valid; the interleaved line must match `TAG_VPORT_FMODE` sprite-fetch
+ * (POS at +0, CTL at half the line: 32px → +4).
  */
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap);
 
@@ -166,15 +152,6 @@ void spriteSetAttached(tSprite *pSprite, UBYTE isAttached);
  * @see spriteProcess()
  */
 void spriteRequestMetadataUpdate(tSprite *pSprite);
-
-#ifdef ACE_USE_AGA_FEATURES
-/**
- * @brief Rebuilds the AGA hardware DMA stream from the sprite bitmap.
- * Call after you change pixel data. Header/position updates still go through
- * spriteRequestMetadataUpdate() / spriteProcess().
- */
-void spriteRequestDataUpdate(tSprite *pSprite);
-#endif
 
 /**
  * @brief Updates the sprite's metadata if set as requiring update.

@@ -54,7 +54,6 @@ static void spriteChannelWriteSprpt(UBYTE ubChannelIndex, ULONG ulSprAddr) {
 }
 
 #ifdef ACE_USE_AGA_FEATURES
-/* Bytes per sprite DMA line for current FMODE sprite-fetch bits. */
 static UBYTE spriteFetchLineBytes(void) {
 	UBYTE ubFmode = 0;
 	if(s_pView && s_pView->pFirstVPort) {
@@ -69,135 +68,6 @@ static UBYTE spriteFetchLineBytes(void) {
 		default:
 			return 4;  /* 16px */
 	}
-}
-
-static UBYTE *spriteAlignPtr(UBYTE *p, UBYTE ubAlign) {
-	ULONG u = (ULONG)p;
-	ULONG a = ubAlign;
-	return (UBYTE *)((u + a - 1) & ~(a - 1));
-}
-
-static void spriteFreeHwData(tSprite *pSprite) {
-	if(pSprite->pHwAlloc) {
-		memFree(pSprite->pHwAlloc, pSprite->ulHwAllocSize);
-		pSprite->pHwAlloc = 0;
-		pSprite->pHwData = 0;
-		pSprite->ulHwAllocSize = 0;
-	}
-}
-
-/* Pad a narrower interleaved line into an FMODE-wide DMA slot (plane0 then plane1). */
-static void spriteCopyLineToHw(
-	UBYTE *pDst, UBYTE ubDstBytes, const UBYTE *pSrc, UBYTE ubSrcBytes
-) {
-	UBYTE ubSrcPlane = (UBYTE)(ubSrcBytes >> 1);
-	UBYTE ubDstPlane = (UBYTE)(ubDstBytes >> 1);
-	UBYTE i;
-	for(i = 0; i < ubDstPlane; ++i) {
-		pDst[i] = (i < ubSrcPlane) ? pSrc[i] : 0;
-	}
-	for(i = 0; i < ubDstPlane; ++i) {
-		pDst[ubDstPlane + i] = (i < ubSrcPlane) ? pSrc[ubSrcPlane + i] : 0;
-	}
-}
-
-/* Bump FMODE sprite-fetch if the bitmap is wider than the current setting. */
-static UBYTE spriteEnsureMinFetch(UWORD uwPlaneBytes) {
-	tVPort *pVp;
-	UBYTE ubNeed;
-	UBYTE ubOld;
-
-	if(uwPlaneBytes <= 2 || !s_pView || !s_pView->pFirstVPort) {
-		return 0;
-	}
-
-	pVp = s_pView->pFirstVPort;
-	ubNeed = (uwPlaneBytes >= 8) ? 0x0C : 0x04;
-	ubOld = (UBYTE)(pVp->ubFmode & 0x0C);
-	if(ubOld == ubNeed || (ubNeed == 0x04 && ubOld == 0x0C)) {
-		return 0;
-	}
-	if(ubNeed == 0x04 && (ubOld == 0x04 || ubOld == 0x08)) {
-		return 0;
-	}
-
-	pVp->ubFmode = (UBYTE)((pVp->ubFmode & ~0x0C) | ubNeed);
-	g_pCustom->fmode = pVp->ubFmode;
-	return 1;
-}
-
-static void spriteBuildHwData(tSprite *pSprite) {
-	tBitMap *pBm = pSprite->pBitmap;
-	UWORD uwBpr;
-	UWORD uwHeight;
-	UBYTE ubFetch;
-	UBYTE ubAlign;
-	ULONG ulPayload;
-	ULONG ulAlloc;
-	ULONG i;
-	const UBYTE *pSrc;
-
-	if(!pBm) {
-		spriteFreeHwData(pSprite);
-		return;
-	}
-
-	uwBpr = pBm->BytesPerRow;
-	uwHeight = pSprite->uwHeight;
-	ubFetch = spriteFetchLineBytes();
-
-	/*
-	 * FMODE widens POS/CTL as well as DATA/DATB (HowToCode: 32px = 2 longwords,
-	 * 64px = 4). The ACE empty first/last line is exactly that record when the
-	 * bitmap line width matches the fetch — use the bitmap as the DMA list.
-	 */
-	if(uwBpr == ubFetch) {
-		spriteFreeHwData(pSprite);
-		return;
-	}
-
-	ubAlign = (ubFetch >= 16) ? 16 : 8;
-	ulPayload = (ULONG)(uwHeight + 2) * ubFetch;
-	ulAlloc = ulPayload + ubAlign;
-	if(pSprite->pHwAlloc && pSprite->ulHwAllocSize != ulAlloc) {
-		spriteFreeHwData(pSprite);
-	}
-	if(!pSprite->pHwAlloc) {
-		pSprite->pHwAlloc = (UBYTE *)memAllocChipClear(ulAlloc);
-		pSprite->ulHwAllocSize = ulAlloc;
-		pSprite->pHwData = spriteAlignPtr(pSprite->pHwAlloc, ubAlign);
-	}
-
-	pSrc = (const UBYTE *)pBm->Planes[0];
-	for(i = 0; i < uwHeight; ++i) {
-		spriteCopyLineToHw(
-			pSprite->pHwData + ubFetch + i * ubFetch, ubFetch,
-			pSrc + (i + 1) * uwBpr, (UBYTE)uwBpr
-		);
-	}
-	pSprite->isHeaderToBeUpdated = 1;
-}
-
-static void spriteRebuildAllHwData(void) {
-	UBYTE i;
-	for(i = 0; i < HARDWARE_SPRITE_CHANNEL_COUNT; ++i) {
-		tSprite *pSprite = s_pChannelsData[i].pFirstSprite;
-		if(pSprite && pSprite->pBitmap) {
-			spriteBuildHwData(pSprite);
-			spriteChannelRequestCopperUpdate(&s_pChannelsData[i]);
-		}
-	}
-}
-
-static ULONG spriteGetDmaAddr(const tSprite *pSprite) {
-	if(pSprite->pHwData) {
-		return (ULONG)pSprite->pHwData;
-	}
-	return (ULONG)pSprite->pBitmap->Planes[0];
-}
-
-void spriteRequestDataUpdate(tSprite *pSprite) {
-	spriteBuildHwData(pSprite);
 }
 #endif
 
@@ -308,9 +178,6 @@ void spriteRemove(tSprite *pSprite) {
 		}
 	}
 
-#ifdef ACE_USE_AGA_FEATURES
-	spriteFreeHwData(pSprite);
-#endif
 	memFree(pSprite, sizeof(*pSprite));
 	systemUnuse();
 }
@@ -340,6 +207,8 @@ void spriteRequestMetadataUpdate(tSprite *pSprite) {
 }
 
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
+	UBYTE ubByteWidth;
+
 	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
 		logWrite(
 			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP\n",
@@ -347,24 +216,24 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 		);
 		return;
 	}
-#if defined(ACE_USE_AGA_FEATURES)
-	UBYTE uwMaxSpriteWidth = 8;
-#else
-	UBYTE uwMaxSpriteWidth = 2;
-#endif
-	UBYTE ubByteWidth = bitmapGetByteWidth(pBitmap);
-	if(ubByteWidth > uwMaxSpriteWidth) {
+	ubByteWidth = bitmapGetByteWidth(pBitmap);
+#ifdef ACE_USE_AGA_FEATURES
+	if(ubByteWidth != 2 && ubByteWidth != 4 && ubByteWidth != 8) {
 		logWrite(
-			"ERR: Unsupported sprite width: %hhu, expected %hhu\n",
-			ubByteWidth * 8, uwMaxSpriteWidth
+			"ERR: Unsupported sprite width: %hhu, expected 16, 32 or 64\n",
+			ubByteWidth * 8
 		);
 		return;
 	}
-
-	pSprite->pBitmap = pBitmap;
-#ifdef ACE_USE_AGA_FEATURES
-	if(spriteEnsureMinFetch(ubByteWidth)) {
-		spriteRebuildAllHwData();
+	{
+		UBYTE ubFetch = spriteFetchLineBytes();
+		if(pBitmap->BytesPerRow != ubFetch) {
+			logWrite(
+				"ERR: Sprite channel %hhu width %hhu px does not match FMODE fetch %hhu px\n",
+				pSprite->ubChannelIndex, ubByteWidth * 8, ubFetch * 4
+			);
+			return;
+		}
 	}
 #if defined(ACE_DEBUG)
 	if(ubByteWidth > 2 && s_pView && s_pView->pFirstVPort &&
@@ -373,7 +242,17 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 		logWrite("ERR: Wide sprites need an AGA viewport (TAG_VPORT_USES_AGA)\n");
 	}
 #endif
+#else
+	if(ubByteWidth != 2) {
+		logWrite(
+			"ERR: Unsupported sprite width: %hhu, expected 16\n",
+			ubByteWidth * 8
+		);
+		return;
+	}
 #endif
+
+	pSprite->pBitmap = pBitmap;
 	spriteSetHeight(pSprite, pBitmap->Rows - 2);
 
 	tSpriteChannel *pChannel = &s_pChannelsData[pSprite->ubChannelIndex];
@@ -387,19 +266,13 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 	}
 
 	const tSprite *pSprite = pChannel->pFirstSprite;
+	ULONG ulSprAddr = (
+		pSprite && pSprite->isEnabled ?
+		(ULONG)(pSprite->pBitmap->Planes[0]) :
+		(ULONG)s_pBlankSprite
+	);
 	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK && s_pInitialClearCopBlock) {
-		ULONG ulSprAddr;
-
 		pChannel->ubCopperRegenCount = 0;
-		ulSprAddr = (
-			pSprite && pSprite->isEnabled ?
-#ifdef ACE_USE_AGA_FEATURES
-			spriteGetDmaAddr(pSprite) :
-#else
-			(ULONG)(pSprite->pBitmap->Planes[0]) :
-#endif
-			(ULONG)s_pBlankSprite
-		);
 		spriteChannelWriteSprpt(ubChannelIndex, ulSprAddr);
 	}
 	else {
@@ -407,15 +280,6 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 		UWORD uwRawCopPos = pChannel->uwRawCopPos;
 		tCopCmd *pList = &s_pView->pCopList->pBackBfr->pList[uwRawCopPos];
 
-		ULONG ulSprAddr = (
-			pSprite && pSprite->isEnabled ?
-#ifdef ACE_USE_AGA_FEATURES
-			spriteGetDmaAddr(pSprite) :
-#else
-			(ULONG)(pSprite->pBitmap->Planes[0]) :
-#endif
-			(ULONG)s_pBlankSprite
-		);
 		copSetMoveVal(&pList[0].sMove, ulSprAddr >> 16);
 		copSetMoveVal(&pList[1].sMove, ulSprAddr & 0xFFFF);
 	}
@@ -450,18 +314,10 @@ void spriteProcess(tSprite *pSprite) {
 	);
 
 #ifdef ACE_USE_AGA_FEATURES
-	/*
-	 * Each sprite DMA slot fetches FMODE-wide data and Lisa keeps the first
-	 * word: POS at 0, CTL at (line/2). 16px: CTL at +2. 32px: CTL at +4.
-	 * Writing OCS-packed POS/CTL at +0/+2 leaves CTL=0 → VSTOP=0 → trails.
-	 */
+	/* FMODE-wide slot: Lisa keeps the first word of each half (POS, then CTL). */
 	{
-		UBYTE *pBase = pSprite->pHwData
-			? pSprite->pHwData
-			: (UBYTE *)pSprite->pBitmap->Planes[0];
-		UWORD uwLine = pSprite->pHwData
-			? spriteFetchLineBytes()
-			: pSprite->pBitmap->BytesPerRow;
+		UBYTE *pBase = (UBYTE *)pSprite->pBitmap->Planes[0];
+		UWORD uwLine = pSprite->pBitmap->BytesPerRow;
 		UWORD uwCtlOff = (UWORD)(uwLine >> 1);
 		UWORD i;
 		for(i = 0; i < uwLine; ++i) {
@@ -492,7 +348,4 @@ void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
 
 	pSprite->uwHeight = uwHeight;
 	pSprite->isHeaderToBeUpdated = 1;
-#ifdef ACE_USE_AGA_FEATURES
-	spriteBuildHwData(pSprite);
-#endif
 }

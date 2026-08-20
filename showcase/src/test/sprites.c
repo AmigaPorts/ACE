@@ -2,17 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * Showcase: hardware sprites via the sprite manager.
- *
- * OCS walks three setups (attached 16-color, two-channel 32px, lone 16px).
- * AGA rebuild uses FMODE 32px fetch — one DMA channel per 32px sprite — and
- * cycles even/odd sprite palette banks so you can see ESPRM/OSPRM working.
- * Sprite COLOR banks are written as 24-bit (COLOR + LOCT).
- * Orb uses channel 0 so it draws in front of the others (priority = channel).
- * Graphics load from data/sprites.pak (pakFileOpen / pakFileGetFileByPath).
- */
-
 #include "test/sprites.h"
 #include <ace/generic/screen.h>
 #include <ace/managers/copper.h>
@@ -31,7 +20,6 @@
 
 #ifdef ACE_USE_AGA_FEATURES
 #include <ace/utils/sprite.h>
-/* 32-bit sprite fetch, 16-bit playfield. FMODE is global — all sprites are 32px. */
 #define SPRITE_FMODE_32 0x04
 #endif
 
@@ -50,8 +38,6 @@ static tSimpleBufferManager *s_pBfr;
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
 
-/* Orb on ch0 (highest sprite priority). Rainbow attached ch2+3.
- * OCS stripe ch4+5, checker ch6. AGA stripe ch4, checker ch5 (odd bank). */
 static tBitMap *s_pBmRainbowLo, *s_pBmRainbowHi;
 static tBitMap *s_pBmStripe;
 #ifndef ACE_USE_AGA_FEATURES
@@ -81,9 +67,6 @@ static UWORD s_pPal[32];
 #endif
 
 static void setSpritePos(tSprite *pSpr, WORD wX, WORD wY) {
-	if(!pSpr) {
-		return;
-	}
 	pSpr->wX = wX;
 	pSpr->wY = wY;
 	spriteRequestMetadataUpdate(pSpr);
@@ -111,8 +94,7 @@ static tBitMap *loadPakBitmap(const char *szName) {
 	return bitmapCreateFromFd(pFile, 0);
 }
 
-#ifdef ACE_USE_AGA_FEATURES
-static void loadPakPalette(const char *szName, ULONG *pPal, UWORD uwMax) {
+static void loadPakPalette(const char *szName, void *pPal, UWORD uwMax) {
 	tFile *pFile;
 
 	if(!s_pPak) {
@@ -125,11 +107,7 @@ static void loadPakPalette(const char *szName, ULONG *pPal, UWORD uwMax) {
 	paletteLoadFromFd(pFile, (UWORD *)pPal, uwMax);
 }
 
-static void setPal24(UWORD uwIdx, ULONG ulRgb24) {
-	((ULONG *)s_pVPort->pPalette)[uwIdx] = ulRgb24;
-}
-
-/* COLOR bank + LOCT: high nibble then low (same split as viewUpdateGlobalPalette). */
+#ifdef ACE_USE_AGA_FEATURES
 static void pokeAgaColor24(UWORD uwIdx, ULONG ulRgb24) {
 	UBYTE ubBank = (UBYTE)(uwIdx / 32);
 	UBYTE ubReg = (UBYTE)(uwIdx % 32);
@@ -154,52 +132,17 @@ static void fillSpriteBank24(UWORD uwBase, const ULONG *pRgb, UBYTE ubCount) {
 		pokeAgaColor24((UWORD)(uwBase + i), pRgb[i]);
 	}
 }
-
-static void applySpriteBanks(void) {
-	/* Only BPLCON4 ESPRM/OSPRM — do not touch playfield COLOR0–15. */
-	spriteSetEvenColorPaletteBank(s_ubEvenBank);
-	spriteSetOddColorPaletteBank(s_ubOddBank);
-}
-#else
-static void loadPakPalette(const char *szName, UWORD *pPal, UWORD uwMax) {
-	tFile *pFile;
-
-	if(!s_pPak) {
-		return;
-	}
-	pFile = pakFileGetFileByPath(s_pPak, szName);
-	if(!pFile) {
-		return;
-	}
-	paletteLoadFromFd(pFile, pPal, uwMax);
-}
-
-static void setPal12(UWORD uwIdx, UWORD uwRgb12) {
-	s_pVPort->pPalette[uwIdx] = uwRgb12;
-}
 #endif
 
 static void processSprites(void) {
-	if(s_pSprRainbowLo) {
-		spriteProcess(s_pSprRainbowLo);
-	}
-	if(s_pSprRainbowHi) {
-		spriteProcess(s_pSprRainbowHi);
-	}
-	if(s_pSprStripe) {
-		spriteProcess(s_pSprStripe);
-	}
+	spriteProcess(s_pSprRainbowLo);
+	spriteProcess(s_pSprRainbowHi);
+	spriteProcess(s_pSprStripe);
 #ifndef ACE_USE_AGA_FEATURES
-	if(s_pSprStripeR) {
-		spriteProcess(s_pSprStripeR);
-	}
+	spriteProcess(s_pSprStripeR);
 #endif
-	if(s_pSprOrb) {
-		spriteProcess(s_pSprOrb);
-	}
-	if(s_pSprChecker) {
-		spriteProcess(s_pSprChecker);
-	}
+	spriteProcess(s_pSprOrb);
+	spriteProcess(s_pSprChecker);
 	spriteProcessChannel(0);
 	spriteProcessChannel(2);
 	spriteProcessChannel(3);
@@ -247,17 +190,16 @@ void gsTestSpritesCreate(void) {
 	loadPakPalette("sprites.plt", s_pPal, 32);
 #ifdef ACE_USE_AGA_FEATURES
 	for(i = 0; i < 32; ++i) {
-		setPal24(i, s_pPal[i]);
+		((ULONG *)s_pVPort->pPalette)[i] = s_pPal[i];
 	}
-	/* Playfield HUD — leave bank 0 alone when swapping sprite banks. */
-	setPal24(COLOR_BG, 0x001122);
-	setPal24(COLOR_TEXT, 0xF8F4FF);
-	setPal24(COLOR_DIM, 0x887766);
+	((ULONG *)s_pVPort->pPalette)[COLOR_BG] = 0x001122;
+	((ULONG *)s_pVPort->pPalette)[COLOR_TEXT] = 0xF8F4FF;
+	((ULONG *)s_pVPort->pPalette)[COLOR_DIM] = 0x887766;
 	loadPakPalette("ice.plt", s_pBankIce, 15);
 	loadPakPalette("gold.plt", s_pBankGold, 15);
 #else
 	for(i = 0; i < 32; ++i) {
-		setPal12(i, s_pPal[i]);
+		s_pVPort->pPalette[i] = s_pPal[i];
 	}
 #endif
 
@@ -296,10 +238,7 @@ void gsTestSpritesCreate(void) {
 	spriteManagerCreate(s_pView, 0, 0);
 	systemSetDmaBit(DMAB_SPRITE, 1);
 
-	/* Orb on ch0 — hardware sprite priority is the channel (0 in front of 7). */
 	s_pSprOrb = spriteAdd(0, s_pBmOrb);
-
-	/* Attached pair → 16 colors from the lo/hi bitplanes. */
 	s_pSprRainbowLo = spriteAdd(2, s_pBmRainbowLo);
 	s_pSprRainbowHi = spriteAdd(3, s_pBmRainbowHi);
 	spriteSetAttached(s_pSprRainbowHi, 1);
@@ -336,18 +275,17 @@ void gsTestSpritesCreate(void) {
 	processSprites();
 
 	viewLoad(s_pView);
-	/* Sprites in front of playfield. */
 	g_pCustom->bplcon2 = 0x20;
 
 #ifdef ACE_USE_AGA_FEATURES
-	/* Sprite COLOR17–31 in banks 1/2/3 (default / ice / gold). ESPRM/OSPRM select. */
 	fillSpriteBank24(32 + 17, &s_pPal[17], 15);
 	fillSpriteBank24(64 + 17, s_pBankIce, 15);
 	fillSpriteBank24(96 + 17, s_pBankGold, 15);
 	s_ubEvenBank = 1;
 	s_ubOddBank = 2;
 	s_ubBankTimer = 0;
-	applySpriteBanks();
+	spriteSetEvenColorPaletteBank(s_ubEvenBank);
+	spriteSetOddColorPaletteBank(s_ubOddBank);
 #endif
 	systemUnuse();
 }
@@ -359,7 +297,6 @@ void gsTestSpritesLoop(void) {
 	}
 
 #ifdef ACE_USE_AGA_FEATURES
-	/* ~1.5s at 50Hz: rotate even/odd banks, keep them different. */
 	if(++s_ubBankTimer >= 75) {
 		s_ubBankTimer = 0;
 		s_ubEvenBank = (UBYTE)(1 + (s_ubEvenBank % 3));
@@ -367,11 +304,11 @@ void gsTestSpritesLoop(void) {
 		if(s_ubOddBank == s_ubEvenBank) {
 			s_ubOddBank = (UBYTE)(1 + (s_ubOddBank % 3));
 		}
-		applySpriteBanks();
+		spriteSetEvenColorPaletteBank(s_ubEvenBank);
+		spriteSetOddColorPaletteBank(s_ubOddBank);
 	}
 #endif
 
-	/* Bounce the rows independently; orb flies in 2D over the rest. */
 	s_wXRainbow = (WORD)(s_wXRainbow + s_bDirRainbow);
 	if(s_wXRainbow > 280 || s_wXRainbow < 8) {
 		s_bDirRainbow = (BYTE)-s_bDirRainbow;
@@ -423,32 +360,18 @@ void gsTestSpritesDestroy(void) {
 	systemUse();
 	systemSetDmaBit(DMAB_SPRITE, 0);
 	spriteManagerDestroy();
-	if(s_pBmRainbowLo) {
-		bitmapDestroy(s_pBmRainbowLo);
-	}
-	if(s_pBmRainbowHi) {
-		bitmapDestroy(s_pBmRainbowHi);
-	}
-	if(s_pBmStripe) {
-		bitmapDestroy(s_pBmStripe);
-	}
+	bitmapDestroy(s_pBmRainbowLo);
+	bitmapDestroy(s_pBmRainbowHi);
+	bitmapDestroy(s_pBmStripe);
 #ifndef ACE_USE_AGA_FEATURES
-	if(s_pBmStripeR) {
-		bitmapDestroy(s_pBmStripeR);
-	}
+	bitmapDestroy(s_pBmStripeR);
 #endif
-	if(s_pBmOrb) {
-		bitmapDestroy(s_pBmOrb);
-	}
-	if(s_pBmChecker) {
-		bitmapDestroy(s_pBmChecker);
-	}
+	bitmapDestroy(s_pBmOrb);
+	bitmapDestroy(s_pBmChecker);
 	if(s_pTextBitMap) {
 		fontDestroyTextBitMap(s_pTextBitMap);
 	}
-	if(s_pFont) {
-		fontDestroy(s_pFont);
-	}
+	fontDestroy(s_pFont);
 	if(s_pPak) {
 		pakFileClose(s_pPak);
 		s_pPak = 0;

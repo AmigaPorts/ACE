@@ -3,19 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * Split a 16-color (attached) sprite preview into two 4-color (2BPP) plane PNGs.
+ * Split a 16-color attached-sprite PNG into two 4-color (2BPP) plane PNGs.
+ * lo = bits 0-1, hi = bits 2-3. Outputs use match.plt colors 0..3.
  *
- * Amiga attached sprites store one logical 16-color image as two 2BPP DMA
- * lists: lo = bits 0-1, hi = bits 2-3. Artists edit the combined look;
- * this tool is the usual build step before bitmap_conv -i.
- *
- * Usage:
- *   sprite_split_16to4 match.plt in.png -o lo.png hi.png
- *
- * match.plt — source colors (indices 0..15, or COLOR16..31). Prefer a
- *             duplicate-free 16-entry palette. Output planes are painted with
- *             match[0..3] so bitmap_conv can use a 4-color .plt of those same
- *             first four entries (depth 2).
+ * Usage: sprite_split_16to4 match.plt in.png -o lo.png hi.png
  */
 
 #include "common/logging.h"
@@ -25,10 +16,7 @@
 void printUsage(const std::string &szAppName)
 {
 	using fmt::print;
-	print("Usage:\n\t{} match.plt in.png -o lo.png hi.png\n\n", szAppName);
-	print("match.plt\tPalette used to resolve source colors; outputs use colors 0..3\n");
-	print("in.png\t\tAttached-sprite preview (up to 16 colors)\n");
-	print("-o lo hi\tOutput paths for low and high 4-color plane PNGs\n");
+	print("Usage:\n\t{} match.plt in.png -o lo.png hi.png\n", szAppName);
 }
 
 static bool writePlanePng(
@@ -65,37 +53,16 @@ static bool writePlanePng(
 
 int main(int lArgCount, const char *pArgs[])
 {
-	if(lArgCount < 6) {
-		nLog::error("Too few arguments");
+	if(lArgCount < 6 || std::string(pArgs[3]) != "-o") {
+		nLog::error("Expected match.plt in.png -o lo.png hi.png");
 		printUsage(pArgs[0]);
 		return EXIT_FAILURE;
 	}
 
 	std::string szMatch = pArgs[1];
 	std::string szInput = pArgs[2];
-	std::string szLo, szHi;
-
-	for(int i = 3; i < lArgCount; ++i) {
-		if(pArgs[i] == std::string("-o")) {
-			if(i + 2 >= lArgCount) {
-				nLog::error("-o needs lo.png and hi.png paths");
-				return EXIT_FAILURE;
-			}
-			szLo = pArgs[++i];
-			szHi = pArgs[++i];
-		}
-		else {
-			nLog::error("Unknown arg '{}'", pArgs[i]);
-			printUsage(pArgs[0]);
-			return EXIT_FAILURE;
-		}
-	}
-
-	if(szLo.empty() || szHi.empty()) {
-		nLog::error("Missing -o lo.png hi.png");
-		printUsage(pArgs[0]);
-		return EXIT_FAILURE;
-	}
+	std::string szLo = pArgs[4];
+	std::string szHi = pArgs[5];
 
 	auto Match = tPalette::fromFile(szMatch);
 	if(!Match.isValid() || Match.m_vColors.size() < 4) {

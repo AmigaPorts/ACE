@@ -16,7 +16,7 @@ With header and footer in mind, this means that e.g. 16x32 sprite data can be pr
 
 On OCS/ECS, wider sprites are made by placing multiple 16px-wide sprites next to each other.
 
-With `ACE_USE_AGA_FEATURES`, the sprite manager also accepts 32px and 64px interleaved 2BPP bitmaps. Each sprite DMA slot is FMODE-wide; Lisa keeps the first word of the slot, so POS is at offset 0 and CTL at half the line (32px: +4, not the OCS +2). Set `TAG_VPORT_FMODE` sprite-fetch bits (`0x04` for 32px, `0x0C` for 64px) — FMODE is global, so every sprite channel uses that fetch width. A 16px bitmap under 32-bit fetch is padded into a CHIP list; call `spriteRequestDataUpdate()` if you change those pixels after `spriteSetBitmap()`.
+With `ACE_USE_AGA_FEATURES`, the sprite manager also accepts 32px and 64px interleaved 2BPP bitmaps. Each sprite DMA slot is FMODE-wide; Lisa keeps the first word of the slot, so POS is at offset 0 and CTL at half the line (32px: +4, not the OCS +2). Set `TAG_VPORT_FMODE` sprite-fetch bits (`0x04` for 32px, `0x0C` for 64px) to match the bitmap width — FMODE is global, so every sprite channel uses that fetch width.
 
 The final sprite palette is dependent on the channel.
 The sprite 2BPP colors are translated into colors from upper half of the current display palette, even if lower screen BPP is used:

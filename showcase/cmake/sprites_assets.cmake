@@ -96,12 +96,6 @@ function(convertShowcaseSprites TARGET RES_DIR DATA_DIR)
 			TARGET ${TARGET} PALETTE ${_SPR_GEN}/checker_4.plt INTERLEAVED
 			SOURCES ${_SPR_GEN}/checker.png DESTINATIONS ${_SPR_GEN}/checker.bm
 		)
-		set(_SPR_PAK_SRCS
-			${_SPR_GEN}/arrow.bm ${_SPR_GEN}/pencil.bm
-			${_SPR_GEN}/sprites.plt ${_SPR_GEN}/ice.plt ${_SPR_GEN}/gold.plt
-			${_SPR_GEN}/rainbow_lo.bm ${_SPR_GEN}/rainbow_hi.bm
-			${_SPR_GEN}/stripe.bm ${_SPR_GEN}/orb.bm ${_SPR_GEN}/checker.bm
-		)
 	else()
 		convertBitmaps(
 			TARGET ${TARGET} PALETTE ${_SPR_GEN}/stripe_l_4.plt INTERLEAVED
@@ -119,14 +113,12 @@ function(convertShowcaseSprites TARGET RES_DIR DATA_DIR)
 			TARGET ${TARGET} PALETTE ${_SPR_GEN}/checker_4.plt INTERLEAVED
 			SOURCES ${_SPR_GEN}/checker.png DESTINATIONS ${_SPR_GEN}/checker.bm
 		)
-		set(_SPR_PAK_SRCS
-			${_SPR_GEN}/arrow.bm ${_SPR_GEN}/pencil.bm
-			${_SPR_GEN}/sprites.plt
-			${_SPR_GEN}/rainbow_lo.bm ${_SPR_GEN}/rainbow_hi.bm
-			${_SPR_GEN}/stripe_l.bm ${_SPR_GEN}/stripe_r.bm
-			${_SPR_GEN}/orb.bm ${_SPR_GEN}/checker.bm
-		)
 	endif()
+
+	set(_SPR_PAK_SRCS)
+	foreach(_name ${_SPR_PAK_ORDER})
+		list(APPEND _SPR_PAK_SRCS ${_SPR_GEN}/${_name})
+	endforeach()
 
 	getToolPath(pak_tool TOOL_PAK_TOOL)
 	# Stable order file: only rewrite when content changes so configure does not

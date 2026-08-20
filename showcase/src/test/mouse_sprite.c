@@ -2,12 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * Showcase: mouse cursor as a hardware sprite on channel 0.
- * Arrow and pencil cursors are 16px 2BPP .bm files inside data/sprites.pak.
- * LMB swaps to the pencil and paints.
- */
-
 #include "test/mouse_sprite.h"
 #include <ace/generic/screen.h>
 #include <ace/managers/blit.h>
@@ -30,7 +24,6 @@
 #define COLOR_TEXT 1
 #define COLOR_HINT 2
 #define COLOR_DOT 3
-/* Sprite ch0 uses palette 16–19: outline / fill / lead. */
 #define COLOR_SPR_OUTLINE 17
 #define COLOR_SPR_FILL 18
 #define COLOR_SPR_LEAD 19
@@ -247,11 +240,10 @@ void gsTestMouseSpriteLoop(void) {
 		paintDot(uwX, uwY);
 	}
 	if(mouseUse(MOUSE_PORT_1, MOUSE_RMB)) {
-		UWORD uwTop = s_pFont ? (UWORD)(s_pFont->uwHeight + 2) : 0;
-		UWORD uwBot = s_pFont ? (UWORD)(s_pFont->uwHeight + 2) : 0;
+		UWORD uwHud = s_pFont ? (UWORD)(s_pFont->uwHeight + 2) : 0;
 		blitRect(
-			s_pBfr->pBack, 0, uwTop,
-			SCREEN_PAL_WIDTH, SCREEN_PAL_HEIGHT - uwTop - uwBot,
+			s_pBfr->pBack, 0, uwHud,
+			SCREEN_PAL_WIDTH, SCREEN_PAL_HEIGHT - 2 * uwHud,
 			COLOR_BG
 		);
 	}
