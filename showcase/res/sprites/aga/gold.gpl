@@ -2,18 +2,18 @@ GIMP Palette
 Name: gold
 Columns: 4
 #
-255 136   0 Index 0
-255 153   0 Index 1
-255 170   0 Index 2
-255 187   0 Index 3
-255 204   0 Index 4
-255 221   0 Index 5
-255 238   0 Index 6
-255 255  68 Index 7
-255 255 136 Index 8
-221 136   0 Index 9
-187 102   0 Index 10
-153  68   0 Index 11
-255  68   0 Index 12
-255  34   0 Index 13
+255 150   8 Index 0
+255 165   0 Index 1
+255 180  16 Index 2
+255 195   0 Index 3
+255 210   8 Index 4
+255 225   0 Index 5
+255 240  16 Index 6
+255 255  70 Index 7
+255 255 150 Index 8
+230 150   8 Index 9
+195 110   0 Index 10
+160  75   8 Index 11
+255  70  16 Index 12
+255  40   8 Index 13
 255 255 255 Index 14

@@ -3,6 +3,6 @@ Name: stripe_4
 Columns: 4
 #
   0  17  51 Index 0
-  0 255 255 Index 1
-  0 136 255 Index 2
-  0   0 255 Index 3
+  8 240 255 Index 1
+ 24 140 255 Index 2
+ 40  48 255 Index 3

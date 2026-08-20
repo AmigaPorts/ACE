@@ -2,18 +2,18 @@ GIMP Palette
 Name: ice
 Columns: 4
 #
-136 255 255 Index 0
-102 238 255 Index 1
- 68 221 255 Index 2
- 34 204 255 Index 3
-  0 187 255 Index 4
-  0 153 255 Index 5
-  0 119 255 Index 6
-  0  85 221 Index 7
-  0  51 187 Index 8
-  0  34 153 Index 9
- 68 255 255 Index 10
-136 255 238 Index 11
-170 255 255 Index 12
-204 255 255 Index 13
+160 255 250 Index 0
+120 240 255 Index 1
+ 80 220 255 Index 2
+ 40 200 255 Index 3
+  8 180 255 Index 4
+  0 150 245 Index 5
+  0 120 255 Index 6
+  0  90 220 Index 7
+  0  55 190 Index 8
+  8  40 160 Index 9
+ 70 255 255 Index 10
+150 255 240 Index 11
+180 255 255 Index 12
+210 255 255 Index 13
 255 255 255 Index 14

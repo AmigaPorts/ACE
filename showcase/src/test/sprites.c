@@ -8,6 +8,7 @@
  * OCS walks three setups (attached 16-color, two-channel 32px, lone 16px).
  * AGA rebuild uses FMODE 32px fetch — one DMA channel per 32px sprite — and
  * cycles even/odd sprite palette banks so you can see ESPRM/OSPRM working.
+ * Sprite COLOR banks are written as 24-bit (COLOR + LOCT).
  * Orb uses channel 0 so it draws in front of the others (priority = channel).
  * Graphics load from data/sprites.pak (pakFileOpen / pakFileGetFileByPath).
  */
@@ -66,15 +67,17 @@ static tSprite *s_pSprOrb, *s_pSprChecker;
 static WORD s_wXRainbow, s_wXStripe, s_wXOrb, s_wYOrb, s_wXChecker;
 static BYTE s_bDirRainbow, s_bDirStripe, s_bDirChecker;
 static BYTE s_bOrbVx, s_bOrbVy;
-static UWORD s_pPal[32];
 static tPakFile *s_pPak;
 
 #ifdef ACE_USE_AGA_FEATURES
+static ULONG s_pPal[32];
+static ULONG s_pBankIce[15];
+static ULONG s_pBankGold[15];
 static UBYTE s_ubEvenBank;
 static UBYTE s_ubOddBank;
 static UBYTE s_ubBankTimer;
-static UWORD s_pBankIce[15];
-static UWORD s_pBankGold[15];
+#else
+static UWORD s_pPal[32];
 #endif
 
 static void setSpritePos(tSprite *pSpr, WORD wX, WORD wY) {
@@ -108,6 +111,56 @@ static tBitMap *loadPakBitmap(const char *szName) {
 	return bitmapCreateFromFd(pFile, 0);
 }
 
+#ifdef ACE_USE_AGA_FEATURES
+static void loadPakPalette(const char *szName, ULONG *pPal, UWORD uwMax) {
+	tFile *pFile;
+
+	if(!s_pPak) {
+		return;
+	}
+	pFile = pakFileGetFileByPath(s_pPak, szName);
+	if(!pFile) {
+		return;
+	}
+	paletteLoadFromFd(pFile, (UWORD *)pPal, uwMax);
+}
+
+static void setPal24(UWORD uwIdx, ULONG ulRgb24) {
+	((ULONG *)s_pVPort->pPalette)[uwIdx] = ulRgb24;
+}
+
+/* COLOR bank + LOCT: high nibble then low (same split as viewUpdateGlobalPalette). */
+static void pokeAgaColor24(UWORD uwIdx, ULONG ulRgb24) {
+	UBYTE ubBank = (UBYTE)(uwIdx / 32);
+	UBYTE ubReg = (UBYTE)(uwIdx % 32);
+	UBYTE ubR = (UBYTE)(ulRgb24 >> 16);
+	UBYTE ubG = (UBYTE)(ulRgb24 >> 8);
+	UBYTE ubB = (UBYTE)ulRgb24;
+
+	g_pCustom->bplcon3 = (UWORD)((UWORD)ubBank << 13);
+	g_pCustom->color[ubReg] = (UWORD)(
+		((ubR >> 4) << 8) | ((ubG >> 4) << 4) | (ubB >> 4)
+	);
+	g_pCustom->bplcon3 = (UWORD)(((UWORD)ubBank << 13) | BV(9));
+	g_pCustom->color[ubReg] = (UWORD)(
+		((ubR & 0x0F) << 8) | ((ubG & 0x0F) << 4) | (ubB & 0x0F)
+	);
+	g_pCustom->bplcon3 = 0;
+}
+
+static void fillSpriteBank24(UWORD uwBase, const ULONG *pRgb, UBYTE ubCount) {
+	UBYTE i;
+	for(i = 0; i < ubCount; ++i) {
+		pokeAgaColor24((UWORD)(uwBase + i), pRgb[i]);
+	}
+}
+
+static void applySpriteBanks(void) {
+	/* Only BPLCON4 ESPRM/OSPRM — do not touch playfield COLOR0–15. */
+	spriteSetEvenColorPaletteBank(s_ubEvenBank);
+	spriteSetOddColorPaletteBank(s_ubOddBank);
+}
+#else
 static void loadPakPalette(const char *szName, UWORD *pPal, UWORD uwMax) {
 	tFile *pFile;
 
@@ -121,43 +174,6 @@ static void loadPakPalette(const char *szName, UWORD *pPal, UWORD uwMax) {
 	paletteLoadFromFd(pFile, pPal, uwMax);
 }
 
-#ifdef ACE_USE_AGA_FEATURES
-static ULONG rgb12to24(UWORD uwRgb12) {
-	UBYTE ubR = (UBYTE)(((uwRgb12 >> 8) & 0xF) * 0x11);
-	UBYTE ubG = (UBYTE)(((uwRgb12 >> 4) & 0xF) * 0x11);
-	UBYTE ubB = (UBYTE)((uwRgb12 & 0xF) * 0x11);
-	return ((ULONG)ubR << 16) | ((ULONG)ubG << 8) | ubB;
-}
-
-static void setPal12(UWORD uwIdx, UWORD uwRgb12) {
-	((ULONG *)s_pVPort->pPalette)[uwIdx] = rgb12to24(uwRgb12);
-}
-
-/* Write COLOR0..COLOR31 in bank N: once for low nibble, again with LOCT for high. */
-static void pokeAgaColor12(UWORD uwIdx, UWORD uwRgb12) {
-	UBYTE ubBank = (UBYTE)(uwIdx / 32);
-	UBYTE ubReg = (UBYTE)(uwIdx % 32);
-	uwRgb12 &= 0x0FFF;
-	g_pCustom->bplcon3 = (UWORD)((UWORD)ubBank << 13);
-	g_pCustom->color[ubReg] = uwRgb12;
-	g_pCustom->bplcon3 = (UWORD)(((UWORD)ubBank << 13) | BV(9));
-	g_pCustom->color[ubReg] = uwRgb12;
-	g_pCustom->bplcon3 = 0;
-}
-
-static void fillSpriteBank12(UWORD uwBase, const UWORD *pRgb, UBYTE ubCount) {
-	UBYTE i;
-	for(i = 0; i < ubCount; ++i) {
-		pokeAgaColor12((UWORD)(uwBase + i), pRgb[i]);
-	}
-}
-
-static void applySpriteBanks(void) {
-	/* Only BPLCON4 ESPRM/OSPRM — do not touch playfield COLOR0–15. */
-	spriteSetEvenColorPaletteBank(s_ubEvenBank);
-	spriteSetOddColorPaletteBank(s_ubOddBank);
-}
-#else
 static void setPal12(UWORD uwIdx, UWORD uwRgb12) {
 	s_pVPort->pPalette[uwIdx] = uwRgb12;
 }
@@ -229,16 +245,20 @@ void gsTestSpritesCreate(void) {
 
 	s_pPak = pakFileOpen("data/sprites.pak", 1);
 	loadPakPalette("sprites.plt", s_pPal, 32);
+#ifdef ACE_USE_AGA_FEATURES
+	for(i = 0; i < 32; ++i) {
+		setPal24(i, s_pPal[i]);
+	}
+	/* Playfield HUD — leave bank 0 alone when swapping sprite banks. */
+	setPal24(COLOR_BG, 0x001122);
+	setPal24(COLOR_TEXT, 0xF8F4FF);
+	setPal24(COLOR_DIM, 0x887766);
+	loadPakPalette("ice.plt", s_pBankIce, 15);
+	loadPakPalette("gold.plt", s_pBankGold, 15);
+#else
 	for(i = 0; i < 32; ++i) {
 		setPal12(i, s_pPal[i]);
 	}
-#ifdef ACE_USE_AGA_FEATURES
-	/* Playfield HUD colors — leave bank 0 alone when swapping sprite banks. */
-	setPal12(COLOR_BG, 0x024);
-	setPal12(COLOR_TEXT, 0xFFF);
-	setPal12(COLOR_DIM, 0x888);
-	loadPakPalette("ice.plt", s_pBankIce, 15);
-	loadPakPalette("gold.plt", s_pBankGold, 15);
 #endif
 
 	s_pBmRainbowLo = loadPakBitmap("rainbow_lo.bm");
@@ -262,7 +282,7 @@ void gsTestSpritesCreate(void) {
 		: 0;
 
 #ifdef ACE_USE_AGA_FEATURES
-	labelAt(8, 8, "AGA sprites  ESC back  sprites pak");
+	labelAt(8, 8, "AGA sprites 24-bit  ESC back");
 	labelAt(8, 36, "Rainbow  16-color 32px  attached ch2+3");
 	labelAt(8, 96, "Stripe  AGA 32px 4-color  ch4  FMODE");
 	labelAt(8, 156, "Orb ch0 front  Checker ch5 odd-bank");
@@ -321,9 +341,9 @@ void gsTestSpritesCreate(void) {
 
 #ifdef ACE_USE_AGA_FEATURES
 	/* Sprite COLOR17–31 in banks 1/2/3 (default / ice / gold). ESPRM/OSPRM select. */
-	fillSpriteBank12(32 + 17, &s_pPal[17], 15);
-	fillSpriteBank12(64 + 17, s_pBankIce, 15);
-	fillSpriteBank12(96 + 17, s_pBankGold, 15);
+	fillSpriteBank24(32 + 17, &s_pPal[17], 15);
+	fillSpriteBank24(64 + 17, s_pBankIce, 15);
+	fillSpriteBank24(96 + 17, s_pBankGold, 15);
 	s_ubEvenBank = 1;
 	s_ubOddBank = 2;
 	s_ubBankTimer = 0;

@@ -3,18 +3,18 @@ Name: attached_16
 Columns: 4
 #
   0  17  51 Index 0
-255   0   0 Index 1
-255  68   0 Index 2
-255 136   0 Index 3
-255 204   0 Index 4
-255 255   0 Index 5
-136 255   0 Index 6
-  0 255   0 Index 7
-  0 255 136 Index 8
-  0 255 255 Index 9
-  0 136 255 Index 10
-  0   0 255 Index 11
-136   0 255 Index 12
-255   0 255 Index 13
-255   0 136 Index 14
-255 255 255 Index 15
+255  32  16 Index 1
+255  80  24 Index 2
+255 140   8 Index 3
+255 200   0 Index 4
+240 255  16 Index 5
+140 255  32 Index 6
+ 32 255  48 Index 7
+ 16 255 140 Index 8
+  8 240 255 Index 9
+ 24 140 255 Index 10
+ 40  48 255 Index 11
+140  24 255 Index 12
+255  16 240 Index 13
+255  24 140 Index 14
+255 255 250 Index 15
