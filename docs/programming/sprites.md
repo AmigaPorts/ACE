@@ -130,6 +130,10 @@ When optimizing its calls, you need to call it at least twice (once for each dou
 - enabling sprite,
 - changes in sprite chaining.
 
+### Mouse pointer
+
+To drive a sprite from the mouse manager (Workbench-style cursor on channel 0), see [Using a sprite as a mouse pointer](mouse_sprite.md).
+
 ### Chaining sprites in a single channel
 
 This is currently not supported.
