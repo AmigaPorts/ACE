@@ -13,10 +13,8 @@
 #include <hardware/dmabits.h>
 #include <ace/managers/viewport/simplebuffer.h>
 #include <ace/utils/bitmap.h>
-#include <ace/utils/custom.h>
 #include <ace/utils/extview.h>
 #include <ace/utils/font.h>
-#include <ace/utils/pak_file.h>
 #include <ace/managers/memory.h>
 #include "game.h"
 
@@ -39,7 +37,6 @@ static tSimpleBufferManager *s_pBfr;
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
 static tBitMap *s_pBmArrow, *s_pBmPencil;
-static tPakFile *s_pPak;
 static tSprite *s_pPtrSprite;
 static char *s_szHudCoords;
 static UWORD s_uwLastX, s_uwLastY;
@@ -118,7 +115,7 @@ static void drawHudStatic(void) {
 	);
 	fontDrawStr(
 		s_pFont, s_pBfr->pBack, 4, SCREEN_PAL_HEIGHT - s_pFont->uwHeight - 2,
-		"ESC back  ch0  arrow/pencil from sprites pak",
+		"ESC back  ch0  arrow/pencil",
 		COLOR_HINT, FONT_LAZY, s_pTextBitMap
 	);
 	drawHudCoords();
@@ -169,21 +166,9 @@ void gsTestMouseSpriteCreate(void) {
 	mouseSetPosition(
 		MOUSE_PORT_1, SCREEN_PAL_WIDTH / 2, SCREEN_PAL_HEIGHT / 2
 	);
-#ifdef AMIGA
-	{
-		UWORD uwDat = g_pCustom->joy0dat;
-		g_sMouseManager.pMice[MOUSE_PORT_1].ubPrevHwX = (UBYTE)(uwDat & 0xFF);
-		g_sMouseManager.pMice[MOUSE_PORT_1].ubPrevHwY = (UBYTE)(uwDat >> 8);
-	}
-#endif
 
-	s_pPak = pakFileOpen("data/sprites.pak", 1);
-	if(s_pPak) {
-		s_pBmArrow = bitmapCreateFromFd(pakFileGetFileByPath(s_pPak, "arrow.bm"), 0);
-		s_pBmPencil = bitmapCreateFromFd(pakFileGetFileByPath(s_pPak, "pencil.bm"), 0);
-		pakFileClose(s_pPak);
-		s_pPak = 0;
-	}
+	s_pBmArrow = bitmapCreateFromPath("data/arrow.bm", 0);
+	s_pBmPencil = bitmapCreateFromPath("data/pencil.bm", 0);
 
 	spriteManagerCreate(s_pView, 0, 0);
 	systemSetDmaBit(DMAB_SPRITE, 1);
@@ -275,10 +260,6 @@ void gsTestMouseSpriteDestroy(void) {
 	}
 	if(s_pFont) {
 		fontDestroy(s_pFont);
-	}
-	if(s_pPak) {
-		pakFileClose(s_pPak);
-		s_pPak = 0;
 	}
 	viewDestroy(s_pView);
 }

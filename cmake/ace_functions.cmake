@@ -175,53 +175,40 @@ function(transformBitmap)
 	target_sources(${args_TARGET} PUBLIC ${args_DESTINATION})
 endfunction()
 
-# Convert a PNG to an interleaved 2BPP sprite .bm (and optional .plt).
+# Convert a PNG to an interleaved 2BPP sprite .bm.
 # ATTACHED splits a 16-color image into lo/hi bitmaps.
+# PAD adds empty header/footer rows for sprite control words.
 function(convertSprite)
 	getToolPath(sprite_conv TOOL_SPRITE_CONV)
 	cmake_parse_arguments(
-		args "ATTACHED;AGA" "TARGET;PALETTE;SOURCE;DESTINATION;LO;HI;PLT" "" ${ARGN}
+		args "ATTACHED;PAD" "TARGET;PALETTE;SOURCE;DESTINATION;LO;HI" "" ${ARGN}
 	)
 	toAbsolute(args_PALETTE)
 	toAbsolute(args_SOURCE)
 
 	set(_sprFlags)
-	if(args_AGA)
-		list(APPEND _sprFlags -aga)
+	if(args_PAD)
+		list(APPEND _sprFlags -pad)
 	endif()
 
 	if(args_ATTACHED)
 		toAbsolute(args_LO)
 		toAbsolute(args_HI)
 		set(_sprOuts ${args_LO} ${args_HI})
-		if(NOT args_PLT)
-			set(args_PLT ${args_LO})
-			string(REGEX REPLACE "\\.[^.]+$" ".plt" args_PLT "${args_PLT}")
-		else()
-			toAbsolute(args_PLT)
-		endif()
-		list(APPEND _sprOuts ${args_PLT})
 		add_custom_command(
 			OUTPUT ${_sprOuts}
 			COMMAND ${TOOL_SPRITE_CONV} ${args_PALETTE} ${args_SOURCE}
-				-attached -o ${args_LO} ${args_HI} -p ${args_PLT} ${_sprFlags}
+				-attached -o ${args_LO} ${args_HI} ${_sprFlags}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			DEPENDS ${args_PALETTE} ${args_SOURCE}
 		)
 	else()
 		toAbsolute(args_DESTINATION)
 		set(_sprOuts ${args_DESTINATION})
-		if(NOT args_PLT)
-			set(args_PLT ${args_DESTINATION})
-			string(REGEX REPLACE "\\.[^.]+$" ".plt" args_PLT "${args_PLT}")
-		else()
-			toAbsolute(args_PLT)
-		endif()
-		list(APPEND _sprOuts ${args_PLT})
 		add_custom_command(
 			OUTPUT ${_sprOuts}
 			COMMAND ${TOOL_SPRITE_CONV} ${args_PALETTE} ${args_SOURCE}
-				-o ${args_DESTINATION} -p ${args_PLT} ${_sprFlags}
+				-o ${args_DESTINATION} ${_sprFlags}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			DEPENDS ${args_PALETTE} ${args_SOURCE}
 		)

@@ -13,6 +13,7 @@ The sprite data consists of:
 
 On Amiga hardware, each sprite is 16 pixels wide, can be of arbitrary height and is always 2BPP.
 With header and footer in mind, this means that e.g. 16x32 sprite data can be prepared as 16x34 2BPP interleaved bitmap.
+[`sprite_conv -pad`](../tools/sprite_conv.md) adds those two rows for you; the tool writes only the `.bm` (use `palette_conv` for a `.plt`).
 
 On OCS/ECS, wider sprites are made by placing multiple 16px-wide sprites next to each other.
 

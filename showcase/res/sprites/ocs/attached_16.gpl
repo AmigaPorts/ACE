@@ -15,6 +15,6 @@ Columns: 4
   0 136 255 Index 10
   0   0 255 Index 11
 136   0 255 Index 12
-255   0 255 Index 13
-255   0 136 Index 14
+ 68  68 102 Index 13
+187 187 204 Index 14
 255 255 255 Index 15

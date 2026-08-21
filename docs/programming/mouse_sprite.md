@@ -29,16 +29,16 @@ The sprite manager stores control words in the first and last rows of the bitmap
 Draw your pointer as:
 
 - width 16 (OCS/ECS) — a multiple of 16 on AGA if you use wide sprites
-- height equal to the visible cursor plus **two** empty rows (one header, one footer)
+- height equal to the visible cursor (no extra rows needed if you pass `-pad`)
 
-For a 16×16 visible arrow, the PNG is therefore 16×18.
-The showcase cursors are 16×24 visible (`arrow` / `pencil` in [showcase/res/sprites/mouse](../../showcase/res/sprites/mouse)), stored as 16×26 cells.
+For a 16×16 visible arrow, the PNG is 16×16 and `sprite_conv -pad` (or CMake `PAD`) adds the header and footer rows.
+The showcase cursors are 16×24 visible (`arrow` / `pencil` in [showcase/res/sprites/mouse](../../showcase/res/sprites/mouse)), stored as 16×26 cells that already include those rows.
 
 Color 0 must be the transparent background.
 The remaining three colors are the outline, fill, and any accent.
 
 > [!CAUTION]
-> If you convert a bitmap without the extra rows, `spriteSetBitmap()` will still steal the first and last lines for control words and you will lose two rows of graphics.
+> If you convert a bitmap without `-pad` and without the extra rows, `spriteSetBitmap()` will still steal the first and last lines for control words and you will lose two rows of graphics.
 
 ## Converting the pointer
 
@@ -55,6 +55,7 @@ convertSprite(
   PALETTE ${RES_DIR}/mouse.gpl
   SOURCE ${RES_DIR}/cursor.png
   DESTINATION ${DATA_DIR}/cursor.bm
+  PAD
 )
 ```
 
@@ -85,8 +86,8 @@ s_pVpMain->pPalette[19] = 0xF80; // accent
 If you use `TAG_VIEW_GLOBAL_PALETTE` (the default), copy them onto the topmost viewport's palette.
 
 > [!NOTE]
-> `sprite_conv` also writes a `.plt` next to the `.bm`.
-> That file is a copy of the **input** palette, not a 32-color display palette, so loading it into the viewport will not place colors at 17..19 for you.
+> For a `.plt` file use [`palette_conv`](../tools/palette_conv.md) / `convertPalette()`.
+> `sprite_conv` only writes the `.bm`.
 
 ## Setting up mouse and sprite
 
@@ -116,14 +117,6 @@ void gameGsCreate(void) {
   mouseSetPosition(
     MOUSE_PORT_1, SCREEN_PAL_WIDTH / 2, SCREEN_PAL_HEIGHT / 2
   );
-#ifdef AMIGA
-  // Seed hardware counters so the first mouseProcess() does not jump.
-  {
-    UWORD uwDat = g_pCustom->joy0dat;
-    g_sMouseManager.pMice[MOUSE_PORT_1].ubPrevHwX = (UBYTE)(uwDat & 0xFF);
-    g_sMouseManager.pMice[MOUSE_PORT_1].ubPrevHwY = (UBYTE)(uwDat >> 8);
-  }
-#endif
 
   s_pBmCursor = bitmapCreateFromPath("data/cursor.bm", 0);
 
@@ -249,9 +242,8 @@ if(mouseCheck(MOUSE_PORT_1, MOUSE_LMB)) {
 
 - **Forgotten sprite DMA.** `spriteManagerCreate()` does not enable it. Call `systemSetDmaBit(DMAB_SPRITE, 1)`.
 - **Forgotten `copProcessBlocks()`.** Sprite copper updates will not appear.
-- **First-frame jump.** `mouseCreate()` does not seed `ubPrevHwX` / `ubPrevHwY` from `joy0dat`. Copy those counters once after create, as in the setup snippet.
 - **Wrong palette slots.** Channel 0 uses colors 17–19, not 1–3.
-- **Missing header/footer rows.** Visible height is `bitmap->Rows - 2`.
+- **Missing header/footer rows.** Visible height is `bitmap->Rows - 2`. Use `sprite_conv -pad` (or CMake `PAD`) unless the PNG already has those rows.
 - **Double `mouseProcess()`.** Calling it in both `genericProcess()` and the gamestate loop applies movement twice.
 
 ## Attached 16-color pointers

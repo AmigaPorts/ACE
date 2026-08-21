@@ -13,7 +13,6 @@
 #include <ace/utils/custom.h>
 #include <ace/utils/extview.h>
 #include <ace/utils/font.h>
-#include <ace/utils/pak_file.h>
 #include <ace/utils/palette.h>
 #include <hardware/dmabits.h>
 #include "game.h"
@@ -53,7 +52,6 @@ static tSprite *s_pSprOrb, *s_pSprChecker;
 static WORD s_wXRainbow, s_wXStripe, s_wXOrb, s_wYOrb, s_wXChecker;
 static BYTE s_bDirRainbow, s_bDirStripe, s_bDirChecker;
 static BYTE s_bOrbVx, s_bOrbVy;
-static tPakFile *s_pPak;
 
 #ifdef ACE_USE_AGA_FEATURES
 static ULONG s_pPal[32];
@@ -79,32 +77,6 @@ static void labelAt(UWORD uwX, UWORD uwY, const char *sz) {
 	fontDrawStr(
 		s_pFont, s_pBfr->pBack, uwX, uwY, sz, COLOR_TEXT, FONT_COOKIE, s_pTextBitMap
 	);
-}
-
-static tBitMap *loadPakBitmap(const char *szName) {
-	tFile *pFile;
-
-	if(!s_pPak) {
-		return 0;
-	}
-	pFile = pakFileGetFileByPath(s_pPak, szName);
-	if(!pFile) {
-		return 0;
-	}
-	return bitmapCreateFromFd(pFile, 0);
-}
-
-static void loadPakPalette(const char *szName, void *pPal, UWORD uwMax) {
-	tFile *pFile;
-
-	if(!s_pPak) {
-		return;
-	}
-	pFile = pakFileGetFileByPath(s_pPak, szName);
-	if(!pFile) {
-		return;
-	}
-	paletteLoadFromFd(pFile, (UWORD *)pPal, uwMax);
 }
 
 #ifdef ACE_USE_AGA_FEATURES
@@ -186,8 +158,7 @@ void gsTestSpritesCreate(void) {
 		TAG_DONE
 	);
 
-	s_pPak = pakFileOpen("data/sprites.pak", 1);
-	loadPakPalette("sprites.plt", s_pPal, 32);
+	paletteLoadFromPath("data/sprites.plt", (UWORD *)s_pPal, 32);
 #ifdef ACE_USE_AGA_FEATURES
 	for(i = 0; i < 32; ++i) {
 		((ULONG *)s_pVPort->pPalette)[i] = s_pPal[i];
@@ -195,28 +166,24 @@ void gsTestSpritesCreate(void) {
 	((ULONG *)s_pVPort->pPalette)[COLOR_BG] = 0x001122;
 	((ULONG *)s_pVPort->pPalette)[COLOR_TEXT] = 0xF8F4FF;
 	((ULONG *)s_pVPort->pPalette)[COLOR_DIM] = 0x887766;
-	loadPakPalette("ice.plt", s_pBankIce, 15);
-	loadPakPalette("gold.plt", s_pBankGold, 15);
+	paletteLoadFromPath("data/ice.plt", (UWORD *)s_pBankIce, 15);
+	paletteLoadFromPath("data/gold.plt", (UWORD *)s_pBankGold, 15);
 #else
 	for(i = 0; i < 32; ++i) {
 		s_pVPort->pPalette[i] = s_pPal[i];
 	}
 #endif
 
-	s_pBmRainbowLo = loadPakBitmap("rainbow_lo.bm");
-	s_pBmRainbowHi = loadPakBitmap("rainbow_hi.bm");
+	s_pBmRainbowLo = bitmapCreateFromPath("data/rainbow_lo.bm", 0);
+	s_pBmRainbowHi = bitmapCreateFromPath("data/rainbow_hi.bm", 0);
 #ifdef ACE_USE_AGA_FEATURES
-	s_pBmStripe = loadPakBitmap("stripe.bm");
+	s_pBmStripe = bitmapCreateFromPath("data/stripe.bm", 0);
 #else
-	s_pBmStripe = loadPakBitmap("stripe_l.bm");
-	s_pBmStripeR = loadPakBitmap("stripe_r.bm");
+	s_pBmStripe = bitmapCreateFromPath("data/stripe_l.bm", 0);
+	s_pBmStripeR = bitmapCreateFromPath("data/stripe_r.bm", 0);
 #endif
-	s_pBmOrb = loadPakBitmap("orb.bm");
-	s_pBmChecker = loadPakBitmap("checker.bm");
-	if(s_pPak) {
-		pakFileClose(s_pPak);
-		s_pPak = 0;
-	}
+	s_pBmOrb = bitmapCreateFromPath("data/orb.bm", 0);
+	s_pBmChecker = bitmapCreateFromPath("data/checker.bm", 0);
 
 	s_pFont = fontCreateFromPath("data/silkscreen.fnt");
 	s_pTextBitMap = s_pFont
@@ -229,7 +196,7 @@ void gsTestSpritesCreate(void) {
 	labelAt(8, 96, "Stripe  AGA 32px 4-color  ch4  FMODE");
 	labelAt(8, 156, "Orb ch0 front  Checker ch5 odd-bank");
 #else
-	labelAt(8, 8, "Hardware sprites  ESC back  sprites pak");
+	labelAt(8, 8, "Hardware sprites  ESC back");
 	labelAt(8, 36, "Rainbow  16-color 16px  attached ch2+3");
 	labelAt(8, 96, "Stripe  4-color 32px  ch4+5");
 	labelAt(8, 156, "Orb ch0 front  Checker ch6");
@@ -372,9 +339,5 @@ void gsTestSpritesDestroy(void) {
 		fontDestroyTextBitMap(s_pTextBitMap);
 	}
 	fontDestroy(s_pFont);
-	if(s_pPak) {
-		pakFileClose(s_pPak);
-		s_pPak = 0;
-	}
 	viewDestroy(s_pView);
 }

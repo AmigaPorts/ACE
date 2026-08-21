@@ -10,6 +10,7 @@
 #include <ace/managers/mouse.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/fetchmode.h>
 #include <ace/utils/sprite.h>
 
 #define SPRITE_VPOS_BITS 9
@@ -53,24 +54,6 @@ static void spriteChannelWriteSprpt(UBYTE ubChannelIndex, ULONG ulSprAddr) {
 	s_pView->pCopList->ubStatus |= STATUS_UPDATE;
 }
 
-#ifdef ACE_USE_AGA_FEATURES
-static UBYTE spriteFetchLineBytes(void) {
-	UBYTE ubFmode = 0;
-	if(s_pView && s_pView->pFirstVPort) {
-		ubFmode = s_pView->pFirstVPort->ubFmode;
-	}
-	switch((ubFmode >> 2) & 3) {
-		case 1:
-		case 2:
-			return 8;  /* 32px */
-		case 3:
-			return 16; /* 64px */
-		default:
-			return 4;  /* 16px */
-	}
-}
-#endif
-
 void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSprite[1]) {
 	if (pBlankSprite) {
 #ifdef ACE_DEBUG
@@ -83,7 +66,7 @@ void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSpri
 	} else {
 		s_isOwningBlankSprite = 1;
 #ifdef ACE_USE_AGA_FEATURES
-		/* 4-byte header plus one 64px data line so FMODE 3 cannot walk off CHIP. */
+		// 4-byte header plus one 64px data line so FMODE 3 cannot walk off CHIP.
 		s_pBlankSprite = memAllocChipClear(4 + 16);
 #else
 		s_pBlankSprite = memAllocChipClear(sizeof(ULONG));
@@ -218,6 +201,7 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	}
 	ubByteWidth = bitmapGetByteWidth(pBitmap);
 #ifdef ACE_USE_AGA_FEATURES
+#if defined(ACE_DEBUG)
 	if(ubByteWidth != 2 && ubByteWidth != 4 && ubByteWidth != 8) {
 		logWrite(
 			"ERR: Unsupported sprite width: %hhu, expected 16, 32 or 64\n",
@@ -225,8 +209,13 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 		);
 		return;
 	}
+#endif
 	{
-		UBYTE ubFetch = spriteFetchLineBytes();
+		UBYTE ubFmode = 0;
+		if(s_pView && s_pView->pFirstVPort) {
+			ubFmode = s_pView->pFirstVPort->ubFmode;
+		}
+		UBYTE ubFetch = fetchModeGetSpriteLineBytes(ubFmode);
 		if(pBitmap->BytesPerRow != ubFetch) {
 			logWrite(
 				"ERR: Sprite channel %hhu width %hhu px does not match FMODE fetch %hhu px\n",
@@ -243,6 +232,7 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 	}
 #endif
 #else
+#if defined(ACE_DEBUG)
 	if(ubByteWidth != 2) {
 		logWrite(
 			"ERR: Unsupported sprite width: %hhu, expected 16\n",
@@ -250,6 +240,7 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 		);
 		return;
 	}
+#endif
 #endif
 
 	pSprite->pBitmap = pBitmap;
@@ -314,7 +305,7 @@ void spriteProcess(tSprite *pSprite) {
 	);
 
 #ifdef ACE_USE_AGA_FEATURES
-	/* FMODE-wide slot: Lisa keeps the first word of each half (POS, then CTL). */
+	// FMODE-wide slot: Lisa keeps the first word of each half (POS, then CTL).
 	{
 		UBYTE *pBase = (UBYTE *)pSprite->pBitmap->Planes[0];
 		UWORD uwLine = pSprite->pBitmap->BytesPerRow;

@@ -1,6 +1,8 @@
 # Sprite conversion
 
-`sprite_conv` turns a PNG into an ACE hardware-sprite `.bm` (always 2BPP interleaved) and a `.plt`.
+`sprite_conv` turns a PNG into an ACE hardware-sprite `.bm` (always 2BPP interleaved).
+
+Use [`palette_conv`](palette_conv.md) / `convertPalette()` when you need a `.plt`.
 
 If you get stuck, run `sprite_conv` with no args for the switch list.
 
@@ -12,8 +14,12 @@ First argument is the palette (`.gpl` / `.plt` / …), second is the PNG. Palett
 
   `sprite_conv path/to/pal.gpl path/to/sprite.png -o path/to/sprite.bm`
 
-  Writes `sprite.bm` and `sprite.plt` (the input palette). Use `-p` to pick the `.plt` path, `-np` to skip it, `-aga` for an AGA v2 palette.
-
 - Attached 16-color sprite (two DMA channels):
 
   `sprite_conv path/to/pal.gpl path/to/sprite.png -attached -o lo.bm hi.bm`
+
+- Control-word rows:
+
+  `sprite_conv path/to/pal.gpl path/to/sprite.png -pad -o path/to/sprite.bm`
+
+  `-pad` inserts one empty header row and one empty footer row. The sprite manager stores POS/CTL there, so visible height is `bitmap->Rows - 2`. From CMake, pass `PAD` to `convertSprite`.
