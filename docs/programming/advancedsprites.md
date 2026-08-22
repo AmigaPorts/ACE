@@ -110,6 +110,7 @@ Before that you can change the sprite position :
 advancedSpriteSetPos(s_pASprite,180,100); // ==> Set position
 advancedSpriteSetPosX(s_pASprite,s_pASprite->wX-2); // ==> Move x by -2
 advancedSpriteSetPosY(s_pASprite,s_pASprite->wY+2); // ==>  Move Y by +2
+advancedSpriteSetFineX(s_pASprite, 2); // AGA 1/4 px remainder (0-3)
 ```
 
 Do not use `s_pASprite->wX = ...` to change the value, use the available function. 

@@ -85,7 +85,7 @@ static inline UWORD fetchModeGetScrollPrefetchBytes(const tVPort *pVPort) {
 
 #ifdef ACE_USE_AGA_FEATURES
 static inline UBYTE fetchModeGetFineUnitsPerPixel(const tVPort *pVPort) {
-	// BPLCON1 H0 is 35ns: 4 units per lores pixel, 2 per hires pixel.
+	// BPLCON1 H0 is 1/4 lores px: 4 units per lores pixel, 2 per hires pixel.
 	return (pVPort->eFlags & VP_FLAG_HIRES) ? 2 : 4;
 }
 #endif
@@ -154,8 +154,8 @@ static inline LONG fetchModeGetInitialBplOffset(const tVPort *pVPort) {
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
- * @brief Packs an 8-bit 35ns delay into BPLCON1 for both playfields.
- * Delay bit 0 is H0 (35ns) -> BPLCON1 bit 8; bit 7 is H7 -> bit 11.
+ * @brief Packs an 8-bit 1/4 px delay into BPLCON1 for both playfields.
+ * Delay bit 0 is H0 (1/4 lores px) -> BPLCON1 bit 8; bit 7 is H7 -> bit 11.
  * PF2 bits are PF1 << 4.
  */
 static inline UWORD fetchModeEncodeBplcon1FromDelayFine(UWORD uwDelayFine) {

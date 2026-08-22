@@ -191,10 +191,10 @@ void gsTestSpritesCreate(void) {
 		: 0;
 
 #ifdef ACE_USE_AGA_FEATURES
-	labelAt(8, 8, "AGA sprites 24-bit  ESC back");
-	labelAt(8, 36, "Rainbow  16-color 32px  attached ch2+3");
-	labelAt(8, 96, "Stripe  AGA 32px 4-color  ch4  FMODE");
-	labelAt(8, 156, "Orb ch0 front  Checker ch5 odd-bank");
+	labelAt(8, 8, "AGA sprites  ESC back");
+	labelAt(8, 36, "Rainbow  32px 16-color  1/4px");
+	labelAt(8, 96, "Stripe  same X  1px steps");
+	labelAt(8, 156, "Orb ch0  Checker ch5  1px");
 #else
 	labelAt(8, 8, "Hardware sprites  ESC back");
 	labelAt(8, 36, "Rainbow  16-color 16px  attached ch2+3");
@@ -220,7 +220,7 @@ void gsTestSpritesCreate(void) {
 #endif
 
 	s_wXRainbow = 40;
-	s_wXStripe = 80;
+	s_wXStripe = 40;
 	s_wXOrb = 48;
 	s_wYOrb = 72;
 	s_wXChecker = 180;
@@ -274,8 +274,39 @@ void gsTestSpritesLoop(void) {
 		spriteSetEvenColorPaletteBank(s_ubEvenBank);
 		spriteSetOddColorPaletteBank(s_ubOddBank);
 	}
-#endif
 
+	spriteMoveByFine(s_pSprRainbowLo, s_bDirRainbow);
+	spriteMoveByFine(s_pSprRainbowHi, s_bDirRainbow);
+	if(s_pSprRainbowLo->wX > 280 || s_pSprRainbowLo->wX < 8) {
+		s_bDirRainbow = (BYTE)-s_bDirRainbow;
+	}
+	setSpritePos(s_pSprStripe, s_pSprRainbowLo->wX, 108);
+
+	s_wXChecker = (WORD)(s_wXChecker + s_bDirChecker);
+	if(s_wXChecker > 280 || s_wXChecker < 8) {
+		s_bDirChecker = (BYTE)-s_bDirChecker;
+	}
+	s_wXOrb = (WORD)(s_wXOrb + s_bOrbVx);
+	s_wYOrb = (WORD)(s_wYOrb + s_bOrbVy);
+	if(s_wXOrb <= 0) {
+		s_wXOrb = 0;
+		s_bOrbVx = (BYTE)-s_bOrbVx;
+	}
+	else if(s_wXOrb >= ORB_X_MAX) {
+		s_wXOrb = ORB_X_MAX;
+		s_bOrbVx = (BYTE)-s_bOrbVx;
+	}
+	if(s_wYOrb <= 0) {
+		s_wYOrb = 0;
+		s_bOrbVy = (BYTE)-s_bOrbVy;
+	}
+	else if(s_wYOrb >= ORB_Y_MAX) {
+		s_wYOrb = ORB_Y_MAX;
+		s_bOrbVy = (BYTE)-s_bOrbVy;
+	}
+	setSpritePos(s_pSprOrb, s_wXOrb, s_wYOrb);
+	setSpritePos(s_pSprChecker, s_wXChecker, 168);
+#else
 	s_wXRainbow = (WORD)(s_wXRainbow + s_bDirRainbow);
 	if(s_wXRainbow > 280 || s_wXRainbow < 8) {
 		s_bDirRainbow = (BYTE)-s_bDirRainbow;
@@ -311,11 +342,10 @@ void gsTestSpritesLoop(void) {
 	setSpritePos(s_pSprRainbowLo, s_wXRainbow, 48);
 	setSpritePos(s_pSprRainbowHi, s_wXRainbow, 48);
 	setSpritePos(s_pSprStripe, s_wXStripe, 108);
-#ifndef ACE_USE_AGA_FEATURES
 	setSpritePos(s_pSprStripeR, (WORD)(s_wXStripe + 16), 108);
-#endif
 	setSpritePos(s_pSprOrb, s_wXOrb, s_wYOrb);
 	setSpritePos(s_pSprChecker, s_wXChecker, 168);
+#endif
 
 	processSprites();
 	copProcessBlocks();
@@ -323,10 +353,10 @@ void gsTestSpritesLoop(void) {
 }
 
 void gsTestSpritesDestroy(void) {
-	viewLoad(0);
 	systemUse();
 	systemSetDmaBit(DMAB_SPRITE, 0);
 	spriteManagerDestroy();
+	viewLoad(0);
 	bitmapDestroy(s_pBmRainbowLo);
 	bitmapDestroy(s_pBmRainbowHi);
 	bitmapDestroy(s_pBmStripe);

@@ -33,6 +33,9 @@ typedef struct tSprite {
 	UBYTE isEnabled;
 	UBYTE isHeaderToBeUpdated;
 	UBYTE isAttached; // Odd Sprites Only.
+#ifdef ACE_USE_AGA_FEATURES
+	UBYTE ubFineX; ///< 1/4 px remainder, 0-3 (SPRxCTL SH0/SH1)
+#endif
 } tSprite;
 
 /**
@@ -137,6 +140,28 @@ void spriteSetEnabled(tSprite *pSprite, UBYTE isEnabled);
  * @see spriteProcess()
  */
 void spriteSetAttached(tSprite *pSprite, UBYTE isAttached);
+
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * @brief Sets the AGA fine (1/4 px) X remainder. Clamped to 0-3.
+ * Sprites do not follow playfield BPLCON1; set this yourself if they should match.
+ */
+void spriteSetFineX(tSprite *pSprite, UBYTE ubFineX);
+
+/**
+ * @brief Moves the sprite by a 1/4 px X delta. Fine X carries into @c wX (4 units/pixel).
+ */
+void spriteMoveByFine(tSprite *pSprite, WORD wDxFine);
+#endif
+
+static inline UBYTE spriteGetFineX(const tSprite *pSprite) {
+#ifdef ACE_USE_AGA_FEATURES
+	return pSprite->ubFineX;
+#else
+	(void)pSprite;
+	return 0;
+#endif
+}
 
 /**
  * @brief Sets metadata update as pending. Be sure to call it after

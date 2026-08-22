@@ -27,7 +27,7 @@ typedef struct _tCameraManager {
 	UBYTE ubBfr;            ///< Currently used buffer for double buffering
 	UBYTE isDblBfr;
 #ifdef ACE_USE_AGA_FEATURES
-	UBYTE ubFineX;          ///< 35ns remainder: 0-3 lores (1/4 px), 0-1 hires (1/2 px)
+	UBYTE ubFineX;          ///< 1/4 px remainder: 0-3 lores, 0-1 hires (1/2 px)
 	UBYTE ubLastFineX[2];   ///< Previous fine X per copper buffer
 #endif
 } tCameraManager;
@@ -51,13 +51,13 @@ void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy);
 
 #ifdef ACE_USE_AGA_FEATURES
 /**
- * @brief Sets the AGA fine (35ns) X remainder. Clamped to the current resolution
+ * @brief Sets the AGA fine (1/4 px) X remainder. Clamped to the current resolution
  * (0-3 lores, 0-1 hires). Forced to 0 when the camera is at max X.
  */
 void cameraSetFineX(tCameraManager *pManager, UBYTE ubFineX);
 
 /**
- * @brief Moves the camera by a 35ns X delta plus integer Y.
+ * @brief Moves the camera by a 1/4 px X delta plus integer Y.
  * Fine X carries into @c uPos.uwX using 4 units/pixel (lores) or 2 (hires).
  */
 void cameraMoveByFine(tCameraManager *pManager, WORD wDxFine, WORD wDy);

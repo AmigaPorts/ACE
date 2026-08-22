@@ -35,6 +35,9 @@ typedef struct tAdvancedSprite {
     UBYTE isEnabled;
     UBYTE isHeaderToBeUpdated;
     UBYTE is4PP; // 16-color sprites only.
+#ifdef ACE_USE_AGA_FEATURES
+    UBYTE ubFineX; ///< 1/4 px remainder, 0-3
+#endif
 } tAdvancedSprite;
 
 /**
@@ -104,6 +107,22 @@ void advancedSpriteSetPosX(tAdvancedSprite *pAdvancedSprite,WORD wX);
  * @param wY Y position, measured from the top of the view.
  */
 void advancedSpriteSetPosY(tAdvancedSprite *pAdvancedSprite, WORD wY);
+
+#ifdef ACE_USE_AGA_FEATURES
+/**
+ * @brief Sets the AGA fine (1/4 px) X remainder. Clamped to 0-3.
+ */
+void advancedSpriteSetFineX(tAdvancedSprite *pAdvancedSprite, UBYTE ubFineX);
+#endif
+
+static inline UBYTE advancedSpriteGetFineX(const tAdvancedSprite *pAdvancedSprite) {
+#ifdef ACE_USE_AGA_FEATURES
+	return pAdvancedSprite->ubFineX;
+#else
+	(void)pAdvancedSprite;
+	return 0;
+#endif
+}
 
 /**
  * @brief Updates the sprite's metadata if set as requiring update.
