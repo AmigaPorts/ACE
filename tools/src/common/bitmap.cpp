@@ -380,3 +380,37 @@ tChunkyBitmap tChunkyBitmap::filterColors(
 	}
 	return Out;
 }
+
+tChunkyBitmap tChunkyBitmap::toSpriteSubBitmap(
+	const tChunkyBitmap &Source, const tPalette &Palette, std::uint8_t ubShift
+)
+{
+	if(Palette.m_vColors.size() < 4) {
+		nLog::error("Palette needs at least 4 colors to encode 2BPP sprites");
+		return tChunkyBitmap();
+	}
+
+	tPalette Pal4;
+	Pal4.m_vColors.assign(Palette.m_vColors.begin(), Palette.m_vColors.begin() + 4);
+
+	tChunkyBitmap Dst(Source.m_uwWidth, Source.m_uwHeight);
+	for(std::uint16_t uwY = 0; uwY < Source.m_uwHeight; ++uwY) {
+		for(std::uint16_t uwX = 0; uwX < Source.m_uwWidth; ++uwX) {
+			auto Color = Source.pixelAt(uwX, uwY);
+			std::int16_t wIdx = Palette.getColorIdx(Color);
+			if(wIdx < 0) {
+				nLog::error(
+					"Unexpected color #{:02X}{:02X}{:02X} at {},{}",
+					Color.ubR, Color.ubG, Color.ubB, uwX, uwY
+				);
+				return tChunkyBitmap();
+			}
+			auto ubSpr = static_cast<std::uint8_t>(wIdx);
+			if(ubSpr >= 16) {
+				ubSpr = static_cast<std::uint8_t>(ubSpr - 16);
+			}
+			Dst.pixelAt(uwX, uwY) = Pal4.m_vColors[(ubSpr >> ubShift) & 3];
+		}
+	}
+	return Dst;
+}

@@ -33,6 +33,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. Copperlists
 1. Double buffering
 1. [Sprites](programming/sprites.md)
+1. [Using a sprite as a mouse pointer](programming/mouse_sprite.md)
 1. [Working with and without OS](programming/os.md)
 1. DMA usage
 1. [Multi-directional large tilemaps scrolling with TileBuffer](programming/tilebuffer.md)
@@ -46,6 +47,7 @@ TBD, will be doxy-generated or done as wiki pages, idk yet.
 
 - [Palettes](tools/palette_conv.md)
 - [Bitmaps](tools/bitmap_conv.md)
+- [Sprites](tools/sprite_conv.md)
 - [Fonts](tools/font_conv.md)
 - [Audio](tools/audio_conv.md)
 - [.plt v2 / palette changes (overview)](palette-plt-v2-changes.md)

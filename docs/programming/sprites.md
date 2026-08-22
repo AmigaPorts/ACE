@@ -13,9 +13,11 @@ The sprite data consists of:
 
 On Amiga hardware, each sprite is 16 pixels wide, can be of arbitrary height and is always 2BPP.
 With header and footer in mind, this means that e.g. 16x32 sprite data can be prepared as 16x34 2BPP interleaved bitmap.
+[`sprite_conv -pad`](../tools/sprite_conv.md) adds those two rows for you; the tool writes only the `.bm` (use `palette_conv` for a `.plt`).
 
-In order to create wider sprites, you need to use multiple 16px-wide sprites and position them next to each other.
-Although AGA chipset supports wider sprites, the support for that feature is still unimplemented.
+On OCS/ECS, wider sprites are made by placing multiple 16px-wide sprites next to each other.
+
+With `ACE_USE_AGA_FEATURES`, the sprite manager also accepts 32px and 64px interleaved 2BPP bitmaps. Each sprite DMA slot is FMODE-wide; Lisa keeps the first word of the slot, so POS is at offset 0 and CTL at half the line (32px: +4, not the OCS +2). Set `TAG_VPORT_FMODE` sprite-fetch bits (`0x04` for 32px, `0x0C` for 64px) to match the bitmap width — FMODE is global, so every sprite channel uses that fetch width.
 
 The final sprite palette is dependent on the channel.
 The sprite 2BPP colors are translated into colors from upper half of the current display palette, even if lower screen BPP is used:
@@ -128,6 +130,10 @@ When optimizing its calls, you need to call it at least twice (once for each dou
 - sprite bitmap,
 - enabling sprite,
 - changes in sprite chaining.
+
+### Mouse pointer
+
+To drive a sprite from the mouse manager (Workbench-style cursor on channel 0), see [Using a sprite as a mouse pointer](mouse_sprite.md).
 
 ### Chaining sprites in a single channel
 

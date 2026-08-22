@@ -242,6 +242,12 @@ void menuShowTests(void) {
 	menuListSetEntry(s_pMenuList, TEST_STATE_TWISTER, MENULIST_ENABLED, "Twister");
 	menuListSetEntry(s_pMenuList, TEST_STATE_SIMPLEBUFFER_BPP_FMODE, MENULIST_ENABLED, "Simple buffer bpp fmode");
 	menuListSetEntry(s_pMenuList, TEST_STATE_SCROLLTILEBUFFER_BPP_FMODE, MENULIST_ENABLED, "Scroll tile buffer bpp fmode");
+	menuListSetEntry(s_pMenuList, TEST_STATE_MOUSE_SPRITE, MENULIST_ENABLED, "Mouse sprite");
+#ifdef ACE_USE_AGA_FEATURES
+	menuListSetEntry(s_pMenuList, TEST_STATE_SPRITES, MENULIST_ENABLED, "Sprites (AGA)");
+#else
+	menuListSetEntry(s_pMenuList, TEST_STATE_SPRITES, MENULIST_ENABLED, "Sprites");
+#endif
 	s_ubMenuType = MENU_TESTS;
 
 	// Redraw list

@@ -21,10 +21,10 @@ Supported:
 - AGA palette handling in view loading and viewport palette allocation
 - AGA palette utilities (load/save/dim/mix/dump) when built with `ACE_USE_AGA_FEATURES`
 - AGA sprite palette bank control helpers
+- AGA wide sprites (32px / 64px) via the sprite manager: FMODE-wide DMA slots, POS at +0 and CTL at half the header line
 
 Not done yet:
 
-- Wide sprites support is still in progress
 - Sub-pixel scrolling support is still in progress
 
 To follow status and testing progress, see [issue #151](https://github.com/AmigaPorts/ACE/issues/151).
