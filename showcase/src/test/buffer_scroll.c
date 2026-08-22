@@ -9,7 +9,6 @@
 #include <ace/managers/system.h>
 #include <ace/managers/viewport/scrollbuffer.h>
 #include <ace/managers/viewport/simplebuffer.h>
-#include <ace/utils/fetchmode.h>
 #include <ace/utils/palette.h>
 #include <ace/utils/font.h>
 #include "game.h"
@@ -34,7 +33,6 @@ static const char *s_pModeNames[MODE_COUNT] = {
 static tMode s_eCurrentMode;
 static tView *s_pView;
 static tVPort *s_pVPort;
-static tSimpleBufferManager *s_pHudBuffer;
 static tCameraManager *s_pCamera;
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
@@ -101,49 +99,13 @@ static void destroyView(void) {
 		viewDestroy(s_pView);
 		s_pView = 0;
 		s_pVPort = 0;
-		s_pHudBuffer = 0;
 		s_pCamera = 0;
 	}
-}
-
-static void createHud(UBYTE isHires) {
-	tVPort *pHudVp = vPortCreate(0,
-		TAG_VPORT_VIEW, s_pView,
-		TAG_VPORT_BPP, TEST_SCROLL_BPP,
-		TAG_VPORT_HEIGHT, 16,
-		TAG_VPORT_HIRES, isHires,
-	TAG_DONE);
-	loadTestPalette(pHudVp);
-	s_pHudBuffer = simpleBufferCreate(0,
-		TAG_SIMPLEBUFFER_VPORT, pHudVp,
-		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
-		TAG_SIMPLEBUFFER_USE_X_SCROLLING, 0,
-	TAG_DONE);
-}
-
-static void drawHud(void) {
-	char szMsg[48];
-	UWORD uwCon1 = fetchModeCalcBplShift(
-		s_pVPort, s_pCamera->uPos.uwX, cameraGetFineX(s_pCamera)
-	);
-
-	blitRect(
-		s_pHudBuffer->pBack, 0, 0,
-		s_pHudBuffer->uBfrBounds.uwX, s_pHudBuffer->uBfrBounds.uwY, 0
-	);
-	sprintf(
-		szMsg, "X:%u F:%hhu CON1:%04X",
-		s_pCamera->uPos.uwX, cameraGetFineX(s_pCamera), uwCon1
-	);
-	fontDrawStr(
-		s_pFont, s_pHudBuffer->pBack, 4, 4, szMsg, 6, FONT_COOKIE, s_pTextBitMap
-	);
 }
 
 static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
 	s_pView = viewCreate(0,
 	TAG_DONE);
-	createHud(isHires);
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
@@ -166,7 +128,6 @@ static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
 static void initScrollBuffer(UBYTE isHires) {
 	s_pView = viewCreate(0,
 	TAG_DONE);
-	createHud(isHires);
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
@@ -287,7 +248,6 @@ void gsTestBufferScrollLoop(void) {
 		changeMode(MODE_SCROLL_HIRES);
 	}
 
-	drawHud();
 	viewProcessManagers(s_pView);
 	copProcessBlocks();
 	vPortWaitForEnd(s_pVPort);

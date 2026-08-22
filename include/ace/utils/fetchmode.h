@@ -143,11 +143,11 @@ static inline LONG fetchModeGetInitialBplOffset(const tVPort *pVPort) {
  */
 static inline UWORD fetchModeEncodeBplcon1FromDelayFine(UWORD uwDelayFine) {
 	UWORD uwPf1 = 0;
-	uwPf1 |= (uwDelayFine & 0x01) << 8; // H0 -> bit 8
-	uwPf1 |= (uwDelayFine & 0x02) << 8; // H1 -> bit 9
-	uwPf1 |= (uwDelayFine & 0x3C) >> 2; // H2-H5 -> bits 0-3
-	uwPf1 |= (uwDelayFine & 0x40) << 4; // H6 -> bit 10
-	uwPf1 |= (uwDelayFine & 0x80) << 4; // H7 -> bit 11
+	uwPf1 |= (uwDelayFine & 0x01) << 8;
+	uwPf1 |= (uwDelayFine & 0x02) << 8;
+	uwPf1 |= (uwDelayFine & 0x3C) >> 2;
+	uwPf1 |= (uwDelayFine & 0x40) << 4;
+	uwPf1 |= (uwDelayFine & 0x80) << 4;
 	return (UWORD)(uwPf1 | (uwPf1 << 4));
 }
 
@@ -208,9 +208,6 @@ static inline LONG fetchModeCalcBplOffsetX(
 ) {
 #ifdef ACE_USE_AGA_FEATURES
 	{
-		// BPLCON1 wraps every fetch-block in 35ns units. The bitplane pointer
-		// must step on that same wrap, not on integer X, otherwise a non-zero
-		// fine remainder jumps ~15px each time delayFine overflows.
 		ULONG ulScrollFine = fetchModeCombineScrollFine(pVPort, uwScrollX, ubFineX);
 		UWORD uwBlockFine = fetchModeGetScrollBlockFine(pVPort);
 		UBYTE ubPrefetch = fetchModeGetScrollPrefetchBytes(pVPort);
