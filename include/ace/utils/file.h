@@ -47,9 +47,17 @@ typedef struct tFile {
 
 void fileClose(tFile *pFile);
 
-ULONG fileRead(tFile *pFile, void *pDest, ULONG ulSize);
+ULONG fileReadBytes(tFile *pFile, UBYTE *pDest, ULONG ulSize);
 
-ULONG fileWrite(tFile *pFile, const void *pSrc, ULONG ulSize);
+ULONG fileReadWords(tFile *pFile, UWORD *pDest, ULONG ulSize);
+
+ULONG fileReadLongs(tFile *pFile, ULONG *pDest, ULONG ulSize);
+
+ULONG fileWriteBytes(tFile *pFile, const UBYTE *pSrc, ULONG ulSize);
+
+ULONG fileWriteWords(tFile *pFile, const UWORD *pSrc, ULONG ulSize);
+
+ULONG fileWriteLongs(tFile *pFile, const ULONG *pSrc, ULONG ulSize);
 
 ULONG fileSeek(tFile *pFile, LONG lPos, WORD wMode);
 
