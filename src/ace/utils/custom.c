@@ -26,6 +26,18 @@ tCopperUlong FAR REGPTR g_pCop2Lc = (tCopperUlong REGPTR)(
 
 tCia FAR REGPTR g_pCia[CIA_COUNT] = {(tCia*)0xBFE001, (tCia*)0xBFD000};
 
+/* Write-only: never read g_pCustom->bplcon4. Bank setters RMW this copy. */
+static UWORD s_uwBplCon4 = BPLCON4_AGA_RESET;
+
+void customSetBplCon4(UWORD uwBplCon4) {
+	s_uwBplCon4 = uwBplCon4;
+	g_pCustom->bplcon4 = uwBplCon4;
+}
+
+UWORD customGetBplCon4(void) {
+	return s_uwBplCon4;
+}
+
 UWORD ciaGetTimerA(tCia REGPTR pCia) {
 	UBYTE ubHi, ubLo;
 	do {

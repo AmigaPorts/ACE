@@ -47,6 +47,10 @@ public:
 	bool mergeWithMask(const tChunkyBitmap &Mask);
 
 	tChunkyBitmap filterColors(const tPalette &Palette, const tRgb &ColorDefault);
+
+	static tChunkyBitmap toSpriteSubBitmap(
+		const tChunkyBitmap &Source, const tPalette &Palette, std::uint8_t ubShift
+	);
 };
 
 class tPlanarBitmap {

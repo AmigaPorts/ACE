@@ -1,0 +1,20 @@
+GIMP Palette
+Name: attached_16
+Columns: 4
+#
+  0  17  51 Index 0
+255   0   0 Index 1
+255  68   0 Index 2
+255 136   0 Index 3
+255 204   0 Index 4
+255 255   0 Index 5
+136 255   0 Index 6
+  0 255   0 Index 7
+  0 255 136 Index 8
+  0 255 255 Index 9
+  0 136 255 Index 10
+  0   0 255 Index 11
+136   0 255 Index 12
+ 68  68 102 Index 13
+187 187 204 Index 14
+255 255 255 Index 15

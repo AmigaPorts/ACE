@@ -19,6 +19,23 @@ static inline UBYTE fetchModeGetBitplaneFmode(const tVPort *pVPort) {
 #endif
 }
 
+static inline UBYTE fetchModeGetSpriteLineBytes(UBYTE ubFmode) {
+#ifdef ACE_USE_AGA_FEATURES
+	switch((ubFmode >> 2) & 3) {
+		case 1:
+		case 2:
+			return 8; // 32px
+		case 3:
+			return 16; // 64px
+		default:
+			return 4; // 16px
+	}
+#else
+	(void)ubFmode;
+	return 4; // 16px
+#endif
+}
+
 static inline UWORD fetchModeGetDDfStep(const tVPort *pVPort) {
 	UWORD uwWidth = pVPort->pView->uwWidth;
 	switch(fetchModeGetBitplaneFmode(pVPort)) {

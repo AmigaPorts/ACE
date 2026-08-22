@@ -248,16 +248,14 @@ void viewLoad(tView *pView) {
 		g_pCustom->bplcon0 = 0; // No output
 		g_pCustom->fmode = 0;   // AGA fix
 		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->bplcon4 = 0x0011; // AGA fix
+		customSetBplCon4(BPLCON4_AGA_RESET);
 #ifdef ACE_USE_AGA_FEATURES
 		for(UBYTE i = 0; i < 8; ++i) {
-			g_pCustom->bplpt[i] = 0;
-		}
 #else
 		for(UBYTE i = 0; i < 6; ++i) {
+#endif
 			g_pCustom->bplpt[i] = 0;
 		}
-#endif
 		g_pCustom->bpl1mod = 0;
 		g_pCustom->bpl2mod = 0;
 	}
@@ -284,7 +282,7 @@ void viewLoad(tView *pView) {
 		g_pCustom->bplcon0 = viewBuildBplCon0(pView);
 		g_pCustom->bplcon2 = viewBuildBplCon2(pView);
 		g_pCustom->bplcon3 = 0; // AGA fix
-		g_pCustom->bplcon4 = 0x0011; // AGA fix
+		customSetBplCon4(BPLCON4_AGA_RESET);
 #ifdef ACE_USE_AGA_FEATURES
 		g_pCustom->fmode = pView->pFirstVPort->ubFmode;
 #else

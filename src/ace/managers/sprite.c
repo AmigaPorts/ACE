@@ -5,10 +5,12 @@
 #include <ace/managers/sprite.h>
 #include <ace/macros.h>
 #include <ace/generic/screen.h>
+#include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 #include <ace/managers/mouse.h>
 #include <ace/managers/log.h>
 #include <ace/utils/custom.h>
+#include <ace/utils/fetchmode.h>
 #include <ace/utils/sprite.h>
 
 #define SPRITE_VPOS_BITS 9
@@ -31,6 +33,27 @@ static void spriteChannelRequestCopperUpdate(tSpriteChannel *pChannel) {
 	pChannel->ubCopperRegenCount = 2; // for front/back buffers in raw mode
 }
 
+/**
+ * Patch sprxpth/ptl MOVEs in the vblank disable block (WAIT 0,0).
+ * Per-channel WAIT 0,1 blocks are unsafe: after the first of those waits is
+ * satisfied, later WAIT 0,1 instructions have already passed this frame, so
+ * the copper stalls until next line 1. If COP1LC is restarted on vblank the
+ * playfield copper never runs — one sprite works, several hang the machine.
+ */
+static void spriteChannelWriteSprpt(UBYTE ubChannelIndex, ULONG ulSprAddr) {
+	tCopBlock *pBlock = s_pInitialClearCopBlock;
+	UWORD uwCmd;
+
+	if(!pBlock) {
+		return;
+	}
+	uwCmd = (UWORD)ubChannelIndex << 1;
+	copSetMoveVal(&pBlock->pCmds[uwCmd].sMove, (UWORD)(ulSprAddr >> 16));
+	copSetMoveVal(&pBlock->pCmds[uwCmd + 1].sMove, (UWORD)(ulSprAddr & 0xFFFF));
+	pBlock->ubUpdated = 2;
+	s_pView->pCopList->ubStatus |= STATUS_UPDATE;
+}
+
 void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSprite[1]) {
 	if (pBlankSprite) {
 #ifdef ACE_DEBUG
@@ -42,7 +65,12 @@ void spriteManagerCreate(const tView *pView, UWORD uwRawCopPos, ULONG pBlankSpri
 		s_pBlankSprite = pBlankSprite;
 	} else {
 		s_isOwningBlankSprite = 1;
+#ifdef ACE_USE_AGA_FEATURES
+		// 4-byte header plus one 64px data line so FMODE 3 cannot walk off CHIP.
+		s_pBlankSprite = memAllocChipClear(4 + 16);
+#else
 		s_pBlankSprite = memAllocChipClear(sizeof(ULONG));
+#endif
 		// Just to make sure we don't accidentally mismatch the control words size
 		_Static_assert(sizeof(ULONG) == sizeof(tHardwareSpriteHeader), "We expect a Hardware sprite to have a ULONG sized header");
 	}
@@ -87,7 +115,11 @@ void spriteManagerDestroy(void) {
 		copBlockDestroy(s_pView->pCopList, s_pInitialClearCopBlock);
 	}
 	if (s_isOwningBlankSprite) {
+#ifdef ACE_USE_AGA_FEATURES
+		memFree(s_pBlankSprite, 4 + 16);
+#else
 		memFree(s_pBlankSprite, sizeof(ULONG));
+#endif
 	}
 	systemUnuse();
 }
@@ -108,17 +140,6 @@ tSprite *spriteAdd(UBYTE ubChannelIndex, tBitMap *pBitmap) {
 	else {
 		spriteChannelRequestCopperUpdate(pChannel);
 		pChannel->pFirstSprite = pSprite;
-
-		if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
-#if defined(ACE_DEBUG)
-			if(pChannel->pCopBlock) {
-				logWrite("ERR: Sprite channel %hhu already has copBlock\n", ubChannelIndex);
-				systemUnuse();
-				return 0;
-			}
-#endif
-			pChannel->pCopBlock = copBlockCreate(s_pView->pCopList, 2, 0, 1);
-		}
 	}
 
 	spriteSetBitmap(pSprite, pBitmap);
@@ -136,11 +157,7 @@ void spriteRemove(tSprite *pSprite) {
 		spriteChannelRequestCopperUpdate(pChannel);
 
 		if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK) {
-			tCopBlock *pCopBlock = pChannel->pCopBlock;
-			if(pCopBlock) {
-				copBlockDestroy(s_pView->pCopList, pCopBlock);
-				pChannel->pCopBlock = 0;
-			}
+			spriteChannelWriteSprpt(pSprite->ubChannelIndex, (ULONG)s_pBlankSprite);
 		}
 	}
 
@@ -173,6 +190,8 @@ void spriteRequestMetadataUpdate(tSprite *pSprite) {
 }
 
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
+	UBYTE ubByteWidth;
+
 	if(!(pBitmap->Flags & BMF_INTERLEAVED) || pBitmap->Depth != 2) {
 		logWrite(
 			"ERR: Sprite channel %hhu bitmap %p isn't interleaved 2BPP\n",
@@ -180,19 +199,49 @@ void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap) {
 		);
 		return;
 	}
-#if defined(ACE_USE_AGA_FEATURES)
-	UBYTE uwMaxSpriteWidth = 8;
-#else
-	UBYTE uwMaxSpriteWidth = 2;
-#endif
-	UBYTE ubByteWidth = bitmapGetByteWidth(pBitmap);
-	if(ubByteWidth > uwMaxSpriteWidth) {
+	ubByteWidth = bitmapGetByteWidth(pBitmap);
+#ifdef ACE_USE_AGA_FEATURES
+#if defined(ACE_DEBUG)
+	if(ubByteWidth != 2 && ubByteWidth != 4 && ubByteWidth != 8) {
 		logWrite(
-			"ERR: Unsupported sprite width: %hhu, expected %hhu\n",
-			ubByteWidth * 8, uwMaxSpriteWidth
+			"ERR: Unsupported sprite width: %hhu, expected 16, 32 or 64\n",
+			ubByteWidth * 8
 		);
 		return;
 	}
+#endif
+	{
+		UBYTE ubFmode = 0;
+		if(s_pView && s_pView->pFirstVPort) {
+			ubFmode = s_pView->pFirstVPort->ubFmode;
+		}
+		UBYTE ubFetch = fetchModeGetSpriteLineBytes(ubFmode);
+		if(pBitmap->BytesPerRow != ubFetch) {
+			logWrite(
+				"ERR: Sprite channel %hhu width %hhu px does not match FMODE fetch %hhu px\n",
+				pSprite->ubChannelIndex, ubByteWidth * 8, ubFetch * 4
+			);
+			return;
+		}
+	}
+#if defined(ACE_DEBUG)
+	if(ubByteWidth > 2 && s_pView && s_pView->pFirstVPort &&
+		!(s_pView->pFirstVPort->eFlags & VP_FLAG_AGA)
+	) {
+		logWrite("ERR: Wide sprites need an AGA viewport (TAG_VPORT_USES_AGA)\n");
+	}
+#endif
+#else
+#if defined(ACE_DEBUG)
+	if(ubByteWidth != 2) {
+		logWrite(
+			"ERR: Unsupported sprite width: %hhu, expected 16\n",
+			ubByteWidth * 8
+		);
+		return;
+	}
+#endif
+#endif
 
 	pSprite->pBitmap = pBitmap;
 	spriteSetHeight(pSprite, pBitmap->Rows - 2);
@@ -207,34 +256,21 @@ void spriteProcessChannel(UBYTE ubChannelIndex) {
 		return;
 	}
 
-	// Update relevant part of current raw copperlist
 	const tSprite *pSprite = pChannel->pFirstSprite;
-	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK && pChannel->pCopBlock) {
+	ULONG ulSprAddr = (
+		pSprite && pSprite->isEnabled ?
+		(ULONG)(pSprite->pBitmap->Planes[0]) :
+		(ULONG)s_pBlankSprite
+	);
+	if(s_pView->pCopList->ubMode == COPPER_MODE_BLOCK && s_pInitialClearCopBlock) {
 		pChannel->ubCopperRegenCount = 0;
-		tCopBlock *pCopBlock = pChannel->pCopBlock;
-		pCopBlock->uwCurrCount = 0;
-		ULONG ulSprAddr = (
-			pSprite->isEnabled ?
-			(ULONG)(pSprite->pBitmap->Planes[0]) : (ULONG)s_pBlankSprite
-		);
-		copMove(
-			s_pView->pCopList, pCopBlock,
-			&g_pSprFetch[pSprite->ubChannelIndex].uwHi, ulSprAddr >> 16
-		);
-		copMove(
-			s_pView->pCopList, pCopBlock,
-			&g_pSprFetch[pSprite->ubChannelIndex].uwLo, ulSprAddr & 0xFFFF
-		);
+		spriteChannelWriteSprpt(ubChannelIndex, ulSprAddr);
 	}
 	else {
 		--pChannel->ubCopperRegenCount;
 		UWORD uwRawCopPos = pChannel->uwRawCopPos;
 		tCopCmd *pList = &s_pView->pCopList->pBackBfr->pList[uwRawCopPos];
 
-		ULONG ulSprAddr = (
-			pSprite && pSprite->isEnabled ?
-			(ULONG)(pSprite->pBitmap->Planes[0]) : (ULONG)s_pBlankSprite
-		);
 		copSetMoveVal(&pList[0].sMove, ulSprAddr >> 16);
 		copSetMoveVal(&pList[1].sMove, ulSprAddr & 0xFFFF);
 	}
@@ -259,10 +295,8 @@ void spriteProcess(tSprite *pSprite) {
 	UWORD uwVStart = s_pView->ubPosY + pSprite->wY;
 	UWORD uwVStop = uwVStart + pSprite->uwHeight;
 	UWORD uwHStart = s_pView->ubPosX - 1 + pSprite->wX; // For diwstrt 0x81, x offset equal to 128 worked fine, hence -1
-
-	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
-	pHeader->uwRawPos = ((uwVStart << 8) | ((uwHStart) >> 1));
-	pHeader->uwRawCtl = (UWORD) (
+	UWORD uwRawPos = (UWORD)((uwVStart << 8) | ((uwHStart) >> 1));
+	UWORD uwRawCtl = (UWORD)(
 		(uwVStop << 8) |
 		(isAttached << 7) |
 		(BTST(uwVStart, 8) << 2) |
@@ -270,6 +304,24 @@ void spriteProcess(tSprite *pSprite) {
 		BTST(uwHStart, 0)
 	);
 
+#ifdef ACE_USE_AGA_FEATURES
+	// FMODE-wide slot: Lisa keeps the first word of each half (POS, then CTL).
+	{
+		UBYTE *pBase = (UBYTE *)pSprite->pBitmap->Planes[0];
+		UWORD uwLine = pSprite->pBitmap->BytesPerRow;
+		UWORD uwCtlOff = (UWORD)(uwLine >> 1);
+		UWORD i;
+		for(i = 0; i < uwLine; ++i) {
+			pBase[i] = 0;
+		}
+		*(UWORD *)pBase = uwRawPos;
+		*(UWORD *)(pBase + uwCtlOff) = uwRawCtl;
+	}
+#else
+	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
+	pHeader->uwRawPos = uwRawPos;
+	pHeader->uwRawCtl = uwRawCtl;
+#endif
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {

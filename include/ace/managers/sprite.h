@@ -12,7 +12,6 @@
  *
  * @todo Add support for chained sprites - only one per channel atm
  * @todo Add support for attached (16-color) sprites?
- * @todo AGA differences?
  * @todo Separate spriteAdd/spriteRemove from spriteCreate/spriteDestroy
  * @todo Make allocations optional, allow using spriteInit(tSprite *) instead of Create/Destroy
  * @todo Allow using fragments of bitmap (specified Y offset) for sprite tiles support. How to solve metadata writing?
@@ -106,6 +105,9 @@ void spriteRemove(tSprite *pSprite);
  * @param pBitmap Bitmap to be used for display/control data. The bitmap must be
  * in 2BPP interleaved format as well as start and end with an empty line,
  * which will not be displayed but used for storing control data.
+ * Width is 16px on OCS/ECS. With ACE_USE_AGA_FEATURES, 32px and 64px are also
+ * valid; the interleaved line must match `TAG_VPORT_FMODE` sprite-fetch
+ * (POS at +0, CTL at half the line: 32px → +4).
  */
 void spriteSetBitmap(tSprite *pSprite, tBitMap *pBitmap);
 
