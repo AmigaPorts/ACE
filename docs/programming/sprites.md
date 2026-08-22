@@ -126,6 +126,7 @@ This function will do almost nothing if no change has been done, so you can call
 When optimizing its calls, you need to call it at least twice (once for each double-buffered copperlist buffer) after significant metadata change has been made, including but not limited to:
 
 - position,
+- AGA fine X (`spriteSetFineX()`, 0–3 × 1/4 px; sprites do not follow playfield `BPLCON1`),
 - height,
 - sprite bitmap,
 - enabling sprite,

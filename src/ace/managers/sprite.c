@@ -185,6 +185,27 @@ void spriteSetAttached(tSprite *pSprite, UBYTE isAttached) {
 	pSprite->isHeaderToBeUpdated = 1;
 }
 
+#ifdef ACE_USE_AGA_FEATURES
+void spriteSetFineX(tSprite *pSprite, UBYTE ubFineX) {
+	pSprite->ubFineX = ubFineX & 3;
+	pSprite->isHeaderToBeUpdated = 1;
+}
+
+void spriteMoveByFine(tSprite *pSprite, WORD wDxFine) {
+	LONG lTotal = (LONG)pSprite->wX * 4 + (pSprite->ubFineX & 3) + wDxFine;
+	if(lTotal >= 0) {
+		pSprite->wX = (WORD)(lTotal >> 2);
+		pSprite->ubFineX = (UBYTE)(lTotal & 3);
+	}
+	else {
+		ULONG ul = (ULONG)(-lTotal);
+		pSprite->wX = (WORD)(-((LONG)((ul + 3) >> 2)));
+		pSprite->ubFineX = (UBYTE)((4 - (ul & 3)) & 3);
+	}
+	pSprite->isHeaderToBeUpdated = 1;
+}
+#endif
+
 void spriteRequestMetadataUpdate(tSprite *pSprite) {
 	pSprite->isHeaderToBeUpdated = 1;
 }
@@ -302,6 +323,10 @@ void spriteProcess(tSprite *pSprite) {
 		(BTST(uwVStart, 8) << 2) |
 		(BTST(uwVStop, 8) << 1) |
 		BTST(uwHStart, 0)
+#ifdef ACE_USE_AGA_FEATURES
+		| ((pSprite->ubFineX & 1) << 3)
+		| (((pSprite->ubFineX >> 1) & 1) << 4)
+#endif
 	);
 
 #ifdef ACE_USE_AGA_FEATURES

@@ -217,6 +217,13 @@ void advancedSpriteSetPosY(tAdvancedSprite *pAdvancedSprite, WORD wY) {
     pAdvancedSprite->isHeaderToBeUpdated = 1;
 }
 
+#ifdef ACE_USE_AGA_FEATURES
+void advancedSpriteSetFineX(tAdvancedSprite *pAdvancedSprite, UBYTE ubFineX) {
+    pAdvancedSprite->ubFineX = ubFineX & 3;
+    pAdvancedSprite->isHeaderToBeUpdated = 1;
+}
+#endif
+
 void advancedSpriteSetFrame(tAdvancedSprite *pAdvancedSprite, UWORD animFrame) {
     if (animFrame >= pAdvancedSprite->uwAnimCount) {
         logWrite("ERR: Invalid animation index %hu\n", animFrame);
@@ -253,6 +260,9 @@ void advancedSpriteProcess(tAdvancedSprite *pAdvancedSprite) {
         pAdvancedSprite->pSprites[i]->wX = pAdvancedSprite->wX + addAttachedX(pAdvancedSprite, i);
 
         pAdvancedSprite->pSprites[i]->wY = pAdvancedSprite->wY;
+#ifdef ACE_USE_AGA_FEATURES
+        pAdvancedSprite->pSprites[i]->ubFineX = pAdvancedSprite->ubFineX;
+#endif
 
         pAdvancedSprite->pSprites[i]->isEnabled = pAdvancedSprite->isEnabled;
 

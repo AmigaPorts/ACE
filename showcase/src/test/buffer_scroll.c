@@ -42,7 +42,7 @@ static void drawModeInfo(tBitMap *pBfr, UWORD uwX, UWORD uwY) {
 	sprintf(szMsg, "Current mode is %s", s_pModeNames[s_eCurrentMode]);
 	fontDrawStr(s_pFont, pBfr, uwX, uwY + 0 * 10, szMsg, 6, FONT_COOKIE, s_pTextBitMap);
 #ifdef ACE_USE_AGA_FEATURES
-	fontDrawStr(s_pFont, pBfr, uwX, uwY + 1 * 10, "WASD hold  Q/E fine", 6, FONT_COOKIE, s_pTextBitMap);
+	fontDrawStr(s_pFont, pBfr, uwX, uwY + 1 * 10, "WASD hold  Q/E 1/4px", 6, FONT_COOKIE, s_pTextBitMap);
 #else
 	fontDrawStr(s_pFont, pBfr, uwX, uwY + 1 * 10, "WSAD to navigate", 6, FONT_COOKIE, s_pTextBitMap);
 #endif
