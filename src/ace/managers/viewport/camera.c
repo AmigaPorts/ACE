@@ -4,6 +4,7 @@
 
 #include <ace/managers/viewport/camera.h>
 #include <ace/macros.h>
+#include <ace/utils/fetchmode.h>
 
 tCameraManager *cameraCreate(
 	tVPort *pVPort, UWORD uwPosX, UWORD uwPosY, UWORD uwMaxX, UWORD uwMaxY,
@@ -37,8 +38,28 @@ void cameraDestroy(tCameraManager *pManager) {
 	logWrite("OK! \n");
 }
 
+#ifdef ACE_USE_AGA_FEATURES
+static UBYTE cameraGetFineUnitsPerPixel(const tCameraManager *pManager) {
+	return fetchModeGetFineUnitsPerPixel(pManager->sCommon.pVPort);
+}
+
+static void cameraClampFineX(tCameraManager *pManager) {
+	UBYTE ubUnits = cameraGetFineUnitsPerPixel(pManager);
+	if(pManager->ubFineX >= ubUnits) {
+		pManager->ubFineX = ubUnits - 1;
+	}
+	if(pManager->uPos.uwX >= pManager->uMaxPos.uwX) {
+		pManager->uPos.uwX = pManager->uMaxPos.uwX;
+		pManager->ubFineX = 0;
+	}
+}
+#endif
+
 void cameraProcess(tCameraManager *pManager) {
 	pManager->uLastPos[pManager->ubBfr].ulYX = pManager->uPos.ulYX;
+#ifdef ACE_USE_AGA_FEATURES
+	pManager->ubLastFineX[pManager->ubBfr] = pManager->ubFineX;
+#endif
 	if(pManager->isDblBfr) {
 		pManager->ubBfr = !pManager->ubBfr;
 	}
@@ -61,6 +82,11 @@ void cameraReset(
 	pManager->uLastPos[1].uwY = uwStartY;
 	pManager->isDblBfr = isDblBfr;
 	pManager->ubBfr = 0;
+#ifdef ACE_USE_AGA_FEATURES
+	pManager->ubFineX = 0;
+	pManager->ubLastFineX[0] = 0;
+	pManager->ubLastFineX[1] = 0;
+#endif
 
 	// Max camera coords based on viewport size
 	pManager->uMaxPos.uwX = uwWidth - pManager->sCommon.pVPort->uwWidth;
@@ -73,13 +99,48 @@ void cameraReset(
 void cameraSetCoord(tCameraManager *pManager, UWORD uwX, UWORD uwY) {
 	pManager->uPos.uwX = uwX;
 	pManager->uPos.uwY = uwY;
+#ifdef ACE_USE_AGA_FEATURES
+	pManager->ubFineX = 0;
+#endif
 	// logWrite("New camera pos: %u,%u\n", uwX, uwY);
 }
 
 void cameraMoveBy(tCameraManager *pManager, WORD wDx, WORD wDy) {
 	pManager->uPos.uwX = CLAMP(pManager->uPos.uwX+wDx, 0, pManager->uMaxPos.uwX);
 	pManager->uPos.uwY = CLAMP(pManager->uPos.uwY+wDy, 0, pManager->uMaxPos.uwY);
+#ifdef ACE_USE_AGA_FEATURES
+	if(pManager->uPos.uwX >= pManager->uMaxPos.uwX) {
+		pManager->ubFineX = 0;
+	}
+#endif
 }
+
+#ifdef ACE_USE_AGA_FEATURES
+void cameraSetFineX(tCameraManager *pManager, UBYTE ubFineX) {
+	pManager->ubFineX = ubFineX;
+	cameraClampFineX(pManager);
+}
+
+void cameraMoveByFine(tCameraManager *pManager, WORD wDxFine, WORD wDy) {
+	UBYTE ubUnits = cameraGetFineUnitsPerPixel(pManager);
+	LONG lTotal = (
+		(LONG)pManager->uPos.uwX * ubUnits + pManager->ubFineX + wDxFine
+	);
+	LONG lMax = (LONG)pManager->uMaxPos.uwX * ubUnits;
+
+	if(lTotal < 0) {
+		lTotal = 0;
+	}
+	else if(lTotal > lMax) {
+		lTotal = lMax;
+	}
+	pManager->uPos.uwX = (UWORD)(lTotal / ubUnits);
+	pManager->ubFineX = (UBYTE)(lTotal % ubUnits);
+	pManager->uPos.uwY = CLAMP(
+		pManager->uPos.uwY + wDy, 0, pManager->uMaxPos.uwY
+	);
+}
+#endif
 
 void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY) {
 	tVPort *pVPort;
@@ -87,10 +148,21 @@ void cameraCenterAt(tCameraManager *pManager, UWORD uwAvgX, UWORD uwAvgY) {
 	pVPort = pManager->sCommon.pVPort;
 	pManager->uPos.uwX = CLAMP(uwAvgX - (pVPort->uwWidth>>1), 0, pManager->uMaxPos.uwX);
 	pManager->uPos.uwY = CLAMP(uwAvgY - (pVPort->uwHeight>>1), 0, pManager->uMaxPos.uwY);
+#ifdef ACE_USE_AGA_FEATURES
+	pManager->ubFineX = 0;
+#endif
 }
 
 UBYTE cameraIsMoved(const tCameraManager *pManager) {
-	return pManager->uPos.ulYX != pManager->uLastPos[pManager->ubBfr].ulYX;
+	if(pManager->uPos.ulYX != pManager->uLastPos[pManager->ubBfr].ulYX) {
+		return 1;
+	}
+#ifdef ACE_USE_AGA_FEATURES
+	if(pManager->ubFineX != pManager->ubLastFineX[pManager->ubBfr]) {
+		return 1;
+	}
+#endif
+	return 0;
 }
 
 UWORD cameraGetXDiff(const tCameraManager *pManager) {

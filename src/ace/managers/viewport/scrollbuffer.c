@@ -288,8 +288,12 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 	);
 
 	// preparations for new copperlist
-	UWORD uwShift = fetchModeCalcBplShift(pManager->sCommon.pVPort, uwScrollX);
-	ULONG ulBplAddX = fetchModeCalcBplOffsetX(pManager->sCommon.pVPort, uwScrollX);
+	UWORD uwShift = fetchModeCalcBplShift(
+		pManager->sCommon.pVPort, uwScrollX, cameraGetFineX(pManager->pCamera)
+	);
+	ULONG ulBplAddX = fetchModeCalcBplOffsetX(
+		pManager->sCommon.pVPort, uwScrollX, cameraGetFineX(pManager->pCamera)
+	);
 
 	tCopList *pCopList = pManager->sCommon.pVPort->pView->pCopList;
 
