@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "buffer_scroll.h"
+#include <stdio.h>
+#include <ace/managers/blit.h>
 #include <ace/managers/key.h>
 #include <ace/managers/system.h>
 #include <ace/managers/viewport/scrollbuffer.h>
@@ -39,7 +41,11 @@ static void drawModeInfo(tBitMap *pBfr, UWORD uwX, UWORD uwY) {
 	char szMsg[50];
 	sprintf(szMsg, "Current mode is %s", s_pModeNames[s_eCurrentMode]);
 	fontDrawStr(s_pFont, pBfr, uwX, uwY + 0 * 10, szMsg, 6, FONT_COOKIE, s_pTextBitMap);
+#ifdef ACE_USE_AGA_FEATURES
+	fontDrawStr(s_pFont, pBfr, uwX, uwY + 1 * 10, "WASD hold  Q/E fine", 6, FONT_COOKIE, s_pTextBitMap);
+#else
 	fontDrawStr(s_pFont, pBfr, uwX, uwY + 1 * 10, "WSAD to navigate", 6, FONT_COOKIE, s_pTextBitMap);
+#endif
 	for(UBYTE i = 0; i < 4; ++i) {
 		sprintf(szMsg, "%d to %s", i + 1, s_pModeNames[i]);
 		fontDrawStr(s_pFont, pBfr, uwX, uwY + (2 + i) * 10, szMsg, 6, FONT_COOKIE, s_pTextBitMap);
@@ -84,19 +90,29 @@ static void fillBfr(tBitMap *pBfr, UWORD uwWidth, UWORD uwHeight) {
 	logBlockEnd("fillBfr()");
 }
 
-static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
-	viewLoad(0);
-	systemUse();
-	if(s_pView->pFirstVPort) {
-		vPortDestroy(s_pView->pFirstVPort);
+static void loadTestPalette(tVPort *pVPort) {
+	paletteLoadFromPath("data/amidb32.plt", pVPort->pPalette, 1 << SHOWCASE_BPP);
+}
+
+static void destroyView(void) {
+	if(s_pView) {
+		viewDestroy(s_pView);
+		s_pView = 0;
+		s_pVPort = 0;
+		s_pCamera = 0;
 	}
+}
+
+static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
+	s_pView = viewCreate(0,
+	TAG_DONE);
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
 		TAG_VPORT_BPP, TEST_SCROLL_BPP,
 		TAG_VPORT_HIRES, isHires,
 	TAG_DONE);
-	paletteLoadFromPath("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
+	loadTestPalette(s_pVPort);
 
 	tSimpleBufferManager *s_pBfr = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVPort,
@@ -107,24 +123,18 @@ static void initSimpleBuffer(UBYTE isHires, UWORD uwWidth, UWORD uwHeight) {
 	s_pCamera = s_pBfr->pCamera;
 
 	fillBfr(s_pBfr->pBack, uwWidth, uwHeight);
-
-	viewLoad(s_pView);
-	systemUnuse();
 }
 
 static void initScrollBuffer(UBYTE isHires) {
-	viewLoad(0);
-	systemUse();
-	if(s_pView->pFirstVPort) {
-		vPortDestroy(s_pView->pFirstVPort);
-	}
+	s_pView = viewCreate(0,
+	TAG_DONE);
 
 	s_pVPort = vPortCreate(0,
 		TAG_VPORT_VIEW, s_pView,
 		TAG_VPORT_BPP, TEST_SCROLL_BPP,
 		TAG_VPORT_HIRES, isHires,
 	TAG_DONE);
-	paletteLoadFromPath("data/amidb32.plt", s_pVPort->pPalette, 1 << SHOWCASE_BPP);
+	loadTestPalette(s_pVPort);
 
 	// This will create buffer which is shorter than 640 with capability of
 	// wrapped scrolling to simulate bigger buffer size
@@ -157,13 +167,13 @@ static void initScrollBuffer(UBYTE isHires) {
 	blitRect(s_pBfr->pBack, 16, 16, 32, 32, 5);
 
 	drawModeInfo(s_pBfr->pBack, 50, 50);
-
-	viewLoad(s_pView);
-	systemUnuse();
 }
 
 static void changeMode(tMode eMode) {
 	s_eCurrentMode = eMode;
+	viewLoad(0);
+	systemUse();
+	destroyView();
 	switch(eMode) {
 		case MODE_SIMPLE_LORES:
 			initSimpleBuffer(0, 400, 300);
@@ -180,13 +190,12 @@ static void changeMode(tMode eMode) {
 		default:
 			break;
 	}
+	viewLoad(s_pView);
+	systemUnuse();
 }
 
 void gsTestBufferScrollCreate(void) {
 	logBlockBegin("gsTestBufferScrollCreate()");
-
-	s_pView = viewCreate(0,
-	TAG_DONE);
 
 	s_pFont = fontCreateFromPath("data/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
@@ -215,6 +224,16 @@ void gsTestBufferScrollLoop(void) {
 	if(keyCheck(KEY_D)) {
 		wDx = 1;
 	}
+	cameraMoveBy(s_pCamera, wDx, wDy);
+
+#ifdef ACE_USE_AGA_FEATURES
+	if(keyCheck(KEY_Q)) {
+		cameraMoveByFine(s_pCamera, -1, 0);
+	}
+	else if(keyCheck(KEY_E)) {
+		cameraMoveByFine(s_pCamera, 1, 0);
+	}
+#endif
 
 	if(keyUse(KEY_1)) {
 		changeMode(MODE_SIMPLE_LORES);
@@ -229,7 +248,6 @@ void gsTestBufferScrollLoop(void) {
 		changeMode(MODE_SCROLL_HIRES);
 	}
 
-	cameraMoveBy(s_pCamera, wDx, wDy);
 	viewProcessManagers(s_pView);
 	copProcessBlocks();
 	vPortWaitForEnd(s_pVPort);

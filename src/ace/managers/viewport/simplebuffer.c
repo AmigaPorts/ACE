@@ -162,10 +162,12 @@ static UWORD simpleBufferCalcBplOffsAndShift(tSimpleBufferManager *pManager, ULO
 	UWORD uwShift;
 	if(pManager->ubFlags & SIMPLEBUFFER_FLAG_X_SCROLLABLE) {
 		uwShift = fetchModeCalcBplShift(
-			pManager->sCommon.pVPort, pManager->pCamera->uPos.uwX
+			pManager->sCommon.pVPort, pManager->pCamera->uPos.uwX,
+			cameraGetFineX(pManager->pCamera)
 		);
 		*pBplOffs = fetchModeCalcBplOffsetX(
-			pManager->sCommon.pVPort, pManager->pCamera->uPos.uwX
+			pManager->sCommon.pVPort, pManager->pCamera->uPos.uwX,
+			cameraGetFineX(pManager->pCamera)
 		);
 	}
 	else {

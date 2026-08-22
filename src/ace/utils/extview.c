@@ -170,10 +170,12 @@ void viewUpdateGlobalPalette(const tView *pView) {
 	if(pView->uwFlags & VIEW_FLAG_GLOBAL_PALETTE) {
 #ifdef ACE_USE_AGA_FEATURES
 		if(pView->pFirstVPort->eFlags & VP_FLAG_AGA) {
-			WORD colorBanks = (1 << pView->pFirstVPort->ubBpp) / 32;
+			UBYTE ubBpp = pView->pFirstVPort->ubBpp;
+			UBYTE colorBanks = (ubBpp >= 5) ? (1 << (ubBpp - 5)) : 1;
+			UBYTE colorsInBank = (ubBpp >= 5) ? 32 : (1 << ubBpp);
 			ULONG *pPaletteAGA = (ULONG *)pView->pFirstVPort->pPalette;
 			for(UBYTE p = 0; p < colorBanks; ++p) {
-				for(UBYTE i = 0; i < 32; ++i) {
+				for(UBYTE i = 0; i < colorsInBank; ++i) {
 					UBYTE r = pPaletteAGA[(p * 32) + i] >> 16;
 					UBYTE g = pPaletteAGA[(p * 32) + i] >> 8;
 					UBYTE b = pPaletteAGA[(p * 32) + i];
