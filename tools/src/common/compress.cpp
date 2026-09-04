@@ -17,6 +17,29 @@ static uint8_t rleTableRead(const uint8_t *table, std::uint16_t *index)
 	return byte;
 }
 
+static bool isInLookupRange(
+	std::uint16_t uwPos, std::uint16_t uwRangeStart, std::uint16_t uwRangeLength
+) {
+	if(uwRangeLength == 0) {
+		return false;
+	}
+
+	std::uint16_t uwRangeEnd = uwRangeStart + uwRangeLength;
+	if(uwRangeEnd >= 4096) {
+		uwRangeEnd &= 0xfff;
+		if(uwRangeStart <= uwPos || uwPos < uwRangeEnd) {
+			return true;
+		}
+	}
+	else {
+		if(uwRangeStart <= uwPos && uwPos < uwRangeEnd) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool rleTableFind(
 	const uint8_t *pLookup, std::uint16_t uwLookupLength,
 	std::uint16_t uwLookupWritePos, const uint8_t *pData, std::uint32_t ulMatchLimit,
@@ -25,33 +48,33 @@ static bool rleTableFind(
 {
 	*pMatchPosition = 0;
 	*pMatchLength = 0;
-	std::uint32_t ulMatchedLength;
+	std::uint32_t ulMatchLength;
 	bool isFound = false;
 	for (auto i = 0u; i < uwLookupLength; i++) {
 		std::uint32_t ulLimit = ulMatchLimit;
 		if(uwLookupLength < 0x1000) {
 			ulLimit = std::min(ulLimit, uwLookupLength - i);
 		}
-		for (ulMatchedLength = 0u; ulMatchedLength < ulLimit; ulMatchedLength++) {
-			auto offset = i + ulMatchedLength;
-			if (pLookup[offset & 0xfff] != pData[ulMatchedLength]) {
+		for (ulMatchLength = 0u; ulMatchLength < ulLimit; ulMatchLength++) {
+			auto MatchedBytePos = (i + ulMatchLength) & 0xfff;
+			if (pLookup[MatchedBytePos] != pData[ulMatchLength]) {
 				break;
 			}
 
-			 // Don't return RLE runs that are in the area of the table that
-			 // will be written to, since the values will change.
+			// Don't allow RLE runs that are in the area of the table that
+			// will be written to, since the values will change.
 			if (
-				(i >= uwLookupWritePos && i <= uwLookupWritePos + ulMatchedLength) ||
-				(offset >= uwLookupWritePos && offset <= uwLookupWritePos + ulMatchedLength)
+				isInLookupRange(i, uwLookupWritePos, ulMatchLength) ||
+				isInLookupRange(MatchedBytePos, uwLookupWritePos, ulMatchLength)
 			) {
-				ulMatchedLength = 0;
+				ulMatchLength = 0;
 				break;
 			}
 		}
-		if (ulMatchedLength >= s_RleMinLength) {
-			if(ulMatchedLength > *pMatchLength) {
+		if (ulMatchLength >= s_RleMinLength) {
+			if(ulMatchLength > *pMatchLength) {
 				*pMatchPosition = i;
-				*pMatchLength = ulMatchedLength;
+				*pMatchLength = ulMatchLength;
 				isFound = true;
 			}
 		}
@@ -60,11 +83,10 @@ static bool rleTableFind(
 	return isFound;
 }
 
-static void rleTableWrite(uint8_t *table, std::uint16_t *index, uint8_t byte)
+static void rleTableWrite(uint8_t *pTable, std::uint16_t *pPosition, uint8_t ubData)
 {
-	table[*index] = byte;
-	(*index)++;
-	(*index) &= 0xfff;
+	pTable[*pPosition] = ubData;
+	*pPosition = (*pPosition + 1) & 0xfff;
 }
 
 void compressUnpackerInit(
@@ -102,7 +124,7 @@ tCompressUnpackResult compressUnpackerProcess(
 				if (ubBitValue) {
 					// Output the next byte and store it in the table
 					std::uint8_t ubRawByte = pUnpacker->pCompressed[pUnpacker->ulReadOffset++];
-					if(pUnpacker->isVerbose) fmt::println("byte at {}: {:02X}", pUnpacker->ulReadOffset - 1, ubRawByte);
+					if(pUnpacker->isVerbose) fmt::println("byte at packpos {}: {:02X}", pUnpacker->ulReadOffset - 1, ubRawByte);
 					rleTableWrite(pUnpacker->pLookup, &pUnpacker->uwLookupPos, ubRawByte);
 					*pOut = ubRawByte;
 					pUnpacker->ulWriteOffset++;
@@ -119,8 +141,8 @@ tCompressUnpackResult compressUnpackerProcess(
 					pUnpacker->uwRleStart = uwRleCtl >> 4;
 
 					if(pUnpacker->isVerbose) fmt::print(
-						"sequence at {}, word: {:04X}, len: {}, index: {}, sequence:",
-						pUnpacker->ulReadOffset - 2, uwRleCtl, pUnpacker->ubRleLength, pUnpacker->uwRleStart
+					"sequence at packpos {}, ctl: {:04X}, seq at: {} + {}, table write pos {}, sequence:",
+						pUnpacker->ulReadOffset - 2, uwRleCtl, pUnpacker->uwRleStart, pUnpacker->ubRleLength, pUnpacker->uwLookupPos
 					);
 					pUnpacker->ubRlePos = 0;
 					pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_WRITE_RLE;
@@ -132,7 +154,7 @@ tCompressUnpackResult compressUnpackerProcess(
 			break;
 
 		case COMPRESS_UNPACK_STATE_KIND_END_CTL:
-			if(pUnpacker->isVerbose) fmt::println("used ctl at {}: {:02X}", pUnpacker->ulCtlOffset, pUnpacker->ubCtlByte);
+			if(pUnpacker->isVerbose) fmt::println("used ctl at packpos {}: {:02X}", pUnpacker->ulCtlOffset, pUnpacker->ubCtlByte);
 			if (pUnpacker->ulWriteOffset >= pUnpacker->ulUncompressedSize) {
 				pUnpacker->eCurrentState = COMPRESS_UNPACK_STATE_KIND_DONE;
 			}
@@ -189,7 +211,7 @@ std::uint32_t compressPack(
 				break;
 			}
 
-			// Try to find an repeated sequence
+			// Try to find a repeated sequence
 			bool isFound = rleTableFind(
 				pLookup, uwLookupLength, uwLookupWritePos, &pSrc[ulSrcOffset],
 				std::min(ulSrcSize - ulSrcOffset, s_RleMaxLength),
@@ -202,8 +224,8 @@ std::uint32_t compressPack(
 				uwRleCtl |= (uwRleMatchPosition & 0xfff) << 4;
 
 				if(isVerbose) fmt::println(
-					"sequence at {}, word: {:04X}, len: {}, index: {}, sequence: {:02X}",
-					ulDestOffset, uwRleCtl, ubRleMatchLength, uwRleMatchPosition,
+					"sequence at packpos {}, ctl: {:04X}, seq at: {} + {}, table write pos {}, sequence: {:02X}",
+					ulDestOffset, uwRleCtl, uwRleMatchPosition, ubRleMatchLength, uwLookupWritePos,
 					fmt::join(&pSrc[ulSrcOffset], &pSrc[ulSrcOffset + ubRleMatchLength], " ")
 				);
 				pDest[ulDestOffset++] = uwRleCtl >> 8;
@@ -219,13 +241,13 @@ std::uint32_t compressPack(
 				// Control byte flag is set.
 				pDest[ulCtrlByteOffset] |= (1 << ubBit);
 				auto RawByte = pSrc[ulSrcOffset++];
-				if(isVerbose) fmt::println("byte at {}: {:02X}", ulDestOffset, RawByte);
+				if(isVerbose) fmt::println("byte at packpos {}: {:02X}", ulDestOffset, RawByte);
 				pDest[ulDestOffset++] = RawByte;
 				rleTableWrite(pLookup, &uwLookupWritePos, RawByte);
 				uwLookupLength = std::min(0x1000, uwLookupLength + 1);
 			}
 		}
-		if(isVerbose) fmt::println("used ctl at {}: {:02X}", ulCtrlByteOffset, pDest[ulCtrlByteOffset]);
+		if(isVerbose) fmt::println("used ctl at packpos {}: {:02X}", ulCtrlByteOffset, pDest[ulCtrlByteOffset]);
 	}
 
 	if(isVerbose) fmt::println("compress done, length: {}", ulDestOffset);
