@@ -331,22 +331,25 @@ void spriteProcess(tSprite *pSprite) {
 
 #ifdef ACE_USE_AGA_FEATURES
 	// FMODE-wide slot: Lisa keeps the first word of each half (POS, then CTL).
+	// Don't wipe those words first - sprite DMA may read them mid-update.
 	{
 		UBYTE *pBase = (UBYTE *)pSprite->pBitmap->Planes[0];
-		UWORD uwLine = pSprite->pBitmap->BytesPerRow;
-		UWORD uwCtlOff = (UWORD)(uwLine >> 1);
+		UWORD uwCtlOff = pSprite->pBitmap->BytesPerRow >> 1;
 		UWORD i;
-		for(i = 0; i < uwLine; ++i) {
-			pBase[i] = 0;
-		}
+
 		*(UWORD *)pBase = uwRawPos;
 		*(UWORD *)(pBase + uwCtlOff) = uwRawCtl;
+		for(i = sizeof(UWORD); i < uwCtlOff; ++i) {
+			pBase[i] = 0;
+			pBase[i + uwCtlOff] = 0;
+		}
 	}
 #else
 	tHardwareSpriteHeader *pHeader = (tHardwareSpriteHeader*)(pSprite->pBitmap->Planes[0]);
 	pHeader->uwRawPos = uwRawPos;
 	pHeader->uwRawCtl = uwRawCtl;
 #endif
+	pSprite->isHeaderToBeUpdated = 0;
 }
 
 void spriteSetHeight(tSprite *pSprite, UWORD uwHeight) {
