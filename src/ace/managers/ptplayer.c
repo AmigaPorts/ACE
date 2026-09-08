@@ -2191,7 +2191,9 @@ static void mt_tremolo(
 	wNewVol = CLAMP(wNewVol, 0, 64);
 
 	pChannelReg->ac_per = pChannelData->uwPeriod;
-	pChannelReg->ac_vol = wNewVol;
+	// Tremolo volume must go through the master volume table, just like all
+	// other music volume writes.
+	pChannelReg->ac_vol = mt_MasterVolTab[wNewVol];
 
 	// increase tremolopos by speed
 	pChannelData->n_tremolopos += ubSpeed;
@@ -2311,12 +2313,15 @@ static void mt_pernop(
 
 static void mt_volchange(
 	UBYTE ubNewVolume,
-	UNUSED_ARG tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
+	tChannelStatus *pChannelData, volatile tChannelRegs *pChannelReg
 ) {
 	// cmd C x y (xy = new volume)
 	if(ubNewVolume > 64) {
 		ubNewVolume = 64;
 	}
+	// Store the new volume in channel state, so that subsequent volume slides
+	// (A, 5, 6, 7, E Ax, E Bx) and master volume changes start from it.
+	pChannelData->uwVolume = ubNewVolume;
 	pChannelReg->ac_vol = mt_MasterVolTab[ubNewVolume];
 }
 
