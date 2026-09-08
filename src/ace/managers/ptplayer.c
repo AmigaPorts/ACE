@@ -2191,7 +2191,9 @@ static void mt_tremolo(
 	wNewVol = CLAMP(wNewVol, 0, 64);
 
 	pChannelReg->ac_per = pChannelData->uwPeriod;
-	pChannelReg->ac_vol = wNewVol;
+	// Tremolo volume must go through the master volume table, just like all
+	// other music volume writes.
+	pChannelReg->ac_vol = mt_MasterVolTab[wNewVol];
 
 	// increase tremolopos by speed
 	pChannelData->n_tremolopos += ubSpeed;
