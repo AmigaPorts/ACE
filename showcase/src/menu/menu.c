@@ -189,7 +189,7 @@ void menuShowMain(void) {
 	s_pMenuList->sCoord.uwY = uwListY;
 	menuListResetCount(s_pMenuList, 3);
 	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Tests");
-	menuListSetEntry(s_pMenuList, 1, MENULIST_DISABLED, "Examples");
+	menuListSetEntry(s_pMenuList, 1, MENULIST_ENABLED, "Examples");
 	menuListSetEntry(s_pMenuList, 2, MENULIST_ENABLED, "Quit");
 	s_ubMenuType = MENU_MAIN;
 
@@ -272,7 +272,9 @@ void menuShowExamples(void) {
 
 	// Draw BG
 	menuDrawBg();
-	menuLayoutVertCenter(s_pMenuList, 1, &uwTitleY, &uwListY);
+	menuLayoutVertCenter(
+		s_pMenuList, EXAMPLE_STATE_COUNT, &uwTitleY, &uwListY
+	);
 	fontDrawStr(
 		s_pMenuFont, s_pMenuBfr->pBack, s_pMenuBfr->uBfrBounds.uwX >> 1, uwTitleY,
 		"Examples", 1, FONT_COOKIE|FONT_CENTER|FONT_SHADOW, s_pTextBitMap
@@ -281,8 +283,16 @@ void menuShowExamples(void) {
 	// Prepare new list
 	s_pMenuList->sCoord.uwX = s_pMenuBfr->uBfrBounds.uwX >> 1;
 	s_pMenuList->sCoord.uwY = uwListY;
-	menuListResetCount(s_pMenuList, 1);
-	menuListSetEntry(s_pMenuList, 0, MENULIST_ENABLED, "Back");
+	menuListResetCount(s_pMenuList, EXAMPLE_STATE_COUNT);
+	menuListSetEntry(s_pMenuList, EXAMPLE_STATE_BACK, MENULIST_ENABLED, "Back");
+	menuListSetEntry(
+		s_pMenuList, EXAMPLE_STATE_SHOOTER_HORIZONTAL, MENULIST_ENABLED,
+		"Multiplexed sprites - Horizontal shooter"
+	);
+	menuListSetEntry(
+		s_pMenuList, EXAMPLE_STATE_SHOOTER_VERTICAL, MENULIST_ENABLED,
+		"Multiplexed sprites - Vertical shooter"
+	);
 	s_ubMenuType = MENU_EXAMPLES;
 
 	// Redraw list
@@ -291,9 +301,12 @@ void menuShowExamples(void) {
 }
 
 void menuSelectExamples(void) {
-	switch(s_pMenuList->ubSelected) {
-		case 0:
-			menuShowMain();
-			break;
+	if(s_pMenuList->ubSelected) {
+		stateChange(
+			g_pGameStateManager, &g_pExampleStates[s_pMenuList->ubSelected]
+		);
+	}
+	else {
+		menuShowMain();
 	}
 }

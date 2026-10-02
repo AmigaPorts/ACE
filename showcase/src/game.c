@@ -21,6 +21,8 @@
 #include "test/scroll_tile_buffer.h"
 #include "test/mouse_sprite.h"
 #include "test/sprites.h"
+#include "examples/shooter_horizontal/shooter.h"
+#include "examples/shooter_vertical/shooter.h"
 
 tStateManager *g_pGameStateManager = 0;
 tState g_pTestStates[TEST_STATE_COUNT] = {
@@ -39,6 +41,18 @@ tState g_pTestStates[TEST_STATE_COUNT] = {
     [TEST_STATE_SCROLLTILEBUFFER_BPP_FMODE] = {.cbCreate = gsTestDiagScrollTileBufferCreate, .cbLoop = gsTestDiagScrollTileBufferLoop, .cbDestroy = gsTestDiagScrollTileBufferDestroy},
     [TEST_STATE_MOUSE_SPRITE] = {.cbCreate = gsTestMouseSpriteCreate, .cbLoop = gsTestMouseSpriteLoop, .cbDestroy = gsTestMouseSpriteDestroy},
     [TEST_STATE_SPRITES] = {.cbCreate = gsTestSpritesCreate, .cbLoop = gsTestSpritesLoop, .cbDestroy = gsTestSpritesDestroy},
+};
+tState g_pExampleStates[EXAMPLE_STATE_COUNT] = {
+	[EXAMPLE_STATE_SHOOTER_HORIZONTAL] = {
+		.cbCreate = gsExampleShooterHorzCreate,
+		.cbLoop = gsExampleShooterHorzLoop,
+		.cbDestroy = gsExampleShooterHorzDestroy
+	},
+	[EXAMPLE_STATE_SHOOTER_VERTICAL] = {
+		.cbCreate = gsExampleShooterVertCreate,
+		.cbLoop = gsExampleShooterVertLoop,
+		.cbDestroy = gsExampleShooterVertDestroy
+	},
 };
 
 #define GENERIC_MAIN_LOOP_CONDITION gameIsRunning() && g_pGameStateManager->pCurrent
