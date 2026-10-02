@@ -38,6 +38,8 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. DMA usage
 1. [Multi-directional large tilemaps scrolling with TileBuffer](programming/tilebuffer.md)
 1. [Advanced Sprites](programming/advancedsprites.md)
+1. [Multiplexed sprites](programming/multiplexedsprites.md)
+1. [Advanced multiplexed sprites](programming/advancedmultiplexedsprites.md)
 
 ## Reference manual
 
