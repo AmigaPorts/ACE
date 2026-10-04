@@ -81,14 +81,14 @@ void _logPopIndent(void) {
 	--g_sLogManager.ubIndent;
 }
 
-void _logWrite(char *szFormat, ...) {
+void _logWrite(const char *szFormat, ...) {
 	va_list vaArgs;
 	va_start(vaArgs, szFormat);
 	logWriteVa(szFormat, vaArgs);
 	va_end(vaArgs);
 }
 
-void _logWriteVa(char *szFormat, va_list vaArgs) {
+void _logWriteVa(const char *szFormat, va_list vaArgs) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
@@ -147,7 +147,7 @@ void _logClose(void) {
  */
 
 // Log blocks
-void _logBlockBegin(char *szBlockName, ...) {
+void _logBlockBegin(const char *szBlockName, ...) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
@@ -172,7 +172,7 @@ void _logBlockBegin(char *szBlockName, ...) {
 	}
 }
 
-void _logBlockEnd(char *szBlockName) {
+void _logBlockEnd(const char *szBlockName) {
 	if(g_sLogManager.ubShutUp) {
 		return;
 	}
@@ -208,7 +208,7 @@ void _logBlockEnd(char *szBlockName) {
 
 // Average logging
 
-tAvg *_logAvgCreate(char *szName, UWORD uwAllocCount) {
+tAvg *_logAvgCreate(const char *szName, UWORD uwAllocCount) {
 	tAvg *pAvg = memAllocFast(sizeof(tAvg));
 	pAvg->szName = szName;
 	pAvg->uwAllocCount = uwAllocCount;

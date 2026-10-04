@@ -25,7 +25,7 @@ typedef struct _tAvg {
 	ULONG ulMax;
 	ULONG ulStartTime;
 	ULONG *pDeltas;
-	char *szName;
+	const char *szName;
 } tAvg;
 
 
@@ -55,18 +55,18 @@ void _logPopIndent(void);
 void _logPushInt(void);
 void _logPopInt(void);
 
-void _logWrite(char *szFormat, ...) __attribute__ ((format (printf, 1, 2)));
+void _logWrite(const char *szFormat, ...) __attribute__ ((format (printf, 1, 2)));
 
-void _logWriteVa(char *szFormat, va_list vaArgs);
+void _logWriteVa(const char *szFormat, va_list vaArgs);
 
 // Functions - block logging
 
-void _logBlockBegin(char *szBlockName, ...) __attribute__ ((format (printf, 1, 2)));
-void _logBlockEnd(char *szBlockName);
+void _logBlockBegin(const char *szBlockName, ...) __attribute__ ((format (printf, 1, 2)));
+void _logBlockEnd(const char *szBlockName);
 
 // Functions - average block time
 
-tAvg *_logAvgCreate(char *szName, UWORD uwCount);
+tAvg *_logAvgCreate(const char *szName, UWORD uwCount);
 void _logAvgDestroy(tAvg *pAvg);
 void _logAvgBegin(tAvg *pAvg);
 void _logAvgEnd(tAvg *pAvg);
