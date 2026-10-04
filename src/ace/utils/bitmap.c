@@ -350,8 +350,8 @@ void bitmapLoadFromFd(
 	}
 	else {
 		for(ubPlane = 0; ubPlane != pBitMap->Depth; ++ubPlane) {
+			UWORD uwDestOffs = uwWidth * uwStartY + (uwStartX / 8);
 			for(y = 0; y != uwSrcHeight; ++y) {
-				UWORD uwDestOffs = uwWidth * uwStartY + (uwStartX / 8);
 				fileReadBytes(
 					pFile,
 					&pBitMap->Planes[ubPlane][uwDestOffs],
