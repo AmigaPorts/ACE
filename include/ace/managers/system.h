@@ -23,19 +23,24 @@ typedef void (*tAceIntHandler)(
 
 typedef void (*tKeyInputHandler)(UBYTE ubRawKeyCode);
 
+typedef void (*tHwInterrupt)(void);
+
 //-------------------------------------------------------------------- FUNCTIONS
 
 /**
  * @brief The startup code to give ACE somewhat initial state.
+ *
  * Prepares OS for enabling / disabling. Disables as much of it as possible,
  * but leaves it in enabled state.
+ *
  * This is the first thing you should call in your ACE app.
  */
 void systemCreate(void);
 
 /**
  * @brief Cleans up after app, restores anything that systemCreate took over.
- * After running the function, the system to its state before running your app.
+ *
+ * After this call, the system to its state before running your app.
  * This is the last thing you should call in your ACE app.
  */
 void systemDestroy(void);
@@ -95,7 +100,7 @@ UWORD systemGetVersion(void);
 UBYTE systemIsStartVolumeWritable(void);
 
 /**
- * Disable caches on 680x0 CPUs. Previous cache control words
+ * @brief Disable caches on 680x0 CPUs. Previous cache control words
  * are stored so they can later be restored with
  * systemRestoreCpuCaches.
  *
@@ -104,12 +109,26 @@ UBYTE systemIsStartVolumeWritable(void);
 void systemDisableCpuCaches();
 
 /**
- * Restore cache control settings after a previous call to
+ * @brief Restore cache control settings after a previous call to
  * systemDisableCpuCaches.
  *
  * @see systemDisableCpuCaches
  */
 void systemRestoreCpuCaches();
+
+/**
+ * @brief Temporarily swaps the hardware interrupt function.
+ *
+ * Use only when it is performance-critical. Handling of specific intbits
+ * in a hardware handler is completely up to you.
+ * This has lowest-possible overhead but is also very fragile:
+ *
+ * - can be used only when OS is disabled
+ * - gets replaced by ACE's interrupt handing on using os enable/disable
+ */
+void systemOverrideHwInterrupt(UBYTE ubIndex, tHwInterrupt cbInterrupt);
+
+void systemResetHwInterrupt(UBYTE ubIndex);
 
 //---------------------------------------------------------------------- GLOBALS
 

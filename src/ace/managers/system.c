@@ -1417,3 +1417,23 @@ void systemRestoreCpuCaches() {
 		Supervisor((void *)s_pSetPcr);
 	}
 }
+
+void systemOverrideHwInterrupt(UBYTE ubIndex, tHwInterrupt cbInterrupt) {
+#if defined(ACE_DEBUG)
+	if(systemIsUsed()) {
+		logWrite("ERR: Can't override hw interrupt when OS is alive");
+		return;
+	}
+#endif
+	s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + ubIndex] = cbInterrupt;
+}
+
+void systemResetHwInterrupt(UBYTE ubIndex) {
+#if defined(ACE_DEBUG)
+	if(systemIsUsed()) {
+		logWrite("ERR: Can't override hw interrupt when OS is alive");
+		return;
+	}
+#endif
+	s_pHwVectors[SYSTEM_INT_VECTOR_FIRST + ubIndex] = s_pAceHwInterrupts[ubIndex];
+}
