@@ -54,7 +54,7 @@ static UWORD s_uwBgBufferLength;
 static UBYTE s_ubBobsSaved;
 #endif
 
-tBobQueue s_pQueues[2];
+static tBobQueue s_pQueues[2];
 
 //------------------------------------------------------------------ PRIVATE FNS
 
@@ -490,7 +490,7 @@ void bobBegin(tBitMap *pBuffer) {
 	g_pCustom->bltalwm = 0xFFFF;
 	g_pCustom->bltamod = 0;
 	g_pCustom->bltapt = pA;
-#ifdef GAME_DEBUG
+#if defined(ACE_DEBUG)
 	UWORD uwDrawnHeight = 0;
 #endif
 
@@ -524,7 +524,7 @@ void bobBegin(tBitMap *pBuffer) {
 			g_pCustom->bltsize = pBob->_uwBlitSize;
 #endif
 
-#ifdef GAME_DEBUG
+#if defined(ACE_DEBUG)
 			UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
 			uwDrawnHeight += uwBlitWords * pBob->uwHeight;
 #endif
@@ -534,7 +534,7 @@ void bobBegin(tBitMap *pBuffer) {
 	s_ubBobsSaved = 0;
 #endif
 
-#ifdef GAME_DEBUG
+#if defined(ACE_DEBUG) && !defined(ACE_BOB_PRISTINE_BUFFER)
 	UWORD uwDrawLimit = s_pQueues[0].pBg->Rows * s_pQueues[0].pBg->Depth;
 	if(uwDrawnHeight > uwDrawLimit) {
 		logWrite(
