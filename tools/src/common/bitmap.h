@@ -48,6 +48,14 @@ public:
 
 	tChunkyBitmap filterColors(const tPalette &Palette, const tRgb &ColorDefault);
 
+	std::uint16_t getTrimCountLeft() const;
+
+	std::uint16_t getTrimCountRight() const;
+
+	std::uint16_t getTrimCountUp() const;
+
+	std::uint16_t getTrimCountDown() const;
+
 	static tChunkyBitmap toSpriteSubBitmap(
 		const tChunkyBitmap &Source, const tPalette &Palette, std::uint8_t ubShift
 	);

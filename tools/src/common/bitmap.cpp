@@ -136,7 +136,6 @@ tPlanarBitmap::tPlanarBitmap(
 
 	// Write bitplanes - from LSB to MSB
 	std::uint16_t uwPixelBuffer;
-	std::uint32_t ulPos;
 	for(std::uint8_t ubPlane = 0; ubPlane != ubDepth; ++ubPlane) {
 		for(std::uint16_t y = 0; y != Chunky.m_uwHeight; ++y) {
 			uwPixelBuffer = 0;
@@ -413,4 +412,100 @@ tChunkyBitmap tChunkyBitmap::toSpriteSubBitmap(
 		}
 	}
 	return Dst;
+}
+
+std::uint16_t tChunkyBitmap::getTrimCountLeft() const
+{
+	std::uint16_t uwTrimCount = 0;
+	auto BgColor = pixelAt(0, 0);
+	for(std::uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
+		auto isLineEmpty = true;
+		for(std::uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
+			if(pixelAt(uwX, uwY) != BgColor) {
+				isLineEmpty = false;
+				break;
+			}
+		}
+
+		if(isLineEmpty) {
+			++uwTrimCount;
+		}
+		else {
+			break;
+		}
+	}
+
+	return uwTrimCount;
+}
+
+std::uint16_t tChunkyBitmap::getTrimCountRight() const
+{
+	std::uint16_t uwTrimCount = 0;
+	auto BgColor = pixelAt(m_uwWidth - 1, 0);
+	for(std::uint16_t uwX = m_uwWidth; uwX--;) {
+		auto isLineEmpty = true;
+		for(std::uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
+			if(pixelAt(uwX, uwY) != BgColor) {
+				isLineEmpty = false;
+				break;
+			}
+		}
+
+		if(isLineEmpty) {
+			++uwTrimCount;
+		}
+		else {
+			break;
+		}
+	}
+
+	return uwTrimCount;
+}
+
+std::uint16_t tChunkyBitmap::getTrimCountUp() const
+{
+	std::uint16_t uwTrimCount = 0;
+	auto BgColor = pixelAt(0, 0);
+	for(std::uint16_t uwY = 0; uwY < m_uwHeight; ++uwY) {
+		auto isLineEmpty = true;
+		for(std::uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
+			if(pixelAt(uwX, uwY) != BgColor) {
+				isLineEmpty = false;
+				break;
+			}
+		}
+
+		if(isLineEmpty) {
+			++uwTrimCount;
+		}
+		else {
+			break;
+		}
+	}
+
+	return uwTrimCount;
+}
+
+std::uint16_t tChunkyBitmap::getTrimCountDown() const
+{
+	std::uint16_t uwTrimCount = 0;
+	auto BgColor = pixelAt(0, m_uwHeight - 1);
+	for(std::uint16_t uwY = m_uwHeight; uwY--;) {
+		auto isLineEmpty = true;
+		for(std::uint16_t uwX = 0; uwX < m_uwWidth; ++uwX) {
+			if(pixelAt(uwX, uwY) != BgColor) {
+				isLineEmpty = false;
+				break;
+			}
+		}
+
+		if(isLineEmpty) {
+			++uwTrimCount;
+		}
+		else {
+			break;
+		}
+	}
+
+	return uwTrimCount;
 }
