@@ -11,13 +11,13 @@
 struct tRgb {
 	std::uint8_t ubR, ubG, ubB;
 
-	tRgb(std::uint8_t ubNewR, std::uint8_t ubNewG, std::uint8_t ubNewB):
+	constexpr tRgb(std::uint8_t ubNewR, std::uint8_t ubNewG, std::uint8_t ubNewB):
 		ubR(ubNewR), ubG(ubNewG), ubB(ubNewB) { }
 
-	tRgb(std::uint8_t ubGrayscale):
+	constexpr tRgb(std::uint8_t ubGrayscale):
 		ubR(ubGrayscale), ubG(ubGrayscale), ubB(ubGrayscale) { }
 
-	tRgb():
+	constexpr tRgb():
 		ubR(0), ubG(0), ubB(0) { }
 
 	tRgb(const std::string &szCode);
