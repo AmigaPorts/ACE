@@ -13,7 +13,7 @@ if(MSVC)
     add_compile_definitions(_USE_MATH_DEFINES=1 NOMINMAX=1)
 endif()
 
-CPMAddPackage("gh:fmtlib/fmt#10.0.0")
+CPMAddPackage("gh:fmtlib/fmt#12.0.0")
 CPMAddPackage(
 	NAME freetype
 	VERSION 2.14.1
