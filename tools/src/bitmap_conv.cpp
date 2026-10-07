@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+ #include <optional>
 #include "common/logging.h"
 #include "common/fs.h"
 #include "common/rgb.h"
@@ -22,6 +23,7 @@ void printUsage(const std::string &szAppName)
 	print("\t\t\tto use same path as .bm with \"_mask.bm\" suffix\n");
 	print("\t-nmo\t\tDon't generate mask output file\n");
 	print("\t-no\t\tDon't generate bitplane output file\n");
+	print("\t-mp\t\tAdd a mask as extra plane. Valid only with -mc and without -i\n");
 	print("Default conversions:\n");
 	print("\t.bm -> .png (will try to read mask from inPath_mask.bm)\n");
 	print("\t.png -> .bm (will write mask to outPath_mask.bm if -mc was specified)\n");
@@ -29,6 +31,8 @@ void printUsage(const std::string &szAppName)
 
 int main(int lArgCount, const char *pArgs[])
 {
+	using namespace std::string_view_literals;
+
 	const std::uint8_t ubMandatoryArgCnt = 2;
 	if(lArgCount - 1 < ubMandatoryArgCnt) {
 		nLog::error("Too few arguments, expected {}", ubMandatoryArgCnt);
@@ -42,40 +46,49 @@ int main(int lArgCount, const char *pArgs[])
 	bool isEhb = false;
 	bool isEnabledOutputMask = true;
 	bool isEnabledOutput = true;
-	bool isMaskColor = false;
-	tRgb MaskColor;
+	bool isAppendMaskPlane = false;
+	std::optional<tRgb> MaskColor;
 
 	for(auto ArgIndex = ubMandatoryArgCnt + 1; ArgIndex < lArgCount; ++ArgIndex) {
-		if(pArgs[ArgIndex] == std::string("-o")) {
+		if(pArgs[ArgIndex] == "-o"sv) {
 			auto &Value = pArgs[++ArgIndex];
 			szOutput = Value;
 		}
-		else if(pArgs[ArgIndex] == std::string("-i")) {
+		else if(pArgs[ArgIndex] == "-i"sv) {
 			isWriteInterleaved = true;
 		}
-		else if(pArgs[ArgIndex] == std::string("-ehb")) {
+		else if(pArgs[ArgIndex] == "-ehb"sv) {
 			isEhb = true;
 		}
-		else if(pArgs[ArgIndex] == std::string("-mc") && ArgIndex < lArgCount - 1) {
-			isMaskColor = true;
+		else if(pArgs[ArgIndex] == "-mc"sv && ArgIndex < lArgCount - 1) {
 			auto &Value = pArgs[++ArgIndex];
 			MaskColor = tRgb(Value);
 		}
-		else if(pArgs[ArgIndex] == std::string("-mf") && ArgIndex < lArgCount - 1) {
+		else if(pArgs[ArgIndex] == "-mf"sv && ArgIndex < lArgCount - 1) {
 			auto &Value = pArgs[++ArgIndex];
 			szMask = Value;
 		}
-		else if(pArgs[ArgIndex] == std::string("-nmo")) {
+		else if(pArgs[ArgIndex] == "-nmo"sv) {
 			isEnabledOutputMask = false;
 		}
-		else if(pArgs[ArgIndex] == std::string("-no")) {
+		else if(pArgs[ArgIndex] == "-no"sv) {
 			isEnabledOutput = false;
+		}
+		else if(pArgs[ArgIndex] == "-mp"sv) {
+			isAppendMaskPlane = true;
 		}
 		else {
 			nLog::error("Unknown arg or missing value: '{}'", pArgs[ArgIndex]);
 			printUsage(pArgs[0]);
 			return EXIT_FAILURE;
 		}
+	}
+
+	if(isAppendMaskPlane && isWriteInterleaved) {
+		nLog::error("Can't write extra mask plane in interleaved bitmaps");
+	}
+	if(isAppendMaskPlane && !MaskColor.has_value()) {
+		nLog::error("Can't write extra mask plane without mask color specified");
 	}
 
 	std::string szInExt = nFs::getExt(szInput);
@@ -95,7 +108,7 @@ int main(int lArgCount, const char *pArgs[])
 	}
 	std::string szOutExt = nFs::getExt(szOutput);
 
-	if(szMask == "" && isMaskColor) {
+	if(szMask == "" && MaskColor.has_value()) {
 		if(szOutExt == "bm") {
 			szMask = nFs::removeExt(szOutput) + "_mask." + szOutExt;
 		}
@@ -125,11 +138,11 @@ int main(int lArgCount, const char *pArgs[])
 			nLog::error("Couldn't load input: '{}'", szInput);
 		}
 		In = tChunkyBitmap(InPlanar, Palette);
-		if(isMaskColor) {
+		if(MaskColor.has_value()) {
 			tPalette PaletteMask;
 			PaletteMask.m_vColors.push_back(tRgb(0,0,0));
 			for(std::uint16_t i = 1; i < 256; ++i) {
-				PaletteMask.m_vColors.push_back(MaskColor);
+				PaletteMask.m_vColors.push_back(MaskColor.value());
 			}
 			auto szInMask = nFs::removeExt(szInput) + "_mask." + szInExt;
 			auto InMask = tChunkyBitmap(tPlanarBitmap::fromBm(szInMask), PaletteMask);
@@ -150,27 +163,38 @@ int main(int lArgCount, const char *pArgs[])
 	// Save to output
 	if(szOutExt == "bm") {
 		tPalette PaletteMask;
-		if(isMaskColor) {
-			tRgb MaskAntiColor(~MaskColor.ubR, ~MaskColor.ubG, ~MaskColor.ubB);
+		std::optional<tPlanarBitmap> MaskPlanar;
+		if(MaskColor.has_value()) {
+			tRgb MaskAntiColor(
+				~MaskColor.value().ubR, ~MaskColor.value().ubG, ~MaskColor.value().ubB
+			);
 			// Generate mask palette - 0 is transparent, everything else is not
 			if(isWriteInterleaved) {
 				auto PaletteSize = 1u << Palette.getBpp();
 				PaletteMask.m_vColors.resize(PaletteSize, tRgb(1, 1, 1));
-				PaletteMask.m_vColors.front() = MaskColor;
+				PaletteMask.m_vColors.front() = MaskColor.value();
 				PaletteMask.m_vColors.back() = MaskAntiColor;
 			}
 			else {
-				PaletteMask.m_vColors.push_back(MaskColor);
+				PaletteMask.m_vColors.push_back(MaskColor.value());
 				PaletteMask.m_vColors.push_back(MaskAntiColor);
 			}
-			if(isEnabledOutputMask) {
-				const auto Mask = In.filterColors(PaletteMask, MaskAntiColor);
-				tPlanarBitmap(Mask, PaletteMask).toBm(szMask, isWriteInterleaved);
+			const auto MaskChunky = In.filterColors(
+				PaletteMask, MaskAntiColor
+			);
+			MaskPlanar.emplace(MaskChunky, PaletteMask);
+			if(isEnabledOutputMask && !isAppendMaskPlane) {
+				MaskPlanar.value().toBm(szMask, isWriteInterleaved);
 			}
 		}
 		auto Planar = tPlanarBitmap(In, Palette, PaletteMask);
 		if(!Planar.m_uwWidth) {
 			return EXIT_FAILURE;
+		}
+		if(isAppendMaskPlane && MaskPlanar.has_value()) {
+			if(!Planar.tryAppendPlaneFrom(MaskPlanar.value(), 0)) {
+				return EXIT_FAILURE;
+			}
 		}
 		if(isEnabledOutput) {
 			Planar.toBm(szOutput, isWriteInterleaved);

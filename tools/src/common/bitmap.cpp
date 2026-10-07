@@ -172,6 +172,23 @@ tPlanarBitmap::tPlanarBitmap(
 	m_ubDepth = ubDepth;
 }
 
+bool tPlanarBitmap::tryAppendPlaneFrom(
+	const tPlanarBitmap &other, std::uint8_t ubPlaneIndex
+)
+{
+	if(other.m_uwWidth != m_uwWidth || other.m_uwHeight != m_uwHeight) {
+		nLog::error(
+			"Dimensions between bitmaps don't match - this: {}x{}, other: {}x{}",
+			m_uwWidth, m_uwHeight, other.m_uwWidth, other.m_uwHeight
+		);
+		return false;
+	}
+
+	m_pPlanes[m_ubDepth] = other.m_pPlanes[ubPlaneIndex];
+	++m_ubDepth;
+	return true;
+}
+
 bool tPlanarBitmap::toBm(const std::string &szPath, bool isInterleaved)
 {
 	flags::flags<tBmFlags> eFlags(tBmFlags::NONE);

@@ -75,6 +75,8 @@ public:
 
 	tPlanarBitmap(std::uint16_t uwWidth, std::uint16_t uwHeight, std::uint8_t ubDepth);
 
+	bool tryAppendPlaneFrom(const tPlanarBitmap &other, std::uint8_t ubPlaneIndex);
+
 	bool toBm(const std::string &szPath, bool isInterleaved);
 
 	static tPlanarBitmap fromBm(const std::string &szPath);
