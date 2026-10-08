@@ -30,12 +30,20 @@ typedef enum tTestState {
 	TEST_STATE_COUNT
 } tTestState;
 
+typedef enum tExampleState {
+	EXAMPLE_STATE_BACK,
+	EXAMPLE_STATE_SHOOTER_HORIZONTAL,
+	EXAMPLE_STATE_SHOOTER_VERTICAL,
+	EXAMPLE_STATE_COUNT
+} tExampleState;
+
 //------------------------------------------------------------------------ TYPES
 
 //---------------------------------------------------------------------- GLOBALS
 
 extern tStateManager *g_pGameStateManager;
 extern tState g_pTestStates[TEST_STATE_COUNT];
+extern tState g_pExampleStates[EXAMPLE_STATE_COUNT];
 
 //-------------------------------------------------------------------- FUNCTIONS
 
