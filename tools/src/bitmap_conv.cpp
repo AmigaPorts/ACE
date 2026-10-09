@@ -162,32 +162,19 @@ int main(int lArgCount, const char *pArgs[])
 
 	// Save to output
 	if(szOutExt == "bm") {
-		tPalette PaletteMask;
 		std::optional<tPlanarBitmap> MaskPlanar;
 		if(MaskColor.has_value()) {
-			tRgb MaskAntiColor(
-				~MaskColor.value().ubR, ~MaskColor.value().ubG, ~MaskColor.value().ubB
+			MaskPlanar = tPlanarBitmap::createMaskFrom(
+				In, MaskColor.value(), isWriteInterleaved ? Palette.getBpp() : 1
 			);
-			// Generate mask palette - 0 is transparent, everything else is not
-			if(isWriteInterleaved) {
-				auto PaletteSize = 1u << Palette.getBpp();
-				PaletteMask.m_vColors.resize(PaletteSize, tRgb(1, 1, 1));
-				PaletteMask.m_vColors.front() = MaskColor.value();
-				PaletteMask.m_vColors.back() = MaskAntiColor;
-			}
-			else {
-				PaletteMask.m_vColors.push_back(MaskColor.value());
-				PaletteMask.m_vColors.push_back(MaskAntiColor);
-			}
-			const auto MaskChunky = In.filterColors(
-				PaletteMask, MaskAntiColor
-			);
-			MaskPlanar.emplace(MaskChunky, PaletteMask);
 			if(isEnabledOutputMask && !isAppendMaskPlane) {
 				MaskPlanar.value().toBm(szMask, isWriteInterleaved);
 			}
 		}
-		auto Planar = tPlanarBitmap(In, Palette, PaletteMask);
+		auto PaletteIgnore = MaskColor.has_value()
+			? tPalette({MaskColor.value()})
+			: tPalette();
+		auto Planar = tPlanarBitmap(In, Palette, PaletteIgnore);
 		if(!Planar.m_uwWidth) {
 			return EXIT_FAILURE;
 		}

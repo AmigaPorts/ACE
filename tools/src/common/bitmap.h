@@ -46,7 +46,9 @@ public:
 
 	bool mergeWithMask(const tChunkyBitmap &Mask);
 
-	tChunkyBitmap filterColors(const tPalette &Palette, const tRgb &ColorDefault);
+	tChunkyBitmap filterColors(
+		const tPalette &Palette, const tRgb &ColorDefault
+	) const;
 
 	std::uint16_t getTrimCountLeft() const;
 
@@ -80,6 +82,10 @@ public:
 	bool toBm(const std::string &szPath, bool isInterleaved);
 
 	static tPlanarBitmap fromBm(const std::string &szPath);
+
+	static tPlanarBitmap createMaskFrom(
+		const tChunkyBitmap &Source, const tRgb &MaskColor, std::uint8_t ubMaskBpp
+	);
 };
 
 #endif // _ACE_TOOLS_COMMON_BITMAP_H_

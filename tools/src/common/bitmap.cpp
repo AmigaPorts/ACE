@@ -31,11 +31,11 @@ tChunkyBitmap::tChunkyBitmap(
 	for(std::uint32_t ulY = 0; ulY < m_uwHeight; ++ulY) {
 		for(std::uint32_t ulX = 0; ulX < m_uwWidth; ++ulX) {
 			std::uint8_t ubColorIdx = 0;
-			std::uint32_t ulOffs = (ulY * m_uwWidth + ulX) / PxPerCell;
+			auto Offs = (ulY * m_uwWidth + ulX) / PxPerCell;
 			for(std::uint8_t ubPlane = Planar.m_ubDepth; ubPlane--;) {
 				auto &Plane = Planar.m_pPlanes[ubPlane];
 				ubColorIdx <<= 1;
-				ubColorIdx |= (Plane.at(ulOffs) >> (15 - (ulX & 15))) & 1;
+				ubColorIdx |= (Plane.at(Offs) >> (15 - (ulX & 15))) & 1;
 			}
 			if(ubColorIdx >= Palette.m_vColors.size()) {
 				nLog::error(
@@ -307,6 +307,29 @@ tPlanarBitmap tPlanarBitmap::fromBm(const std::string &szPath)
 	}
 }
 
+tPlanarBitmap tPlanarBitmap::createMaskFrom(
+	const tChunkyBitmap &Source, const tRgb &MaskColor, std::uint8_t ubMaskBpp
+)
+{
+	tPalette PaletteMask;
+	tRgb MaskAntiColor(~MaskColor.ubR, ~MaskColor.ubG, ~MaskColor.ubB);
+
+	// Generate mask palette - 0 is transparent, everything else is not
+	// Dummy color is a filler color that doesn't exist in image
+	// FIXME: get rid of dummy color because AGA images might collide with it
+	auto DummyColor = tRgb(1, 1, 1);
+	auto PaletteSize = 1u << ubMaskBpp;
+	PaletteMask.m_vColors.resize(PaletteSize, DummyColor);
+	PaletteMask.m_vColors.front() = MaskColor;
+	PaletteMask.m_vColors.back() = MaskAntiColor;
+
+	const auto MaskChunky = Source.filterColors(
+		PaletteMask, MaskAntiColor
+	);
+
+	return tPlanarBitmap(MaskChunky, PaletteMask);
+}
+
 tRgb &tChunkyBitmap::pixelAt(std::uint16_t uwX, std::uint16_t uwY)
 {
 	std::uint32_t ulPos = m_uwWidth * (uwY) + uwX;
@@ -379,7 +402,7 @@ bool tChunkyBitmap::mergeWithMask(const tChunkyBitmap &Mask)
 
 tChunkyBitmap tChunkyBitmap::filterColors(
 	const tPalette &Palette, const tRgb &ColorDefault
-)
+) const
 {
 	const auto &Colors = Palette.m_vColors;
 	tChunkyBitmap Out(m_uwWidth, m_uwHeight);
