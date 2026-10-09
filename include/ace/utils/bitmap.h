@@ -14,12 +14,6 @@ extern "C" {
 
 // File has its own 'flags' field - could be used in new ACE bitmap struct
 #define BITMAP_INTERLEAVED 1
-// FEATURE PROPOSAL:
-// If set, ubBpp shows how many bitplanes are in bitmap, but after last one
-// there is mask attached. Could be useful with c2p transforms - mask could be
-// rotated with bitmap. Mask would be attached and detached with
-// bitmapAttachMask() and bitmapDetachMask() fns.
-#define BITMAP_MASK_ATTACHED 2
 
 /* Types */
 
@@ -92,7 +86,7 @@ typedef struct _tAceBitmap {
  *
  *  @see bitmapDestroy
  *  @see bitmapCreateFromFd
- *  @see bitmapLoadFromFd
+ *  @see bitmapLoadFragmentFromFd
  */
 tBitMap* bitmapCreate(
 	UWORD uwWidth, UWORD uwHeight, UBYTE ubDepth, UBYTE ubFlags
@@ -117,46 +111,78 @@ tBitMap *bitmapCreateFromMem(
 );
 
 /**
- *  @brief Loads bitmap data from file to already existing bitmap.
- *  If source is smaller than destination, you can use uwStartX & uwStartY
- *  params to load bitmap on given coords.
+ * @brief Loads full bitmap data from file to already existing bitmap.
  *
- *  @param pBitMap Pointer to destination bitmap
- *  @param szFilePath Source bitmap file path.
- *  @param uwStartX Start X-coordinate on destination bitmap, 8-pixel aligned.
- *  @param uwStartY Start Y-coordinate on destination bitmap
+ * @param pBitMap Pointer to destination bitmap
+ * @param szFilePath Source bitmap file path.
  *
- *  @see bitmapCreate
- *  @see bitmapCreateFromFd
- *  @see bitmapCreateFromPath
- *  @see bitmapLoadFromFd
+ * @see bitmapCreate
+ * @see bitmapCreateFromPath
+ * @see bitmapLoadFragmentFromPath
+ * @see bitmapLoadFullFromFd
  */
-void bitmapLoadFromPath(
+void bitmapLoadFullFromPath(tBitMap *pBitMap, const char *szPath);
+
+/**
+ * @brief Loads full bitmap data from file descriptor to already existing bitmap.
+ *
+ * @param pBitMap Pointer to destination bitmap
+ * @param szFilePath Source bitmap file path.
+ *
+ * @see bitmapCreate
+ * @see bitmapCreateFromPath
+ * @see bitmapLoadFragmentFromPath
+ * @see bitmapLoadFullFromFd
+ */
+void bitmapLoadFullFromFd(tBitMap *pBitMap, tFile *pFile);
+
+/**
+ * @brief Loads bitmap data from file to already existing bitmap.
+ * If source is smaller than destination, you can use uwStartX & uwStartY
+ * params to load bitmap on given coords.
+ *
+ * @note This function is very slow due to line-by line reading.
+ * If you need to read full bitmap data, use @ref bitmapLoadFullFromPath instead.
+ *
+ * @param pBitMap Pointer to destination bitmap
+ * @param szFilePath Source bitmap file path.
+ * @param uwStartX Start X-coordinate on destination bitmap, 8-pixel aligned.
+ * @param uwStartY Start Y-coordinate on destination bitmap
+ *
+ * @see bitmapCreate
+ * @see bitmapCreateFromPath
+ * @see bitmapLoadFragmentFromFd
+ * @see bitmapLoadFullFromPath
+ */
+void bitmapLoadFragmentFromPath(
 	tBitMap *pBitMap, const char *szPath, UWORD uwStartX, UWORD uwStartY
 );
 
 /**
- *  @brief Loads bitmap data from file to already existing bitmap.
- *  If source is smaller than destination, you can use uwStartX & uwStartY
- *  params to load bitmap on given coords.
+ * @brief Loads bitmap data from file descriptor to already existing bitmap.
+ * If source is smaller than destination, you can use uwStartX & uwStartY
+ * params to load bitmap on given coords.
  *
- *  @param pBitMap Pointer to destination bitmap
- *  @param pFile Handle to the bitmap file. Will be closed on function return.
- *  @param uwStartX Start X-coordinate on destination bitmap, 8-pixel aligned.
- *  @param uwStartY Start Y-coordinate on destination bitmap
+ * @note This function is very slow due to line-by line reading.
+ * If you need to read full bitmap data, use @ref bitmapLoadFullFromFd instead.
  *
- *  @see bitmapCreate
- *  @see bitmapCreateFromFd
- *  @see bitmapCreateFromPath
- *  @see bitmapLoadFromPath
+ * @param pBitMap Pointer to destination bitmap
+ * @param pFile Handle to the bitmap file. Will be closed on function return.
+ * @param uwStartX Start X-coordinate on destination bitmap, 8-pixel aligned.
+ * @param uwStartY Start Y-coordinate on destination bitmap
+ *
+ * @see bitmapCreate
+ * @see bitmapCreateFromFd
+ * @see bitmapLoadFragmentFromPath
+ * @see bitmapLoadFullFromFd
  */
-void bitmapLoadFromFd(
+void bitmapLoadFragmentFromFd(
 	tBitMap *pBitMap, tFile *pFile, UWORD uwStartX, UWORD uwStartY
 );
 
 /**
  *  @brief Creates bitmap and loads its data from file.
- *  As opposed to bitmapLoadFromPath, this function creates bitmap based
+ *  As opposed to bitmapLoadFragmentFromPath, this function creates bitmap based
  *  on dimensions, BPP & flags stored in file.
  *
  *  @param szFilePath Source bitmap file path.
@@ -164,8 +190,8 @@ void bitmapLoadFromFd(
  *  @return Pointer to newly created bitmap based on file, 0 on error.
  *
  *  @see bitmapCreateFromFd
- *  @see bitmapLoadFromFd
- *  @see bitmapLoadFromPath
+ *  @see bitmapLoadFragmentFromFd
+ *  @see bitmapLoadFragmentFromPath
  *  @see bitmapCreate
  *  @see bitmapDestroy
  */
@@ -173,7 +199,7 @@ tBitMap* bitmapCreateFromPath(const char *szPath, UBYTE isFast);
 
 /**
  *  @brief Creates bitmap and loads its data from file.
- *  As opposed to bitmapLoadFromFd, this function creates bitmap based
+ *  As opposed to bitmapLoadFragmentFromFd, this function creates bitmap based
  *  on dimensions, BPP & flags stored in file.
  *
  *  @param pFile Handle to the bitmap file. Will be closed on function return.
@@ -181,8 +207,8 @@ tBitMap* bitmapCreateFromPath(const char *szPath, UBYTE isFast);
  *  @return Pointer to newly created bitmap based on file, 0 on error.
  *
  *  @see bitmapCreateFromPath
- *  @see bitmapLoadFromFd
- *  @see bitmapLoadFromPath
+ *  @see bitmapLoadFragmentFromFd
+ *  @see bitmapLoadFragmentFromPath
  *  @see bitmapCreate
  *  @see bitmapDestroy
  */

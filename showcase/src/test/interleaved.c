@@ -39,8 +39,8 @@ void gsTestInterleavedCreate(void) {
 	paletteLoadFromPath(
 		"data/amidb32.plt", s_pTestInterleavedVPort->pPalette, 1 << SHOWCASE_BPP
 	);
-	bitmapLoadFromPath(
-		s_pTestInterleavedBfr->pBack, "data/32c_pal_interleaved.bm", 0, 0
+	bitmapLoadFullFromPath(
+		s_pTestInterleavedBfr->pBack, "data/32c_pal_interleaved.bm"
 	);
 
 	s_pSave = bitmapCreate(BOUNCE_RECT_WIDTH + 16, BOUNCE_RECT_HEIGHT, SHOWCASE_BPP, BMF_INTERLEAVED);

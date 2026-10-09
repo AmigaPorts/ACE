@@ -37,6 +37,28 @@ static void bitmapFreeChipAligned(void *pMem, ULONG ulSize) {
 }
 #endif
 
+static void bitmapReadPlanes(tBitMap *pBitMap, tFile *pFile) {
+	if(bitmapIsInterleaved(pBitMap)) {
+		fileReadBytes(
+			pFile, pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows
+		);
+	}
+	else {
+		if(pBitMap->Flags & BMF_CONTIGUOUS) {
+			fileReadBytes(
+				pFile, pBitMap->Planes[0], pBitMap->BytesPerRow * pBitMap->Rows * pBitMap->Depth
+			);
+		}
+		else {
+			for(UBYTE ubPlane = 0; ubPlane < pBitMap->Depth; ++ubPlane) {
+				fileReadBytes(
+					pFile, pBitMap->Planes[ubPlane], pBitMap->BytesPerRow * pBitMap->Rows
+				);
+			}
+		}
+	}
+}
+
 /* Globals */
 
 /* Functions */
@@ -235,13 +257,17 @@ fail:
 #endif // AMIGA
 }
 
-void bitmapLoadFromPath(tBitMap *pBitMap, const char *szPath, UWORD uwStartX, UWORD uwStartY) {
-	return bitmapLoadFromFd(pBitMap, diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), uwStartX, uwStartY);
+void bitmapLoadFragmentFromPath(
+	tBitMap *pBitMap, const char *szPath, UWORD uwStartX, UWORD uwStartY
+) {
+	return bitmapLoadFragmentFromFd(
+		pBitMap, diskFileOpen(szPath, DISK_FILE_MODE_READ, 1), uwStartX, uwStartY
+	);
 }
 
-void bitmapLoadFromFd(
-		tBitMap *pBitMap, tFile *pFile, UWORD uwStartX, UWORD uwStartY)
-{
+void bitmapLoadFragmentFromFd(
+	tBitMap *pBitMap, tFile *pFile, UWORD uwStartX, UWORD uwStartY
+) {
 	UWORD uwSrcWidth, uwDstWidth, uwSrcHeight;
 	UBYTE ubSrcFlags, ubSrcBpp, ubSrcVersion;
 	UWORD y;
@@ -250,7 +276,7 @@ void bitmapLoadFromFd(
 
 	systemUse();
 	logBlockBegin(
-		"bitmapLoadFromFd(pBitMap: %p, pFile: %p, uwStartX: %u, uwStartY: %u)",
+		"bitmapLoadFragmentFromFd(pBitMap: %p, pFile: %p, uwStartX: %u, uwStartY: %u)",
 		pBitMap, pFile, uwStartX, uwStartY
 	);
 
@@ -263,7 +289,7 @@ void bitmapLoadFromFd(
 	// Open source bitmap
 	if(!pFile) {
 		logWrite("ERR: Null file handle\n");
-		logBlockEnd("bitmapLoadFromFd()");
+		logBlockEnd("bitmapLoadFragmentFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -278,7 +304,7 @@ void bitmapLoadFromFd(
 	if(ubSrcVersion != 0) {
 		fileClose(pFile);
 		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
-		logBlockEnd("bitmapLoadFromFd()");
+		logBlockEnd("bitmapLoadFragmentFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -291,7 +317,7 @@ void bitmapLoadFromFd(
 			!!(ubSrcFlags & BITMAP_INTERLEAVED), bitmapIsInterleaved(pBitMap)
 		);
 		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFd()");
+		logBlockEnd("bitmapLoadFragmentFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -303,7 +329,7 @@ void bitmapLoadFromFd(
 			ubSrcBpp, pBitMap->Depth
 		);
 		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFd()");
+		logBlockEnd("bitmapLoadFragmentFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -318,7 +344,7 @@ void bitmapLoadFromFd(
 			uwDstWidth, pBitMap->Rows
 		);
 		fileClose(pFile);
-		logBlockEnd("bitmapLoadFromFd()");
+		logBlockEnd("bitmapLoadFragmentFromFd()");
 		systemUnuse();
 		return;
 	}
@@ -362,7 +388,96 @@ void bitmapLoadFromFd(
 		}
 	}
 	fileClose(pFile);
-	logBlockEnd("bitmapLoadFromFd()");
+	logBlockEnd("bitmapLoadFragmentFromFd()");
+	systemUnuse();
+}
+
+void bitmapLoadFullFromPath(tBitMap *pBitMap, const char *szPath) {
+	return bitmapLoadFullFromFd(
+		pBitMap, diskFileOpen(szPath, DISK_FILE_MODE_READ, 1)
+	);
+}
+
+void bitmapLoadFullFromFd(tBitMap *pBitMap, tFile *pFile) {
+	systemUse();
+	logBlockBegin(
+		"bitmapLoadFullFromFd(pBitMap: %p, pFile: %p)", pBitMap, pFile
+	);
+
+	if(!pBitMap) {
+		logWrite("ERR: pBitMap is 0\n");
+		systemUnuse();
+		return;
+	}
+
+	// Open source bitmap
+	if(!pFile) {
+		logWrite("ERR: Null file handle\n");
+		logBlockEnd("bitmapLoadFullFromFd()");
+		systemUnuse();
+		return;
+	}
+
+	// Read header
+	UWORD uwSrcWidth, uwSrcHeight;
+	UBYTE ubSrcFlags, ubSrcBpp, ubSrcVersion;
+	fileReadWords(pFile, &uwSrcWidth, 1);
+	fileReadWords(pFile, &uwSrcHeight, 1);
+	fileReadBytes(pFile, &ubSrcBpp, 1);
+	fileReadBytes(pFile, &ubSrcVersion, 1);
+	fileReadBytes(pFile, &ubSrcFlags, 1);
+	fileSeek(pFile, 2 * sizeof(UBYTE), FILE_SEEK_CURRENT); // Skip unused 2 bytes
+	if(ubSrcVersion != 0) {
+		fileClose(pFile);
+		logWrite("ERR: Unknown file version: %hu\n", ubSrcVersion);
+		logBlockEnd("bitmapLoadFullFromFd()");
+		systemUnuse();
+		return;
+	}
+	logWrite("Source dimensions: %ux%u\n", uwSrcWidth, uwSrcHeight);
+
+	// Interleaved check
+	if(!!(ubSrcFlags & BITMAP_INTERLEAVED) != bitmapIsInterleaved(pBitMap)) {
+		logWrite(
+			"ERR: Interleaved flag conflict (file: %d, bm: %hhu)\n",
+			!!(ubSrcFlags & BITMAP_INTERLEAVED), bitmapIsInterleaved(pBitMap)
+		);
+		fileClose(pFile);
+		logBlockEnd("bitmapLoadFullFromFd()");
+		systemUnuse();
+		return;
+	}
+
+	// Depth check
+	if(ubSrcBpp > pBitMap->Depth) {
+		logWrite(
+			"ERR: Source has greater BPP than destination: %hu > %hu\n",
+			ubSrcBpp, pBitMap->Depth
+		);
+		fileClose(pFile);
+		logBlockEnd("bitmapLoadFullFromFd()");
+		systemUnuse();
+		return;
+	}
+
+	// Check bitmap dimensions
+	UWORD uwDstWidth = bitmapGetByteWidth(pBitMap) << 3;
+	if(uwSrcWidth != uwDstWidth || uwSrcHeight != (pBitMap->Rows)) {
+		logWrite(
+			"ERR: Source %ux%u doesn't match dest %ux%u\n",
+			uwSrcWidth, uwSrcHeight,
+			uwDstWidth, pBitMap->Rows
+		);
+		fileClose(pFile);
+		logBlockEnd("bitmapLoadFullFromFd()");
+		systemUnuse();
+		return;
+	}
+
+	// Read data
+	bitmapReadPlanes(pBitMap, pFile);
+	fileClose(pFile);
+	logBlockEnd("bitmapLoadFullFromFd()");
 	systemUnuse();
 }
 
@@ -371,12 +486,6 @@ tBitMap *bitmapCreateFromPath(const char *szPath, UBYTE isFast) {
 }
 
 tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
-	tBitMap *pBitMap;
-	UWORD uwWidth, uwHeight;  // Image dimensions
-	UBYTE ubVersion, ubFlags; // Format version & flags
-	UBYTE ubPlaneCount;       // Bitplane count
-	UBYTE i;
-
 	systemUse();
 	logBlockBegin("bitmapCreateFromFd(pFile: %p)", pFile);
 	if(!pFile) {
@@ -387,6 +496,9 @@ tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
 	}
 
 	// Read header
+	UWORD uwWidth, uwHeight;  // Image dimensions
+	UBYTE ubVersion, ubFlags; // Format version & flags
+	UBYTE ubPlaneCount;       // Bitplane count
 	fileReadWords(pFile, &uwWidth, 1);
 	fileReadWords(pFile, &uwHeight, 1);
 	fileReadBytes(pFile, &ubPlaneCount, 1);
@@ -402,6 +514,7 @@ tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
 	}
 
 	// Init bitmap
+	tBitMap *pBitMap;
 	UBYTE ubBitmapFlags = 0;
 	if(isFast) {
 		ubBitmapFlags |= BMF_FASTMEM;
@@ -417,7 +530,6 @@ tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
 			systemUnuse();
 			return 0;
 		}
-		fileReadBytes(pFile, pBitMap->Planes[0], (uwWidth >> 3) * uwHeight * ubPlaneCount);
 	}
 	else {
 		pBitMap = bitmapCreate(uwWidth, uwHeight, ubPlaneCount, ubBitmapFlags);
@@ -428,10 +540,8 @@ tBitMap *bitmapCreateFromFd(tFile *pFile, UBYTE isFast) {
 			systemUnuse();
 			return 0;
 		}
-		for (i = 0; i != ubPlaneCount; ++i) {
-			fileReadBytes(pFile, pBitMap->Planes[i], (uwWidth >> 3) * uwHeight);
-		}
 	}
+	bitmapReadPlanes(pBitMap, pFile);
 	fileClose(pFile);
 
 	logWrite(
