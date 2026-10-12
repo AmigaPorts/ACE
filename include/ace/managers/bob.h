@@ -105,6 +105,20 @@ void bobManagerCreate(
 );
 
 /**
+ * @brief Rebinds an initialized manager to replacement display buffers.
+ *
+ * Keeps registered BOB capacity and background buffers intact. The replacement
+ * buffers must use the same depth as those passed to bobManagerCreate().
+ */
+void bobManagerSetBuffers(
+	tBitMap *pFront, tBitMap *pBack,
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	tBitMap *pPristineBuffer,
+#endif
+	UWORD uwAvailHeight
+);
+
+/**
  * @brief Destroys bob manager, releasing all its resources.
  *
  * @see bobManagerCreate()

@@ -173,6 +173,39 @@ void bobManagerCreate(
 	logBlockEnd("bobManagerCreate()");
 }
 
+void bobManagerSetBuffers(
+	tBitMap *pFront, tBitMap *pBack,
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	tBitMap *pPristineBuffer,
+#endif
+	UWORD uwAvailHeight
+) {
+	logBlockBegin(
+		"bobManagerSetBuffers(pFront: %p, pBack: %p, uwAvailHeight: %hu)",
+		pFront, pBack, uwAvailHeight
+	);
+
+	blitWait();
+	bobDiscardUndraw();
+	s_pQueues[0].pDst = pBack;
+	s_pQueues[1].pDst = pFront;
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	s_pPristineBuffer = pPristineBuffer;
+#endif
+	s_ubBufferCurr = 0;
+	s_isPushingDone = 0;
+	s_ubBobsPushed = 0;
+	s_ubBobsDrawn = 0;
+#if !defined(ACE_BOB_PRISTINE_BUFFER)
+	s_ubBobsSaved = 0;
+#endif
+	s_ubBpp = pFront->Depth;
+	s_uwAvailHeight = uwAvailHeight;
+	s_uwDestByteWidth = bitmapGetByteWidth(pBack);
+
+	logBlockEnd("bobManagerSetBuffers()");
+}
+
 void bobReallocateBuffers(void) {
 	systemUse();
 	logBlockBegin("bobReallocateBuffers()");
