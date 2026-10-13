@@ -51,7 +51,6 @@ typedef struct _tMultiplexedSpriteElement {
 	UWORD uwHeight;
 	UBYTE isEnabled;
 	UBYTE isAttached;
-	UBYTE isHeaderToBeUpdated;
 	UBYTE isBitmapToBeUpdated; ///< Internal per-buffer dirty mask.
 	UWORD pBufferOffset[2]; ///< Internal cached DMA row offsets.
 } tMultiplexedSpriteElement;
@@ -62,7 +61,6 @@ typedef struct _tMultiplexedSprite {
 	UBYTE isEnabled; ///< Whole-channel enable, sampled by Process.
 	UBYTE ubChannelIndex;
 	UBYTE isHeaderToBeUpdated;
-	UBYTE isBitmapToBeUpdated;
 	UBYTE ubSpriteCount;
 	tMultiplexedSpriteElement **pMultiplexedSpriteElement;
 	UWORD uwMaxHeight;
@@ -114,8 +112,9 @@ tMultiplexedSprite *multiplexedSpriteAdd(
  * @brief Release the sprite's DMA streams and elements.
  *
  * Borrowed bitmaps are not freed. Disable sprite DMA first and keep it
- * disabled until both copper buffers point at blank or replacement data,
- * or unload the view.
+ * disabled until the copper has loaded the blank pointer, or unload the view.
+ * Raw mode clears both copper buffers before freeing the DMA streams.
+ * Block mode requires both buffers to rebuild before re-enabling sprite DMA.
  */
 void multiplexedSpriteRemove(tMultiplexedSprite *pSprite);
 

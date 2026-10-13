@@ -5,6 +5,7 @@
 #include <ace/managers/advancedmultiplexedsprite.h>
 #include <string.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/system.h>
 
@@ -76,6 +77,8 @@ tAdvancedMultiplexedSprite *advancedMultiplexedSpriteAdd(
 		(pStrip2 && (!isStripValid(pStrip2, ubSpriteHeight) ||
 		pStrip2->Depth != pStrip1->Depth ||
 		bitmapGetByteWidth(pStrip2) != bitmapGetByteWidth(pStrip1)))) {
+		logWrite("ERR: advancedMultiplexedSpriteAdd: invalid strip, "
+			"height or element count\n");
 		return 0;
 	}
 	UBYTE ubCount = bitmapGetByteWidth(pStrip1) / 2 * (pStrip1->Depth / 2);
@@ -85,6 +88,8 @@ tAdvancedMultiplexedSprite *advancedMultiplexedSpriteAdd(
 	}
 	if(ubChannelIndex + ubCount > 8 ||
 		(pStrip1->Depth == 4 && (ubChannelIndex & 1)) || ulFrames > 65535UL) {
+		logWrite("ERR: advancedMultiplexedSpriteAdd: invalid channel "
+			"range, attachment or frame count\n");
 		return 0;
 	}
 	systemUse();
@@ -195,6 +200,9 @@ void advancedMultiplexedSpriteSetEnabled(
 		pSprite->pMultiplexedSpriteElements[ubIndex]->isEnabled = !!isEnabled;
 		pSprite->isHeaderToBeUpdated = 1;
 	}
+	else {
+		logWrite("ERR: advancedMultiplexedSpriteSetEnabled: invalid element\n");
+	}
 }
 
 void advancedMultiplexedSpriteSetPos(
@@ -205,14 +213,20 @@ void advancedMultiplexedSpriteSetPos(
 		pSprite->pMultiplexedSpriteElements[ubIndex]->wY = wY;
 		pSprite->isHeaderToBeUpdated = 1;
 	}
+	else {
+		logWrite("ERR: advancedMultiplexedSpriteSetPos: invalid element\n");
+	}
 }
 
 void advancedMultiplexedSpriteSetFrame(
 	tAdvancedMultiplexedSprite *pSprite, UBYTE ubIndex, UWORD uwFrame
 ) {
 	if(!pSprite || ubIndex >= pSprite->ubMultiplexedCount ||
-		uwFrame >= pSprite->uwAnimCount ||
-		pSprite->pMultiplexedSpriteElements[ubIndex]->uwAnimFrame == uwFrame) {
+		uwFrame >= pSprite->uwAnimCount) {
+		logWrite("ERR: advancedMultiplexedSpriteSetFrame: invalid frame/element\n");
+		return;
+	}
+	if(pSprite->pMultiplexedSpriteElements[ubIndex]->uwAnimFrame == uwFrame) {
 		return;
 	}
 	pSprite->pMultiplexedSpriteElements[ubIndex]->uwAnimFrame = uwFrame;

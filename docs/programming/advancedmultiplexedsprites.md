@@ -107,6 +107,8 @@ void advancedMultiplexedSpriteRemove(tAdvancedMultiplexedSprite *pSprite);
 - `ProcessChannel` takes the object, not a channel number, and updates all its
   channels.
 - 0 sprite pointers and invalid indices or frames are ignored.
+  Invalid constructor/setter arguments are logged in `ACE_DEBUG` builds.
+  `Remove(0)` remains a silent cleanup no-op.
 
 ## Every frame
 

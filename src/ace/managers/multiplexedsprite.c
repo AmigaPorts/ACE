@@ -5,6 +5,7 @@
 #include <ace/managers/multiplexedsprite.h>
 #include <string.h>
 #include <ace/managers/blit.h>
+#include <ace/managers/log.h>
 #include <ace/managers/memory.h>
 #include <ace/managers/sprite.h>
 #include <ace/managers/system.h>
@@ -30,6 +31,7 @@ static tMultiplexedSpriteElement *getElement(
 	tMultiplexedSprite *pSprite, UBYTE ubIndex
 ) {
 	if(!pSprite || ubIndex >= pSprite->ubSpriteCount) {
+		logWrite("ERR: multiplexedSprite: NULL sprite or invalid index\n");
 		return 0;
 	}
 	return pSprite->pMultiplexedSpriteElement[ubIndex];
@@ -39,6 +41,7 @@ void multiplexedSpriteManagerCreate(
 	const tView *pView, UWORD uwRawCopPos, ULONG pBlankSprite[1]
 ) {
 	if(!pView || !pView->pCopList) {
+		logWrite("ERR: multiplexedSpriteManagerCreate: invalid view\n");
 		return;
 	}
 	systemUse();
@@ -106,6 +109,8 @@ tMultiplexedSprite *multiplexedSpriteAdd(
 	if(!s_pView || !s_pBlankSprite || !ubSpriteHeight || !ubElementCount ||
 		ubChannelIndex >= HARDWARE_SPRITE_CHANNEL_COUNT ||
 		s_pChannels[ubChannelIndex].pSprite) {
+		logWrite("ERR: multiplexedSpriteAdd: invalid size/channel or "
+			"manager unavailable\n");
 		return 0;
 	}
 	systemUse();
@@ -172,8 +177,17 @@ void multiplexedSpriteRemove(tMultiplexedSprite *pSprite) {
 	tMultiplexedChannel *pChannel = &s_pChannels[pSprite->ubChannelIndex];
 	if(pChannel->pSprite == pSprite) {
 		pChannel->pSprite = 0;
-		// Retain a blank pointer block until manager destruction/reuse.
-		multiplexedSpriteProcessChannel(pSprite->ubChannelIndex);
+		if(s_pView->pCopList->ubMode == COPPER_MODE_RAW) {
+			// The helper packs selected channels at the supplied offset.
+			// Clear only this channel, in BOTH buffers, before freeing data.
+			spriteDisableInCopRawMode(s_pView->pCopList,
+				1 << pSprite->ubChannelIndex, pChannel->uwRawCopPos,
+				s_pBlankSprite);
+		}
+		else {
+			// Retain a blank pointer block until destruction/reuse.
+			multiplexedSpriteProcessChannel(pSprite->ubChannelIndex);
+		}
 	}
 	for(UBYTE i = 0; i < 2; ++i) {
 		if(pSprite->pDmaBitmap[i]) {
@@ -204,6 +218,7 @@ void multiplexedSpriteSetElement(
 	tMultiplexedSpriteElement *pElement = getElement(pSprite, ubIndex);
 	if(!pElement || !uwHeight || uwHeight > pSprite->uwMaxHeight ||
 		(pElement->pBitmap && uwHeight > pElement->pBitmap->Rows)) {
+		logWrite("ERR: multiplexedSpriteSetElement: invalid height/element\n");
 		return;
 	}
 	multiplexedSpriteSetHeight(pSprite, ubIndex, uwHeight);
@@ -220,6 +235,7 @@ void multiplexedSpriteSetBitmap(
 		!pBitmap->Planes[0] || pBitmap->Planes[1] != pBitmap->Planes[0] + 2 ||
 		pBitmap->BytesPerRow != 4 || !pBitmap->Rows ||
 		pBitmap->Rows > pSprite->uwMaxHeight) {
+		logWrite("ERR: multiplexedSpriteSetBitmap: invalid bitmap/element\n");
 		return;
 	}
 	pElement->pBitmap = pBitmap;
@@ -268,6 +284,10 @@ void multiplexedSpriteSetHeight(
 		pElement->uwHeight != uwHeight) {
 		pElement->uwHeight = uwHeight;
 		pElement->isBitmapToBeUpdated = 3;
+	}
+	else if(pElement && (!uwHeight || uwHeight > pSprite->uwMaxHeight ||
+		(pElement->pBitmap && uwHeight > pElement->pBitmap->Rows))) {
+		logWrite("ERR: multiplexedSpriteSetHeight: invalid height\n");
 	}
 }
 

@@ -115,6 +115,8 @@ void multiplexedSpriteSetElement(tMultiplexedSprite *pSprite, UBYTE ubIndex,
 - `SetAttached` only works on odd channels. You have to keep the even channel
   in sync yourself; the advanced manager does that for you.
 - 0 sprite pointers, invalid indices and invalid values are ignored.
+  Rejected arguments produce diagnostics in `ACE_DEBUG` builds. Expected
+  per-frame overlap suppression does not log; `Remove(0)` stays silent.
 
 ## Every frame
 
@@ -216,9 +218,11 @@ destroy the manager, then destroy the view. The manager destroy frees any
 ordinary sprites still left.
 
 To remove a sprite while the view stays loaded, disable sprite DMA first.
-Keep it disabled until both copper buffers have been rebuilt: in raw mode
-call `multiplexedSpriteProcessChannel()` for the removed channel and swap the
-copper list twice. Disabling the sprite alone doesn't make it safe to free.
+Raw-mode removal blanks the channel in both copper buffers before freeing its
+DMA streams. Keep sprite DMA disabled until the copper has loaded the blank
+pointer: editing the lists does not update the hardware pointer immediately.
+In block mode, keep DMA disabled until both copper buffers have been rebuilt.
+Disabling the sprite alone doesn't make it safe to free.
 
 ## Performance notes
 
