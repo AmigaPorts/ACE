@@ -53,6 +53,7 @@ In alphabetical order:
 - CastleHack
 - [Chaos Arena](https://github.com/Last-Minute-Creations/chaosArena)
 - [Flappy Ace](https://github.com/NZjeux26/FlappyAceWin)
+- [Foxy's Run WIP](https://github.com/Vairn/foxys-run)
 - [GermZ](https://github.com/Last-Minute-Creations/germz)
 - [GermZ Survivor](https://github.com/Last-Minute-Creations/GermzSurvivor)
 - [Goblin Villages](https://github.com/Last-Minute-Creations/goblin-villages)
