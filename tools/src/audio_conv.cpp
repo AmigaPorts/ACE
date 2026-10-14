@@ -80,7 +80,7 @@ int main(int lArgCount, const char *pArgs[]) {
 		}
 		else if(Arg == "-fpt"sv) {
 			isForcePt = true;
-			oForcePad = std::min<uint8_t>(oForcePad.value_or(0), 2);
+			oForcePad = std::max<uint8_t>(oForcePad.value_or(0), 2);
 		}
 		else if(Arg == "-fpad"sv && ArgIndex < lArgCount -1) {
 			oForcePad = uint8_t(std::stoul(pArgs[++ArgIndex]));
