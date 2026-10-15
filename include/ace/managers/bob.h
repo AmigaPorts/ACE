@@ -105,6 +105,33 @@ void bobManagerCreate(
 );
 
 /**
+ * @brief Rebinds an initialized manager to replacement display buffers.
+ *
+ * Keeps registered BOB capacity and background buffers intact. Pending undraw
+ * operations for the previous buffers are discarded.
+ *
+ * The replacement buffers must be interleaved and use the same depth and
+ * BytesPerRow as those passed to bobManagerCreate(). The available scroll
+ * height may change.
+ *
+ * @param pFront Replacement front buffer bitmap.
+ * @param pBack Replacement back buffer bitmap.
+ * @param pPristineBuffer Replacement pristine buffer bitmap. It must have the
+ * same layout as pFront and pBack.
+ * @param uwAvailHeight True available height for Y-scroll in the replacement
+ * buffers.
+ *
+ * @see bobManagerCreate()
+ */
+void bobManagerSetBuffers(
+	tBitMap *pFront, tBitMap *pBack,
+#if defined(ACE_BOB_PRISTINE_BUFFER)
+	tBitMap *pPristineBuffer,
+#endif
+	UWORD uwAvailHeight
+);
+
+/**
  * @brief Destroys bob manager, releasing all its resources.
  *
  * @see bobManagerCreate()
