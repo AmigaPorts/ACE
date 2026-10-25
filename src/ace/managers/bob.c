@@ -304,6 +304,7 @@ void bobSetWidth(tBob *pBob, UWORD uwWidth)
 	pBob->uwWidth = uwWidth;
 	UWORD uwBlitWords = (uwWidth + 15) / 16 + 1; // One word more for aligned copy
 	pBob->_uwBlitSize = (pBob->_uwBlitSize & VSIZEMASK) | uwBlitWords;
+	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords * 2;
 }
 
 void bobSetHeight(tBob *pBob, UWORD uwHeight)
