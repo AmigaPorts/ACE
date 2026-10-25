@@ -62,7 +62,7 @@ extern "C" {
 #define JOY_ACTIVE 2
 
 typedef struct _tJoyManager {
-	UBYTE pStates[20];
+	UBYTE pStates[24];
 } tJoyManager;
 
 /* Globals */
