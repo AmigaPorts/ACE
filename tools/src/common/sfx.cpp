@@ -148,10 +148,13 @@ void tSfx::enforceEmptyFirstWord(void) {
 }
 
 void tSfx::padContents(std::uint8_t ubAlignment) {
-		std::uint8_t ubAddCount = m_vData.size() % ubAlignment;
-		for(std::uint8_t i = ubAddCount; i--;) {
-			m_vData.push_back(0);
-		}
+	if(ubAlignment == 0) {
+		return;
+	}
+	std::uint8_t ubAddCount = m_vData.size() % ubAlignment;
+	for(std::uint8_t i = ubAddCount; i--;) {
+		m_vData.push_back(0);
+	}
 }
 
 tSfx tSfx::splitAfter(std::uint32_t ulSamples) {
