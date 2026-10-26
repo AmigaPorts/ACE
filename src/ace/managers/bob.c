@@ -258,7 +258,6 @@ void bobInit(
 #endif
 	pBob->isUndrawRequired = isUndrawRequired;
 	UWORD uwBlitWords = (uwWidth+15) / 16 + 1; // One word more for aligned copy
-	pBob->_wModuloUndrawSave = s_uwDestByteWidth - uwBlitWords * 2;
 	pBob->_uwBlitSize = uwBlitWords; // Height compontent is set later on
 	bobSetFrame(pBob, pFrameData, pMaskData);
 	bobSetWidth(pBob, uwWidth);
