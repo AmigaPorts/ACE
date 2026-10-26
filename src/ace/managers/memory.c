@@ -118,8 +118,12 @@ static ULONG _memEntryDelete(
 		s_ulFastUsage -= ulSize;
 	}
 
+	// free the record
+	ULONG ulCurrSize = pCurr->ulSize;
+	_memFreeRls(pCurr, sizeof(tMemEntry));
+
 	systemUnuse();
-	return pCurr->ulSize;
+	return ulCurrSize;
 }
 
 static void memEntryCheckTrash(
