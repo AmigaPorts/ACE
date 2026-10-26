@@ -257,8 +257,6 @@ void bobInit(
 	pBob->_uwOriginalHeight = uwHeight;
 #endif
 	pBob->isUndrawRequired = isUndrawRequired;
-	UWORD uwBlitWords = (uwWidth+15) / 16 + 1; // One word more for aligned copy
-	pBob->_uwBlitSize = uwBlitWords; // Height compontent is set later on
 	bobSetFrame(pBob, pFrameData, pMaskData);
 	bobSetWidth(pBob, uwWidth);
 	bobSetHeight(pBob, uwHeight);
