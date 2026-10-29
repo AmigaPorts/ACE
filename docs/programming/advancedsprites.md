@@ -26,7 +26,8 @@ Be aware that it can take 2 or 4 channels on the 8 available on Amiga :
 - [X] Frames/animation
 - [X] 32px sprites
 - [X] 16 colors sprites
-- [ ] Multiplexed sprites (not yet available)
+- [X] Multiplexed sprites: see [multiplexed sprites](multiplexedsprites.md) and
+  [advanced multiplexed sprites](advancedmultiplexedsprites.md)
 
 ## Initializing Advanced Sprites
 
