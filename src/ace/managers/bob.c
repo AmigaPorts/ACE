@@ -275,6 +275,7 @@ void bobInit(
 	pBob->_pBufferDrawPtrs[0] = 0;
 	pBob->_pBufferDrawPtrs[1] = 0;
 	if(isUndrawRequired) {
+		UWORD uwBlitWords = (uwWidth + 15) / 16 + 1; // One word more for aligned copy
 		s_uwBgBufferLength += uwBlitWords * pBob->_uwInterleavedHeight;
 	}
 #endif
