@@ -59,6 +59,33 @@ copProcessBlocks();
 vPortWaitForEnd(s_pVp);
 ```
 
+## Drawing on a double-buffered display
+
+With `TAG_SIMPLEBUFFER_IS_DBLBUF, 1` the manager swaps `pFront`/`pBack` every
+frame inside `viewProcessManagers()`. This dictates what you may draw on:
+
+- `pFront` is the page currently on screen - never draw on it during the game
+  loop, as the beam will catch partial draws and erase operations.
+- `pBack` is the only valid draw target during the loop.
+- Static content (backgrounds, panels): draw it once at gamestate create - on
+  **both** `pFront` and `pBack`, since either page may be shown first.
+- Dynamic content (sprites, timers): redraw it **every frame** on `pBack`.
+  Content drawn "only when it changes" blinks at half framerate once double
+  buffering is actually swapping, because the other page keeps showing the
+  stale frame.
+- Bookkeeping for manually erased/redrawn objects must be tracked **per
+  physical page** - each page erases its own last drawn position. Capture the
+  two bitmaps at create and identify the current page by comparing `pBack`
+  against them: a `pBack == pFront` test is always false, as those are two
+  distinct buffers whose roles merely swap.
+
+> [!CAUTION]
+> The pages only swap if `viewProcessManagers()` **and** `copProcessBlocks()`
+> run every frame (see the frame-end sequence above). With either call
+> missing, the game silently falls back to single buffering -
+> `TAG_SIMPLEBUFFER_IS_DBLBUF, 1` alone does nothing - and all dynamic
+> content starts flickering.
+
 ## Using BOBs
 
 Define some bob structs for later use.
@@ -105,8 +132,10 @@ In gamestate loop, you need to:
 - ensure that all bobs are drawn
 
 ```c
-// Begin the BOB drawing cycle - undraws previous BOBs
-bobBegin();
+// Begin the BOB drawing cycle - undraws previous BOBs.
+// Pass the buffer the bobs are to be drawn on (the back buffer when
+// double buffering).
+bobBegin(s_pVpManager->pBack);
 
 // At this point, it's the best time to draw non-bob stuff, e.g. update background.
 
