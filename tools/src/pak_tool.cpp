@@ -46,6 +46,7 @@ static void printUsage(const std::string &szAppName) {
 	print("Extra options:\n");
 	print("\t-c                Enable compression.\n");
 	print("\t-r orderfile.txt  Reorder files with list file - one path per line. Omitted files will be appended at the end.\n");
+	print("\t-v                Verbose mode.\n");
 }
 
 int main(int lArgCount, const char *pArgs[])
@@ -63,11 +64,15 @@ int main(int lArgCount, const char *pArgs[])
 	std::string OutPath(pArgs[2]);
 	std::string OrderPath;
 	bool isCompressed = false;
+	bool isVerbose = false;
 
 	for(auto ArgIndex = 3; ArgIndex < lArgCount; ++ArgIndex) {
 		std::string_view Arg = pArgs[ArgIndex];
 		if(Arg == "-c"sv) {
 			isCompressed = true;
+		}
+		else if(Arg == "-v"sv) {
+			isVerbose = true;
 		}
 		else if(Arg == "-r"sv && ArgIndex + 1 < lArgCount) {
 			OrderPath = pArgs[++ArgIndex];
@@ -128,12 +133,12 @@ int main(int lArgCount, const char *pArgs[])
 					vPackBuffer.resize(Entry.ulUncompressedSize * 2);
 				}
 				auto CompressedSize = (std::uint32_t)compressPack(
-					vFileContents.data(), Entry.ulUncompressedSize, vPackBuffer.data()
+					vFileContents.data(), Entry.ulUncompressedSize, vPackBuffer.data(), isVerbose
 				);
 
 				vDecompressed.resize(Entry.ulUncompressedSize);
 				tCompressUnpacker UnpackState;
-				compressUnpackerInit(&UnpackState, vPackBuffer.data(), CompressedSize, Entry.ulUncompressedSize);
+				compressUnpackerInit(&UnpackState, vPackBuffer.data(), CompressedSize, Entry.ulUncompressedSize, isVerbose);
 				while(true) {
 					std::uint8_t ubRead;
 					tCompressUnpackResult eResult = compressUnpackerProcess(&UnpackState, &ubRead);
@@ -147,7 +152,7 @@ int main(int lArgCount, const char *pArgs[])
 
 				for(std::size_t i = 0; i < Entry.ulUncompressedSize; ++i) {
 					if(vDecompressed[i] != vFileContents[i]) {
-						nLog::error("mismatch at index {}", i);
+						nLog::error("Entry {} compression verify error: mismatch at pos {}", Entry.Path, i);
 						return EXIT_FAILURE;
 					}
 				}
