@@ -25,7 +25,7 @@ extern "C" {
  * bobReallocateBuffers()
  *
  * in gamestate loop:
- * bobBegin()
+ * bobBegin(pBack)
  * someCalcHereOrOtherBlitterOperationsHere()
  * bobPush(&sBobX) <-- no other blitting past this point
  * someCalcHere()
@@ -216,9 +216,10 @@ UBYTE *bobCalcFrameAddress(tBitMap *pBitmap, UWORD uwOffsetY);
 
 /**
  * @brief Undraws all bobs, restoring BG to its former state.
- * Also bob current drawing queue is reset, making room for pushing new bobs.
+ * Also, current bob drawing queue is reset, making room for pushing new bobs.
  * After calling this function, you may push new bobs to screen.
  *
+ * @param pBuffer Buffer to draw bobs on - use the vport manager's back buffer.
  * @see bobPush()
  */
 void bobBegin(tBitMap *pBuffer);
