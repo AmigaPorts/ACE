@@ -32,7 +32,7 @@ We want to keep those docs as elaborate and easy to understand as possible.
 1. Debugging memory leaks
 1. Organizing your project
 1. Copperlists
-1. Double buffering
+1. [Double buffering](programming/double_buffering.md)
 1. [Sprites](programming/sprites.md)
 1. [Using a sprite as a mouse pointer](programming/mouse_sprite.md)
 1. [Working with and without OS](programming/os.md)

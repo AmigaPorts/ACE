@@ -28,7 +28,7 @@ In your main or gamestate create function, do the following:
 ```c
 // Initialize: 1 = PAL mode, 0 = NTSC. Wrong value causes playback speed issues.
 // If your game supports both PAL/NTSC modes, you can detect it with
-// systemIsPal() from  <ace/managers/system.h>.
+// systemIsPal() from <ace/managers/system.h>.
 ptplayerCreate(systemIsPal());
 
 // Optional: Configure which channels are reserved for music
