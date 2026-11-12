@@ -223,8 +223,12 @@ void bobReallocateBuffers(void) {
 	s_pQueues[0].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 	s_pQueues[1].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 #if !defined(ACE_BOB_PRISTINE_BUFFER)
-	s_pQueues[0].pBg = bitmapCreate(16, s_uwBgBufferLength, s_ubBpp, BMF_INTERLEAVED);
-	s_pQueues[1].pBg = bitmapCreate(16, s_uwBgBufferLength, s_ubBpp, BMF_INTERLEAVED);
+	UWORD uwBgRows = (s_uwBgBufferLength + s_ubBpp - 1) / s_ubBpp;
+	s_pQueues[0].pBg = bitmapCreate(16, uwBgRows, s_ubBpp, BMF_INTERLEAVED);
+	s_pQueues[1].pBg = bitmapCreate(16, uwBgRows, s_ubBpp, BMF_INTERLEAVED);
+	if(!s_pQueues[0].pBg || !s_pQueues[1].pBg) {
+		logWrite("ERR: Can't allocate bob undraw buffers\n");
+	}
 	logWrite("Undraw bg buffer length: %hu\n", s_uwBgBufferLength);
 #endif
 	logBlockEnd("bobReallocateBuffers()");
@@ -558,7 +562,7 @@ void bobBegin(tBitMap *pBuffer) {
 
 #if defined(ACE_DEBUG)
 			UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
-			uwDrawnHeight += uwBlitWords * pBob->uwHeight;
+			uwDrawnHeight += uwBlitWords * pBob->_uwInterleavedHeight;
 #endif
 		}
 	}
