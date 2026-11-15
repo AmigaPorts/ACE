@@ -223,9 +223,8 @@ void bobReallocateBuffers(void) {
 	s_pQueues[0].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 	s_pQueues[1].pBobs = memAllocFast(sizeof(tBob*) * s_ubMaxBobCount);
 #if !defined(ACE_BOB_PRISTINE_BUFFER)
-	UWORD uwBgRows = (s_uwBgBufferLength + s_ubBpp - 1) / s_ubBpp;
-	s_pQueues[0].pBg = bitmapCreate(16, uwBgRows, s_ubBpp, BMF_INTERLEAVED);
-	s_pQueues[1].pBg = bitmapCreate(16, uwBgRows, s_ubBpp, BMF_INTERLEAVED);
+	s_pQueues[0].pBg = bitmapCreate(16, s_uwBgBufferLength, s_ubBpp, BMF_INTERLEAVED);
+	s_pQueues[1].pBg = bitmapCreate(16, s_uwBgBufferLength, s_ubBpp, BMF_INTERLEAVED);
 	if(!s_pQueues[0].pBg || !s_pQueues[1].pBg) {
 		logWrite("ERR: Can't allocate bob undraw buffers\n");
 	}
@@ -280,7 +279,7 @@ void bobInit(
 	pBob->_pBufferDrawPtrs[1] = 0;
 	if(isUndrawRequired) {
 		UWORD uwBlitWords = (uwWidth + 15) / 16 + 1; // One word more for aligned copy
-		s_uwBgBufferLength += uwBlitWords * pBob->_uwInterleavedHeight;
+		s_uwBgBufferLength += uwBlitWords * uwHeight;
 	}
 #endif
 	++s_ubMaxBobCount;
@@ -562,7 +561,7 @@ void bobBegin(tBitMap *pBuffer) {
 
 #if defined(ACE_DEBUG)
 			UWORD uwBlitWords = (pBob->uwWidth+15) / 16 + 1;
-			uwDrawnHeight += uwBlitWords * pBob->_uwInterleavedHeight;
+			uwDrawnHeight += uwBlitWords * pBob->uwHeight;
 #endif
 		}
 	}
@@ -571,7 +570,7 @@ void bobBegin(tBitMap *pBuffer) {
 #endif
 
 #if defined(ACE_DEBUG) && !defined(ACE_BOB_PRISTINE_BUFFER)
-	UWORD uwDrawLimit = s_pQueues[0].pBg->Rows * s_pQueues[0].pBg->Depth;
+	UWORD uwDrawLimit = s_pQueues[0].pBg->Rows;
 	if(uwDrawnHeight > uwDrawLimit) {
 		logWrite(
 			"ERR: BG restore out of bounds: used %hu, limit: %hu",
