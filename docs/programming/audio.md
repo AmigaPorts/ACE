@@ -26,8 +26,10 @@ You can also combine it with 3rd party audio mixers for squeezing out more out o
 In your main or gamestate create function, do the following:
 
 ```c
-// Initialize (1 = PAL mode, 0 = NTSC)
-ptplayerCreate(1);
+// Initialize: 1 = PAL mode, 0 = NTSC. Wrong value causes playback speed issues.
+// If your game supports both PAL/NTSC modes, you can detect it with
+// systemIsPal() from <ace/managers/system.h>.
+ptplayerCreate(systemIsPal());
 
 // Optional: Configure which channels are reserved for music
 ptplayerSetMusicChannelMask(0b0011);  // Reserves channels 0 and 1 for music

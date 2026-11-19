@@ -3,7 +3,7 @@
 Workbench draws the mouse with hardware sprite channel 0, and ACE games typically do the same.
 A hardware sprite sits on top of the playfield without blitting, so you never have to undraw the pointer or punch a hole in your bitmap.
 
-This tutorial assumes you already have a view, a viewport and a simple buffer, and that you have read [Using sprites](sprites.md).
+This tutorial assumes you already have a view, a viewport and a simple buffer, and that you have read [Using sprites](sprites.md) and the mouse part of [Working with Input](input.md#mice).
 
 A complete example lives in the showcase as the **Mouse sprite** test (`showcase/src/test/mouse_sprite.c`).
 
@@ -17,6 +17,7 @@ ACE splits mouse **input** from mouse **graphics**:
   It does not read the mouse.
 
 Your job is to copy the mouse position onto a sprite each frame.
+This article focuses on the sprite part - see [Working with Input](input.md#mice) for more details on the mouse manager.
 
 > [!NOTE]
 > `spriteManagerCreate()` documents this split on purpose: the same sprite can be driven by mouse, joystick, or your own logic.
@@ -138,6 +139,7 @@ Channel 0 is the front-most sprite.
 ACE's default `BPLCON2` already puts sprites 0–3 in front of the playfield, so a channel-0 pointer shows up without extra priority setup.
 
 Call `mouseProcess()` **once** per frame — typically next to `keyProcess()` in `genericProcess()`, or at the start of the gamestate loop if you created the mouse there.
+See [Working with Input](input.md) for details.
 
 ```c
 void genericProcess(void) {
@@ -209,7 +211,7 @@ If the mouse manager was created in `genericCreate()`, destroy it in `genericDes
 
 ## Buttons and swapping cursors
 
-`mouseCheck()` is the held state, `mouseUse()` is an edge trigger (press once, then consumed).
+Use `mouseCheck()` / `mouseUse()` to read the buttons, as described in [Working with Input](input.md).
 You can swap the sprite bitmap when the button is down — the showcase switches arrow → pencil on LMB:
 
 ```c

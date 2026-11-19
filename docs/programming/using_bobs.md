@@ -59,6 +59,9 @@ copProcessBlocks();
 vPortWaitForEnd(s_pVp);
 ```
 
+> [!NOTE]
+> When using double buffering, read [Double buffering](double_buffering.md) to learn which buffer you can draw on and when.
+
 ## Using BOBs
 
 Define some bob structs for later use.
@@ -105,8 +108,9 @@ In gamestate loop, you need to:
 - ensure that all bobs are drawn
 
 ```c
-// Begin the BOB drawing cycle - undraws previous BOBs
-bobBegin();
+// Begin the BOB drawing cycle - undraws previous BOBs.
+// Pass the buffer the bobs are to be drawn on - the back buffer when double buffering.
+bobBegin(s_pVpManager->pBack);
 
 // At this point, it's the best time to draw non-bob stuff, e.g. update background.
 
