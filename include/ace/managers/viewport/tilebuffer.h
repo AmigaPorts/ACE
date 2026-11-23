@@ -38,7 +38,8 @@ typedef enum tTileBufferCreateTags {
 	TAG_TILEBUFFER_BOUND_TILE_Y = (TAG_USER | 3),
 
 	/**
-	 * @brief Size of tile, given in bitshift. Set to 4 for 16px, 5 for 32px, etc. Mandatory.
+	 * @brief Tile width as bitshift (4 → 16px, 5 → 32px). Mandatory.
+	 * Width must stay power-of-two for blitter word alignment.
 	 */
 	TAG_TILEBUFFER_TILE_SHIFT = (TAG_USER | 4),
 
@@ -89,6 +90,13 @@ typedef enum tTileBufferCreateTags {
 
 	TAG_TILEBUFFER_FRONT_BITMAP = (TAG_USER | 13),
 	TAG_TILEBUFFER_BACK_BITMAP =  (TAG_USER | 14),
+
+	/**
+	 * @brief Tile height in pixels. Only used when ACE_USE_NON_SQUARE_TILES is
+	 * enabled; otherwise height equals width (1 << TILE_SHIFT).
+	 * Need not be a power of two (e.g. TwinWorld 16×10).
+	 */
+	TAG_TILEBUFFER_TILE_HEIGHT = (TAG_USER | 15),
 } tTileBufferCreateTags;
 
 /* types */
@@ -133,8 +141,9 @@ typedef struct tTileBufferManager {
 	tScrollBufferManager *pScroll; ///< Quick ref to Scroll
 	// Manager vars
 	tUwCoordYX uTileBounds;       ///< Tile count in x,y
-	UBYTE ubTileSize;             ///< Tile size in pixels
-	UBYTE ubTileShift;            ///< Tile size in shift, e.g. 4 for 16: 1 << 4 == 16
+	UBYTE ubTileSize;             ///< Tile width in pixels (1 << ubTileShift)
+	UBYTE ubTileShift;            ///< Tile width shift, e.g. 4 for 16px
+	UBYTE ubTileHeight;           ///< Tile height in pixels (== ubTileSize unless ACE_USE_NON_SQUARE_TILES)
 	UWORD uwMarginedWidth;        ///< Width of visible area + margins
 	UWORD uwMarginedHeight;       ///< Height of visible area + margins
 	                              ///  TODO: refresh when scrollbuffer changes

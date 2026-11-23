@@ -70,6 +70,12 @@ typedef enum tScrollBufferCreateTags {
 
 	TAG_SCROLLBUFFER_FRONT_BITMAP =   (TAG_USER|9),
 	TAG_SCROLLBUFFER_BACK_BITMAP =    (TAG_USER|10),
+
+	/**
+	 * @brief Margin stride for Y buffer sizing (pixels). Defaults to
+	 * TAG_SCROLLBUFFER_MARGIN_WIDTH. With non-square tiles, pass tile height.
+	 */
+	TAG_SCROLLBUFFER_MARGIN_HEIGHT =  (TAG_USER|11),
 } tScrollBufferCreateTags;
 
 #define SCROLLBUFFER_FLAG_COPLIST_RAW 1
@@ -126,12 +132,18 @@ void scrollBufferProcess(tScrollBufferManager *pManager);
  */
 void scrollBufferGetBitmapDimensions(
 	const tVPort *pVPort, UBYTE ubMarginWidth,
+#if defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubMarginHeight,
+#endif
 	UWORD uwBoundWidth, UWORD uwBoundHeight,
 	UWORD *pWidth, UWORD *pHeight
 );
 
 void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
+#if defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubMarginHeight,
+#endif
 	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBfr,
 	tBitMap *pCustomFront, tBitMap *pCustomBack
 );

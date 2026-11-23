@@ -60,6 +60,11 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 		);
 		goto fail;
 	}
+#if defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubMarginHeight = tagGet(
+		pTags, vaTags, TAG_SCROLLBUFFER_MARGIN_HEIGHT, ubMarginWidth
+	);
+#endif
 
 	// Buffer bitmap
 	UWORD uwBoundWidth = tagGet(
@@ -119,7 +124,11 @@ tScrollBufferManager *scrollBufferCreate(void *pTags, ...) {
 	tBitMap *pCustomFront = (tBitMap*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_FRONT_BITMAP, 0);
 	tBitMap *pCustomBack = (tBitMap*)tagGet(pTags, vaTags, TAG_SCROLLBUFFER_BACK_BITMAP, 0);
 	scrollBufferReset(
-		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight,
+		pManager, ubMarginWidth,
+#if defined(ACE_USE_NON_SQUARE_TILES)
+		ubMarginHeight,
+#endif
+		uwBoundWidth, uwBoundHeight,
 		ubBitmapFlags, isDblBuf, pCustomFront, pCustomBack
 	);
 
@@ -361,13 +370,19 @@ void scrollBufferProcess(tScrollBufferManager *pManager) {
 
 void scrollBufferGetBitmapDimensions(
 	const tVPort *pVPort, UBYTE ubMarginWidth,
+#if defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubMarginHeight,
+#endif
 	UWORD uwBoundWidth, UNUSED_ARG UWORD uwBoundHeight,
 	UWORD *pWidth, UWORD *pHeight
 ) {
+#if !defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubMarginHeight = ubMarginWidth;
+#endif
 	UWORD uwVpWidth = pVPort->uwWidth;
 	UWORD uwVpHeight = pVPort->uwHeight;
 	UWORD uwBmAvailHeight =
-		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
+		ubMarginHeight * (blockCountCeil(uwVpHeight, ubMarginHeight) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
 #if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
 	uwBmAvailHeight = nearestPowerOf2(uwBmAvailHeight);
 #endif
@@ -380,12 +395,18 @@ void scrollBufferGetBitmapDimensions(
 
 void scrollBufferReset(
 	tScrollBufferManager *pManager, UBYTE ubMarginWidth,
+#if defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubMarginHeight,
+#endif
 	UWORD uwBoundWidth, UWORD uwBoundHeight, UBYTE ubBitmapFlags, UBYTE isDblBuf,
 	tBitMap *pCustomFront, tBitMap *pCustomBack
 ) {
+#if !defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubMarginHeight = ubMarginWidth;
+#endif
 	logBlockBegin(
-		"scrollBufferReset(pManager: %p, ubMarginWidth: %hu, uwBoundWidth: %u, uwBoundHeight: %u)",
-		pManager, ubMarginWidth, uwBoundWidth, uwBoundHeight
+		"scrollBufferReset(pManager: %p, ubMarginWidth: %hu, ubMarginHeight: %hu, uwBoundWidth: %u, uwBoundHeight: %u)",
+		pManager, ubMarginWidth, ubMarginHeight, uwBoundWidth, uwBoundHeight
 	);
 	// Helper vars
 	UWORD uwVpWidth = pManager->sCommon.pVPort->uwWidth;
@@ -397,7 +418,7 @@ void scrollBufferReset(
 	pManager->uBfrBounds.uwY = uwBoundHeight;
 	// Optimize avail height to power of two so that modulo can be an AND
 	pManager->uwBmAvailHeight =
-		ubMarginWidth * (blockCountCeil(uwVpHeight, ubMarginWidth) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
+		ubMarginHeight * (blockCountCeil(uwVpHeight, ubMarginHeight) + 2 * (ACE_SCROLLBUFFER_Y_MARGIN_SIZE + SCROLLBUFFER_Y_DRAW_MARGIN_SIZE));
 #if defined(ACE_SCROLLBUFFER_POT_BITMAP_HEIGHT)
 	pManager->uwBmAvailHeight = nearestPowerOf2(pManager->uwBmAvailHeight);
 #endif
