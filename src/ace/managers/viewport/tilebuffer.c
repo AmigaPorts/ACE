@@ -424,8 +424,6 @@ static inline void tileBufferContinueTileDraw(
 	UBYTE isWaitForBlit, UBYTE isInterleaved
 ) {
 	tTileBufferTileIndex TileToDraw = pTileDataColumn[uwTileY];
-	/* Always blit the ACE tileset cell first (TwinWorld tile 0 = sky pen 1).
-	 * Skipping it left the scroll buffer uncleared → black playfield / trash. */
 
 	if (isInterleaved) {
 		// this function should be inlined into the caller, where

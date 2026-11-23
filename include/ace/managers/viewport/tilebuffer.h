@@ -94,7 +94,7 @@ typedef enum tTileBufferCreateTags {
 	/**
 	 * @brief Tile height in pixels. Only used when ACE_USE_NON_SQUARE_TILES is
 	 * enabled; otherwise height equals width (1 << TILE_SHIFT).
-	 * Need not be a power of two (e.g. TwinWorld 16×10).
+	 * Need not be a power of two.
 	 */
 	TAG_TILEBUFFER_TILE_HEIGHT = (TAG_USER | 15),
 } tTileBufferCreateTags;
