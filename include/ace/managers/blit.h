@@ -164,13 +164,13 @@ UBYTE blitSafeCopy(
  * instead.
  *
  * @param pSrc Source bitmap.
- * @param wSrcX Source rectangle top-left position's X-coordinate.
- * @param wSrcY Source rectangle top-left position's Y-coordinate.
+ * @param uwSrcX Source rectangle top-left position's X-coordinate.
+ * @param uwSrcY Source rectangle top-left position's Y-coordinate.
  * @param pDst Destination bitmap. Can be same as pSrc.
- * @param wDstX Destination rectangle top-left position's X-coordinate.
- * @param wDstY Destination rectangle top-left position's Y-coordinate.
- * @param wWidth Rectangle width.
- * @param wHeight Rectangle height.
+ * @param uwDstX Destination rectangle top-left position's X-coordinate.
+ * @param uwDstY Destination rectangle top-left position's Y-coordinate.
+ * @param uwWidth Rectangle width.
+ * @param uwHeight Rectangle height.
  * @return Always 1.
  *
  * @see blitSafeCopyAligned()
@@ -178,9 +178,9 @@ UBYTE blitSafeCopy(
  * @see blitCopy()
  */
 UBYTE blitUnsafeCopyAligned(
-	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
-	tBitMap *pDst, WORD wDstX, WORD wDstY,
-	WORD wWidth, WORD wHeight
+	const tBitMap *pSrc, UWORD uwSrcX, UWORD uwSrcY,
+	tBitMap *pDst, UWORD uwDstX, UWORD uwDstY,
+	UWORD uwWidth, UWORD uwHeight
 );
 
 /**

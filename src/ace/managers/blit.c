@@ -264,19 +264,19 @@ UBYTE blitSafeCopy(
  * Best for drawing tilemaps
  */
 UBYTE blitUnsafeCopyAligned(
-	const tBitMap *pSrc, WORD wSrcX, WORD wSrcY,
-	tBitMap *pDst, WORD wDstX, WORD wDstY, WORD wWidth, WORD wHeight
+	const tBitMap *pSrc, UWORD uwSrcX, UWORD uwSrcY,
+	tBitMap *pDst, UWORD uwDstX, UWORD uwDstY, UWORD uwWidth, UWORD uwHeight
 ) {
 	// Use C channel instead of A - same speed, less regs to set up
-	UWORD uwBlitWords = wWidth / 16;
+	UWORD uwBlitWords = uwWidth / 16;
 	UWORD uwBltCon0 = USEC|USED | MINTERM_C;
-	ULONG ulSrcOffs = pSrc->BytesPerRow * wSrcY + (wSrcX / 8);
-	ULONG ulDstOffs = pDst->BytesPerRow * wDstY + (wDstX / 8);
+	ULONG ulSrcOffs = pSrc->BytesPerRow * uwSrcY + (uwSrcX / 8);
+	ULONG ulDstOffs = pDst->BytesPerRow * uwDstY + (uwDstX / 8);
 
 	if(bitmapIsInterleaved(pSrc) && bitmapIsInterleaved(pDst)) {
 		WORD wSrcModulo = bitmapGetByteWidth(pSrc) - uwBlitWords * 2;
 		WORD wDstModulo = bitmapGetByteWidth(pDst) - uwBlitWords * 2;
-		wHeight *= pSrc->Depth;
+		uwHeight *= pSrc->Depth;
 
 		blitWait(); // Don't modify registers when other blit is in progress
 		g_pCustom->bltcon0 = uwBltCon0;
@@ -286,10 +286,10 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltcpt = &pSrc->Planes[0][ulSrcOffs];
 		g_pCustom->bltdpt = &pDst->Planes[0][ulDstOffs];
 #if defined(ACE_USE_ECS_FEATURES)
-		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizv = uwHeight;
 		g_pCustom->bltsizh = uwBlitWords;
 #else
-		g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+		g_pCustom->bltsize = (uwHeight << HSIZEBITS) | uwBlitWords;
 #endif
 	}
 	else {
@@ -308,7 +308,7 @@ UBYTE blitUnsafeCopyAligned(
 		g_pCustom->bltcmod = wSrcModulo;
 		g_pCustom->bltdmod = wDstModulo;
 #if defined(ACE_USE_ECS_FEATURES)
-		g_pCustom->bltsizv = wHeight;
+		g_pCustom->bltsizv = uwHeight;
 #endif
 		while(ubPlane--) {
 			blitWait();
@@ -317,7 +317,7 @@ UBYTE blitUnsafeCopyAligned(
 #if defined(ACE_USE_ECS_FEATURES)
 			g_pCustom->bltsizh = uwBlitWords;
 #else
-			g_pCustom->bltsize = (wHeight << HSIZEBITS) | uwBlitWords;
+			g_pCustom->bltsize = (uwHeight << HSIZEBITS) | uwBlitWords;
 #endif
 		}
 	}
