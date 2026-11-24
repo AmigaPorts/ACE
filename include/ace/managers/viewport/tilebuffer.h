@@ -166,6 +166,20 @@ typedef struct tTileBufferManager {
 void tileBufferQueueProcess(tTileBufferManager *pManager);
 
 /**
+ * @brief Reset the pending tiles and margin redraw state of the tile buffer.
+ *
+ * This is useful when manually redrawing the entire tilemap anyway over multiple
+ * frames using tileBufferDrawTile, for example (when tileBufferRedrawAll would be
+ * too slow to do it in a single go. By controlling wether you pass some value
+ * like -1 for wStartX/wEndX/wStartY/wEndY or something else, you can control
+ * if the margin will be redrawn on the next camera movement or not (in case you
+ * also want to do the margin manually or not).
+ */
+void tileBufferResetRedrawState(
+	tRedrawState *pState, WORD wStartX, WORD wEndX, WORD wStartY, WORD wEndY
+);
+
+/**
  * Tilemap buffer manager create fn. See TAG_TILEBUFFER_* for available options.
  *
  * After calling this function, be sure to do the following:
