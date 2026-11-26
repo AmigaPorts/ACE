@@ -30,7 +30,7 @@ static UBYTE shiftFromPowerOfTwo(UWORD uwPot) {
 
 #define BLIT_WORDS_NON_INTERLEAVED_BIT (0b1 << 5) // tileSize is UBYTE, top bit of width is definitely free
 
-static void tileBufferResetRedrawState(
+void tileBufferResetRedrawState(
 	tRedrawState *pState, WORD wStartX, WORD wEndX, WORD wStartY, WORD wEndY
 ) {
 #if defined(ACE_SCROLLBUFFER_ENABLE_SCROLL_X)
