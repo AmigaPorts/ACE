@@ -148,8 +148,6 @@ tTileBufferManager *tileBufferCreate(void *pTags, ...) {
 		goto fail;
 	}
 	pManager->ubTileHeight = ubTileHeight;
-#else
-	pManager->ubTileHeight = pManager->ubTileSize;
 #endif
 
 	pManager->cbTileDraw = (tTileDrawCallback)tagGet(
@@ -312,7 +310,9 @@ void tileBufferReset(
 		pManager->pScroll = scrollBufferCreate(0,
 			TAG_SCROLLBUFFER_VPORT, pManager->sCommon.pVPort,
 			TAG_SCROLLBUFFER_MARGIN_WIDTH, pManager->ubTileSize,
+#if defined(ACE_USE_NON_SQUARE_TILES)
 			TAG_SCROLLBUFFER_MARGIN_HEIGHT, TILEBUF_TILE_HEIGHT(pManager),
+#endif
 			TAG_SCROLLBUFFER_BOUND_WIDTH, uwTileX << ubTileShift,
 			TAG_SCROLLBUFFER_BOUND_HEIGHT, TILEBUF_TILE_TO_Y(pManager, uwTileY),
 			TAG_SCROLLBUFFER_IS_DBLBUF, isDblBuf,

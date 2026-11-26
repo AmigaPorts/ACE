@@ -91,12 +91,13 @@ typedef enum tTileBufferCreateTags {
 	TAG_TILEBUFFER_FRONT_BITMAP = (TAG_USER | 13),
 	TAG_TILEBUFFER_BACK_BITMAP =  (TAG_USER | 14),
 
+#if defined(ACE_USE_NON_SQUARE_TILES)
 	/**
-	 * @brief Tile height in pixels. Only used when ACE_USE_NON_SQUARE_TILES is
-	 * enabled; otherwise height equals width (1 << TILE_SHIFT).
-	 * Need not be a power of two.
+	 * @brief Tile height in pixels. Need not be a power of two.
+	 * Defaults to width (1 << TILE_SHIFT) if omitted.
 	 */
 	TAG_TILEBUFFER_TILE_HEIGHT = (TAG_USER | 15),
+#endif
 } tTileBufferCreateTags;
 
 /* types */
@@ -143,7 +144,9 @@ typedef struct tTileBufferManager {
 	tUwCoordYX uTileBounds;       ///< Tile count in x,y
 	UBYTE ubTileSize;             ///< Tile width in pixels (1 << ubTileShift)
 	UBYTE ubTileShift;            ///< Tile width shift, e.g. 4 for 16px
-	UBYTE ubTileHeight;           ///< Tile height in pixels (== ubTileSize unless ACE_USE_NON_SQUARE_TILES)
+#if defined(ACE_USE_NON_SQUARE_TILES)
+	UBYTE ubTileHeight;           ///< Tile height in pixels
+#endif
 	UWORD uwMarginedWidth;        ///< Width of visible area + margins
 	UWORD uwMarginedHeight;       ///< Height of visible area + margins
 	                              ///  TODO: refresh when scrollbuffer changes

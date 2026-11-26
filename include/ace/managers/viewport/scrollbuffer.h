@@ -71,11 +71,13 @@ typedef enum tScrollBufferCreateTags {
 	TAG_SCROLLBUFFER_FRONT_BITMAP =   (TAG_USER|9),
 	TAG_SCROLLBUFFER_BACK_BITMAP =    (TAG_USER|10),
 
+#if defined(ACE_USE_NON_SQUARE_TILES)
 	/**
 	 * @brief Margin stride for Y buffer sizing (pixels). Defaults to
 	 * TAG_SCROLLBUFFER_MARGIN_WIDTH. With non-square tiles, pass tile height.
 	 */
 	TAG_SCROLLBUFFER_MARGIN_HEIGHT =  (TAG_USER|11),
+#endif
 } tScrollBufferCreateTags;
 
 #define SCROLLBUFFER_FLAG_COPLIST_RAW 1
